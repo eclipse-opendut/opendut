@@ -1,6 +1,6 @@
 use leptos::prelude::*;
-use opendut_lea_components::{UserInputValue, NON_BREAKING_SPACE};
-use opendut_model::cluster::ClusterId;
+use opendut_lea_components::{SelectionTable, SelectionTableRow, UserInputValue};
+use opendut_model::cluster::ClusterDescriptor;
 use crate::app::use_app_globals;
 use crate::tests::configurator::types::UserTestConfiguration;
 
@@ -30,20 +30,24 @@ pub fn ClusterSelector(test_configuration: RwSignal<UserTestConfiguration>) -> i
         }
     );
 
-    let help_text = move || {
-        getter.with(|selection| match selection {
-            UserInputValue::Left(error) => error.to_owned(),
-            UserInputValue::Right(_) => String::from(NON_BREAKING_SPACE),
-            UserInputValue::Both(error, _) => error.to_owned(),
-        })
-    };
-
     let clusters = Signal::derive(move || {
         if let Some(mut clusters) = registered_clusters.get() {
-            clusters.sort_by(|cluster_a, cluster_b| {
-                cluster_a.name.value().to_lowercase()
-                    .cmp(&cluster_b.name.value().to_lowercase())
+            clusters
+                .sort_by(|cluster_a, cluster_b| {
+                    cluster_a.name.value().to_lowercase()
+                        .cmp(&cluster_b.name.value().to_lowercase())
             });
+
+            let rows = clusters.iter().map(|cluster_descriptor| {
+                let ClusterDescriptor { id, name, .. } = cluster_descriptor;
+                let id = id.to_string();
+                let name = name.to_string();
+
+                SelectionTableRow {
+                    id: Clone::clone(&id),
+                    cells: vec![name, id]
+                }
+            }).collect::<Vec<_>>();
 
             if clusters.is_empty() {
                 setter.set(UserInputValue::Left(String::from("No clusters available.")));
@@ -51,76 +55,24 @@ pub fn ClusterSelector(test_configuration: RwSignal<UserTestConfiguration>) -> i
                 setter.set(UserInputValue::Left(String::from("Select a cluster.")));
             }
 
-            clusters
+            rows
         } else {
             Vec::new()
         }
     });
 
-    let is_selected = move |cluster: ClusterId| {
-        let cluster = Clone::clone(&cluster);
-        Signal::derive(move || {
-            let getter = getter.get();
-            match getter {
-                UserInputValue::Right(selected) => cluster.to_string() == selected,
-                UserInputValue::Left(_) | UserInputValue::Both(_, _) => false,
-            }
-        })
-    };
+    let header = vec![
+        String::new(),
+        String::from("Name"),
+        String::from("Cluster ID")
+    ];
 
     view! {
-        <p class="help has-text-danger"> { help_text } </p>
-        <div class="table-container mt-2">
-            <table class="table is-fullwidth">
-                <thead>
-                    <tr>
-                        <th></th>
-                        <th>Name</th>
-                        <th>Cluster ID</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <For
-                        each=move || clusters.get()
-                        key=|cluster| cluster.id
-                        children=move |cluster| {
-                            let cluster_id = cluster.id;
-                            let is_selected = is_selected(Clone::clone(&cluster_id));
-
-                            view! {
-                                <tr
-                                    class:has-background-link-light=move || is_selected.get()
-                                    style="cursor: pointer;"
-                                    on:click=move |_| {
-                                        setter.set(UserInputValue::Right(cluster_id.to_string()));
-                                    }
-                                >
-                                    <td class="is-narrow">
-                                        <div class="control">
-                                            <label class="radio">
-                                                <input
-                                                    type="radio"
-                                                    name="selected-cluster"
-                                                    prop:checked=is_selected
-                                                    on:click=move |_| {
-                                                        setter.set(UserInputValue::Right(cluster_id.to_string()));
-                                                    }
-                                                />
-                                            </label>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        { cluster.name.to_string() }
-                                    </td>
-                                    <td>
-                                        { cluster_id.to_string() }
-                                    </td>
-                                </tr>
-                            }
-                        }
-                    />
-                </tbody>
-            </table>
-        </div>
+        <SelectionTable
+            header
+            rows=clusters
+            getter
+            setter
+        />
     }
 }

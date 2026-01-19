@@ -5,6 +5,7 @@ pub mod user_input;
 pub mod user_textarea;
 pub mod vector_user_input;
 pub mod user_select;
+pub mod selection_table;
 
 pub type UserInputError = String;
 pub type UserInputValue = Ior<UserInputError, String>;
