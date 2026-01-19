@@ -10,8 +10,20 @@ Always create a database backup before upgrading CARL.
 
 ## Unreleased
 
-tbd.
+### Added
+* Added option to start the localenv with [mTLS client authentication](https://opendut.eclipse.dev/book/development/testenv/advanced.html#enable-client-authentication):
+  * Added client certificates that are generated during provisioning
+  * THEO: Added file locations to look for docker compose override files.
+  * Added _optional_ docker compose configuration files to enable mTLS.
+* CARL is now able to check client certificates for mutual authentication.
 
+### Fixed
+* CARL was intended to be run behind reverse proxy (traefik) that is doing mutual authentication. Due to connection drops seen at the peer side we changed from an HTTP traefik router to a TCP router. Unfortunately, this bypassed the client certificate checks in traefik and exposed CARL directly. Support for mTLS in CARL was therefore added directly. Release `0.9.0` did not check client certificates in CARL.
+* It is now possible to load multiple certificate authorities.
+
+### Changed
+* Localenv peer network was separated from the backend network. Separate Docker networks ensure peers connect to the backend as they would when deployed next to a test bench.
+* Added logging to stdout during Telemetry startup. Previously, no messages were shown during startup until configuration phase passed the OpenTelemetry stack. 
 
 ## [0.9.0] - 2025-12-19
 

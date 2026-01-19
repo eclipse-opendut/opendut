@@ -4,7 +4,8 @@ You may run all the containers in a virtual machine, using Vagrant.
 This is the recommended way to run the test environment.
 It will create a private network (subnet 192.168.56.0/24).
 The virtual machine itself has the IP address: `192.168.56.10`.
-The docker network has the IP subnet: `192.168.32.0/24`.
+The docker network for the backend has the IP subnet: `192.168.32.0/24`.
+The docker network for the EDGAR peers has the IP subnet: `192.168.38.0/24`.
 Make sure those network addresses are not occupied or in conflict with other networks accessible from your machine.
 
 ## Requirements

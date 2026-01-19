@@ -10,7 +10,7 @@ certificate = "/etc/opendut/tls/carl.pem"
 key = "/etc/opendut/tls/carl.key"
 ca = "/etc/opendut/tls/ca.pem"
 
-# use client certificate when connecting to other services (identity provider, opentelemetry collector, NetBird)
+# use client certificate when connecting to other services (identity provider, opentelemetry collector, in the future also NetBird)
 [network.tls.client.auth] #mTLS
 enabled = false
 certificate = "/etc/opendut/tls/client-auth.pem"

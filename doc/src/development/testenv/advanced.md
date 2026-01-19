@@ -142,3 +142,29 @@ OPENDUT_CARL_IMAGE_VERSION=0.9.0-alpha
 This will make the test environment load the specified version of the CARL distribution.
 Make sure that the specified version is already built or downloaded here: `target/ci/distribution/x86_64-unknown-linux-gnu`.
 If you use this feature, a warning will be printed when starting the test environment.
+
+## Load custom configuration in localenv and testenv
+
+By default, the localenv is loaded with the following configuration files:
+- Environment variables: `./.ci/deploy/localenv/.env.development`
+- Docker compose file: `./.ci/deploy/localenv/docker-compose.yml`
+
+The localenv can be customized by creating the following files:
+- Environment variables: `./.ci/deploy/localenv/.env.override`
+- Docker compose file: `./.ci/deploy/localenv/docker-compose.override.yml`
+
+### EDGAR Testenv cluster
+
+The testenv cluster also supports custom configuration:
+- Docker compose file: `.ci/deploy/testenv/edgar/docker-compose.yml`
+- Override file location: `.ci/deploy/testenv/edgar/docker-compose.override.yml`
+
+## Enable client authentication
+
+To enable client authentication in localenv and testenv:
+1. Copy the following files:
+    ```shell
+    cp .ci/deploy/localenv/docker-compose.override.mtls.yml ./.ci/deploy/localenv/docker-compose.override.yml
+    cp .ci/deploy/testenv/edgar/docker-compose.override.mtls.yml .ci/deploy/testenv/edgar/docker-compose.override.yml
+    ```
+2. And restart the localenv.
