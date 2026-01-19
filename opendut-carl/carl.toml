@@ -10,6 +10,13 @@ certificate = "/etc/opendut/tls/carl.pem"
 key = "/etc/opendut/tls/carl.key"
 ca = "/etc/opendut/tls/ca.pem"
 
+# use client certificate when connecting to other services (identity provider, opentelemetry collector, NetBird)
+[network.tls.client.auth] #mTLS
+enabled = false
+certificate = "/etc/opendut/tls/client-auth.pem"
+key = "/etc/opendut/tls/client-auth.key"
+
+# validate certificates of connecting clients with the given certificate authority
 [network.tls.server.auth] #mTLS
 enabled = false
 ca = "/etc/opendut/tls/ca.pem"
@@ -63,7 +70,7 @@ kind = ""
 [vpn.netbird]
 url = ""
 ca = ""
-auth.type = ""
+auth.type = "oauth-create-api-token"
 auth.secret = ""
 # only for OIDC
 auth.issuer = ""
