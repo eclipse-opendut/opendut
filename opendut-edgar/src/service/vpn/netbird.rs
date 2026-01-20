@@ -30,14 +30,14 @@ impl NetbirdProcess {
                     .arg("--config=/etc/netbird/config.json")
                     .arg("--log-level=info")
                     .arg("--daemon-addr=unix:///var/run/netbird.sock")
-                    .arg("--log-file=/var/log/netbird/client.log"); //TODO maybe --log-file=console
+                    .arg("--log-file=console");
 
                 command
             }
         )
         .with_restart_policy(RestartPolicy::Always)
         .with_restart_delay(Duration::from_secs(5))
-        .with_output_config(OutputConfig::Inherit);
+        .with_output_config(OutputConfig::Capture);
 
         let process_id = AsyncProcessManager::spawn_process(process_manager.clone(), config).await?;
 
