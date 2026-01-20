@@ -10,7 +10,7 @@ ENV TARGET_TRIPLE=x86_64-unknown-linux-gnu
 #   - `can-utils` for `cangw` used by EDGAR Service
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends \
-    ca-certificates python3 can-utils && \
+    ca-certificates python3 can-utils curl iputils-ping multitail && \
     rm -rf /var/lib/apt/lists/*
 
 
@@ -39,3 +39,5 @@ WORKDIR /opt
 ADD target/ci/distribution/${TARGET_TRIPLE}/opendut-edgar-${TARGET_TRIPLE}-${VERSION}.tar.gz /opt
 
 CMD ["/opt/opendut-edgar/opendut-edgar", "setup", "managed", "--no-confirm"]
+
+# USER edgar  # TODO create unprivileged user

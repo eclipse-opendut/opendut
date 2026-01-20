@@ -37,3 +37,4 @@ RUN mkdir -p /usr/local/opendut/bin/distribution /usr/local/opendut/bin/debug /o
 ENV PATH="${PATH}:/usr/local/opendut/bin/distribution/:/usr/local/opendut/bin/debug/:/opt/opendut/edgar/netbird/"
 
 ENTRYPOINT ["/opt/entrypoint.sh"]
+CMD ["/opt/managed.sh", "leader"]

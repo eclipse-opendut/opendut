@@ -14,10 +14,18 @@ pub enum Package {
     Util,
     Vpn,
     VpnNetbird,
-    IntegrationTests,
+    IntegrationTests
 }
 
 impl Package {
+    pub fn dockerfile_path(&self) -> Option<&'static str> {
+        match self {
+            Package::Carl => Some(".ci/docker/carl/Dockerfile"),
+            Package::Edgar => Some(".ci/docker/edgar/Dockerfile"),
+            _ => None,
+        }
+    }
+
     pub fn ident(&self) -> String {
         match self {
             Package::Carl => "opendut-carl",

@@ -40,7 +40,10 @@ pub enum TaskCli {
     Destroy,
     /// Run EDGAR cluster creation.
     Edgar(TestEdgarCli),
+    /// Run EDGAR production image
+    EdgarProduction,
 }
+
 
 impl TestenvCli {
     pub(crate) fn default_handling(self) -> crate::Result {
@@ -70,6 +73,15 @@ impl TestenvCli {
             }
             TaskCli::Edgar(cli) => {
                 cli.default_handling()?;
+            }
+            TaskCli::EdgarProduction => {
+                DockerCommand::new()
+                    .add_testenv_edgar_args()
+                    .add_localenv_secrets_args()
+                    .add_edgar_production_image_args()
+                    .arg("up")
+                    .arg("--build")
+                    .run()?;
             }
         }
         Ok(())

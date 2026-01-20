@@ -1,0 +1,26 @@
+# test environment for EDGAR production image
+
+# works only within the opendut-vm (uses docker volume)
+# docker compose -f .ci/deploy/testenv/edgar/docker-compose.yml -f .ci/deploy/testenv/edgar/docker-compose-production.yml --env-file .ci/deploy/localenv/data/secrets/.env --env-file .ci/deploy/localenv/.env.development --env-file .env-theo up --build
+
+x-edgar-production-params: &edgar-production-params
+  restart: 'no'
+  build: !override
+    context: ../../../..
+    dockerfile: ./.ci/docker/edgar/Dockerfile  # use production image
+    args:
+      - VERSION=$OPENDUT_CARL_VERSION
+  environment:
+    - OPENDUT_EDGAR_SETUP_STRING
+
+services:
+  leader:
+    container_name: edgar-production
+    <<: *edgar-production-params
+
+  # disable other peers
+  peer:
+    deploy:
+      mode: replicated
+      replicas: 0
+    <<: *edgar-production-params

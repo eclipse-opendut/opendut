@@ -71,13 +71,10 @@ services:
 
   leader:
     container_name: edgar-leader  # defined DNS for the container
-    command: /opt/managed.sh leader
-    #command: sleep infinity
     <<: *default-edgar-params
 
   peer:
     command: /opt/managed.sh
-    #command: sleep infinity
     deploy:
       mode: replicated
       # edgar replica count (e.g. 3)

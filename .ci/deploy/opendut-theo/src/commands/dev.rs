@@ -26,11 +26,11 @@ pub enum TaskCli {
         #[arg(long, short, action = ArgAction::SetTrue)]
         expose: bool,
     },
-    /// Start CARL with developer configuration.
+    /// Run CARL with developer configuration.
     Carl,
     /// CARL environment run configuration for your IDE (different output in VM and host!).
     CarlConfig,
-    /// EDGAR container.
+    /// Run EDGAR container shell.
     EdgarShell,
 }
 

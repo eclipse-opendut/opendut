@@ -120,6 +120,11 @@ impl DockerCommand {
             .arg(LOCALENV_SECRETS_ENV_FILE)
     }
 
+    pub(crate) fn add_edgar_production_image_args(&mut self) -> &mut Self {
+        self.arg("--file")
+            .arg(".ci/deploy/testenv/edgar/docker-compose-production.yml")
+    }
+
     pub(crate) fn expect_output(&mut self, error_message: &str) -> Result<Output, anyhow::Error> {
         self.debug_log_executed_command();
         let result = self.command.output();

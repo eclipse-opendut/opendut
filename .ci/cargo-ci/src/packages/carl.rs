@@ -69,11 +69,8 @@ impl CarlCli {
             TaskCli::DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli { target }) => {
                 distribution::validate::validate_contents(target)?;
             }
-            TaskCli::Docker(crate::tasks::docker::DockerCli { tag, publish }) => {
-                crate::tasks::docker::build_carl_docker_image(tag.clone())?;
-                if publish {
-                    crate::tasks::docker::publish_carl_docker_image(tag)?;
-                }
+            TaskCli::Docker(implementation) => {
+                implementation.default_handling(SELF_PACKAGE)?; 
             }
         };
         Ok(())
