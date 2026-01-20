@@ -6051,15 +6051,14 @@ dependencies = [
 [[package]]
 name = "ring"
 version = "0.17.14"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a4689e6c2294d81e88dc6261c768b63bc4fcdb852be6d1352498b114f61383b7"
+source = "git+https://github.com/briansmith/ring.git?rev=522afb658067bed0512a49f66bd4c07389b51ab3#522afb658067bed0512a49f66bd4c07389b51ab3"
 dependencies = [
  "cc",
  "cfg-if",
  "getrandom 0.2.16",
  "libc",
  "untrusted",
- "windows-sys 0.52.0",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
