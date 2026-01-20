@@ -151,8 +151,6 @@ To configure EDGAR, so that it can connect to a backend that requires mTLS Clien
 export OPENDUT_EDGAR_NETWORK_TLS_CLIENT_AUTH_ENABLED=true
 export OPENDUT_EDGAR_NETWORK_TLS_CLIENT_AUTH_CERTIFICATE="" #Path or certificate content
 export OPENDUT_EDGAR_NETWORK_TLS_CLIENT_AUTH_KEY="" #Path or key content
-export OPENDUT_EDGAR_NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH_ENABLED=true
-export OPENDUT_EDGAR_OPENTELEMETRY_TLS_CLIENT_AUTH_ENABLED=true
 ```
 
 These values will be persisted into the EDGAR configuration file.
@@ -160,8 +158,14 @@ These values will be persisted into the EDGAR configuration file.
 Make sure the certificate and key files are accessible by the `opendut_service` user
 that will be created during the EDGAR Setup.
 
-If you need separate certificates and keys for OIDC or OpenTelemetry,
-you can additionally set the respective variables ending on `_CERTIFICATE` and `_KEY`.  
+EDGAR makes client connections to multiple services: OpenDuT CARL, Identity Provider (OIDC) and OpenTelemetry Collector.
+If you need separate or no certificates and keys for OIDC or OpenTelemetry,
+you can additionally set the respective variables for OIDC and OpenTelemetry:
+```
+export OPENDUT_EDGAR_NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH_ENABLED=true
+export OPENDUT_EDGAR_OPENTELEMETRY_TLS_CLIENT_AUTH_ENABLED=true
+```
+The variables ending on `_CERTIFICATE` and `_KEY` define different certificates and keys.  
 Without setting these, the value from `OPENDUT_EDGAR_NETWORK_TLS_CLIENT_AUTH_{CERTIFICATE,KEY}` will be used.
 
 
