@@ -2,15 +2,9 @@ use crate::setup;
 use anyhow::{bail, Context};
 use clap::{Args, Subcommand};
 use opendut_model::peer::PeerSetup;
-use opendut_model::util::net::NetworkInterfaceName;
-use opendut_model::vpn::netbird::SetupKey;
-use std::collections::HashSet;
-use std::net::Ipv4Addr;
 use std::ops::Not;
-use std::str::FromStr;
 use std::{env, fs};
 use tracing::{debug, info};
-use url::Url;
 use crate::setup::util::DryRun;
 
 const SETUP_STRING_ENV: &str = "OPENDUT_EDGAR_SETUP_STRING";
@@ -30,31 +24,6 @@ enum SetupCommand {
         // Setup String retrieved from LEA
         #[arg()]
         setup_string: Option<String>,
-
-        #[clap(flatten)]
-        common: SetupRunCommonArgs,
-    },
-    /// Setup your system for network routing without automatic management. This setup method will be removed in the future.
-    Unmanaged {
-        /// URL of the VPN management service
-        #[arg(long)]
-        management_url: Url,
-
-        /// Setup Key retrieved from the VPN management UI
-        #[arg(long)]
-        setup_key: String,
-
-        /// Whether this EDGAR should act as the leader of this network or use another EDGAR for routing (specify "local" or the IP address of the routing EDGAR respectively)
-        #[arg(long, value_name="local|IP_ADDRESS")]
-        leader: ParseableLeader, // We create a star topology to avoid loops between the GRE interfaces.
-
-        /// Names of the device interfaces where the ECUs are connected
-        #[arg(long, required=true)]
-        device_interfaces: Vec<NetworkInterfaceName>,
-
-        /// Name of the bridge to use, maximum 15 characters long
-        #[arg(long)]
-        bridge: Option<NetworkInterfaceName>,
 
         #[clap(flatten)]
         common: SetupRunCommonArgs,
@@ -87,21 +56,17 @@ impl SetupCli {
     pub async fn run(self) -> anyhow::Result<()> {
         match self.command {
             SetupCommand::Managed { setup_string, common } => {
-                let peer_setup = parse_peer_setup(setup_string)?;
+                setup::start::init_logging().await?;
 
-                setup_run_common_prelude().await?;
+                let user_command = env::args_os()
+                    .collect::<Vec<_>>();
+                info!("EDGAR Setup started!");
+                info!("Setup command being executed: {:?}", user_command);
+
+                let peer_setup = parse_peer_setup(setup_string)?;
 
                 setup::start::managed(peer_setup, common).await?;
             },
-            SetupCommand::Unmanaged { management_url, setup_key, leader, bridge, device_interfaces, common } => {
-                setup_run_common_prelude().await?;
-
-                let setup_key = SetupKey::from(setup_key);
-                let ParseableLeader(leader) = leader;
-                let bridge = bridge.unwrap_or_else(crate::common::default_bridge_name);
-                let device_interfaces = HashSet::from_iter(device_interfaces);
-                setup::start::unmanaged(management_url, setup_key, bridge, device_interfaces, leader, common).await?;
-            }
             SetupCommand::Logs => {
                 let logs = fs::read_to_string(setup::start::logging_file()?)?;
 
@@ -153,33 +118,5 @@ fn parse_peer_setup(setup_string_via_arg: Option<String>) -> anyhow::Result<Peer
             .context("Failed to decode Setup-String.")?;
 
         Ok(peer_setup)
-    }
-}
-
-async fn setup_run_common_prelude() -> anyhow::Result<()> {
-    setup::start::init_logging().await?;
-
-    let user_command = env::args_os()
-        .collect::<Vec<_>>();
-    info!("EDGAR Setup started!");
-    info!("Setup command being executed: {:?}", user_command);
-
-    Ok(())
-}
-
-#[derive(Clone, Debug)]
-struct ParseableLeader(setup::Leader);
-impl FromStr for ParseableLeader {
-    type Err = String;
-    fn from_str(string: &str) -> Result<Self, Self::Err> {
-        let local_string = "local";
-
-        if string.to_lowercase() == local_string {
-            Ok(ParseableLeader(setup::Leader::Local))
-        } else {
-            let ip = Ipv4Addr::from_str(string)
-                .map_err(|cause| format!("Specify either '{local_string}' or a valid IPv4 address ({cause})."))?;
-            Ok(ParseableLeader(setup::Leader::Remote(ip)))
-        }
     }
 }

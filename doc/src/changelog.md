@@ -24,7 +24,12 @@ Always create a database backup before upgrading CARL.
 ### Changed
 * EDGAR: The NetBird client is now spawned as a subprocess rather than a SystemD service, in preparation for running EDGAR in a container.
 * Localenv peer network was separated from the backend network. Separate Docker networks ensure peers connect to the backend as they would when deployed next to a test bench.
-* Added logging to stdout during Telemetry startup. Previously, no messages were shown during startup until configuration phase passed the OpenTelemetry stack. 
+* Added logging to stdout during Telemetry startup. Previously, no messages were shown during startup until configuration phase passed the OpenTelemetry stack.
+
+### Removed
+* EDGAR cannot be setup in unmanaged mode anymore.
+  This was virtually unsupported for a long time already and now diverged too much from managed mode, so that we decided to remove it.
+
 
 ## [0.9.0] - 2025-12-19
 

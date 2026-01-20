@@ -1,14 +1,7 @@
-use std::str::FromStr;
-
-use opendut_model::util::net::NetworkInterfaceName;
-
 pub mod carl;
 pub mod settings;
 pub mod task;
 
-pub fn default_bridge_name() -> NetworkInterfaceName {
-    NetworkInterfaceName::from_str("br-opendut").unwrap()
-}
 
 pub mod constants {
     use std::path::PathBuf;

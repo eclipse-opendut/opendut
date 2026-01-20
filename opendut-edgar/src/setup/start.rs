@@ -1,18 +1,11 @@
-use std::collections::HashSet;
-use std::sync::Arc;
-
 use tracing::info;
-use url::Url;
 
 use crate::common::task::runner::RunMode;
 use crate::common::task::{runner, Task};
-use crate::service::network_interface::manager::NetworkInterfaceManager;
 use crate::setup::write_configuration;
 use crate::setup::util::running_in_docker;
-use crate::setup::{tasks, Leader, User};
+use crate::setup::{tasks, User};
 use opendut_model::peer::PeerSetup;
-use opendut_model::util::net::NetworkInterfaceName;
-use opendut_model::vpn::netbird::SetupKey;
 use opendut_model::vpn::VpnPeerConfiguration;
 use opendut_telemetry::opentelemetry_types::Opentelemetry;
 use std::env;
@@ -115,55 +108,6 @@ pub(super) async fn managed(
     }
     Ok(())
 }
-
-#[allow(clippy::box_default, clippy::too_many_arguments)]
-pub(super) async fn unmanaged(
-    management_url: Url,
-    setup_key: SetupKey,
-    bridge_name: NetworkInterfaceName,
-    device_interfaces: HashSet<NetworkInterfaceName>,
-    leader: Leader,
-    common_args: SetupRunCommonArgs,
-) -> anyhow::Result<()> {
-    let SetupRunCommonArgs { dry_run, no_confirm, mtu, skip_can_setup } = common_args;
-
-    let should_run = no_confirm || user_confirmation(&dry_run)?;
-    if should_run.not() {
-        return Ok(());
-    }
-
-    let network_interface_manager = NetworkInterfaceManager::create()?;
-
-    let mut tasks: Vec<Box<dyn Task>> = vec![];
-
-    let _ = crate::setup::plugin::init::create_plugin_runtime(&mut tasks)?;
-
-    tasks.append(&mut vec![
-        Box::new(tasks::CheckCommandLinePrograms { skip_can_setup }),
-        Box::new(tasks::netbird::Unpack::default()),
-        Box::new(tasks::netbird::InstallService),
-        Box::new(tasks::netbird::RestartService),
-        Box::new(tasks::netbird::Connect { management_url, setup_key, mtu }),
-
-        Box::new(tasks::network_interface::CreateBridge { network_interface_manager: Arc::clone(&network_interface_manager), bridge_name: bridge_name.clone() }),
-        Box::new(tasks::network_interface::CreateGreInterfaces { network_interface_manager: Arc::clone(&network_interface_manager), bridge_name: bridge_name.clone(), leader }),
-        Box::new(tasks::network_interface::ConnectDeviceInterfaces { network_interface_manager, bridge_name, device_interfaces }),
-
-        Box::new(tasks::copy_rperf::CopyRperf),
-    ]);
-
-    let run_mode = match dry_run {
-        DryRun::Yes => RunMode::SetupDryRun,
-        DryRun::No => RunMode::Setup,
-    };
-    let result = runner::run(run_mode, &tasks).await;
-    if let Err(error) = result {
-        error.print_error();
-        // TODO: exit code
-    }
-    Ok(())
-}
-
 
 pub async fn init_logging() -> anyhow::Result<()> {
     let file_logging = Some(logging_file()?);

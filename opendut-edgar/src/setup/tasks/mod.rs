@@ -18,8 +18,6 @@ pub use create_service::CreateServiceFile;
 
 pub mod netbird;
 
-pub mod network_interface;
-
 mod request_linux_network_capability;
 pub use request_linux_network_capability::RequestLinuxNetworkCapability;
 
