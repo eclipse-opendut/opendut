@@ -53,11 +53,7 @@ impl TryFrom<UserTestConfiguration> for ViperTestDescriptor {
 
         let source = configuration
             .source
-            .right_ok_or(TestMisconfiguration::InvalidSourceId)
-            .and_then(|source_id| {
-                ViperSourceId::try_from(source_id)
-                    .map_err(|_| TestMisconfiguration::InvalidSourceId)
-            })?;
+            .right_ok_or(TestMisconfiguration::InvalidSourceId)?;
 
         let suite = configuration
             .suite
@@ -69,11 +65,7 @@ impl TryFrom<UserTestConfiguration> for ViperTestDescriptor {
 
         let cluster = configuration
             .cluster
-            .right_ok_or(TestMisconfiguration::InvalidClusterId)
-            .and_then(|cluster_id| {
-                ClusterId::try_from(cluster_id)
-                    .map_err(|_| TestMisconfiguration::InvalidClusterId)
-            })?;
+            .right_ok_or(TestMisconfiguration::InvalidClusterId)?;
 
         let mut parameters = HashMap::new();
 
