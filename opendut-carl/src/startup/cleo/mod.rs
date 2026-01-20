@@ -37,13 +37,7 @@ pub fn create_cleo_install_script(
                 cleo_script,
             )?;
         } else {
-            let message = format!("No CLEO distribution found for architecture '{}', while adding certificates into CLEO distributions.", arch.triple());
-            if cfg!(debug_assertions) {
-                debug!("{message} Skipping.");  // allow missing files in debug builds
-            } else {
-                use anyhow::bail;
-                bail!("{message}"); // treat as error in production
-            }
+            debug!("No CLEO distribution found for architecture '{}', while adding certificates into CLEO distributions. Skipping.", arch.triple()); //do not fail here, because we skip building for non-host architectures during debug builds (and the distribution is already validated while it's built)
         }
     }
 
