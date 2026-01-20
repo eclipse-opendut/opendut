@@ -1,4 +1,3 @@
-use std::time::Duration;
 use crate::app_info;
 use crate::common::{carl, settings};
 use anyhow::Context;
@@ -54,9 +53,6 @@ pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow:
     };
 
     let vpn = VpnProcess::spawn_from_config(&settings).await?;
-
-    tokio::time::sleep(Duration::from_secs(10)).await; //FIXME something requests the current VPN remote address, which fails when the service isn't currently available
-
 
 
     let (tx_peer_configuration, rx_peer_configuration) = mpsc::channel(100);

@@ -53,6 +53,7 @@ impl Client {
     pub async fn full_status(&mut self) -> Result<FullStatus> {
         let request = tonic::Request::new(StatusRequest {
             get_full_peer_status: true,
+            wait_for_ready: Some(true),
             ..Default::default()
         });
 
