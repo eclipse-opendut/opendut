@@ -9,7 +9,7 @@ use tracing::{debug, info};
 use url::Url;
 
 use opendut_model::vpn::netbird::SetupKey;
-
+use crate::common;
 use crate::common::task::{Success, Task, TaskStateFulfilled};
 use crate::service::vpn::VpnProcess;
 use crate::setup::constants;
@@ -41,6 +41,7 @@ impl Task for Connect {
             let process::Output { status, stdout, stderr } =
                 Command::new(constants::netbird::unpacked_executable()?.as_os_str())
                     .arg("up")
+                    .arg("--config").arg(common::settings::netbird_config_file_path())
                     .arg("--management-url").arg(self.management_url.as_str())
                     .arg("--setup-key").arg(&self.setup_key.value)
                     .arg("--mtu").arg(self.mtu.to_string())

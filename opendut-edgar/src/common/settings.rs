@@ -24,6 +24,10 @@ pub fn default_config_file_path() -> PathBuf {
     PathBuf::from("/etc/opendut/edgar.toml")
 }
 
+pub fn netbird_config_file_path() -> PathBuf {
+    PathBuf::from("/etc/opendut/edgar/netbird/config.json")
+}
+
 pub fn load_with_overrides(overrides: config::Config) -> anyhow::Result<LoadedConfig> {
     let edgar_config_hide_secrets_override = opendut_util::settings::Config::default();
 

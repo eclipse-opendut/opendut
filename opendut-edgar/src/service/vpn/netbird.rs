@@ -4,6 +4,7 @@ use anyhow::anyhow;
 use tokio::process::Command;
 use tracing::debug;
 use opendut_netbird_client_api::extension::LocalPeerStateExtension;
+use crate::common;
 use crate::service::process_manager::{AsyncProcessId, AsyncProcessManager, AsyncProcessManagerExt, AsyncProcessManagerRef, OutputConfig, ProcessConfig, RestartPolicy};
 
 
@@ -27,9 +28,9 @@ impl NetbirdProcess {
                 let mut command = Command::new(netbird_executable);
                 command.arg("service")
                     .arg("run")
-                    .arg("--config=/etc/netbird/config.json")
-                    .arg("--log-level=info")
+                    .arg("--config").arg(common::settings::netbird_config_file_path())
                     .arg("--daemon-addr=unix:///var/run/netbird.sock")
+                    .arg("--log-level=info")
                     .arg("--log-file=console");
 
                 command
