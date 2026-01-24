@@ -84,7 +84,7 @@ where
                 let cluster_name = move || cluster_name.to_string();
                 let configurator_href = move || format!("/clusters/{cluster_id}/configure/general");
                 view! {
-                    <a href={ configurator_href }>{ cluster_name }</a>
+                    <a href=configurator_href on:click=|e| e.stop_propagation() on:mousedown=|e| e.stop_propagation()> { cluster_name } </a>
                 }
             })
             .collect();
@@ -102,13 +102,9 @@ where
     };
 
     let on_click = move |e: web_sys::MouseEvent| {
-        let (start_x, start_y) = mousedown_pos.get();
-        let (end_x, end_y) = (e.client_x(), e.client_y());
-        let diff_x = (end_x - start_x) as f64;
-        let diff_y = (end_y - start_y) as f64;
-        // euclidean distance formula -> distance = sqrt(diff_x² + diff_y²)
-        let distance = (diff_x * diff_x + diff_y * diff_y).sqrt();
-        if distance < 5.0 {
+        let distance = util::calculate_distance(mousedown_pos.get(), (e.client_x(), e.client_y()));
+        // fixes text selection issue: mouse moved < threshold -> click, else it's a drag.
+        if distance < util::MOUSE_DRAG_PIXEL_THRESHOLD {
             use_navigate(&configurator_href(), Default::default());
         }
     };
@@ -125,12 +121,13 @@ where
             <td class="is-vcentered">
                 <a href=configurator_href on:click=|e| e.stop_propagation() on:mousedown=|e| e.stop_propagation()> { peer_name } </a>
             </td>
-            <td class="is-vcentered" on:click=|e| e.stop_propagation() on:mousedown=|e| e.stop_propagation()>
+            <td class="is-vcentered">
                 { cluster_columns }
             </td>
             <td class="is-vcentered">
-                <div class="is-flex" on:click=|e| e.stop_propagation() on:mousedown=|e| e.stop_propagation()>
+                <div class="is-flex">
                     <DeletePeerButton
+                        on:click=|e| e.stop_propagation() on:mousedown=|e| e.stop_propagation()
                         peer_id used_clusters_length
                         button_color=ButtonColor::TextDanger
                         on_delete

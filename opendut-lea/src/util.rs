@@ -1,3 +1,5 @@
+pub const MOUSE_DRAG_PIXEL_THRESHOLD: f64 = 5.0;
+
 pub mod view {
     use leptos::prelude::*;
 
@@ -17,4 +19,13 @@ pub mod view {
         }
         elements_with_separator
     }
+}
+
+pub fn calculate_distance(start: (i32, i32), end: (i32, i32)) -> f64 {
+    let (start_x, start_y) = start;
+    let (end_x, end_y) = end;
+    let diff_x = (end_x - start_x) as f64;
+    let diff_y = (end_y - start_y) as f64;
+    // euclidean distance formula -> distance = sqrt(diff_x² + diff_y²)
+    (diff_x * diff_x + diff_y * diff_y).sqrt()
 }
