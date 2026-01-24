@@ -61,13 +61,9 @@ where
     };
 
     let on_click = move |e: web_sys::MouseEvent| {
-        let (start_x, start_y) = mousedown_pos.get();
-        let (end_x, end_y) = (e.client_x(), e.client_y());
-        let diff_x = (end_x - start_x) as f64;
-        let diff_y = (end_y - start_y) as f64;
-        // euclidean distance formula -> distance = sqrt(diff_x² + diff_y²)
-        let distance = (diff_x * diff_x + diff_y * diff_y).sqrt();
-        if distance < 5.0 {
+        let distance = crate::util::calculate_distance(mousedown_pos.get(), (e.client_x(), e.client_y()));
+        // fixes text selection issue: mouse moved < threshold -> click, else it's a drag.
+        if distance < crate::util::MOUSE_DRAG_PIXEL_THRESHOLD {
             use_navigate(&configurator_href(), Default::default());
         }
     };
