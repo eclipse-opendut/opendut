@@ -33,6 +33,7 @@ pub fn PeersOverview() -> impl IntoView {
                 peers.sort_by(|peer_a, peer_b| {
                     peer_a.name.value().to_lowercase()
                         .cmp(&peer_b.name.value().to_lowercase())
+                        .then(peer_a.id.to_string().cmp(&peer_b.id.to_string()))
                 });
 
                 let mut peer_states = carl.peers.list_peer_states().await
