@@ -31,7 +31,9 @@ impl Task for WriteCaCertificate {
 
     async fn check_present(&self) -> anyhow::Result<TaskStateFulfilled> {
 
-        let _ = determine_update_ca_certificates_path()?; //check `which update-ca-certificates` beforehand to avoid us writing certificate files without it being possible to import them into OS (this would cause us to not re-run the task, since we only check for the files to exist).
+        if matches!(self.command_runner, CommandRunner::Default) {
+            let _ = determine_update_ca_certificates_path()?; //check `which update-ca-certificates` beforehand to avoid us writing certificate files without it being possible to import them into OS (this would cause us to not re-run the task, since we only check for the files to exist).
+        }
 
 
         if self.carl_ca_certificate_path.exists().not()
