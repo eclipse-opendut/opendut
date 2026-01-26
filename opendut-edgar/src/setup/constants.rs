@@ -88,5 +88,5 @@ pub mod rperf {
     }
 }
 
-pub const REQUIRED_COMMAND_LINE_PROGRAMS: [(&str, &str); 1] = [("systemctl", "--version")];
+pub const REQUIRED_COMMAND_LINE_PROGRAMS_SERVICE: [(&str, &str); 1] = [("systemctl", "--version")];
 pub const REQUIRED_COMMAND_LINE_PROGRAMS_CAN: [(&str, &str); 2] = [("cannelloni", "-h"), ("cangw", "-s")];

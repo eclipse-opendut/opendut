@@ -3,12 +3,13 @@ use anyhow::{Context, Result};
 use std::process::Command;
 use async_trait::async_trait;
 use crate::common::task::{Success, Task, TaskStateFulfilled};
-use crate::setup::constants::{REQUIRED_COMMAND_LINE_PROGRAMS, REQUIRED_COMMAND_LINE_PROGRAMS_CAN};
+use crate::setup::constants::{REQUIRED_COMMAND_LINE_PROGRAMS_SERVICE, REQUIRED_COMMAND_LINE_PROGRAMS_CAN};
 use crate::setup::util::EvaluateRequiringSuccess;
 
 
 pub struct CheckCommandLinePrograms {
-    pub skip_can_setup: bool,
+    pub skip_can: bool,
+    pub skip_service_run: bool,
 }
 
 #[async_trait]
@@ -23,9 +24,12 @@ impl Task for CheckCommandLinePrograms {
 
         let required_programs = {
             let mut required_programs = vec![];
-            required_programs.extend(REQUIRED_COMMAND_LINE_PROGRAMS);
 
-            if self.skip_can_setup.not() {
+            if self.skip_service_run.not() {
+                required_programs.extend(REQUIRED_COMMAND_LINE_PROGRAMS_SERVICE);
+            }
+
+            if self.skip_can.not() {
                 required_programs.extend(REQUIRED_COMMAND_LINE_PROGRAMS_CAN);
             }
 

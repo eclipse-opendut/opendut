@@ -20,7 +20,7 @@ pub(super) async fn managed(
     peer_setup: PeerSetup,
     common_args: SetupRunCommonArgs,
 ) -> anyhow::Result<()> {
-    let SetupRunCommonArgs { dry_run, no_confirm, mtu, skip_can_setup } = common_args;
+    let SetupRunCommonArgs { dry_run, no_confirm, mtu, skip_can, skip_service_run } = common_args;
 
     let service_user = determine_service_user_name();
     info!("Using service user '{}'.", service_user.name);
@@ -51,13 +51,13 @@ pub(super) async fn managed(
 
     tasks.append(&mut vec![
         Box::new(tasks::WriteCaCertificate::with_certificate(peer_setup.ca)),
-        Box::new(tasks::CheckCommandLinePrograms { skip_can_setup }),
+        Box::new(tasks::CheckCommandLinePrograms { skip_can, skip_service_run }),
         Box::new(tasks::CheckCarlReachable),
         Box::new(tasks::CopyExecutable),
         Box::new(tasks::copy_rperf::CopyRperf),
     ]);
 
-    if skip_can_setup.not() {
+    if skip_can.not() {
         tasks.push(Box::new(tasks::LoadCanKernelModules::default()));
 
         if !running_in_docker() {
@@ -89,10 +89,12 @@ pub(super) async fn managed(
         ]);
     }
 
-    tasks.append(&mut vec![
-        Box::new(tasks::CreateServiceFile::with_service_user(service_user)),
-        Box::new(tasks::RestartService),
-    ]);
+    if skip_service_run.not() {
+        tasks.append(&mut vec![
+            Box::new(tasks::CreateServiceFile::with_service_user(service_user)),
+            Box::new(tasks::RestartService),
+        ]);
+    }
 
     let run_mode = match dry_run {
         DryRun::Yes => RunMode::SetupDryRun,

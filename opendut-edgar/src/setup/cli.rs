@@ -48,8 +48,13 @@ pub(super) struct SetupRunCommonArgs {
 
     /// EXPERT OPTION: Do not setup CAN on this host and skip checks for it.
     /// Users need to know not to use CAN on this EDGAR, otherwise this can lead to undefined behavior and crashes.
-    #[arg(long, global=true)]
-    pub skip_can_setup: bool,
+    #[arg(long, global=true, alias="skip_can_setup")] //was called "skip_can_setup" before 2026-01-26; keeping it for backwards compatibility for now
+    pub skip_can: bool,
+
+    /// EXPERT OPTION: Do not run the EDGAR Service at the end of the setup and skip checks for it.
+    /// Primarily intended for use when running EDGAR in a container.
+    #[arg(long, global=true, hide=true)]
+    pub skip_service_run: bool,
 }
 
 impl SetupCli {

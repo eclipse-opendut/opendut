@@ -143,7 +143,7 @@ When you configured everything and deployed the cluster, you can test the CAN co
 > If they do so anyways, undefined behavior and crashes will likely occur.
 
 If you want to setup an EDGAR without CAN support even after reading the above warning,
-you can pass `--skip-can-setup` on the EDGAR CLI while running the EDGAR Setup.
+you can pass `--skip-can` on the EDGAR CLI while running the EDGAR Setup.
 
 
 ## mTLS Client Authentication
