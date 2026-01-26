@@ -55,7 +55,7 @@ fn assert_exactly_one_distribution_of_each_component(expected_dist_files: &[&str
 }
 
 fn check_if_distribution_tar_exists_of_each_component(expected_dist_files: &[&str], files: Vec<String>) -> bool {
-    let stripped_version_of_files = files.iter().cloned()
+    let stripped_version_of_files = files.iter()
         .map(|file| {
             let pos = file.find(TARGET_TRIPLE).map(|i| i + 12).unwrap();
             file.index(..pos).to_owned()

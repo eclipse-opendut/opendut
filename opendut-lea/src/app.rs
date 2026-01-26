@@ -3,7 +3,7 @@ use gloo_net::http;
 use leptos::prelude::*;
 use leptos_oidc::{Auth, AuthParameters, AuthSignal};
 use serde::{Deserialize, Deserializer};
-use tracing::{error, info};
+use tracing::info;
 use url::Url;
 use opendut_auth::public::Authentication;
 use opendut_carl_api::carl::wasm::CarlClient;

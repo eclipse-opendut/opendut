@@ -2,7 +2,7 @@ use opendut_auth::registration::client::RegistrationClientRef;
 use opendut_auth::registration::resources::UserId;
 use opendut_model::cleo::{CleoId, CleoSetup};
 use opendut_model::util::net::{AuthConfig, Certificate};
-use tracing::{debug, error};
+use tracing::debug;
 use url::Url;
 use opendut_util::pem::Pem;
 

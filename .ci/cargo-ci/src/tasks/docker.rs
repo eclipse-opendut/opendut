@@ -98,7 +98,7 @@ pub fn build_docker_image(package: &Package, tag: Option<DockerTag>) -> crate::R
 pub fn publish_docker_image(package: &Package, tag: Option<DockerTag>) -> crate::Result {
     Command::new("docker")
         .current_dir(repo_path!())
-        .args(["push", &docker_container_uri(&package, &tag)])
+        .args(["push", &docker_container_uri(package, &tag)])
         .run_requiring_success()?;
     Ok(())
 }

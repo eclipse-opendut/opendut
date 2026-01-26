@@ -10,7 +10,7 @@ use std::collections::HashSet;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::mpsc;
-use tracing::{debug, error, trace, warn};
+use tracing::{debug, trace, warn};
 
 pub type ObserverMessagingBrokerRef = Arc<ObserverMessagingBroker>;
 

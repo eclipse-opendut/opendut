@@ -5,7 +5,7 @@ use opendut_auth::registration::resources::UserId;
 use opendut_model::peer::{PeerDescriptor, PeerId, PeerName, PeerSetup};
 use opendut_model::util::net::{AuthConfig, Certificate};
 use opendut_model::vpn::VpnPeerConfiguration;
-use tracing::{debug, error, info, warn};
+use tracing::{debug, info, warn};
 use url::Url;
 use opendut_util::pem::Pem;
 use crate::resource::api::resources::Resources;

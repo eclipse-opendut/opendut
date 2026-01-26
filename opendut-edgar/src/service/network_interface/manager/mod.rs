@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use futures::TryStreamExt;
 use tokio::process::Command;
-use tracing::{debug, error, warn};
+use tracing::{debug, warn};
 
 use crate::service::network_interface::manager::vcan::Vcan;
 use gretap::Gretap;

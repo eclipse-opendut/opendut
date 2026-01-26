@@ -3,7 +3,7 @@ use crate::resource::persistence::error::PersistenceError;
 use crate::resource::storage::ResourcesStorageApi;
 use opendut_model::peer::state::{PeerConnectionState, PeerState};
 use opendut_model::peer::PeerId;
-use tracing::{debug, error, info};
+use tracing::{debug, info};
 
 
 impl Resources<'_> {
