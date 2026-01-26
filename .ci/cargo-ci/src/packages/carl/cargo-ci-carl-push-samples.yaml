@@ -1,0 +1,93 @@
+# Sample data for easier debugging of LEA and CLEO.
+# Feel free to extend with use-cases you need to test.
+---
+version: v1
+kind: PeerDescriptor
+metadata:
+  id: 33d8b21c-93ea-42c6-8cfa-1df6deca4a65
+  name: opendut-peer1
+spec:
+  location: Earth
+  network:
+    interfaces:
+      - id: 0cf6400e-7a9d-435f-88ec-1c5fd34400c9
+        name: can0
+        kind: can
+        parameters:
+          bitrate-kbps: 500
+          sample-point: 0.7
+          fd: false
+          data-sample-point: 0
+          data-bitrate-kbps: 0
+  topology:
+    devices:
+      - id: 3a55c6ee-a7ba-4c18-af9b-e7fff3802f2b
+        name: opendut-peer1-can
+        interface-id: 0cf6400e-7a9d-435f-88ec-1c5fd34400c9
+
+---
+version: v1
+kind: PeerDescriptor
+metadata:
+  id: 5ad37224-8827-4969-8dc8-e794f5bfb84c
+  name: opendut-peer2
+spec:
+  location: Space
+  network:
+    interfaces:
+      - id: b9334c13-5577-4613-a917-4f728239563a
+        name: can0
+        kind: can
+        parameters:
+          bitrate-kbps: 500
+          sample-point: 0.7
+          fd: false
+          data-sample-point: 0
+          data-bitrate-kbps: 0
+  topology:
+    devices:
+      - id: dda07a40-a78f-43b8-a2b9-2df037802bce
+        name: opendut-peer2-can
+        interface-id: b9334c13-5577-4613-a917-4f728239563a
+
+---
+version: v1
+kind: PeerDescriptor
+metadata:
+  id: 24e08de9-3bf0-43e1-a75e-e1bcb7ebe2fb
+  name: opendut-peer3
+spec:
+  network:
+    interfaces:
+      - id: 485d6876-b484-4385-ae2f-0f58012502c9
+        name: vcan0
+        kind: vcan
+  topology:
+    devices:
+      - id: 65e00762-5df0-4302-a5e9-f887281d4875
+        name: opendut-peer3-can
+        interface-id: 485d6876-b484-4385-ae2f-0f58012502c9
+
+---
+version: v1
+kind: ClusterDescriptor
+metadata:
+  id: 5a8e4bb2-6c3e-4b7b-a26a-beb0cdfb390f
+  name: CAN-to-CAN
+spec:
+  leader-id: 33d8b21c-93ea-42c6-8cfa-1df6deca4a65
+  devices:
+    - 3a55c6ee-a7ba-4c18-af9b-e7fff3802f2b
+    - dda07a40-a78f-43b8-a2b9-2df037802bce
+
+---
+version: v1
+kind: ClusterDescriptor
+metadata:
+  id: 4068964e-d455-4d3a-a7a2-e8c92840fc6b
+  name: CAN-to-vCAN
+spec:
+  leader-id: 24e08de9-3bf0-43e1-a75e-e1bcb7ebe2fb
+  devices:
+    - dda07a40-a78f-43b8-a2b9-2df037802bce
+    - 65e00762-5df0-4302-a5e9-f887281d4875

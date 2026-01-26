@@ -28,6 +28,9 @@ pub enum TaskCli {
     DistributionCopyLicenseJson(crate::tasks::distribution::copy_license_json::DistributionCopyLicenseJsonCli),
     DistributionBundleFiles(crate::tasks::distribution::bundle::DistributionBundleFilesCli),
     DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli),
+
+    /// Upload sample data to simplify debugging LEA and CLEO. Run CARL with `cargo carl` beforehand.
+    PushSamples,
 }
 
 impl CarlCli {
@@ -72,6 +75,8 @@ impl CarlCli {
             TaskCli::Docker(implementation) => {
                 implementation.default_handling(SELF_PACKAGE)?; 
             }
+
+            TaskCli::PushSamples => push_samples()?,
         };
         Ok(())
     }
@@ -357,4 +362,19 @@ pub mod distribution {
             Ok(())
         }
     }
+}
+
+
+fn push_samples() -> anyhow::Result<()> {
+    let file = std::env::temp_dir().join("opendut-cargo-ci-carl-push-samples.yaml");
+
+    fs::write(&file, include_str!("cargo-ci-carl-push-samples.yaml"))?;
+
+    crate::tasks::run::RunCli {
+        features: vec![],
+        passthrough: vec!["apply".to_string(), file.display().to_string()],
+    }
+    .default_handling(Package::Cleo)?;
+
+    Ok(())
 }

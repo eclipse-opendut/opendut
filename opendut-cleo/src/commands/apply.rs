@@ -18,6 +18,7 @@ use std::path::PathBuf;
 #[derive(clap::Parser)]
 ///Create openDuT resource form file
 pub struct ApplyCli {
+    ///Path to read a YAML file from. Alternatively, the configuration can be specified inline as JSON.
     #[arg(value_parser=parse_source)]
     from: Source,
     ///Text, JSON or prettified JSON as output format
