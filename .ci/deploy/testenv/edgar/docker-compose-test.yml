@@ -13,9 +13,11 @@ services:
     extra_hosts:
       - "carl.opendut.local:192.168.56.10"  # 192.168.56.10 is only valid within the opendut-vm
       - "auth.opendut.local:192.168.56.10"
-      - "netbird-relay.opendut.local:192.168.56.10"
-      - "netbird-api.opendut.local:192.168.56.10"
       - "netbird.opendut.local:192.168.56.10"
+      - "netbird-api.opendut.local:192.168.56.10"
+      - "netbird-relay.opendut.local:192.168.56.10"
+      - "signal.opendut.local:192.168.56.10"
+      - "opentelemetry.opendut.local:192.168.56.10"
     environment: !override  # do not use secrets from default environment
       - OPENDUT_CARL_VERSION
 
