@@ -1,5 +1,6 @@
 use opendut_util::project;
 use tracing::info;
+use crate::interactive_message;
 
 #[derive(Clone, PartialEq, Eq)]
 pub enum DryRun { Yes, No }
@@ -10,7 +11,7 @@ impl DryRun {
 
     fn force_dry_run_in_development(&mut self) {
         if project::is_running_in_development() {
-            println!("{DEVELOPMENT_DRY_RUN_BANNER}");
+            interactive_message!("{DEVELOPMENT_DRY_RUN_BANNER}");
             info!("{DEVELOPMENT_DRY_RUN_BANNER}");
             *self = DryRun::Yes;
         }

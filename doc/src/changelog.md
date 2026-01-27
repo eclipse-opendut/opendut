@@ -16,6 +16,8 @@ Always create a database backup before upgrading CARL.
   * THEO: Added file locations to look for docker compose override files.
   * Added _optional_ docker compose configuration files to enable mTLS.
 * CARL is now able to check client certificates for mutual authentication.
+* EDGAR Setup now has a flag `--log-file=/path/to/file.log` which can be used to set where logs should be written to.
+  It can also be set to `-` to write logs to stderr. 
 
 ### Fixed
 * CARL was intended to be run behind reverse proxy (traefik) that is doing mutual authentication. Due to connection drops seen at the peer side we changed from an HTTP traefik router to a TCP router. Unfortunately, this bypassed the client certificate checks in traefik and exposed CARL directly. Support for mTLS in CARL was therefore added directly. Release `0.9.0` did not check client certificates in CARL.

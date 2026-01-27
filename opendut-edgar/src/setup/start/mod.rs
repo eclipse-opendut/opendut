@@ -1,3 +1,5 @@
+pub mod logging;
+
 use tracing::info;
 
 use crate::common::task::runner::RunMode;
@@ -7,26 +9,25 @@ use crate::setup::util::running_in_docker;
 use crate::setup::{tasks, User};
 use opendut_model::peer::PeerSetup;
 use opendut_model::vpn::VpnPeerConfiguration;
-use opendut_telemetry::opentelemetry_types::Opentelemetry;
 use std::env;
 use std::ops::Not;
-use std::path::PathBuf;
-use opendut_telemetry::logging::PipeLogging;
+use crate::interactive_message;
 use crate::setup::cli::SetupRunCommonArgs;
 use crate::setup::util::DryRun;
+
 
 #[allow(clippy::box_default)]
 pub(super) async fn managed(
     peer_setup: PeerSetup,
     common_args: SetupRunCommonArgs,
 ) -> anyhow::Result<()> {
-    let SetupRunCommonArgs { dry_run, no_confirm, mtu, skip_can, skip_service_run } = common_args;
+    let SetupRunCommonArgs { dry_run, no_confirm, log_file: _, mtu, skip_can, skip_service_run } = common_args;
 
     let service_user = determine_service_user_name();
     info!("Using service user '{}'.", service_user.name);
 
-    println!("Using PeerId: {}", peer_setup.id);
-    println!("Will connect to CARL at: {}", peer_setup.carl);
+    interactive_message!("Using PeerId: {}", peer_setup.id);
+    interactive_message!("Will connect to CARL at: {}", peer_setup.carl);
 
     let should_run = no_confirm || user_confirmation(&dry_run)?;
     if should_run.not() {
@@ -109,26 +110,6 @@ pub(super) async fn managed(
     Ok(())
 }
 
-pub async fn init_logging() -> anyhow::Result<()> {
-    let file_logging = Some(logging_file()?);
-
-    let logging_config = opendut_telemetry::logging::LoggingConfig {
-        pipe_logging: PipeLogging::Disabled,
-        file_logging,
-        log_level_override: None,
-    };
-    let opentelemetry_config = Opentelemetry::Disabled;
-    
-    let _ = opendut_telemetry::initialize_with_config(logging_config, opentelemetry_config).await?;
-
-    Ok(())
-}
-fn logging_file() -> anyhow::Result<PathBuf> {
-    let mut log_file = env::current_exe()?;
-    log_file.set_file_name("setup.log");
-    Ok(log_file)
-}
-
 fn determine_service_user_name() -> User {
     const DEFAULT_SERVICE_USER_NAME: &str = "opendut_service";
 
@@ -142,18 +123,18 @@ fn user_confirmation(dry_run: &DryRun) -> anyhow::Result<bool> {
     let crate_version = crate::app_info::PKG_VERSION;
     match dry_run {
         DryRun::No => {
-            println!("This will setup EDGAR {crate_version} on your system.");
+            interactive_message!("This will setup EDGAR {crate_version} on your system.");
 
             let user_confirmed = crate::setup::user_confirmation_prompt("Do you want to continue?")?;
 
             if user_confirmed.not() {
-                println!("Aborting.");
+                interactive_message!("Aborting.");
                 info!("Aborting, because user did not confirm execution.");
             }
             Ok(user_confirmed)
         }
         DryRun::Yes => {
-            println!("Pretending to setup EDGAR {crate_version} on your system.");
+            interactive_message!("Pretending to setup EDGAR {crate_version} on your system.");
             Ok(true)
         }
     }

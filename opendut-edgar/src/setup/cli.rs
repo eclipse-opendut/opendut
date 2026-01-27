@@ -1,9 +1,11 @@
-use crate::setup;
+use crate::{interactive_message, setup};
 use anyhow::{bail, Context};
 use clap::{Args, Subcommand};
 use opendut_model::peer::PeerSetup;
 use std::env;
+use std::path::PathBuf;
 use tracing::{debug, info};
+use crate::setup::start::logging;
 use crate::setup::util::DryRun;
 
 const SETUP_STRING_ENV: &str = "OPENDUT_EDGAR_SETUP_STRING";
@@ -39,6 +41,11 @@ pub(super) struct SetupRunCommonArgs {
     #[arg(long, global=true)]
     pub no_confirm: bool,
 
+    /// The path to store logs at. Pass `-` to write to stderr instead.
+    /// If nothing is specified, the logs will be written to a `setup.log` file, relative to the executable.
+    #[arg(long, global=true)]
+    pub log_file: Option<PathBuf>,
+
     /// Specify the Maximum Transfer Unit for network packages in bytes.
     #[arg(long, global=true, default_value="1542")]
     pub mtu: u16,
@@ -58,7 +65,7 @@ impl SetupCli {
     pub async fn run(self) -> anyhow::Result<()> {
         match self.command {
             SetupCommand::Managed { setup_string, common } => {
-                setup::start::init_logging().await?;
+                setup::start::logging::init(&common.log_file).await?;
 
                 let user_command = env::args_os()
                     .collect::<Vec<_>>();
@@ -89,9 +96,9 @@ fn parse_peer_setup(setup_string_via_arg: Option<String>) -> anyhow::Result<Peer
             }
         }
         else {
-            if console::user_attended() {
-                eprintln!("You can retrieve a Setup-String from the web-UI.");
-                eprintln!("Enter your Setup-String here:");
+            if console::user_attended() && logging::interactive_messages::is_enabled() {
+                interactive_message!("You can retrieve a Setup-String from the web-UI.");
+                interactive_message!("Enter your Setup-String here:");
             } else {
                 debug!("Reading Setup-String from stdin.");
             }
