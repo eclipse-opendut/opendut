@@ -123,7 +123,7 @@ pub async fn init_logging() -> anyhow::Result<()> {
 
     Ok(())
 }
-pub fn logging_file() -> anyhow::Result<PathBuf> {
+fn logging_file() -> anyhow::Result<PathBuf> {
     let mut log_file = env::current_exe()?;
     log_file.set_file_name("setup.log");
     Ok(log_file)

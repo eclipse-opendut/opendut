@@ -182,10 +182,7 @@ If so, follow these steps:
    The order of the paths in the `plugins.txt` file determines the order of execution for the plugins.
 
 ## Troubleshooting
-* In case of issues during the setup, see:
-  ```shell
-  opendut-edgar setup logs | less
-  ```
+* In case of issues during the setup, see the `setup.log` file, which will have been created next to the EDGAR executable.
 
 * It might happen that the NetBird Client started by EDGAR is not able to connect, in that case re-run the EDGAR setup.
 

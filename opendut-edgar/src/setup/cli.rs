@@ -2,8 +2,7 @@ use crate::setup;
 use anyhow::{bail, Context};
 use clap::{Args, Subcommand};
 use opendut_model::peer::PeerSetup;
-use std::ops::Not;
-use std::{env, fs};
+use std::env;
 use tracing::{debug, info};
 use crate::setup::util::DryRun;
 
@@ -28,8 +27,6 @@ enum SetupCommand {
         #[clap(flatten)]
         common: SetupRunCommonArgs,
     },
-    /// Prints the logs from previous setup runs.
-    Logs,
 }
 
 #[derive(Args)]
@@ -72,15 +69,6 @@ impl SetupCli {
 
                 setup::start::managed(peer_setup, common).await?;
             },
-            SetupCommand::Logs => {
-                let logs = fs::read_to_string(setup::start::logging_file()?)?;
-
-                if logs.is_empty().not() {
-                    print!("{logs}");
-                } else {
-                    println!("No logs found.");
-                }
-            }
         };
         info!("EDGAR Setup finished!\n");
         Ok(())
