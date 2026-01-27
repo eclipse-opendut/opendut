@@ -222,10 +222,3 @@ trunk = "0.21.14"
 
 [workspace.lints.clippy]
 unnecessary_lazy_evaluations = "allow"
-
-
-# Taken from here: https://github.com/briansmith/ring/issues/2743#issuecomment-3693512059
-[patch.crates-io]
-# Use `ring` from main-branch until bugfix for frequent rebuilds is released (ring v0.17.15+)
-# See also: https://github.com/briansmith/ring/issues/2454
-ring = { git = "https://github.com/briansmith/ring.git", rev = "522afb658067bed0512a49f66bd4c07389b51ab3" }

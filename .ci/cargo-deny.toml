@@ -64,8 +64,3 @@ license-files = [
 
 [bans]
 multiple-versions = "allow"
-
-[sources]
-allow-git = [
-    "https://github.com/briansmith/ring.git?rev=522afb658067bed0512a49f66bd4c07389b51ab3", #pull in bugfix early for frequent rebuilds of `ring` when using `cargo ci`
-]
