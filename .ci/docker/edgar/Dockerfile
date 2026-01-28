@@ -38,6 +38,6 @@ RUN cp cannelloni /usr/local/bin/
 WORKDIR /opt
 ADD target/ci/distribution/${TARGET_TRIPLE}/opendut-edgar-${TARGET_TRIPLE}-${VERSION}.tar.gz /opt
 
-CMD ["/opt/opendut-edgar/opendut-edgar", "setup", "managed", "--no-confirm"]
+CMD /opt/opendut-edgar/opendut-edgar setup managed --no-confirm --skip-service-run --log-file=- && /opt/opendut-edgar/opendut-edgar service
 
 # USER edgar  # TODO create unprivileged user
