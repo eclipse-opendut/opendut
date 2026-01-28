@@ -6,7 +6,6 @@ use uuid::Uuid;
 
 mod value;
 pub use value::ParameterValue;
-use crate::format::JsonDisplay;
 use crate::OPENDUT_UUID_NAMESPACE;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -82,8 +81,6 @@ pub struct EdgePeerConfigurationState {
     pub parameter_states: Vec<EdgePeerConfigurationParameterState>
 }
 
-impl JsonDisplay for EdgePeerConfigurationState {}
-
 /// State of a parameter on the edge peer side.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EdgePeerConfigurationParameterState {
@@ -97,6 +94,12 @@ pub enum ParameterEdgeDetectedStateKind {
     Present,
     Absent,
     Error(ParameterDetectedStateError),
+}
+
+impl ParameterEdgeDetectedStateKind {
+    pub fn is_successful(&self) -> bool {
+        matches!(self, ParameterEdgeDetectedStateKind::Present | ParameterEdgeDetectedStateKind::Absent)
+    }
 }
 
 

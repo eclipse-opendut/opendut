@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use serde::Serialize;
 #[cfg(feature = "client")]
 pub use client::*;
-use opendut_model::format::JsonDisplay;
 use opendut_model::peer::configuration::{PeerConfiguration, EdgePeerConfigurationState};
 
 pub mod error {
@@ -41,8 +40,6 @@ pub enum DownstreamMessagePayload {
     ApplyPeerConfiguration(Box<ApplyPeerConfiguration>),
     DisconnectNotice,
 }
-
-impl JsonDisplay for DownstreamMessagePayload {}
 
 #[derive(Debug, PartialEq, Serialize)]
 pub struct ApplyPeerConfiguration {

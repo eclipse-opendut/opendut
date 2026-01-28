@@ -73,10 +73,11 @@ pub mod format {
         format!("{name}<{id}>")
     }
 
-    pub trait JsonDisplay: Serialize + fmt::Debug {
-        fn to_json(&self) -> String {
+    pub trait DebugJsonDisplay: Serialize + fmt::Debug {
+        fn to_debug_json(&self) -> String {
             serde_json::to_string(self).unwrap_or_else(|_| format!("Failed to serialize: {:?}", self))
         }
     }
+    impl<T: Serialize + fmt::Debug> DebugJsonDisplay for T {}
 
 }

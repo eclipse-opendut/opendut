@@ -11,7 +11,6 @@ use std::time::SystemTime;
 use chrono::DateTime;
 use serde::{Serialize, Serializer};
 use serde::ser::SerializeStruct;
-use opendut_model::format::JsonDisplay;
 use crate::common::task::dependency::{ParameterVariantWithDependencies, PeerConfigurationDependencyResolver};
 use crate::common::task::runner::{TaskExecutionError};
 use crate::common::task::task_resolver::TaskResolver;
@@ -30,8 +29,6 @@ pub struct CollectedResult {
     pub success: bool,
     unfulfilled_parameters: Vec<ParameterVariantWithDependencies>
 }
-
-impl JsonDisplay for CollectedResult {}
 
 impl From<CollectedResult> for EdgePeerConfigurationState {
     fn from(value: CollectedResult) -> Self {

@@ -15,7 +15,7 @@ use tokio::sync::{mpsc, RwLock};
 use tracing::{debug, error, info, trace, warn, Span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 use opendut_carl_api::carl::broker::stream_header::PeerVersion;
-use opendut_model::format::JsonDisplay;
+use opendut_model::format::DebugJsonDisplay;
 use crate::resource::persistence::error::PersistenceError;
 use crate::resource::manager::ResourceManagerRef;
 use crate::resource::storage::ResourcesStorageApi;
@@ -295,7 +295,7 @@ async fn handle_stream_message(
     let UpstreamMessage { payload, context } = message;
     match payload {
         UpstreamMessagePayload::EdgePeerConfigurationState(state) => {
-            info!("Received PeerConfigurationState from peer <{peer_id}>:\n  {}", state.to_json());
+            info!("Received PeerConfigurationState from peer <{peer_id}>:\n  {}", state.to_debug_json());
             let _ignore_result = resource_manager.insert(peer_id, state).await
                 .inspect_err(|cause| {
                     warn!("Failed to insert PeerConfigurationState for peer <{peer_id}>:\n  {cause}");

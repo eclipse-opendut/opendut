@@ -1,13 +1,14 @@
 use crate::service::can::can_manager::CanManagerRef;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use crate::service::test_execution::executor_manager::ExecutorManagerRef;
-use opendut_model::peer::configuration::{EdgePeerConfigurationState, PeerConfiguration};
+use opendut_model::peer::configuration::{EdgePeerConfigurationParameterState, EdgePeerConfigurationState, ParameterVariant, PeerConfiguration};
 
 use std::fmt::Formatter;
 use std::sync::Arc;
+use serde::Serialize;
 use tokio::sync::mpsc;
 use tracing::{debug, error};
-use opendut_model::format::JsonDisplay;
+use opendut_model::format::DebugJsonDisplay;
 use crate::service::tasks::runner;
 use crate::service::tasks::runner::service_runner::CollectedResult;
 use super::network_metrics::manager::NetworkMetricsManagerRef;
@@ -33,16 +34,44 @@ impl std::fmt::Debug for NetworkInterfaceManagement {
     }
 }
 
+#[derive(Debug, Serialize)]
+struct EdgePeerConfigurationParameterDifference {
+    expected_parameter: ParameterVariant,
+    detected_state: EdgePeerConfigurationParameterState,
+}
+
 pub async fn spawn_peer_configurations_handler(
     mut rx_peer_configuration: mpsc::Receiver<ApplyPeerConfigurationParams>,
     tx_peer_configuration_state: mpsc::Sender<EdgePeerConfigurationState>
 ) -> anyhow::Result<()> {
     tokio::spawn(async move {
         while let Some(apply_peer_configuration_params) = rx_peer_configuration.recv().await {
+            let given_peer_configuration_parameters = apply_peer_configuration_params.peer_configuration.all_parameters();
+
             let result = apply_peer_configuration(apply_peer_configuration_params).await;
             let state = EdgePeerConfigurationState::from(result);
-            debug!("Sending peer configuration state to CARL: {}", state.to_json());
-            // TODO: compare PeerConfiguration with EdgePeerConfigurationState, especially those parameters that failed to apply
+            debug!("Sending peer configuration state to CARL: {}", state.to_debug_json());
+            let mut failed = vec![];
+            let mut unknown = vec![];
+            for param_state in &state.parameter_states {
+                if !param_state.detected_state.is_successful() {
+                    let parameter = given_peer_configuration_parameters.get(&param_state.id);
+                    match parameter {
+                        None => {
+                            unknown.push(param_state.clone());
+                        }
+                        Some(parameter) => {
+                            failed.push(EdgePeerConfigurationParameterDifference { expected_parameter: parameter.clone(), detected_state: param_state.clone()  });
+                        }
+                    }
+                }
+            }
+            if !failed.is_empty() {
+                error!("Some parameters failed to apply: {}", failed.to_debug_json());
+            }
+            if !unknown.is_empty() {
+                error!("Some unknown parameters were reported in the state: {}", unknown.to_debug_json());
+            }
             let _ = tx_peer_configuration_state.send(state).await
                 .inspect_err(|cause| error!("Failed to send peer configuration state to CARL: {cause}"));
         }
@@ -65,9 +94,9 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> Colle
     );
     let result = runner::service_runner::run_tasks(peer_configuration.clone(), resolver).await;
     if result.success {
-        debug!("Peer configuration tasks executed successfully: {}", result.to_json());
+        debug!("Peer configuration tasks executed successfully: {}", result.to_debug_json());
     } else {
-        error!("Failed to apply peer configuration tasks. Collected result is: {}", result.to_json());
+        error!("Failed to apply peer configuration tasks. Collected result is: {}", result.to_debug_json());
         return result;
     }
 
