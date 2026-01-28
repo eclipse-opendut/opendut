@@ -46,6 +46,7 @@ jsonwebtoken = { workspace = true, optional = true }
 leptos = { workspace = true, optional = true }
 prost = { workspace = true }
 semver = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
 thiserror = { workspace = true }
 tokio = { workspace = true, optional = true }
 tonic = { workspace = true }

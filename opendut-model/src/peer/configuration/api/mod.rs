@@ -1,14 +1,15 @@
 use std::collections::HashSet;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::time::SystemTime;
 use uuid::Uuid;
 
 mod value;
 pub use value::ParameterValue;
+use crate::format::JsonDisplay;
 use crate::OPENDUT_UUID_NAMESPACE;
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Parameter<V: ParameterValue> {
     pub id: ParameterId,
     pub dependencies: HashSet<ParameterId>,
@@ -22,7 +23,7 @@ impl<V: ParameterValue> Hash for Parameter<V> {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct ParameterId(pub Uuid);
 
 impl ParameterId {
@@ -35,13 +36,13 @@ impl ParameterId {
     }
 }
 
-#[derive(Clone, Copy, Debug, Ord, PartialOrd, PartialEq, Eq, Serialize)]
+#[derive(Clone, Copy, Debug, Ord, PartialOrd, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ParameterTarget {
     Absent,
     Present,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PeerConfigurationState {
     pub parameter_states: Vec<PeerConfigurationParameterState>
 }
@@ -53,7 +54,7 @@ impl PeerConfigurationState {
 }
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PeerConfigurationParameterState {
     pub id: ParameterId,
     pub timestamp: SystemTime,
@@ -66,7 +67,7 @@ impl PeerConfigurationParameterState {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ParameterDetectedStateKind {
     Present,
     Absent,
@@ -76,20 +77,22 @@ pub enum ParameterDetectedStateKind {
 }
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EdgePeerConfigurationState {
     pub parameter_states: Vec<EdgePeerConfigurationParameterState>
 }
 
+impl JsonDisplay for EdgePeerConfigurationState {}
+
 /// State of a parameter on the edge peer side.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EdgePeerConfigurationParameterState {
     pub id: ParameterId,
     pub timestamp: SystemTime,
     pub detected_state: ParameterEdgeDetectedStateKind,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ParameterEdgeDetectedStateKind {
     Present,
     Absent,
@@ -97,19 +100,19 @@ pub enum ParameterEdgeDetectedStateKind {
 }
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ParameterDetectedStateError {
     pub kind: ParameterDetectedStateErrorKind,
     pub cause: ParameterDetectedStateErrorCause,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ParameterDetectedStateErrorCause {
     Unclassified(String),
     MissingDependencies(Vec<ParameterId>),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ParameterDetectedStateErrorKind {
     CreatingFailed,
     RemovingFailed,
@@ -118,12 +121,12 @@ pub enum ParameterDetectedStateErrorKind {
     WaitingForDependenciesFailed,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ParameterTargetStateErrorCreatingFailed {
     UnclassifiedError(String),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ParameterTargetStateErrorRemovingFailed {
     UnclassifiedError(String),
 }

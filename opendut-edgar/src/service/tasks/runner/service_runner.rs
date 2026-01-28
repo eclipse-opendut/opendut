@@ -8,23 +8,30 @@
 
 use std::collections::HashSet;
 use std::time::SystemTime;
+use chrono::DateTime;
+use serde::{Serialize, Serializer};
+use serde::ser::SerializeStruct;
+use opendut_model::format::JsonDisplay;
 use crate::common::task::dependency::{ParameterVariantWithDependencies, PeerConfigurationDependencyResolver};
 use crate::common::task::runner::{TaskExecutionError};
 use crate::common::task::task_resolver::TaskResolver;
 use crate::common::task::{Success, TaskAbsent, TaskStateFulfilled};
 use opendut_model::peer::configuration::{ParameterId, ParameterTarget, ParameterVariant, PeerConfiguration, EdgePeerConfigurationState, ParameterDetectedStateError, ParameterDetectedStateErrorKind, ParameterDetectedStateErrorCause, EdgePeerConfigurationParameterState, ParameterEdgeDetectedStateKind};
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub enum Outcome {
     Changed(Success),
     Unchanged,
 }
 
+#[derive(Debug, Serialize)]
 pub struct CollectedResult {
     pub(crate) items: Vec<ResultItem>,
     pub success: bool,
     unfulfilled_parameters: Vec<ParameterVariantWithDependencies>
 }
+
+impl JsonDisplay for CollectedResult {}
 
 impl From<CollectedResult> for EdgePeerConfigurationState {
     fn from(value: CollectedResult) -> Self {
@@ -60,10 +67,16 @@ impl From<CollectedResult> for EdgePeerConfigurationState {
                 }
                 Err(error) => {
                     match error {
-                        TaskExecutionError::DetermineSystemStateBefore { task_name, error } | TaskExecutionError::DetermineSystemStateAfter { task_name, error } => {
+                        TaskExecutionError::DetermineSystemStateBefore { task_name, error } => {
                             match target {
-                                ParameterTarget::Present => make_error(ParameterDetectedStateErrorKind::CheckPresentFailed, format!("Task '{task_name}' failed. Error {error}")),
-                                ParameterTarget::Absent => make_error(ParameterDetectedStateErrorKind::CheckAbsentFailed, format!("Task '{task_name}' failed. Error {error}")),
+                                ParameterTarget::Present => make_error(ParameterDetectedStateErrorKind::CheckPresentFailed, format!("Task '{task_name}' failed during DetermineSystemStateBefore. Error {error}")),
+                                ParameterTarget::Absent => make_error(ParameterDetectedStateErrorKind::CheckAbsentFailed, format!("Task '{task_name}' failed during DetermineSystemStateBefore. Error {error}")),
+                            }
+                        }
+                        TaskExecutionError::DetermineSystemStateAfter { task_name, error } => {
+                            match target {
+                                ParameterTarget::Present => make_error(ParameterDetectedStateErrorKind::CheckPresentFailed, format!("Task '{task_name}' failed during DetermineSystemStateAfter. Error {error}")),
+                                ParameterTarget::Absent => make_error(ParameterDetectedStateErrorKind::CheckAbsentFailed, format!("Task '{task_name}' failed during DetermineSystemStateAfter. Error {error}")),
                             }
                         }
                         TaskExecutionError::DuringTaskExecution { task_name, error } => {
@@ -121,6 +134,27 @@ pub struct ResultItem {
     pub parameter: ParameterVariant,
     pub outcome: Result<Outcome, TaskExecutionError>,
     pub timestamp: SystemTime,
+}
+impl Serialize for ResultItem {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer
+    {
+        let mut state = serializer.serialize_struct("ResultItem", 4)?;
+        state.serialize_field("id", &self.id)?;
+        state.serialize_field("parameter", &self.parameter)?;
+        match &self.outcome {
+            Ok(outcome) => {
+                state.serialize_field("outcome", outcome)?;
+            }
+            Err(error) => {
+                state.serialize_field("outcome", &format!("{error}"))?;
+            }
+        }
+        let datetime: DateTime<chrono::Utc> = self.timestamp.into();
+        state.serialize_field("timestamp", &datetime.to_rfc3339())?;
+        state.end()
+    }
 }
 
 

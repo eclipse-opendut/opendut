@@ -7,6 +7,7 @@ use std::fmt::Formatter;
 use std::sync::Arc;
 use tokio::sync::mpsc;
 use tracing::{debug, error};
+use opendut_model::format::JsonDisplay;
 use crate::service::tasks::runner;
 use crate::service::tasks::runner::service_runner::CollectedResult;
 use super::network_metrics::manager::NetworkMetricsManagerRef;
@@ -40,6 +41,8 @@ pub async fn spawn_peer_configurations_handler(
         while let Some(apply_peer_configuration_params) = rx_peer_configuration.recv().await {
             let result = apply_peer_configuration(apply_peer_configuration_params).await;
             let state = EdgePeerConfigurationState::from(result);
+            debug!("Sending peer configuration state to CARL: {}", state.to_json());
+            // TODO: compare PeerConfiguration with EdgePeerConfigurationState, especially those parameters that failed to apply
             let _ = tx_peer_configuration_state.send(state).await
                 .inspect_err(|cause| error!("Failed to send peer configuration state to CARL: {cause}"));
         }
@@ -62,9 +65,9 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> Colle
     );
     let result = runner::service_runner::run_tasks(peer_configuration.clone(), resolver).await;
     if result.success {
-        debug!("Peer configuration tasks executed successfully: {:?}", result.items);
+        debug!("Peer configuration tasks executed successfully: {}", result.to_json());
     } else {
-        error!("Failed to apply peer configuration tasks. Following tasks failed: {:?}", result.items);
+        error!("Failed to apply peer configuration tasks. Collected result is: {}", result.to_json());
         return result;
     }
 

@@ -14,6 +14,7 @@ use tracing_opentelemetry::OpenTelemetrySpanExt;
 use opendut_carl_api::carl::{broker, GrpcUpstream};
 use opendut_carl_api::carl::broker::Upstream;
 use opendut_carl_api::carl::CarlClient;
+use opendut_model::format::JsonDisplay;
 use opendut_model::peer::configuration::EdgePeerConfigurationState;
 use opendut_model::peer::PeerId;
 use opendut_util::settings::LoadedConfig;
@@ -182,7 +183,7 @@ impl PeerMessagingClient {
         let broker::DownstreamMessage { payload: message, context } = message;
 
         if !matches!(message, broker::DownstreamMessagePayload::Pong) {
-            trace!("Received message: {message:?}");
+            trace!("Received message: {}", message.to_json());
         }
 
         match message {

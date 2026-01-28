@@ -33,6 +33,7 @@ pub const OPENDUT_UUID_NAMESPACE: Uuid = uuid!("0de64908-7040-4efa-a3cc-b5e08406
 
 pub mod format {
     use std::fmt;
+    use serde::Serialize;
 
     /// Formats an ID and a name in a legible manner.
     /// ```
@@ -71,4 +72,11 @@ pub mod format {
 
         format!("{name}<{id}>")
     }
+
+    pub trait JsonDisplay: Serialize + fmt::Debug {
+        fn to_json(&self) -> String {
+            serde_json::to_string(self).unwrap_or_else(|_| format!("Failed to serialize: {:?}", self))
+        }
+    }
+
 }

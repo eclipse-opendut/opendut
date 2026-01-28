@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use serde::Serialize;
 
 pub mod runner;
 mod progress_bar;
@@ -40,7 +41,7 @@ pub enum TaskStateFulfilled {
     Unchecked,
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Serialize)]
 pub struct Success {
     pub message: Option<String>,
 }
