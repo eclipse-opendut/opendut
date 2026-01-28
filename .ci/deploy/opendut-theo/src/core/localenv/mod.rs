@@ -89,12 +89,18 @@ pub(crate) fn build_localenv_containers(mode: &TestenvMode) -> Result<i32, Error
     if let TestenvMode::CarlDistribution = mode {
         make_distribution_if_not_present()?;
     }
-    debug!("Building localenv containers...");
-    DockerCommand::new()
-        .add_localenv_args()
-        .add_common_project_env()
-        .arg("build")
-        .expect_show_status("Failed to build localenv services")
+    let skip_build = std::env::var("OPENDUT_SKIP_LOCALENV_BUILD").unwrap_or(String::from("false")).to_lowercase().eq("true");
+    if skip_build {
+        debug!("Skipping explicit localenv build as OPENDUT_SKIP_LOCALENV_BUILD is set to true. This works only in case the localenv containers are already built.");
+        Ok(0)
+    } else {
+        debug!("Building localenv containers...");
+        DockerCommand::new()
+            .add_localenv_args()
+            .add_common_project_env()
+            .arg("build")
+            .expect_show_status("Failed to build localenv services")
+    }
 }
 
 pub(crate) fn destroy() -> Result<(), Error> {
