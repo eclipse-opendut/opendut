@@ -58,12 +58,6 @@ pre_flight_tasks() {
   # prepare log directories
   mkdir -p /logs/{opendut-edgar,netbird,journal}
 
-  # opendut-edgar setup.log
-  touch /logs/opendut-edgar/setup.log
-  if [ ! -e /opt/opendut-edgar/setup.log ]; then
-    touch /logs/opendut-edgar/setup.log
-    ln -s /logs/opendut-edgar/setup.log /opt/opendut-edgar/setup.log
-  fi
   # systemd journal directory
   if [ ! -e /var/log/journal ]; then
     ln -s /logs/journal /var/log/journal
@@ -106,7 +100,7 @@ PEER_ID=$(cleo_get_peer_id "$PEER_NAME")
 # Setup EDGAR
 PEER_SETUP_STRING=$(opendut-cleo generate-setup-string "$PEER_ID")
 echo "Setting up peer with Setup-String: $PEER_SETUP_STRING"
-opendut-edgar setup managed --no-confirm "$PEER_SETUP_STRING"
+opendut-edgar setup managed --no-confirm "$PEER_SETUP_STRING" --log-file=- 2>&1 | tee /logs/opendut-edgar/setup.log
 
 
 ############################################################
