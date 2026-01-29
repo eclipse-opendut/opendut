@@ -23,6 +23,6 @@ This mode is used to test a distribution of OpenDuT.
 
 * Start a cluster in **opendut-vm**:
   ```shell
-  cargo theo testenv edgar start
+  cargo theo testenv cluster start
   ```
   This will start several EDGAR containers and create an OpenDuT cluster. 

@@ -2,7 +2,7 @@ use std::fmt::Formatter;
 use std::time::Duration;
 use anyhow::anyhow;
 use std::thread::sleep;
-use crate::commands::edgar;
+use crate::commands::cluster;
 use crate::core::docker::command::DockerCommand;
 use crate::core::docker::edgar::{edgar_container_names, format_remaining_edgars_string, EDGAR_LEADER_NAME};
 use crate::core::{TheoError, SLEEP_TIME_SECONDS, TIMEOUT_SECONDS};
@@ -39,7 +39,7 @@ pub fn wait_until_all_edgar_peers_are(target_status: EdgarDeploymentStatus) -> c
         for edgar_name in remaining_edgar_names.clone() {
             match target_status {
                 EdgarDeploymentStatus::Provisioned => {
-                    if edgar::check_edgar_container_provisioning_done(&edgar_name)? {
+                    if cluster::check_edgar_container_provisioning_done(&edgar_name)? {
                         println!("EDGAR peer '{edgar_name}' is provisioned.");
                         remaining_edgar_names.remove(&edgar_name);
                     }

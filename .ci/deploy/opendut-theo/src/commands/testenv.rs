@@ -1,4 +1,4 @@
-use crate::commands::edgar::TestEdgarCli;
+use crate::commands::cluster::TestClusterCli;
 use crate::core::docker::command::DockerCommand;
 use crate::core::docker::show_error_if_unhealthy_containers_were_found;
 use crate::core::project::load_theo_environment_variables;
@@ -38,10 +38,10 @@ pub enum TaskCli {
     Network,
     /// Destroy test environment.
     Destroy,
-    /// Run EDGAR cluster creation.
-    Edgar(TestEdgarCli),
-    /// Run EDGAR production image
-    EdgarProduction,
+    /// Launch an Cluster of EDGARs.
+    Cluster(TestClusterCli),
+    /// Run EDGAR production container.
+    Edgar,
 }
 
 
@@ -71,10 +71,10 @@ impl TestenvCli {
             TaskCli::Destroy => {
                 localenv::destroy()?;
             }
-            TaskCli::Edgar(cli) => {
+            TaskCli::Cluster(cli) => {
                 cli.default_handling()?;
             }
-            TaskCli::EdgarProduction => {
+            TaskCli::Edgar => {
                 DockerCommand::new()
                     .add_testenv_edgar_args()
                     .add_localenv_secrets_args()

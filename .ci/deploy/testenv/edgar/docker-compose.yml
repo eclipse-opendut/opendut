@@ -1,5 +1,5 @@
 # Docker compose file for EDGAR test environment (deploys a cluster of EDGAR instances)
-# Used by `cargo theo testenv edgar start`
+# Used by `cargo theo testenv cluster start`
 
 x-default-edgar-params: &default-edgar-params
   restart: 'unless-stopped'

@@ -15,7 +15,7 @@ mod status;
 mod linux_kernel_modules;
 
 #[derive(clap::Parser)]
-pub struct TestEdgarCli {
+pub struct TestClusterCli {
     #[command(subcommand)]
     pub task: TaskCli,
 }
@@ -30,7 +30,7 @@ pub enum TaskCli {
     Build,
 }
 
-impl TestEdgarCli {
+impl TestClusterCli {
     pub(crate) fn default_handling(&self) -> crate::Result {
         match self.task {
             TaskCli::Start => {
