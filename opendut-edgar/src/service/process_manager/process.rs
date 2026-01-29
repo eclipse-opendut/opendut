@@ -111,7 +111,7 @@ impl ManagedAsyncProcess {
                     let reader = BufReader::new(stdout);
                     let mut lines = reader.lines();
                     while let Ok(Some(line)) = lines.next_line().await {
-                        trace!("{name} stdout: {line}");
+                        trace!(process=name, stream="stdout", "{line}");
                     }
                 });
             }
@@ -121,7 +121,7 @@ impl ManagedAsyncProcess {
                     let reader = BufReader::new(stderr);
                     let mut lines = reader.lines();
                     while let Ok(Some(line)) = lines.next_line().await {
-                        trace!("{name} stderr: {line}");
+                        trace!(process=name, stream="stderr", "{line}");
                     }
                 });
             }
