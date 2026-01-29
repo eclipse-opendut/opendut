@@ -11,22 +11,8 @@ use tracing::info;
 use crate::service::peer_messaging_client::PeerMessagingClient;
 use crate::service::vpn::VpnProcess;
 
-const BANNER: &str = r"
-                         _____     _______
-                        |  __ \   |__   __|
-   ___  _ __   ___ _ __ | |  | |_   _| |
-  / _ \| '_ \ / _ \ '_ \| |  | | | | | |
- | (_) | |_) |  __/ | | | |__| | |_| | |
-  \___/| .__/ \___|_| |_|_____/ \__,_|_|
-       | |  ______ _____   _____          _____
-       |_| |  ____|  __ \ / ____|   /\   |  __ \
-           | |__  | |  | | |  __   /  \  | |__) |
-           |  __| | |  | | | |_ | / /\ \ |  _  /
-           | |____| |__| | |__| |/ ____ \| | \ \
-           |______|_____/ \_____/_/    \_\_|  \_\";
-
 pub async fn launch(id_override: Option<PeerId>) -> anyhow::Result<()> {
-    println!("{BANNER}\n{version_info}", version_info=crate::FORMATTED_VERSION);
+    crate::common::banner::print();
 
     let settings_override = config::Config::builder()
         .set_override_option(settings::key::peer::id, id_override.map(|id| id.to_string()))?

@@ -1,3 +1,4 @@
+pub mod banner;
 pub mod carl;
 pub mod settings;
 pub mod task;

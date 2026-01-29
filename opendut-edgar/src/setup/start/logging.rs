@@ -9,6 +9,8 @@ pub async fn init(log_file: &Option<PathBuf>) -> anyhow::Result<()> {
 
     let (pipe_logging, file_logging) =
         if log_file == Path::new("-") { // `--log-file=-` means to write stdout/stderr
+            crate::common::banner::print(); //print the banner to the logs to include version information and make it easy to spot the start of the logs; we don't do that into the file, because using log statements would prefix it with a timestamp
+
             interactive_messages::disable(); //disable interactive messages, because we want to print logs to stdout/stderr instead
             let pipe_logging = PipeLogging::Enabled { stream: PipeLoggingStream::Stderr };
             (pipe_logging, None)

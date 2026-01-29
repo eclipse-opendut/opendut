@@ -65,7 +65,7 @@ impl SetupCli {
     pub async fn run(self) -> anyhow::Result<()> {
         match self.command {
             SetupCommand::Managed { setup_string, common } => {
-                setup::start::logging::init(&common.log_file).await?;
+                logging::init(&common.log_file).await?;
 
                 let user_command = env::args_os()
                     .collect::<Vec<_>>();
