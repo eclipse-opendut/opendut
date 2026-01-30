@@ -35,11 +35,12 @@ impl TestClusterCli {
         match self.task {
             TaskCli::Start => {
                 println!("Stopping if EDGAR cluster is already running...");
+                docker_compose_build(DockerCoreServices::Edgar.as_str())?;
                 stop_if_running()?;
 
                 #[cfg(feature = "linux-kernel-modules")]
                 linux_kernel_modules::load_linux_kernel_modules_for_can()?;
-                docker_compose_build(DockerCoreServices::Edgar.as_str())?;
+
                 start_edgar_in_docker()?;
                 status::wait_until_all_edgar_peers_are(EdgarDeploymentStatus::Provisioned)?;
                 status::wait_until_all_edgar_peers_are(EdgarDeploymentStatus::Ready)?;
