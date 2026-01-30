@@ -6,7 +6,7 @@ ENV TARGET_TRIPLE=x86_64-unknown-linux-gnu
 
 # Install OS package dependencies. We need:
 #   - `ca-certificates` for `update-ca-certificates` command used during EDGAR Setup
-#   - `can-utils` for `cangw` used by EDGAR Service
+#   - `can-utils` for `cangw` command used by EDGAR Service
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends \
     ca-certificates can-utils && \
@@ -30,6 +30,5 @@ RUN cp cannelloni /usr/local/bin/
 WORKDIR /opt
 ADD target/ci/distribution/${TARGET_TRIPLE}/opendut-edgar-${TARGET_TRIPLE}-${VERSION}.tar.gz /opt
 
-CMD /opt/opendut-edgar/opendut-edgar setup managed --no-confirm --skip-service-run --log-file=- && /opt/opendut-edgar/opendut-edgar service
-
-# USER edgar  # TODO create unprivileged user
+CMD /opt/opendut-edgar/opendut-edgar setup managed --no-confirm --skip-service-run --log-file=- && \
+  /opt/opendut-edgar/opendut-edgar service
