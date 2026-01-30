@@ -5,13 +5,11 @@ use leptos::prelude::*;
 use leptos::web_sys;
 use leptos_router::hooks::use_navigate;
 use leptos_use::on_click_outside;
-use opendut_lea_components::health::Health;
-use opendut_lea_components::{
-    ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, health,
-};
+use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton};
 use opendut_model::cluster::ClusterDescriptor;
 use opendut_model::peer::PeerDescriptor;
-use opendut_model::peer::state::{PeerConnectionState, PeerState};
+use opendut_model::peer::state::{PeerState};
+use crate::peers::components::PeerHealth;
 
 #[component]
 pub(crate) fn Row<OnDeleteFn>(
@@ -31,17 +29,6 @@ where
 
     let configurator_href = move || format!("/peers/{}/configure/general", peer_id.get());
     let setup_href = move || format!("/peers/{}/configure/setup", peer_id.get());
-
-    let health_state = Signal::derive(move || match peer_state.get().connection {
-        PeerConnectionState::Offline => health::State {
-            kind: health::StateKind::Unknown,
-            text: String::from("Disconnected"),
-        },
-        PeerConnectionState::Online { .. } => health::State {
-            kind: health::StateKind::Green,
-            text: String::from("Connected. No errors."),
-        },
-    });
 
     let dropdown_active = RwSignal::new(false);
     let dropdown = NodeRef::<Div>::new();
@@ -116,7 +103,7 @@ where
             on:click=on_click
         >
             <td class="is-vcentered">
-                <Health state=health_state />
+                <PeerHealth state=peer_state.into() />
             </td>
             <td class="is-vcentered">
                 <a href=configurator_href on:click=|e| e.stop_propagation() on:mousedown=|e| e.stop_propagation()> { peer_name } </a>
