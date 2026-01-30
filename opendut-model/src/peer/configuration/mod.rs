@@ -105,25 +105,26 @@ impl PeerConfiguration {
         &mut self,
         obsolete_parameter_ids: &HashSet<ParameterId>,
     ) {
-        macro_rules! remove_obsolete_parameters_from_field {
-            ($field:expr) => {
-                $field.retain(|id, _| !obsolete_parameter_ids.contains(id));
-                // also remove dependencies on obsolete parameters
-                for parameter in $field.values_mut() {
-                    parameter.dependencies.retain(|id| !obsolete_parameter_ids.contains(id));
-                }
-            };
+        fn remove_obsolete_parameters_from_field<T: ParameterValue>(
+            obsolete_parameter_ids: &HashSet<ParameterId>,
+            field: &mut ParameterField<T>,
+        ) {
+            field.retain(|id, _| !obsolete_parameter_ids.contains(id));
+            // also remove dependencies on obsolete parameters
+            for parameter in field.values_mut() {
+                parameter.dependencies.retain(|id| !obsolete_parameter_ids.contains(id));
+            }
         }
 
-        remove_obsolete_parameters_from_field!(self.device_interfaces);
-        remove_obsolete_parameters_from_field!(self.ethernet_bridges);
-        remove_obsolete_parameters_from_field!(self.executors);
-        remove_obsolete_parameters_from_field!(self.gre_interfaces);
-        remove_obsolete_parameters_from_field!(self.joined_interfaces);
-        remove_obsolete_parameters_from_field!(self.remote_peer_connection_checks);
-        remove_obsolete_parameters_from_field!(self.can_connections);
-        remove_obsolete_parameters_from_field!(self.can_bridges);
-        remove_obsolete_parameters_from_field!(self.can_local_routes);
+        remove_obsolete_parameters_from_field(obsolete_parameter_ids, &mut self.device_interfaces);
+        remove_obsolete_parameters_from_field(obsolete_parameter_ids, &mut self.ethernet_bridges);
+        remove_obsolete_parameters_from_field(obsolete_parameter_ids, &mut self.executors);
+        remove_obsolete_parameters_from_field(obsolete_parameter_ids, &mut self.gre_interfaces);
+        remove_obsolete_parameters_from_field(obsolete_parameter_ids, &mut self.joined_interfaces);
+        remove_obsolete_parameters_from_field(obsolete_parameter_ids, &mut self.remote_peer_connection_checks);
+        remove_obsolete_parameters_from_field(obsolete_parameter_ids, &mut self.can_connections);
+        remove_obsolete_parameters_from_field(obsolete_parameter_ids, &mut self.can_bridges);
+        remove_obsolete_parameters_from_field(obsolete_parameter_ids, &mut self.can_local_routes);
     }
 }
 
