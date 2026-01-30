@@ -105,15 +105,25 @@ impl PeerConfiguration {
         &mut self,
         obsolete_parameter_ids: &HashSet<ParameterId>,
     ) {
-        self.device_interfaces.retain(|id, _| !obsolete_parameter_ids.contains(id));
-        self.ethernet_bridges.retain(|id, _| !obsolete_parameter_ids.contains(id));
-        self.executors.retain(|id, _| !obsolete_parameter_ids.contains(id));
-        self.gre_interfaces.retain(|id, _| !obsolete_parameter_ids.contains(id));
-        self.joined_interfaces.retain(|id, _| !obsolete_parameter_ids.contains(id));
-        self.remote_peer_connection_checks.retain(|id, _| !obsolete_parameter_ids.contains(id));
-        self.can_connections.retain(|id, _| !obsolete_parameter_ids.contains(id));
-        self.can_bridges.retain(|id, _| !obsolete_parameter_ids.contains(id));
-        self.can_local_routes.retain(|id, _| !obsolete_parameter_ids.contains(id));
+        macro_rules! remove_obsolete_parameters_from_field {
+            ($field:expr) => {
+                $field.retain(|id, _| !obsolete_parameter_ids.contains(id));
+                // also remove dependencies on obsolete parameters
+                for parameter in $field.values_mut() {
+                    parameter.dependencies.retain(|id| !obsolete_parameter_ids.contains(id));
+                }
+            };
+        }
+
+        remove_obsolete_parameters_from_field!(self.device_interfaces);
+        remove_obsolete_parameters_from_field!(self.ethernet_bridges);
+        remove_obsolete_parameters_from_field!(self.executors);
+        remove_obsolete_parameters_from_field!(self.gre_interfaces);
+        remove_obsolete_parameters_from_field!(self.joined_interfaces);
+        remove_obsolete_parameters_from_field!(self.remote_peer_connection_checks);
+        remove_obsolete_parameters_from_field!(self.can_connections);
+        remove_obsolete_parameters_from_field!(self.can_bridges);
+        remove_obsolete_parameters_from_field!(self.can_local_routes);
     }
 }
 
@@ -396,6 +406,33 @@ mod tests {
             ]);
 
             Ok(())
+        }
+    }
+
+    mod remove_parameter {
+        #[test]
+        fn should_remove_parameters_by_id() {
+            use super::*;
+            use crate::util::net::NetworkInterfaceName;
+
+            let parameter_value_1 = parameter::CanBridge { name: NetworkInterfaceName::try_from("can0").unwrap() };
+            let parameter_value_2 = parameter::CanBridge { name: NetworkInterfaceName::try_from("can1").unwrap() };
+
+            let mut testee = PeerConfiguration::default();
+            let id_1 = testee.can_bridges.set(parameter_value_1.clone(), ParameterTarget::Present, HashSet::new());
+            let id_2 = testee.can_bridges.set(parameter_value_2.clone(), ParameterTarget::Present, HashSet::from_iter(vec![id_1]));
+
+            let obsolete_ids = HashSet::from_iter(vec![id_1]);
+            testee.remove_parameters(&obsolete_ids);
+
+            assert_eq!(testee.can_bridges.len(), 1);
+            assert!(testee.can_bridges.get(&id_1).is_none());
+
+            if let Some(remaining_can_bridge) = testee.can_bridges.get(&id_2) {
+                assert!(!remaining_can_bridge.dependencies.contains(&id_1), "Dependencies should have been updated to remove the obsolete parameter!");
+            } else {
+                panic!("Expected can bridge parameter to be present");
+            }
         }
     }
 }
