@@ -11,6 +11,7 @@ use tracing::info;
 use crate::service::peer_messaging_client::PeerMessagingClient;
 use crate::service::vpn::VpnProcess;
 
+
 pub async fn launch(id_override: Option<PeerId>) -> anyhow::Result<()> {
     crate::common::banner::print();
 
@@ -38,6 +39,9 @@ pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow:
         opendut_telemetry::initialize_with_config(logging_config, opentelemetry).await?
     };
 
+    log_edgar_metadata(self_id)?;
+
+
     let vpn = VpnProcess::spawn_from_config(&settings).await?;
 
 
@@ -63,3 +67,16 @@ pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow:
     Ok(())
 }
 
+fn log_edgar_metadata(self_id: PeerId) -> anyhow::Result<()> {
+    let user = nix::unistd::User::from_uid(
+        nix::unistd::getuid()
+    )?;
+
+    let user = match user {
+        Some(user) => format!("system user '{}'", user.name),
+        None => String::from("an unknown system user"),
+    };
+
+    info!("Running with PeerId <{self_id}> under {user}.");
+    Ok(())
+}
