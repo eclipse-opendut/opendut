@@ -38,7 +38,7 @@ pub enum TaskCli {
     Network,
     /// Destroy test environment.
     Destroy,
-    /// Launch an Cluster of EDGARs.
+    /// Launch a cluster of EDGAR's to do a comprehensive integration test.
     Cluster(TestClusterCli),
     /// Run EDGAR production container.
     Edgar,

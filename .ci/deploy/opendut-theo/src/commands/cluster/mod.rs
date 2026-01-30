@@ -22,11 +22,11 @@ pub struct TestClusterCli {
 
 #[derive(clap::Subcommand)]
 pub enum TaskCli {
-    /// Start EDGAR cluster
+    /// Start EDGAR cluster test
     Start,
-    /// Stop EDGAR cluster
+    /// Stop EDGAR cluster test
     Stop,
-    /// Build EDGAR
+    /// Build EDGAR docker container
     Build,
 }
 
