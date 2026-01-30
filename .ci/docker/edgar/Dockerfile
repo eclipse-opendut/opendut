@@ -9,7 +9,7 @@ ENV TARGET_TRIPLE=x86_64-unknown-linux-gnu
 #   - `can-utils` for `cangw` used by EDGAR Service
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends \
-    ca-certificates can-utils curl iputils-ping multitail && \
+    ca-certificates can-utils && \
     rm -rf /var/lib/apt/lists/*
 
 
