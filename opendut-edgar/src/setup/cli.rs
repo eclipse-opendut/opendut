@@ -4,6 +4,7 @@ use clap::{Args, Subcommand};
 use opendut_model::peer::PeerSetup;
 use std::env;
 use std::path::PathBuf;
+use std::process::ExitCode;
 use tracing::{debug, info};
 use crate::setup::start::logging;
 use crate::setup::util::DryRun;
@@ -62,23 +63,23 @@ pub(super) struct SetupRunCommonArgs {
 }
 
 impl SetupCli {
-    pub async fn run(self) -> anyhow::Result<()> {
-        match self.command {
-            SetupCommand::Managed { setup_string, common } => {
-                logging::init(&common.log_file).await?;
+    pub async fn run(self) -> anyhow::Result<ExitCode> {
+        let exit_code =
+            match self.command {
+                SetupCommand::Managed { setup_string, common } => {
+                    logging::init(&common.log_file).await?;
 
-                let user_command = env::args_os()
-                    .collect::<Vec<_>>();
-                info!("EDGAR Setup started!");
-                info!("Setup command being executed: {:?}", user_command);
+                    let user_command = env::args_os()
+                        .collect::<Vec<_>>();
+                    info!("EDGAR Setup started!");
+                    info!("Setup command being executed: {:?}", user_command);
 
-                let peer_setup = parse_peer_setup(setup_string)?;
+                    let peer_setup = parse_peer_setup(setup_string)?;
 
-                setup::start::managed(peer_setup, common).await?;
-            },
-        };
-        info!("EDGAR Setup finished!\n");
-        Ok(())
+                    setup::start::managed(peer_setup, common).await?
+                },
+            };
+        Ok(exit_code)
     }
 }
 

@@ -1,40 +1,29 @@
-use clap::{Parser, Subcommand};
-use uuid::Uuid;
+use std::process::ExitCode;
+use clap::Parser;
 
 use opendut_model::peer::PeerId;
-
 
 #[derive(Parser)]
 #[command(name = "opendut-edgar")]
 #[command(about = "Connect your ECU to openDuT.")]
 #[command(long_version = crate::FORMATTED_VERSION)]
-struct Cli {
-    #[command(subcommand)]
-    command: Commands,
-}
-
-#[derive(Subcommand)]
 enum Commands {
     /// Launches the EDGAR Service
     Service {
         /// Start with the provided ID
         #[arg(long)]
-        id: Option<Uuid>,
+        id: Option<PeerId>,
     },
     Setup(crate::setup::cli::SetupCli),
 }
 
 
-pub async fn cli() -> anyhow::Result<()> {
-
-    let args = Cli::parse();
-
-    match args.command {
+pub async fn cli() -> anyhow::Result<ExitCode> {
+    match Commands::parse() {
         Commands::Service { id } => {
-            let id_override = id.map(PeerId::from);
-            crate::service::start::launch(
-                id_override,
-            ).await
+            crate::service::start::launch(id).await?;
+
+            Ok(ExitCode::SUCCESS)
         },
         Commands::Setup(cli) => cli.run().await,
     }

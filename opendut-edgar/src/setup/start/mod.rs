@@ -11,6 +11,7 @@ use opendut_model::peer::PeerSetup;
 use opendut_model::vpn::VpnPeerConfiguration;
 use std::env;
 use std::ops::Not;
+use std::process::ExitCode;
 use crate::interactive_message;
 use crate::setup::cli::SetupRunCommonArgs;
 use crate::setup::util::DryRun;
@@ -20,7 +21,7 @@ use crate::setup::util::DryRun;
 pub(super) async fn managed(
     peer_setup: PeerSetup,
     common_args: SetupRunCommonArgs,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<ExitCode> {
     let SetupRunCommonArgs { dry_run, no_confirm, log_file: _, mtu, skip_can, skip_service_run } = common_args;
 
     let service_user = determine_service_user_name();
@@ -31,7 +32,7 @@ pub(super) async fn managed(
 
     let should_run = no_confirm || user_confirmation(&dry_run)?;
     if should_run.not() {
-        return Ok(());
+        return Ok(ExitCode::SUCCESS);
     }
 
     if dry_run.not() {
@@ -105,9 +106,11 @@ pub(super) async fn managed(
 
     if let Err(error) = result {
         error.print_error();
-        // TODO: exit code
+        Ok(ExitCode::FAILURE)
+    } else {
+        info!("EDGAR Setup finished successfully!\n");
+        Ok(ExitCode::SUCCESS)
     }
-    Ok(())
 }
 
 fn determine_service_user_name() -> User {
