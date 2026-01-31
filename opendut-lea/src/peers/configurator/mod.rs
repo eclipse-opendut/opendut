@@ -17,6 +17,7 @@ use crate::peers::configurator::types::devices::UserDeviceConfiguration;
 use crate::peers::configurator::types::executor::{UserContainerEnv, UserPeerExecutor, UserPeerExecutorKind};
 use crate::peers::configurator::types::network::{UserNetworkInterface, UserPeerNetwork};
 use crate::peers::configurator::types::UserPeerConfiguration;
+use opendut_model::peer::state::PeerState;
 
 mod components;
 mod tabs;
@@ -30,7 +31,7 @@ pub fn PeerConfigurator() -> impl IntoView {
 
     let active_tab = use_active_tab::<TabIdentifier>();
 
-    let (peer_configuration, peer_configuration_resource, is_valid_peer_configuration) = {
+    let (peer_configuration, peer_configuration_resource, is_valid_peer_configuration, peer_state) = {
         let peer_id = {
             let peer_id = params.with_untracked(|params| {
                 params.get("id").and_then(|id| PeerId::try_from(id.as_str()).ok())
@@ -50,6 +51,7 @@ pub fn PeerConfigurator() -> impl IntoView {
                 }
             }
         };
+        let peer_state = RwSignal::new(PeerState::default());
 
         let peer_configuration = RwSignal::new(UserPeerConfiguration {
             id: peer_id,
@@ -171,6 +173,9 @@ pub fn PeerConfigurator() -> impl IntoView {
                             );
                         }
                     });
+                    if let Ok(state) = carl.peers.get_peer_state(peer_id).await {
+                        peer_state.set(state);
+                    }
                 }
             }
         });
@@ -181,7 +186,7 @@ pub fn PeerConfigurator() -> impl IntoView {
             })
         });
 
-        (peer_configuration, peer_configuration_resource, is_valid_peer_configuration)
+        (peer_configuration, peer_configuration_resource, is_valid_peer_configuration, peer_state)
     };
 
     let peer_id_string = create_read_slice(peer_configuration, |config| config.id.to_string());
@@ -294,7 +299,7 @@ pub fn PeerConfigurator() -> impl IntoView {
             title="Configure Peer"
             subtitle=subtitle
             breadcrumbs=breadcrumbs
-            controls=view! { <Controls configuration=peer_configuration is_valid_peer_configuration=is_valid_peer_configuration.into() /> }
+            controls=view! { <Controls configuration=peer_configuration is_valid_peer_configuration=is_valid_peer_configuration.into() peer_state=peer_state.into() /> }
         >
         <div> {cluster_columns} </div>
             <Suspense

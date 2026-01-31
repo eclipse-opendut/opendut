@@ -7,17 +7,20 @@ use leptos_router::hooks::use_navigate;
 use tracing::{debug, error};
 use opendut_model::cluster::ClusterId;
 use opendut_model::peer::PeerDescriptor;
+use opendut_model::peer::state::PeerState;
 
 use crate::app::use_app_globals;
 use crate::components::{use_toaster, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, Toast};
 use crate::peers::components::DeletePeerButton;
 use crate::peers::configurator::types::UserPeerConfiguration;
 use crate::routing::{navigate_to, WellKnownRoutes};
+use crate::peers::components::PeerHealth;
 
 #[component]
 pub fn Controls(
     configuration: RwSignal<UserPeerConfiguration>,
     is_valid_peer_configuration: Signal<bool>,
+    peer_state: Signal<PeerState>
 ) -> impl IntoView {
 
     let peer_id = Signal::derive(move || {
@@ -43,7 +46,9 @@ pub fn Controls(
     }};
 
     view! {
-        <div class="is-flex">
+        <div class="is-flex is-align-items-center">
+            <PeerHealth state=peer_state.into() />
+            <div class="px-2" />
             <SavePeerButton
                 configuration
                 is_valid_peer_configuration
