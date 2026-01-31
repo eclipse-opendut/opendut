@@ -5,6 +5,7 @@ use leptos_router::hooks::use_navigate;
 use tracing::{debug, error};
 use opendut_lea_components::tooltip::{Tooltip, TooltipDirection};
 use opendut_model::cluster::ClusterDescriptor;
+use opendut_model::cluster::state::ClusterState;
 
 use crate::app::use_app_globals;
 use crate::clusters::components::DeleteClusterButton;
@@ -12,11 +13,13 @@ use crate::clusters::configurator::types::UserClusterDescriptor;
 use crate::clusters::IsDeployed;
 use crate::components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, Toast, use_toaster};
 use crate::routing::{navigate_to, WellKnownRoutes};
+use crate::clusters::components::ClusterHealth;
 
 #[component]
 pub fn Controls(
     cluster_descriptor: ReadSignal<UserClusterDescriptor>,
-    deployed_signal: Signal<IsDeployed>
+    deployed_signal: Signal<IsDeployed>,
+    cluster_state: Signal<ClusterState>,
 ) -> impl IntoView {
 
     let cluster_id = Signal::derive(move || {
@@ -30,7 +33,9 @@ pub fn Controls(
     };
 
     view! {
-        <div class="is-flex">
+        <div class="is-flex is-align-items-center">
+            <ClusterHealth state=cluster_state.into() />
+            <div class="px-2" />
             <SaveClusterButton
                 cluster_descriptor
                 deployed_signal

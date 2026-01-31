@@ -4,6 +4,7 @@ use opendut_lea_components::tabs::{Tab, Tabs};
 use crate::components::UserInputValue;
 use opendut_model::cluster::ClusterId;
 use opendut_model::peer::PeerDescriptor;
+use opendut_model::cluster::state::ClusterState;
 
 use crate::app::use_app_globals;
 use crate::clusters::configurator::components::{DeviceSelection, DeviceSelector, LeaderSelection};
@@ -83,6 +84,7 @@ fn LoadedClusterConfigurator(
     peers: ReadSignal<Vec<PeerDescriptor>>,
 ) -> impl IntoView {
     let globals = use_app_globals();
+    let cluster_state = RwSignal::new(ClusterState::default());
 
     let cluster_id = Signal::derive(move || cluster_descriptor.get().id);
 
@@ -158,6 +160,7 @@ fn LoadedClusterConfigurator(
                     <Controls
                         cluster_descriptor=cluster_descriptor.read_only()
                         deployed_signal
+                        cluster_state=cluster_state.into()
                     />
                 }
             }

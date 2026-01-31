@@ -4,10 +4,11 @@ use leptos::html::Div;
 use leptos::prelude::*;
 use leptos::web_sys;
 use leptos_router::hooks::use_navigate;
-use opendut_lea_components::health::Health;
 use opendut_lea_components::tooltip::Tooltip;
-use opendut_lea_components::{ButtonColor, Toggle, health};
+use opendut_lea_components::{ButtonColor, Toggle};
 use opendut_model::cluster::ClusterDescriptor;
+use crate::clusters::components::ClusterHealth;
+use opendut_model::cluster::state::ClusterState;
 
 #[component]
 pub fn Row<OnDeployFn, OnUndeployFn, OnDeleteFn>(
@@ -37,14 +38,6 @@ where
 
     let _ = leptos_use::on_click_outside(dropdown, move |_| dropdown_active.set(false));
 
-    let health_state = Signal::derive(move || {
-        health::State {
-            //TODO implement Cluster health in backend and display it here
-            kind: health::StateKind::Unknown,
-            text: String::from("Unknown"),
-        }
-    });
-
     let tooltip_text = Signal::derive(move || {
         if is_deployed.get().0 {
             "Deployment requested".to_string()
@@ -67,6 +60,8 @@ where
             use_navigate(&configurator_href(), Default::default());
         }
     };
+
+    let cluster_state = RwSignal::new(ClusterState::default());
 
     view! {
         <tr
@@ -91,7 +86,7 @@ where
                 </Tooltip>
             </td>
             <td class="is-vcentered has-text-centered">
-                <Health state=health_state />
+                <ClusterHealth state=cluster_state.into() />
             </td>
             <td class="is-vcentered">
                 <a href=configurator_href on:click=|e| e.stop_propagation() on:mousedown=|e| e.stop_propagation()> { cluster_name } </a>
