@@ -47,7 +47,7 @@ pub fn Controls(
 
     view! {
         <div class="is-flex is-align-items-center">
-            <PeerHealth state=peer_state.into() />
+            <PeerHealth state=peer_state />
             <div class="px-2" />
             <SavePeerButton
                 configuration

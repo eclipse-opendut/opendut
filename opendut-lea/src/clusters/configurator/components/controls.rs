@@ -34,7 +34,7 @@ pub fn Controls(
 
     view! {
         <div class="is-flex is-align-items-center">
-            <ClusterHealth state=cluster_state.into() />
+            <ClusterHealth state=cluster_state />
             <div class="px-2" />
             <SaveClusterButton
                 cluster_descriptor
