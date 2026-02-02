@@ -104,6 +104,7 @@ impl ManagedAsyncProcess {
 
     /// Drain stdout and stderr asynchronously to avoid deadlock when buffer is full
     pub fn spawn_output_drainers(&mut self) {
+        let pid = self.child.id();
         if let Some(config) = &self.config && let OutputConfig::Capture = config.output_config {
             if let Some(stdout) = self.child.stdout.take() {
                 let name = self.name.clone();
@@ -111,7 +112,7 @@ impl ManagedAsyncProcess {
                     let reader = BufReader::new(stdout);
                     let mut lines = reader.lines();
                     while let Ok(Some(line)) = lines.next_line().await {
-                        trace!(process=name, stream="stdout", "{line}");
+                        trace!(process_name=name, process_id=pid, process_stream="stdout", "{line}");
                     }
                 });
             }
@@ -121,7 +122,7 @@ impl ManagedAsyncProcess {
                     let reader = BufReader::new(stderr);
                     let mut lines = reader.lines();
                     while let Ok(Some(line)) = lines.next_line().await {
-                        trace!(process=name, stream="stderr", "{line}");
+                        trace!(process_name=name, process_id=pid, process_stream="stderr", "{line}");
                     }
                 });
             }
