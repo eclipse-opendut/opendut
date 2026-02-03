@@ -1,7 +1,8 @@
 use leptos::html::Div;
 use leptos::prelude::*;
+use leptos_router::hooks::use_navigate;
 use leptos_use::on_click_outside;
-use opendut_lea_components::ButtonColor;
+use opendut_lea_components::{has_text_selection, ButtonColor};
 use opendut_model::viper::ViperTestDescriptor;
 use crate::app::use_app_globals;
 use crate::tests::components::DeleteTestButton;
@@ -62,8 +63,17 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
 
     let _ = on_click_outside(dropdown, move |_| dropdown_active.set(false) );
 
+    let use_navigate = use_navigate();
+    let on_row_click = move || {
+        if has_text_selection() {
+            return;
+        }
+
+        use_navigate(&configurator_href(), Default::default());
+    };
+
     view! {
-        <tr>
+        <tr class="is-clickable" on:click=move |_| on_row_click()>
             <td class="is-vcentered">
                 <a href=configurator_href> { test_name } </a>
             </td>
@@ -71,7 +81,9 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
                 test_source.get().map(|source_name| {
                     view! {
                         <td class="is-vcentered">
-                            <a href=source_configurator_href> { source_name } </a>
+                            <a href=source_configurator_href on:click=move |ev| ev.stop_propagation()>
+                                { source_name }
+                            </a>
                         </td>
                     }
                 })

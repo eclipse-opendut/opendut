@@ -187,6 +187,7 @@ uuid = "1.13.1"
 walkdir = "2.5.0"
 wasm-bindgen-futures = "0.4.50"
 wasm-bindgen-test = "0.3.50"
+web-sys = "0.3.85"
 
 # v36.x is an LTS release: https://docs.wasmtime.dev/stability-release.html
 # Will stick to v36.x for now, because v39+ contains `im-rc` as dependency which is under MPL-2.0.

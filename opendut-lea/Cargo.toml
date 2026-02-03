@@ -34,6 +34,7 @@ tracing-web = { workspace = true }
 url = { workspace = true }
 uuid = { workspace = true, features = ["js"] }
 wasm-bindgen-futures = { workspace = true }
+web-sys = { workspace = true }
 
 [build-dependencies]
 shadow-rs = { workspace = true, default-features = true }

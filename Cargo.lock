@@ -4557,6 +4557,7 @@ dependencies = [
  "url",
  "uuid",
  "wasm-bindgen-futures",
+ "web-sys",
 ]
 
 [[package]]
@@ -4569,6 +4570,7 @@ dependencies = [
  "opendut-model",
  "slotmap",
  "tracing",
+ "web-sys",
 ]
 
 [[package]]

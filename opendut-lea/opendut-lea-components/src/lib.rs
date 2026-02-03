@@ -30,6 +30,7 @@ pub use warning_message::WarningMessage;
 pub use util::ior::Ior;
 pub use util::net::UserNetworkInterfaceConfiguration;
 pub use util::signal::{ButtonStateSignalProvider, ToggleSignal, Toggled};
+pub use util::table_row_selection::has_text_selection;
 pub use doorhanger::{Doorhanger, DoorhangerAlignment};
 pub use icon_text::IconText;
 pub use toggle::Toggle;
