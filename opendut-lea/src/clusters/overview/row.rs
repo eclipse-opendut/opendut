@@ -86,7 +86,7 @@ where
                 </Tooltip>
             </td>
             <td class="is-vcentered has-text-centered">
-                <ClusterHealth state=cluster_state.into() />
+                <ClusterHealth state=cluster_state />
             </td>
             <td class="is-vcentered">
                 <a href=configurator_href on:click=|e| e.stop_propagation() on:mousedown=|e| e.stop_propagation()> { cluster_name } </a>

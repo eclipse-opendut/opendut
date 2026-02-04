@@ -103,7 +103,7 @@ where
             on:click=on_click
         >
             <td class="is-vcentered">
-                <PeerHealth state=peer_state.into() />
+                <PeerHealth state=peer_state />
             </td>
             <td class="is-vcentered">
                 <a href=configurator_href on:click=|e| e.stop_propagation() on:mousedown=|e| e.stop_propagation()> { peer_name } </a>

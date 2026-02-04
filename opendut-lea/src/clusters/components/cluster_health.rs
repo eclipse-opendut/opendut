@@ -3,7 +3,9 @@ use opendut_lea_components::health::{self, Health};
 use opendut_model::cluster::state::ClusterState;
 
 #[component]
-pub fn ClusterHealth(state: Signal<ClusterState>) -> impl IntoView {
+pub fn ClusterHealth(
+    #[prop(into)] state: Signal<ClusterState>
+) -> impl IntoView {
     let _ = state;
 
     let health_state = Signal::derive(move || {
