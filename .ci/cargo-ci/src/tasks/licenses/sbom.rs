@@ -112,6 +112,7 @@ fn clarify_license_information(package: SpdxItemPackages) -> SpdxItemPackages {
                 => "Apache-2.0",
 
                 "BSD-3-Clause OR MIT" => "BSD-3-Clause",
+                "CC0-1.0 OR MIT-0" => "MIT-0",
                 "GPL-2.0 OR BSD-3-Clause" => "BSD-3-Clause",
                 "ISC AND (Apache-2.0 OR ISC) AND OpenSSL" => "ISC AND OpenSSL",
                 "ISC AND (Apache-2.0 OR ISC)" => "ISC",
