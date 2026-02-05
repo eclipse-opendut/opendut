@@ -234,7 +234,7 @@ services:
   # Signal
   netbird-signal:
     container_name: opendut-netbird-signal
-    image: netbirdio/signal:0.60.2  # https://hub.docker.com/r/netbirdio/management/tags
+    image: netbirdio/signal:0.64.5  # https://hub.docker.com/r/netbirdio/management/tags
     restart: unless-stopped
     volumes:
       - netbird-signal:/var/lib/netbird
@@ -266,7 +266,7 @@ services:
       context: ../../..
       dockerfile: ./.ci/deploy/localenv/data/netbird/Dockerfile_management
       args:
-        NETBIRD_MANAGEMENT_VERSION: "0.60.2"  # https://hub.docker.com/r/netbirdio/management/tags
+        NETBIRD_MANAGEMENT_VERSION: "0.64.5"  # https://hub.docker.com/r/netbirdio/management/tags
     restart: unless-stopped
     depends_on:
       traefik:
@@ -375,7 +375,7 @@ services:
   netbird-relay:
     <<: *default
     container_name: opendut-netbird-relay
-    image: netbirdio/relay:0.60.2
+    image: netbirdio/relay:0.64.5
     environment:
       - NB_LOG_LEVEL=info
       - NB_LISTEN_ADDRESS=:33080

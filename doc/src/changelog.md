@@ -29,6 +29,7 @@ Always create a database backup before upgrading CARL.
 * Localenv peer network was separated from the backend network. Separate Docker networks ensure peers connect to the backend as they would when deployed next to a test bench.
 * Added logging to stdout during Telemetry startup. Previously, no messages were shown during startup until configuration phase passed the OpenTelemetry stack.
 * Updated the telemetry stack to the latest versions.
+* Update NetBird to version 0.64.5.
 
 ### Removed
 * EDGAR cannot be setup in unmanaged mode anymore.
