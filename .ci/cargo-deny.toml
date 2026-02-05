@@ -66,3 +66,6 @@ license-files = [
 
 [bans]
 multiple-versions = "allow"
+deny = [
+    { crate = "openssl", use-instead = "rustls", reason = "We want to avoid pulling in OpenSSL, if possible, because it makes compilation trickier. See, if the crate you want to use has a feature to enable `rustls`." }  # If you need to lift this ban, add this line to your dependencies to enable the `vendored` feature:  openssl-sys = { version = "*", features = ["vendored"] }
+]
