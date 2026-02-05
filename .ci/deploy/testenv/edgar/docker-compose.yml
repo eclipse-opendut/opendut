@@ -88,9 +88,9 @@ volumes:
 
 networks:
   opendut_peers:
-    name: opendut_peers
+    name: ${OPENDUT_EDGAR_NETWORK_NAME:-opendut_peers}
     ipam:
       driver: default
       config:
-        - subnet: 192.168.38.0/24
-          ip_range: 192.168.38.0/24
+        - subnet: ${OPENDUT_EDGAR_NETWORK_SUBNET:-192.168.38.0/24}
+          ip_range: ${OPENDUT_EDGAR_NETWORK_SUBNET:-192.168.38.0/24}
