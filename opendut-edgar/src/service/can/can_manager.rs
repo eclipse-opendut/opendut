@@ -1,4 +1,4 @@
-use crate::service::process_manager::{AsyncProcessId, AsyncProcessManager, AsyncProcessManagerExt, AsyncProcessManagerRef, OutputConfig, ProcessConfig, RestartPolicy};
+use crate::service::process_manager::{create_process_log_function, AsyncProcessId, AsyncProcessManager, AsyncProcessManagerExt, AsyncProcessManagerRef, OutputConfig, ProcessConfig, RestartPolicy};
 use opendut_model::peer::configuration::parameter::CanConnection;
 use opendut_model::peer::configuration::{ParameterId, ParameterValue};
 use std::collections::HashMap;
@@ -46,7 +46,16 @@ impl CanManager {
             .with_restart_delay(Duration::from_secs(5))
             .with_output_config(OutputConfig::Capture);
 
-        let process_id = AsyncProcessManager::spawn_process(self.process_manager.clone(), config).await?;
+        let process_id = if parameter.local_is_server {
+            let local_port = parameter.local_port.0;
+            let log_function = create_process_log_function!("opendut-cannelloni-server", local_port=local_port);
+            AsyncProcessManager::spawn_process(self.process_manager.clone(), config, log_function).await?
+        } else {
+            let remote_peer_id = parameter.remote_peer_id.to_string();
+            let log_function = create_process_log_function!("opendut-cannelloni-peer", leader_peer_id=remote_peer_id);
+            AsyncProcessManager::spawn_process(self.process_manager.clone(), config, log_function).await?
+        };
+
         let parameter_id = parameter.parameter_identifier();
         let mut processes = self.process_map.lock().await;
         processes.insert(parameter_id, process_id);

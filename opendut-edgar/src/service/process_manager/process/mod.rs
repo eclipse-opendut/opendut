@@ -1,10 +1,13 @@
+pub mod logging;
+
 use std::time::Duration;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Child;
 use tokio::sync::mpsc;
 use tokio::task;
-use tracing::{debug, error, trace, warn};
+use tracing::{debug, error, warn};
 use crate::service::process_manager::{OutputConfig, ProcessConfig};
+use crate::service::process_manager::process::logging::ProcessLoggingMetadata;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct AsyncProcessId(u64);
@@ -103,26 +106,36 @@ impl ManagedAsyncProcess {
     }
 
     /// Drain stdout and stderr asynchronously to avoid deadlock when buffer is full
-    pub fn spawn_output_drainers(&mut self) {
+    pub(super) fn spawn_output_drainers(&mut self, log_function: logging::ProcessLogFunction!()) {
         let pid = self.child.id();
-        if let Some(config) = &self.config && let OutputConfig::Capture = config.output_config {
+        if let Some(config) = &self.config
+        && let OutputConfig::Capture = config.output_config {
             if let Some(stdout) = self.child.stdout.take() {
-                let name = self.name.clone();
+                let metadata = ProcessLoggingMetadata {
+                    name: self.name.clone(),
+                    id: pid,
+                    stream: "stdout",
+                };
+                let log_function = log_function.clone();
                 task::spawn(async move {
                     let reader = BufReader::new(stdout);
                     let mut lines = reader.lines();
                     while let Ok(Some(line)) = lines.next_line().await {
-                        trace!(process_name=name, process_id=pid, process_stream="stdout", "{line}");
+                        log_function(&metadata, &line);
                     }
                 });
             }
             if let Some(stderr) = self.child.stderr.take() {
-                let name = self.name.clone();
+                let metadata = ProcessLoggingMetadata {
+                    name: self.name.clone(),
+                    id: pid,
+                    stream: "stderr",
+                };
                 task::spawn(async move {
                     let reader = BufReader::new(stderr);
                     let mut lines = reader.lines();
                     while let Ok(Some(line)) = lines.next_line().await {
-                        trace!(process_name=name, process_id=pid, process_stream="stderr", "{line}");
+                        log_function(&metadata, &line);
                     }
                 });
             }

@@ -50,7 +50,7 @@ pub enum Opentelemetry {
 /// This macro prints startup messages to the console with a consistent prefix before tracing and logging are initialized during OpenTelemetry startup.
 macro_rules! startup_message {
     ($($arg:tt)*) => {
-        println!("[OpenDUT Telemetry] {}", format!($($arg)*));
+        println!("[openDuT Telemetry] {}", format!($($arg)*));
     }
 }
 

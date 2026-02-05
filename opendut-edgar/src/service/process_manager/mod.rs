@@ -3,6 +3,7 @@ mod process;
 
 pub use config::{ProcessConfig, OutputConfig, RestartPolicy};
 pub use process::AsyncProcessId;
+pub(crate) use process::logging::{create_process_log_function, ProcessLoggingMetadata, ProcessLogFunction};
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -29,6 +30,7 @@ impl AsyncProcessManager {
     pub async fn spawn_process(
         manager_ref: AsyncProcessManagerRef,
         config: ProcessConfig,
+        log_function: ProcessLogFunction!(),
     ) -> anyhow::Result<AsyncProcessId> {
         let name = config.name.clone();
         let restart_policy = config.restart_policy;
@@ -53,7 +55,7 @@ impl AsyncProcessManager {
                 config: Some(config.clone()),
                 shutdown_tx: Some(shutdown_tx),
             };
-            managed_process.spawn_output_drainers();
+            managed_process.spawn_output_drainers(log_function);
             manager.processes.insert(process_id, managed_process);
 
             // Start monitoring if restart policy is set
@@ -263,7 +265,7 @@ mod tests {
         .with_restart_policy(RestartPolicy::OnFailure)
         .with_restart_delay(Duration::from_millis(100));
 
-        let id = AsyncProcessManager::spawn_process(manager.clone(), config).await.unwrap();
+        let id = AsyncProcessManager::spawn_process(manager.clone(), config, LOG_FUNCTION).await.unwrap();
 
         // Wait for the process to fail and restart a few times
         tokio::time::sleep(Duration::from_millis(500)).await;
@@ -287,7 +289,7 @@ mod tests {
         .with_restart_policy(RestartPolicy::Always)
         .with_restart_delay(Duration::from_millis(100));
 
-        let id = AsyncProcessManager::spawn_process(manager.clone(), config).await.unwrap();
+        let id = AsyncProcessManager::spawn_process(manager.clone(), config, LOG_FUNCTION).await.unwrap();
 
         // Wait for the process to exit and restart a few times
         tokio::time::sleep(Duration::from_millis(500)).await;
@@ -298,4 +300,6 @@ mod tests {
             mgr.terminate(id).await.unwrap();
         }
     }
+
+    const LOG_FUNCTION: fn(&ProcessLoggingMetadata, &str) = create_process_log_function!("process-manager-test");
 }

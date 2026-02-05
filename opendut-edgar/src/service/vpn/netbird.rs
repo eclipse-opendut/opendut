@@ -5,7 +5,7 @@ use tokio::process::Command;
 use tracing::debug;
 use opendut_netbird_client_api::extension::LocalPeerStateExtension;
 use crate::common;
-use crate::service::process_manager::{AsyncProcessId, AsyncProcessManager, AsyncProcessManagerExt, AsyncProcessManagerRef, OutputConfig, ProcessConfig, RestartPolicy};
+use crate::service::process_manager::{create_process_log_function, AsyncProcessId, AsyncProcessManager, AsyncProcessManagerExt, AsyncProcessManagerRef, OutputConfig, ProcessConfig, RestartPolicy};
 
 
 pub struct NetbirdProcess {
@@ -17,7 +17,8 @@ impl NetbirdProcess {
     pub async fn spawn() -> anyhow::Result<Self> {
         let process_manager = AsyncProcessManagerRef::new_shared();
 
-        let name = "netbird-service";
+        let name = "netbird-client";
+        let log_function = create_process_log_function!("opendut-netbird-client");
 
         let config = ProcessConfig::new(
             name,
@@ -40,7 +41,7 @@ impl NetbirdProcess {
         .with_restart_delay(Duration::from_secs(5))
         .with_output_config(OutputConfig::Capture);
 
-        let process_id = AsyncProcessManager::spawn_process(process_manager.clone(), config).await?;
+        let process_id = AsyncProcessManager::spawn_process(process_manager.clone(), config, log_function).await?;
 
         Ok(Self {
             process_manager,
