@@ -17,17 +17,6 @@ cleo_get_peer_id() {
   fi
 }
 
-cleo_check_expected_number_of_connected_peers_in_cluster() {
-  expected="$1"
-  cluster="$2"
-  RESULT=$(opendut-cleo list --output json peers | jq --arg CLUSTER "$cluster" -r '. | map(select(.name | contains($CLUSTER))) | .[].status' | grep -c Connected)
-  if [ "$RESULT" -eq "$expected" ]; then
-      return 0
-  else
-      return 1
-  fi
-}
-
 check_interface_exists() {
   interface="$1"
 
@@ -89,8 +78,8 @@ pre_flight_tasks "$1"
 # Determine docker service name and respective role for EDGAR
 CONTAINER_IP="$(ip -4 addr show eth0 | grep -oP "(?<=inet ).*(?=/)")"
 CONTAINER_SERVICE_NAME="$(dig -x "${CONTAINER_IP}" +short | grep -Eo "edgar-[a-z0-9\-]+" | cut -d'-' -f'2-')"
-echo "export CONTAINER_SERVICE_NAME=$CONTAINER_SERVICE_NAME" >> ~/.bashrc
-echo 'export PS1="\u@\h:\w ($CONTAINER_SERVICE_NAME) # "' >> ~/.bashrc
+# Custom bash prompt showing container role and IP
+echo "export PS1=\"\\u@\\h:\\w ($CONTAINER_SERVICE_NAME $CONTAINER_IP) # \"" >> ~/.bashrc
 
 # Apply peer configuration
 opendut-cleo apply "/opt/configurations/peer_descriptor_${CONTAINER_SERVICE_NAME}.yaml"
