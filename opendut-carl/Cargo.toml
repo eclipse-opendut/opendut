@@ -37,7 +37,6 @@ indoc = { workspace = true }
 jsonwebtoken = { workspace = true}
 mime = { workspace = true }
 openidconnect = { workspace = true }
-openssl-sys = { workspace = true }
 opentelemetry = { workspace = true }
 opentelemetry_sdk = { workspace = true }
 prost = { workspace = true }
