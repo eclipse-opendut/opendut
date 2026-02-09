@@ -230,43 +230,6 @@ services:
           - ${OPENDUT_DOMAIN_CARL}
           - ${OPENDUT_DOMAIN_NETBIRD_RELAY}
   
-  # vaguely derived from: https://github.com/netbirdio/netbird/blob/main/infrastructure_files/docker-compose.yml.tmpl.traefik
-  netbird-dashboard:
-    container_name: opendut-netbird-dashboard
-    image: netbirdio/dashboard:v2.22.2
-    restart: unless-stopped
-    depends_on:
-      traefik:
-        condition: service_started
-      keycloak:
-        condition: service_healthy
-    environment:
-      # Endpoints
-      - NETBIRD_MGMT_API_ENDPOINT=https://${OPENDUT_DOMAIN_NETBIRD_API}
-      - NETBIRD_MGMT_GRPC_API_ENDPOINT=https://${OPENDUT_DOMAIN_NETBIRD_API}
-      # OIDC
-      - AUTH_AUDIENCE=netbird-client
-      - AUTH_CLIENT_ID=netbird-client
-      - AUTH_CLIENT_SECRET=
-      - AUTH_AUTHORITY=https://${OPENDUT_DOMAIN_AUTH}/realms/netbird
-      - USE_AUTH0=false
-      - AUTH_SUPPORTED_SCOPES=openid profile email offline_access api
-      - AUTH_REDIRECT_URI=
-      - AUTH_SILENT_REDIRECT_URI=
-    healthcheck:
-      <<: *common-healthcheck-params
-      test: [ "CMD-SHELL", curl --fail --silent --output /dev/null --noproxy '*' http://localhost || exit 1 ]
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.netbird-dashboard.rule=Host(`${OPENDUT_DOMAIN_NETBIRD}`)
-      - traefik.http.routers.netbird-dashboard.tls=true
-      - traefik.http.services.netbird-dashboard.loadbalancer.server.port=80
-      - logging=alloy
-      - logging_job=netbird-dashboard
-
-    networks:
-      - opendut_local
-
   # Signal
   netbird-signal:
     container_name: opendut-netbird-signal
