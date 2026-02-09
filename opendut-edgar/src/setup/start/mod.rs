@@ -75,7 +75,7 @@ pub(super) async fn managed(
             info!("VPN is configured for NetBird in PeerSetup. Running NetBird-related tasks.");
             tasks.append(&mut vec![
                 Box::new(tasks::netbird::Unpack::default()),
-                Box::new(tasks::netbird::Connect { management_url, setup_key, mtu }),
+                Box::new(tasks::netbird::Connect { management_url, setup_key, mtu }), //TODO Pass config into here? Or just pass log level? May not want to share config between Setup and Service...
             ]);
         }
     };

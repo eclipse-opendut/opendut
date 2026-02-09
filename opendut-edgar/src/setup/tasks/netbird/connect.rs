@@ -10,6 +10,7 @@ use url::Url;
 
 use opendut_model::vpn::netbird::SetupKey;
 use crate::common;
+use crate::common::settings::netbird::{NetbirdClientConfig, NetbirdLogLevel};
 use crate::common::task::{Success, Task, TaskStateFulfilled};
 use crate::service::vpn::VpnProcess;
 use crate::setup::constants;
@@ -35,7 +36,10 @@ impl Task for Connect {
 
     async fn make_present(&self) -> Result<Success> {
 
-        let netbird = VpnProcess::spawn_as_netbird().await?; //temporarily spawn NetBird process to be able to trigger its login routine
+        let netbird_config = NetbirdClientConfig {
+            log_level: NetbirdLogLevel::Warn,
+        };
+        let netbird = VpnProcess::spawn_as_netbird(netbird_config).await?; //temporarily spawn NetBird process to be able to trigger its login routine
 
         {
             let process::Output { status, stdout, stderr } =

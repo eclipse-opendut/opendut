@@ -5,6 +5,7 @@ use tokio::process::Command;
 use tracing::debug;
 use opendut_netbird_client_api::extension::LocalPeerStateExtension;
 use crate::common;
+use crate::common::settings::netbird::NetbirdClientConfig;
 use crate::service::process_manager::{create_process_log_function, AsyncProcessId, AsyncProcessManager, AsyncProcessManagerExt, AsyncProcessManagerRef, OutputConfig, ProcessConfig, RestartPolicy};
 
 
@@ -14,7 +15,7 @@ pub struct NetbirdProcess {
 }
 
 impl NetbirdProcess {
-    pub async fn spawn() -> anyhow::Result<Self> {
+    pub async fn spawn(config: NetbirdClientConfig) -> anyhow::Result<Self> {
         let process_manager = AsyncProcessManagerRef::new_shared();
 
         let name = "netbird-client";
@@ -31,7 +32,7 @@ impl NetbirdProcess {
                     .arg("run")
                     .arg("--config").arg(common::settings::netbird_config_file_path())
                     .arg("--daemon-addr=unix:///var/run/netbird.sock")
-                    .arg("--log-level=info")
+                    .arg("--log-level").arg(config.log_level.to_string())
                     .arg("--log-file=console");
 
                 command

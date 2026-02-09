@@ -7,7 +7,7 @@ use opendut_util::settings::LoadedConfig;
 use serde::Deserialize;
 
 use crate::common::settings;
-
+use crate::common::settings::netbird::NetbirdClientConfig;
 
 #[must_use]
 pub enum VpnProcess {
@@ -19,14 +19,15 @@ impl VpnProcess {
         let vpn_config = VpnConfig::load_from_config(settings)?;
 
         if vpn_config.enabled {
-            Self::spawn_as_netbird().await
+            let config = NetbirdClientConfig::load_from_config(&settings.config)?;
+            Self::spawn_as_netbird(config).await
         } else {
             Ok(Self::Disabled)
         }
     }
 
-    pub async fn spawn_as_netbird() -> anyhow::Result<Self> {
-        let netbird = NetbirdProcess::spawn().await?;
+    pub async fn spawn_as_netbird(config: NetbirdClientConfig) -> anyhow::Result<Self> {
+        let netbird = NetbirdProcess::spawn(config).await?;
         Ok(Self::Netbird(netbird))
     }
 

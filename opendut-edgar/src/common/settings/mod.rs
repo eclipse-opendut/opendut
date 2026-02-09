@@ -1,3 +1,5 @@
+pub mod netbird;
+
 use std::path::PathBuf;
 
 use opendut_util::settings::LoadedConfig;
@@ -18,6 +20,13 @@ pub mod key {
             }
         }
     }
+    pub mod netbird {
+        pub mod client {
+            pub mod log {
+                pub const level: &str = "vpn.netbird.client.log.level";
+            }
+        }
+    }
 }
 
 pub fn default_config_file_path() -> PathBuf {
@@ -33,7 +42,7 @@ pub fn load_with_overrides(overrides: config::Config) -> anyhow::Result<LoadedCo
 
     let loaded_config = opendut_util::settings::load_config(
         CONFIG_APPLICATION_PREFIX,
-        include_str!("../../edgar.toml"),
+        include_str!("../../../edgar.toml"),
         config::FileFormat::Toml,
         overrides,
         edgar_config_hide_secrets_override

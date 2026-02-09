@@ -46,6 +46,9 @@ enabled = true
 [vpn.disabled]
 remote.host = ""
 
+[vpn.netbird.client]
+log.level = "WARN"
+
 [logging.pipe]
 enabled = true
 stream = "stdout"
