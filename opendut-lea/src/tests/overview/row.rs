@@ -1,7 +1,8 @@
+use leptos::ev;
 use leptos::html::Div;
 use leptos::prelude::*;
 use leptos_router::hooks::use_navigate;
-use leptos_use::on_click_outside;
+use leptos_use::{on_click_outside, use_document, use_event_listener};
 use opendut_lea_components::{has_text_selection, ButtonColor};
 use opendut_model::viper::ViperTestDescriptor;
 use crate::app::use_app_globals;
@@ -61,19 +62,24 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
     let dropdown_active = RwSignal::new(false);
     let dropdown = NodeRef::<Div>::new();
 
-    let _ = on_click_outside(dropdown, move |_| dropdown_active.set(false) );
+    let _ = on_click_outside(dropdown, move |_| dropdown_active.set(false));
+
+    let block_row_click = RwSignal::new(false);
+    let _ = use_event_listener(use_document(), ev::selectionchange, move |_| {
+        block_row_click.set(has_text_selection());
+    });
 
     let use_navigate = use_navigate();
-    let on_row_click = move || {
-        if has_text_selection() {
+    let on_row_click = move |_| {
+        if block_row_click.get_untracked() {
+            block_row_click.set(false);
             return;
         }
-
         use_navigate(&configurator_href(), Default::default());
     };
 
     view! {
-        <tr class="is-clickable" on:click=move |_| on_row_click()>
+        <tr class="is-clickable" on:click=on_row_click>
             <td class="is-vcentered">
                 <a href=configurator_href> { test_name } </a>
             </td>
