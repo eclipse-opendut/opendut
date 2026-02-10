@@ -31,7 +31,7 @@ Always create a database backup before upgrading CARL.
 ### Removed
 * EDGAR cannot be setup in unmanaged mode anymore.
   This was virtually unsupported for a long time already and now diverged too much from managed mode, so that we decided to remove it.
-
+* Removed NetBird dashboard from localenv deployment.
 
 ## [0.9.0] - 2025-12-19
 

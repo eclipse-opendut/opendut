@@ -37,7 +37,6 @@ enum DockerHostnames {
     Carl,
     Keycloak,
     NetbirdManagement,
-    NetbirdDashboard,
     Firefox,
 }
 
@@ -47,7 +46,6 @@ impl DockerHostnames {
             DockerHostnames::Carl => "carl.opendut.local",
             DockerHostnames::Keycloak => "auth.opendut.local",
             DockerHostnames::NetbirdManagement => "netbird-api.opendut.local",
-            DockerHostnames::NetbirdDashboard => "netbird.opendut.local",
             DockerHostnames::Firefox => "firefox",
         }
     }
