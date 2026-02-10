@@ -316,7 +316,7 @@ mod tests {
                 issuer_url: Url::parse("https://keycloak/realms/opendut/").unwrap(),
             },
             vpn: VpnPeerConfiguration::Netbird {
-                management_url: Url::parse("https://netbird.opendut.local/api")?,
+                management_url: Url::parse("https://netbird-api.opendut.local/api")?,
                 setup_key: SetupKey::from("d79c202f-bbbf-4997-844e-678f27606e1c"),
             },
         };

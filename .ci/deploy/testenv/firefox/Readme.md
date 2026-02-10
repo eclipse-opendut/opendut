@@ -12,7 +12,6 @@ Following features are included:
 * Open remote session to firefox in docker your browser via [link](http://localhost:3000).
 * Open url in remote session:
   * https://carl.opendut.local
-  * https://netbird.opendut.local
   * https://auth.opendut.local
 
 

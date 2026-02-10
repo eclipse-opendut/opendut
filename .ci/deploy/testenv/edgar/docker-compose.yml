@@ -62,7 +62,6 @@ x-default-edgar-params: &default-edgar-params
   extra_hosts:
     - "carl.opendut.local:192.168.32.1"
     - "auth.opendut.local:192.168.32.1"
-    - "netbird.opendut.local:192.168.32.1"
     - "netbird-api.opendut.local:192.168.32.1"
     - "netbird-relay.opendut.local:192.168.32.1"
     - "signal.opendut.local:192.168.32.1"

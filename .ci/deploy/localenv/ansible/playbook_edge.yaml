@@ -25,7 +25,6 @@
           {{ backend_ip }} opendut.local
           {{ backend_ip }} carl.opendut.local
           {{ backend_ip }} auth.opendut.local
-          {{ backend_ip }} netbird.opendut.local
           {{ backend_ip }} netbird-api.opendut.local
           {{ backend_ip }} netbird-relay.opendut.local
           {{ backend_ip }} signal.opendut.local

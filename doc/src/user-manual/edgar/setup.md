@@ -74,7 +74,6 @@ by appending entries like this (replace `123.456.789.101` with your server's IP 
 123.456.789.101 opendut.local
 123.456.789.101 carl.opendut.local
 123.456.789.101 auth.opendut.local
-123.456.789.101 netbird.opendut.local
 123.456.789.101 netbird-api.opendut.local
 123.456.789.101 netbird-relay.opendut.local
 123.456.789.101 signal.opendut.local

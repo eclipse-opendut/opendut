@@ -26,7 +26,6 @@ if [ ! -e "/config/.firstrun" ]; then
   touch /config/.firstrun
   # abc is the user firefox runs as
   su - abc -c 'DISPLAY=:1 firefox https://auth.opendut.local'
-  su - abc -c 'DISPLAY=:1 firefox https://netbird.opendut.local'
   su - abc -c 'DISPLAY=:1 firefox https://carl.opendut.local'
   echo "Opened initial sites"
 fi
