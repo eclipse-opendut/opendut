@@ -19,6 +19,9 @@ OPENDUT_PASSWORD_FILE="$PROVISION_ROOT_DIR/.env-pki"
 OPENDUT_ENV_FILE="$PROVISION_ROOT_DIR/.env"
 CA_PATH="$PROVISION_PKI_DIR/opendut-ca"
 
+# Sed pattern to strip base64 padding characters
+SED_STRIP_PADDING='s/=//g'
+
 if [ ! -e "$OPENDUT_PASSWORD_FILE" ]; then
   mkdir "$PROVISION_PKI_DIR"
   # PKI
@@ -30,11 +33,12 @@ if [ ! -e "$OPENDUT_PASSWORD_FILE" ]; then
   echo KEYCLOAK_ADMIN_PASSWORD="$(create_password)" >> $OPENDUT_ENV_FILE
 
   # Netbird
-  echo NETBIRD_DATASTORE_ENC_KEY="$(create_password)" >> $OPENDUT_ENV_FILE
+  # Note: DataStoreEncryptionKey must keep base64 padding (=) for Go's base64.StdEncoding
+  echo NETBIRD_DATASTORE_ENC_KEY="$(openssl rand -base64 32)" >> $OPENDUT_ENV_FILE
   echo TURN_PASSWORD="$(create_password)" >> $OPENDUT_ENV_FILE
   echo NETBIRD_MANAGEMENT_CLIENT_SECRET="$(create_password)" >> $OPENDUT_ENV_FILE
   echo NETBIRD_PASSWORD="$(create_password 16)" >> $OPENDUT_ENV_FILE
-  echo NETBIRD_RELAY_AUTH_SECRET="$(create_password)" >> $OPENDUT_ENV_FILE
+  echo NETBIRD_RELAY_AUTH_SECRET="$(openssl rand -base64 32 | sed "$SED_STRIP_PADDING")" >> $OPENDUT_ENV_FILE
 
   # CARL / Keycloak
   echo OPENDUT_CARL_NETWORK_OIDC_CLIENT_SECRET="$(create_password)" >> $OPENDUT_ENV_FILE
