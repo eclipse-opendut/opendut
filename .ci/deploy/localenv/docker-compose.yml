@@ -265,8 +265,6 @@ services:
     depends_on:
       traefik:
         condition: service_started
-      netbird-dashboard:
-        condition: service_started
       keycloak:
         condition: service_healthy
       provision-secrets:

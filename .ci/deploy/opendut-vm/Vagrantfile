@@ -14,7 +14,7 @@ vm_ssh_key_path = (ENV["OPENDUT_VM_SSH_KEY_PATH"] || "#{Dir.home}/.ssh/id_rsa.pu
 vm_bridged_interface = ENV["OPENDUT_VM_BRIDGED_INTERFACE"]
 
 # proxy settings
-vm_default_no_proxy = "localhost,127.0.0.1,opendut.local,netbird-management,netbird-dashboard,netbird-signal,netbird-relay,netbird-coturn,keycloak,edgar-leader,edgar-*,carl,loki,tempo,prometheus,alloy,otel-collector,grafana,nginx-webdav,192.168.56.10,192.168.0.0/16"
+vm_default_no_proxy = "localhost,127.0.0.1,opendut.local,netbird-management,netbird-signal,netbird-relay,netbird-coturn,keycloak,edgar-leader,edgar-*,carl,loki,tempo,prometheus,alloy,otel-collector,grafana,nginx-webdav,192.168.56.10,192.168.0.0/16"
 vm_http_proxy = ENV["OPENDUT_VM_HTTP_PROXY"]
 vm_https_proxy = (ENV["OPENDUT_VM_HTTPS_PROXY"] || ENV["OPENDUT_VM_HTTP_PROXY"])
 vm_no_proxy = (ENV["OPENDUT_VM_NO_PROXY"] || "opendut.local") + "," + vm_default_no_proxy

@@ -152,22 +152,6 @@ loki.process "docker_logs_scrape" {
 	}
 
 	stage.match {
-		selector = "{job=~\"netbird-dashboard\"}"
-
-		stage.static_labels {
-			values = {
-				level = "DEBUG",
-			}
-		}
-
-		stage.labels {
-			values = {
-				level = null,
-			}
-		}
-	}
-
-	stage.match {
 		selector = "{job=~\"keycloak-init\"}"
 
 		stage.static_labels {

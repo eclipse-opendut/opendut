@@ -57,7 +57,6 @@ static CONTAINER_NAME_MAP: phf::Map<&'static str, DockerHostnames> = phf_map! {
     "opendut-keycloak" => DockerHostnames::Keycloak,
     "opendut-carl" => DockerHostnames::Carl,
     "opendut-netbird-management" => DockerHostnames::NetbirdManagement,
-    "opendut-netbird-dashboard" => DockerHostnames::NetbirdDashboard,
 };
 
 pub(crate) fn docker_inspect_network() -> crate::Result {
