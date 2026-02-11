@@ -62,15 +62,9 @@ pub fn OverviewTable(
 pub fn OverviewTableRow<F>(
     block_row_click: RwSignal<bool>,
     navigation_on_click: F,
-    children: ChildrenFragment
+    children: Children
 ) -> impl IntoView
 where F: Fn(MouseEvent) + 'static {
-
-    let children = children()
-        .nodes
-        .into_iter()
-        .map(|child| view! { <td class="is-vcentered"> { child } </td> })
-        .collect::<Vec<_>>();
 
     let on_row_click = move |event: MouseEvent| {
         if block_row_click.get_untracked() {
@@ -82,7 +76,14 @@ where F: Fn(MouseEvent) + 'static {
 
     view! {
         <tr class="is-clickable" on:click=on_row_click>
-            { children }
+            { children() }
         </tr>
+    }
+}
+
+#[component]
+pub fn OverviewTableCell(children: Children) -> impl IntoView {
+    view! {
+        <td class="is-vcentered"> { children() } </td>
     }
 }

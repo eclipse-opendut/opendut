@@ -6,9 +6,9 @@ use opendut_lea_components::OverviewTableRow;
 use crate::app::SelectionContext;
 
 #[component]
-pub fn LeaOverviewTableRow(
-    #[prop(into)] configurator_href: Signal<String>,
-    children: ChildrenFragment,
+pub fn ClickableOverviewTableRow(
+    configurator_href: Signal<String>,
+    children: Children,
 ) -> impl IntoView {
 
     let selection = use_context::<SelectionContext>()

@@ -41,6 +41,12 @@ pub fn SourcesOverview() -> impl IntoView {
         Breadcrumb::new("Sources", "/sources")
     ];
 
+    let table_headings = vec![
+        TableHeading::new(String::from("Name")),
+        TableHeading::new(String::from("URL")),
+        TableHeading::new(String::from("Action")).set_narrow(),
+    ];
+
     view! {
         <BasePageContainer
             title="Sources"
@@ -61,17 +67,10 @@ pub fn SourcesOverview() -> impl IntoView {
                 </div>
             }
         >
-            { move || Suspend::new(async move {
-                let sources = sources.await;
-
-                let table_headings = vec![
-                    TableHeading::new(String::from("Name")),
-                    TableHeading::new(String::from("URL")),
-                    TableHeading::new(String::from("Action")).set_narrow(),
-                ];
-
-                view! {
-                    <OverviewTable headings=table_headings>
+            <OverviewTable headings=table_headings>
+                { move || Suspend::new(async move {
+                    let sources = sources.await;
+                    view! {
                         <For
                             each = move || sources.clone()
                             key = |source| source.id
@@ -89,9 +88,9 @@ pub fn SourcesOverview() -> impl IntoView {
                                 }
                             }}
                         />
-                    </OverviewTable>
-                }
-            })}
+                    }
+                })}
+            </OverviewTable>
         </BasePageContainer>
     }
 }
