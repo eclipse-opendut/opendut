@@ -6,7 +6,7 @@ use crate::app::use_app_globals;
 
 #[component]
 pub fn DeleteSourceButton<F>(
-    source_id: Signal<ViperSourceId>,
+    #[prop(into)] source_id: Signal<ViperSourceId>,
     #[prop(into)] button_color: Signal<ButtonColor>,
     on_delete: F
 ) -> impl IntoView
