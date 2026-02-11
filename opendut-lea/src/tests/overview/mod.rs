@@ -1,7 +1,9 @@
 mod row;
 
+use leptos::ev;
 use leptos::prelude::*;
-use opendut_lea_components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, LoadingSpinner};
+use leptos_use::{use_document, use_event_listener};
+use opendut_lea_components::{has_text_selection, BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, LoadingSpinner};
 use opendut_model::viper::ViperTestDescriptor;
 use crate::app::use_app_globals;
 use crate::tests::components::CreateTestButton;
@@ -39,6 +41,11 @@ pub fn TestsOverview() -> impl IntoView {
         Breadcrumb::new("Dashboard", "/"),
         Breadcrumb::new("Tests", "/tests")
     ];
+
+    let block_row_click = RwSignal::new(false);
+    let _ = use_event_listener(use_document(), ev::selectionchange, move |_| {
+        block_row_click.set(has_text_selection());
+    });
 
     view! {
         <BasePageContainer
@@ -88,6 +95,7 @@ pub fn TestsOverview() -> impl IntoView {
                                             view! {
                                                 <Row
                                                     test_descriptor=RwSignal::new(test_descriptor)
+                                                    block_row_click
                                                     on_delete
                                                 />
                                             }
