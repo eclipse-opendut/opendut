@@ -31,7 +31,7 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
         }
     );
 
-    let configurator_href = move || { format!("/sources/{}/configure/general", source_id.get()) };
+    let configurator_href = Signal::derive(move || { format!("/sources/{}/configure/general", source_id.get()) });
 
     let dropdown_active = RwSignal::new(false);
     let dropdown = NodeRef::<Div>::new();
@@ -39,7 +39,7 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
     let _ = on_click_outside(dropdown, move |_| dropdown_active.set(false));
 
     view! {
-        <LeaOverviewTableRow configurator_href=configurator_href()>
+        <LeaOverviewTableRow configurator_href>
             <a href=configurator_href> { source_name } </a>
             <a href=source_url> { source_url } </a>
             <div class="is-pulled-right">
