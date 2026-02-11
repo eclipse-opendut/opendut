@@ -34,7 +34,7 @@ pub use doorhanger::{Doorhanger, DoorhangerAlignment};
 pub use icon_text::IconText;
 pub use toggle::Toggle;
 pub use tables::selection_table::{SelectionTable, SelectionTableRow};
-pub use tables::overview_table::{TableHeading, OverviewTable, OverviewTableRow};
+pub use tables::overview_table::{TableHeading, OverviewTable, OverviewTableRow, OverviewTableCell};
 
 pub mod health;
 pub mod tooltip;

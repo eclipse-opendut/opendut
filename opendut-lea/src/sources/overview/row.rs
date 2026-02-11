@@ -1,9 +1,9 @@
 use leptos::html::Div;
 use leptos::prelude::*;
 use leptos_use::on_click_outside;
-use opendut_lea_components::{ButtonColor};
+use opendut_lea_components::{ButtonColor, OverviewTableCell};
 use opendut_model::viper::ViperSourceDescriptor;
-use crate::components::LeaOverviewTableRow;
+use crate::components::ClickableOverviewTableRow;
 use crate::sources::components::DeleteSourceButton;
 
 #[component]
@@ -39,16 +39,24 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
     let _ = on_click_outside(dropdown, move |_| dropdown_active.set(false));
 
     view! {
-        <LeaOverviewTableRow configurator_href>
-            <a href=configurator_href> { source_name } </a>
-            <a href=source_url> { source_url } </a>
-            <div class="is-pulled-right">
-                <DeleteSourceButton
-                    source_id
-                    button_color=ButtonColor::TextDanger
-                    on_delete
-                />
-            </div>
-        </LeaOverviewTableRow>
+        <ClickableOverviewTableRow configurator_href>
+            <OverviewTableCell>
+                <a href=configurator_href> { source_name } </a>
+            </OverviewTableCell>
+
+            <OverviewTableCell>
+                <a href=source_url> { source_url } </a>
+            </OverviewTableCell>
+
+            <OverviewTableCell>
+                <div class="is-pulled-right">
+                    <DeleteSourceButton
+                        source_id
+                        button_color=ButtonColor::TextDanger
+                        on_delete
+                    />
+                </div>
+            </OverviewTableCell>
+        </ClickableOverviewTableRow>
     }
 }
