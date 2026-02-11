@@ -2,13 +2,12 @@ use crate::peers::components::DeletePeerButton;
 use crate::util;
 use leptos::html::Div;
 use leptos::prelude::*;
-use leptos::web_sys;
-use leptos_router::hooks::use_navigate;
 use leptos_use::on_click_outside;
-use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton};
+use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, OverviewTableCell};
 use opendut_model::cluster::ClusterDescriptor;
 use opendut_model::peer::PeerDescriptor;
 use opendut_model::peer::state::{PeerState};
+use crate::components::ClickableOverviewTableRow;
 use crate::peers::components::PeerHealth;
 
 #[component]
@@ -27,7 +26,7 @@ where
         Clone::clone(&peer_descriptor.name).to_string()
     });
 
-    let configurator_href = move || format!("/peers/{}/configure/general", peer_id.get());
+    let configurator_href = Signal::derive(move || format!("/peers/{}/configure/general", peer_id.get()));
     let setup_href = move || format!("/peers/{}/configure/setup", peer_id.get());
 
     let dropdown_active = RwSignal::new(false);
@@ -81,37 +80,21 @@ where
         util::view::join_with_comma_spans(cluster_view_list)
     };
 
-    let mousedown_pos = RwSignal::new((0, 0));
-    let use_navigate = use_navigate();
-
-    let on_mousedown = move |e: web_sys::MouseEvent| {
-        mousedown_pos.set((e.client_x(), e.client_y()));
-    };
-
-    let on_click = move |e: web_sys::MouseEvent| {
-        let distance = util::calculate_distance(mousedown_pos.get(), (e.client_x(), e.client_y()));
-        // fixes text selection issue: mouse moved < threshold -> click, else it's a drag.
-        if distance < util::MOUSE_DRAG_PIXEL_THRESHOLD {
-            use_navigate(&configurator_href(), Default::default());
-        }
-    };
-
     view! {
-        <tr
-            class="is-clickable"
-            on:mousedown=on_mousedown
-            on:click=on_click
-        >
-            <td class="is-vcentered">
+        <ClickableOverviewTableRow configurator_href>
+            <OverviewTableCell>
                 <PeerHealth state=peer_state />
-            </td>
-            <td class="is-vcentered">
+            </OverviewTableCell>
+
+            <OverviewTableCell>
                 <a href=configurator_href on:click=|e| e.stop_propagation() on:mousedown=|e| e.stop_propagation()> { peer_name } </a>
-            </td>
-            <td class="is-vcentered">
+            </OverviewTableCell>
+
+            <OverviewTableCell>
                 { cluster_columns }
-            </td>
-            <td class="is-vcentered">
+            </OverviewTableCell>
+
+            <OverviewTableCell>
                 <div class="is-flex">
                     <DeletePeerButton
                         on:click=|e| e.stop_propagation() on:mousedown=|e| e.stop_propagation()
@@ -148,7 +131,7 @@ where
                         </div>
                     </div>
                 </div>
-            </td>
-        </tr>
+            </OverviewTableCell>
+        </ClickableOverviewTableRow>
     }
 }
