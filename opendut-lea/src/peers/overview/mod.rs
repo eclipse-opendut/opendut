@@ -1,11 +1,11 @@
 mod row;
 
 use crate::app::use_app_globals;
-use crate::components::LoadingSpinner;
 use crate::components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton};
 use crate::peers::components::CreatePeerButton;
 use leptos::prelude::*;
 use tracing::trace;
+use opendut_lea_components::{OverviewTable, TableHeading};
 use opendut_model::cluster::ClusterDescriptor;
 use opendut_model::peer::state::PeerState;
 use opendut_model::peer::PeerDescriptor;
@@ -71,10 +71,17 @@ pub fn PeersOverview() -> impl IntoView {
         Breadcrumb::new("Peers", "/peers")
     ];
 
+    let table_headings = vec![
+        TableHeading::new(String::from("Health")).set_narrow(),
+        TableHeading::new(String::from("Name")),
+        TableHeading::new(String::from("Configured in Clusters")),
+        TableHeading::new(String::from("Action")).set_narrow(),
+    ];
+
     view! {
         <BasePageContainer
             title="Peers"
-            breadcrumbs=breadcrumbs
+            breadcrumbs
             controls=view! {
                 <div class="buttons">
                     <CreatePeerButton />
@@ -91,48 +98,32 @@ pub fn PeersOverview() -> impl IntoView {
                 </div>
             }
         >
-            <table class="table is-hoverable is-fullwidth">
-                <thead>
-                    <tr>
-                        <th class="is-narrow">"Health"</th>
-                        <th>"Name"</th>
-                        <th>"Configured in Clusters"</th>
-                        <th class="is-narrow has-text-centered">"Action"</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <Suspense
-                        fallback=LoadingSpinner
-                    >
-                        { move || {
-                            Suspend::new(async move {
-                                let peers_table_rows = registered_peers.await;
-                                let configured_clusters = configured_clusters.await;
-
+        <OverviewTable headings=table_headings>
+                { move || Suspend::new(async move {
+                    let peers = registered_peers.await;
+                    let configured_clusters = configured_clusters.await;
+                    
+                    view! {
+                        <For
+                            each = move || peers.clone()
+                            key = |(peer, _)| peer.id
+                            children = { move |(peer_descriptor, peer_state)| {
+                                let on_delete = move || {
+                                    refetch_registered_peers.notify();
+                                };
                                 view! {
-                                    <For
-                                        each = move || peers_table_rows.clone()
-                                        key = |(peer, _)| peer.id
-                                        children = { move |(peer_descriptor, peer_state)| {
-                                            let on_delete = move || {
-                                                refetch_registered_peers.notify();
-                                            };
-                                            view! {
-                                                <Row
-                                                    peer_descriptor=RwSignal::new(peer_descriptor)
-                                                    peer_state=RwSignal::new(peer_state)
-                                                    cluster_descriptor=RwSignal::new(configured_clusters.clone())
-                                                    on_delete
-                                                />
-                                            }
-                                        }}
+                                    <Row
+                                        peer_descriptor=RwSignal::new(peer_descriptor)
+                                        peer_state=RwSignal::new(peer_state)
+                                        cluster_descriptor=RwSignal::new(configured_clusters.clone())
+                                        on_delete
                                     />
                                 }
-                            })
-                        }}
-                    </Suspense>
-                </tbody>
-            </table>
+                            }}
+                        />
+                    }
+                })}
+            </OverviewTable>
         </BasePageContainer>
     }
 }
