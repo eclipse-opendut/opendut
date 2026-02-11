@@ -8,10 +8,16 @@ pub struct TableHeading {
 }
 
 impl TableHeading {
-    pub fn new(title: String, is_narrow: bool) -> Self {
+    pub fn new(title: String) -> Self {
         Self {
             title,
-            is_narrow,
+            is_narrow: false,
+        }
+    }
+    pub fn set_narrow(self) -> Self {
+        Self {
+            title: self.title,
+            is_narrow: true,
         }
     }
 }
@@ -34,7 +40,7 @@ pub fn OverviewTable(
                             let is_narrow = heading.is_narrow;
 
                             view! {
-                                <th class=("is-narrow has-text-centered", is_narrow)>
+                                <th class=(["is-narrow", "has-text-centered"], is_narrow)>
                                     { title }
                                 </th>
                             }
@@ -48,5 +54,34 @@ pub fn OverviewTable(
                 </Suspense>
             </tbody>
         </table>
+    }
+}
+
+#[component]
+pub fn OverviewTableRow<F>(
+    block_row_click: RwSignal<bool>,
+    navigation_on_click: F,
+    children: ChildrenFragment
+) -> impl IntoView
+where F: Fn() + 'static {
+
+    let children = children()
+        .nodes
+        .into_iter()
+        .map(|child| view! { <td class="is-vcentered"> { child } </td> })
+        .collect::<Vec<_>>();
+
+    let on_row_click = move |_| {
+        if block_row_click.get_untracked() {
+            block_row_click.set(false);
+            return;
+        }
+        navigation_on_click();
+    };
+
+    view! {
+        <tr class="is-clickable" on:click=on_row_click>
+            { children }
+        </tr>
     }
 }
