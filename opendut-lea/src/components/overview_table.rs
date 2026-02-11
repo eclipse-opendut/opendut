@@ -5,10 +5,10 @@ use crate::app::SelectionContext;
 
 #[component]
 pub fn LeaOverviewTableRow(
-    configurator_href: String,
+    #[prop(into)] configurator_href: Signal<String>,
     children: ChildrenFragment,
 ) -> impl IntoView {
-    
+
     let selection = use_context::<SelectionContext>()
         .expect("SelectionContext should be provided in the context.");
 
@@ -16,7 +16,7 @@ pub fn LeaOverviewTableRow(
 
     let use_navigate = use_navigate();
     let navigation_on_click = move || {
-        use_navigate(&configurator_href, Default::default());
+        use_navigate(&configurator_href.get(), Default::default());
     };
 
     view! {
