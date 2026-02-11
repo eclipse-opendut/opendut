@@ -1,2 +1,2 @@
 pub mod selection_table;
-mod overview_table;
+pub mod overview_table;
