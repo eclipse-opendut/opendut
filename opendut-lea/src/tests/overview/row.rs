@@ -1,16 +1,15 @@
 use leptos::html::Div;
 use leptos::prelude::*;
-use leptos_router::hooks::use_navigate;
 use leptos_use::on_click_outside;
-use opendut_lea_components::ButtonColor;
+use opendut_lea_components::{ButtonColor, OverviewTableCell};
 use opendut_model::viper::ViperTestDescriptor;
 use crate::app::use_app_globals;
+use crate::components::ClickableOverviewTableRow;
 use crate::tests::components::DeleteTestButton;
 
 #[component]
 pub(crate) fn Row<OnDeleteFn>(
     test_descriptor: RwSignal<ViperTestDescriptor>,
-    block_row_click: RwSignal<bool>,
     on_delete: OnDeleteFn,
 ) -> impl IntoView
 where OnDeleteFn: Fn() + Copy + Send + 'static, {
@@ -56,7 +55,7 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
         }
     );
 
-    let configurator_href = move || { format!("/tests/{}/configure/general", test_id.get()) };
+    let configurator_href = Signal::derive(move || { format!("/tests/{}/configure/general", test_id.get()) });
     let source_configurator_href = move || { format!("/sources/{}/configure/general", test_source_id.get()) };
 
     let dropdown_active = RwSignal::new(false);
@@ -64,35 +63,29 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
 
     let _ = on_click_outside(dropdown, move |_| dropdown_active.set(false));
 
-    let use_navigate = use_navigate();
-    let on_row_click = move |_| {
-        if block_row_click.get_untracked() {
-            block_row_click.set(false);
-            return;
-        }
-        use_navigate(&configurator_href(), Default::default());
-    };
-
     view! {
-        <tr class="is-clickable" on:click=on_row_click>
-            <td class="is-vcentered">
+        <ClickableOverviewTableRow configurator_href>
+            <OverviewTableCell>
                 <a href=configurator_href> { test_name } </a>
-            </td>
+            </OverviewTableCell>
+        
             { move ||
                 test_source.get().map(|source_name| {
                     view! {
-                        <td class="is-vcentered">
+                        <OverviewTableCell>
                             <a href=source_configurator_href on:click=move |ev| ev.stop_propagation()>
                                 { source_name }
                             </a>
-                        </td>
+                        </OverviewTableCell>
                     }
                 })
             }
-            <td class="is-vcentered">
+        
+            <OverviewTableCell>
                 <p> { test_suite } </p>
-            </td>
-            <td class="is-vcentered is-flex is-justify-content-center">
+            </OverviewTableCell>
+        
+            <OverviewTableCell>
                 <div class="is-pulled-right">
                     <DeleteTestButton
                         test_id
@@ -100,7 +93,7 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
                         on_delete
                     />
                 </div>
-            </td>
-        </tr>
+            </OverviewTableCell>
+        </ClickableOverviewTableRow>
     }
 }

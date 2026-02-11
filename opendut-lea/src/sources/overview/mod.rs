@@ -59,7 +59,7 @@ pub fn SourcesOverview() -> impl IntoView {
                         color=ButtonColor::Light
                         size=ButtonSize::Normal
                         state=ButtonState::Enabled
-                        label="Refresh table of peers"
+                        label="Refresh table of sources"
                         on_action=move || {
                             refetch_registered_sources.notify();
                         }
