@@ -70,6 +70,7 @@ impl DevCli {
                     .add_localenv_secrets_args()
                     .arg("run")
                     .arg("--rm")
+                    .arg("--build")
                     .arg("-it")
                     .arg("leader")
                     .arg("bash")
