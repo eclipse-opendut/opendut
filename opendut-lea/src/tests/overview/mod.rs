@@ -1,9 +1,7 @@
 mod row;
 
-use leptos::ev;
 use leptos::prelude::*;
-use leptos_use::{use_document, use_event_listener};
-use opendut_lea_components::{has_text_selection, BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, LoadingSpinner};
+use opendut_lea_components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, OverviewTable, TableHeading};
 use opendut_model::viper::ViperTestDescriptor;
 use crate::app::use_app_globals;
 use crate::tests::components::CreateTestButton;
@@ -42,10 +40,12 @@ pub fn TestsOverview() -> impl IntoView {
         Breadcrumb::new("Tests", "/tests")
     ];
 
-    let block_row_click = RwSignal::new(false);
-    let _ = use_event_listener(use_document(), ev::selectionchange, move |_| {
-        block_row_click.set(has_text_selection());
-    });
+    let table_headings = vec![
+        TableHeading::new(String::from("Name")),
+        TableHeading::new(String::from("Source")),
+        TableHeading::new(String::from("Suite")),
+        TableHeading::new(String::from("Action")).set_narrow(),
+    ];
 
     view! {
         <BasePageContainer
@@ -59,7 +59,7 @@ pub fn TestsOverview() -> impl IntoView {
                         color=ButtonColor::Light
                         size=ButtonSize::Normal
                         state=ButtonState::Enabled
-                        label="Refresh table of peers"
+                        label="Refresh table of tests"
                         on_action=move || {
                             refetch_registered_tests.notify();
                         }
@@ -67,46 +67,30 @@ pub fn TestsOverview() -> impl IntoView {
                 </div>
             }
         >
-            <table class="table is-hoverable is-fullwidth">
-                <thead>
-                    <tr>
-                        <th>"Name"</th>
-                        <th>"Source"</th>
-                        <th>"Suite"</th>
-                        <th class="is-narrow has-text-centered">"Action"</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <Suspense
-                        fallback=LoadingSpinner
-                    >
-                        { move || {
-                            Suspend::new(async move {
-                                let tests_table_rows = tests.await;
+        <OverviewTable headings=table_headings>
+            { move || Suspend::new(async move {
+                    let tests = tests.await;
+                    view! {
+                        <For
+                            each = move || tests.clone()
+                            key = |tests| tests.id
+                            children = { move |tests_descriptor| {
+
+                                let on_delete = move || {
+                                    refetch_registered_tests.notify();
+                                };
 
                                 view! {
-                                    <For
-                                        each = move || tests_table_rows.clone()
-                                        key = |test| test.id
-                                        children = { move |test_descriptor| {
-                                            let on_delete = move || {
-                                                refetch_registered_tests.notify();
-                                            };
-                                            view! {
-                                                <Row
-                                                    test_descriptor=RwSignal::new(test_descriptor)
-                                                    block_row_click
-                                                    on_delete
-                                                />
-                                            }
-                                        }}
+                                    <Row
+                                        test_descriptor=RwSignal::new(tests_descriptor)
+                                        on_delete
                                     />
                                 }
-                            })
-                        }}
-                    </Suspense>
-                </tbody>
-            </table>
+                            }}
+                        />
+                    }
+                })}
+            </OverviewTable>
         </BasePageContainer>
     }
 }
