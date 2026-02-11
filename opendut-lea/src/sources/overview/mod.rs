@@ -44,7 +44,7 @@ pub fn SourcesOverview() -> impl IntoView {
     view! {
         <BasePageContainer
             title="Sources"
-            breadcrumbs=breadcrumbs
+            breadcrumbs
             controls=view! {
                 <div class="buttons">
                     <CreateSourceButton />

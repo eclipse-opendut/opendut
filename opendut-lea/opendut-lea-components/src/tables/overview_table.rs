@@ -1,4 +1,5 @@
 use leptos::prelude::*;
+use web_sys::MouseEvent;
 use crate::LoadingSpinner;
 
 #[derive(Clone)]
@@ -63,7 +64,7 @@ pub fn OverviewTableRow<F>(
     navigation_on_click: F,
     children: ChildrenFragment
 ) -> impl IntoView
-where F: Fn() + 'static {
+where F: Fn(MouseEvent) + 'static {
 
     let children = children()
         .nodes
@@ -71,12 +72,12 @@ where F: Fn() + 'static {
         .map(|child| view! { <td class="is-vcentered"> { child } </td> })
         .collect::<Vec<_>>();
 
-    let on_row_click = move |_| {
+    let on_row_click = move |event: MouseEvent| {
         if block_row_click.get_untracked() {
             block_row_click.set(false);
             return;
         }
-        navigation_on_click();
+        navigation_on_click(event);
     };
 
     view! {
