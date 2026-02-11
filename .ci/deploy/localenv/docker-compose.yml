@@ -92,19 +92,19 @@ services:
     volumes:
       - provision-secrets-data:/provision:ro
     environment:
-    - JAVA_OPTS_APPEND=-Dkeycloak.profile.feature.upload_scripts=enabled
-    - KC_DB_PASSWORD=$KEYCLOAK_POSTGRES_PASSWORD
-    - KC_DB_URL=jdbc:postgresql://keycloak-postgres/keycloak
-    - KC_DB_USERNAME=postgres
-    - KC_HEALTH_ENABLED=true
-    - KC_HTTP_ENABLED=true
-    - KC_METRICS_ENABLED=true
-    - KC_HOSTNAME=${OPENDUT_DOMAIN_AUTH}
-    - KC_PROXY_ADDRESS_FORWARDING=true
-    - KC_PROXY_HEADERS=xforwarded
-    - KC_HOSTNAME_STRICT=false
-    - KC_BOOTSTRAP_ADMIN_USERNAME=admin
-    - KC_BOOTSTRAP_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
+      - JAVA_OPTS_APPEND=-Dkeycloak.profile.feature.upload_scripts=enabled
+      - KC_DB_PASSWORD=$KEYCLOAK_POSTGRES_PASSWORD
+      - KC_DB_URL=jdbc:postgresql://keycloak-postgres/keycloak
+      - KC_DB_USERNAME=postgres
+      - KC_HEALTH_ENABLED=true
+      - KC_HTTP_ENABLED=true
+      - KC_METRICS_ENABLED=true
+      - KC_HOSTNAME=${OPENDUT_DOMAIN_AUTH}
+      - KC_PROXY_ADDRESS_FORWARDING=true
+      - KC_PROXY_HEADERS=xforwarded
+      - KC_HOSTNAME_STRICT=false
+      - KC_BOOTSTRAP_ADMIN_USERNAME=admin
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
     labels:
       - traefik.enable=true
       - traefik.http.routers.keycloak.tls=true

@@ -5,6 +5,7 @@
 profile: moderate  # https://ansible.readthedocs.io/projects/lint/profiles/
 
 skip_list:
+  - yaml[brackets]
   - yaml[comments]
   - yaml[line-length]
   - jinja[spacing]

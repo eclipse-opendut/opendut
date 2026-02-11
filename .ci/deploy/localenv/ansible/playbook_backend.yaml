@@ -18,7 +18,7 @@
     - name: Store host specific compose environment file
       copy:
         dest: "{{ opendut_compose_environment_path }}"
-        mode: 0644
+        mode: "0644"
         content: "{{ opendut_compose_environment_config }}"
 
     - name: Provision secrets and initially create volumes
@@ -59,7 +59,7 @@
             cmd: >
               {{ docker_compose_base_command }} pull --policy=always carl
             chdir: "{{ repo_dir }}"
-          changed_when: False  # Prevent marking the playbook as changed just because we pulled an image.
+          changed_when: false  # Prevent marking the playbook as changed just because we pulled an image.
 
         - name: Start all containers
           command:
