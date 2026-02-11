@@ -62,6 +62,8 @@ Always create a database backup before upgrading CARL.
   ```
 * Create new NetBird relay certificate. Execute the following commands in the opendut repository on the target host:
   ```sh
+  echo NETBIRD_RELAY_AUTH_SECRET="$(pwgen 32)" >> .ci/deploy/localenv/data/secrets/.env
+
   DOCKER_CONTAINER_ID=$(docker compose --file .ci/deploy/localenv/docker-compose.yml --env-file .ci/deploy/localenv/.env.development run --entrypoint="sleep 10000" --name opendut-netbird-migration --detach --rm provision-secrets)
   docker exec -ti $DOCKER_CONTAINER_ID bash
   [ -n "$OPENDUT_DOMAIN_NETBIRD_RELAY" ] && /scripts/generate-certificate.sh "${OPENDUT_DOMAIN_NETBIRD_RELAY}" || echo "Missing environment variable"
