@@ -41,12 +41,6 @@ pub fn SourcesOverview() -> impl IntoView {
         Breadcrumb::new("Sources", "/sources")
     ];
 
-    let table_headings = vec![
-        TableHeading::new(String::from("Name")),
-        TableHeading::new(String::from("URL")),
-        TableHeading::new(String::from("Action")).set_narrow(),
-    ];
-
     view! {
         <BasePageContainer
             title="Sources"
@@ -67,8 +61,14 @@ pub fn SourcesOverview() -> impl IntoView {
                 </div>
             }
         >
-            { Suspend::new(async move {
+            { move || Suspend::new(async move {
                 let sources = sources.await;
+
+                let table_headings = vec![
+                    TableHeading::new(String::from("Name")),
+                    TableHeading::new(String::from("URL")),
+                    TableHeading::new(String::from("Action")).set_narrow(),
+                ];
 
                 view! {
                     <OverviewTable headings=table_headings>
@@ -76,9 +76,11 @@ pub fn SourcesOverview() -> impl IntoView {
                             each = move || sources.clone()
                             key = |source| source.id
                             children = { move |source_descriptor| {
+
                                 let on_delete = move || {
                                     refetch_registered_sources.notify();
                                 };
+
                                 view! {
                                     <Row
                                         source_descriptor=RwSignal::new(source_descriptor)
