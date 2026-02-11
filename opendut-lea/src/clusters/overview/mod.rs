@@ -4,14 +4,14 @@ use leptos::prelude::*;
 use tracing::{debug, error};
 use opendut_carl_api::carl::ClientError;
 use opendut_carl_api::carl::cluster::StoreClusterDeploymentError;
-use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton};
+use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, OverviewTable, TableHeading};
 use opendut_model::cluster::{ClusterDeployment, ClusterDescriptor, ClusterId};
 
 use crate::app::use_app_globals;
 use crate::clusters::components::CreateClusterButton;
 use crate::clusters::IsDeployed;
 use crate::clusters::overview::row::Row;
-use crate::components::{use_toaster, BasePageContainer, Breadcrumb, LoadingSpinner, Toast};
+use crate::components::{use_toaster, BasePageContainer, Breadcrumb, Toast};
 
 #[component]
 pub fn ClustersOverview() -> impl IntoView {
@@ -148,10 +148,17 @@ pub fn ClustersOverview() -> impl IntoView {
         Breadcrumb::new("Clusters", "/clusters")
     ];
 
+    let table_headings = vec![
+        TableHeading::new(String::from("Deploy")).set_narrow(),
+        TableHeading::new(String::from("Health")).set_narrow(),
+        TableHeading::new(String::from("Name")),
+        TableHeading::new(String::from("Action")).set_narrow(),
+    ];
+
     view! {
         <BasePageContainer
             title="Clusters"
-            breadcrumbs=breadcrumbs
+            breadcrumbs
             controls=view! {
                 <div class="buttons">
                     <CreateClusterButton />
@@ -168,20 +175,8 @@ pub fn ClustersOverview() -> impl IntoView {
                 </div>
             }
         >
-            <table class="table is-hoverable is-fullwidth">
-                <thead>
-                    <tr>
-                        <th class="is-narrow">"Deploy"</th>
-                        <th class="is-narrow">"Health"</th>
-                        <th>"Name"</th>
-                        <th class="is-narrow has-text-centered">"Action"</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <Suspense
-                        fallback=LoadingSpinner
-                    >
-                    { move || {
+            <OverviewTable headings=table_headings>
+                { move || {
                         let on_deploy = on_deploy.clone();
                         let on_undeploy = on_undeploy.clone();
 
@@ -212,9 +207,7 @@ pub fn ClustersOverview() -> impl IntoView {
                             }
                         })
                     }}
-                    </Suspense>
-                </tbody>
-            </table>
+            </OverviewTable>
         </BasePageContainer>
     }
 }
