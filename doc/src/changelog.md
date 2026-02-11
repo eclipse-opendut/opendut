@@ -53,6 +53,14 @@ Always create a database backup before upgrading CARL.
 * Update NetBird to version 0.60.2.
 * CARL-API: Change NetBird SetupKey from UUID to String.
 
+* The LocalEnv deployment requires the following new environment variables, with their defaults specified here:
+  ```sh
+  OPENDUT_DOMAIN_NETBIRD_RELAY="netbird-relay.opendut.local"
+  OPENDUT_CARL_NETWORK_TLS_SERVER_AUTH_CA="${OPENDUT_CERT_CA_PATH}"
+  OPENDUT_NETBIRD_RELAY_NETWORK_TLS_CERTIFICATE="${SHARED_CERTS_UNENCRYPTED}/${OPENDUT_DOMAIN_NETBIRD_RELAY}.pem"
+  OPENDUT_NETBIRD_RELAY_NETWORK_TLS_KEY="${SHARED_CERTS_UNENCRYPTED}/${OPENDUT_DOMAIN_NETBIRD_RELAY}.key"
+  ```
+
 
 ## [0.8.0] - 2025-11-20
 
