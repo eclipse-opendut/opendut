@@ -1,7 +1,7 @@
 mod row;
 
 use leptos::prelude::*;
-use opendut_lea_components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, LoadingSpinner};
+use opendut_lea_components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, OverviewTable, TableHeading};
 use opendut_model::viper::ViperSourceDescriptor;
 use crate::app::use_app_globals;
 use crate::sources::components::CreateSourceButton;
@@ -41,6 +41,12 @@ pub fn SourcesOverview() -> impl IntoView {
         Breadcrumb::new("Sources", "/sources")
     ];
 
+    let table_headings = vec![
+        TableHeading::new(String::from("Name")),
+        TableHeading::new(String::from("URL")),
+        TableHeading::new(String::from("Action")).set_narrow(),
+    ];
+
     view! {
         <BasePageContainer
             title="Sources"
@@ -61,44 +67,29 @@ pub fn SourcesOverview() -> impl IntoView {
                 </div>
             }
         >
-            <table class="table is-hoverable is-fullwidth">
-                <thead>
-                    <tr>
-                        <th>"Name"</th>
-                        <th>"URL"</th>
-                        <th class="is-narrow has-text-centered">"Action"</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <Suspense
-                        fallback=LoadingSpinner
-                    >
-                        { move || {
-                            Suspend::new(async move {
-                                let sources_table_rows = sources.await;
-                                
+            { Suspend::new(async move {
+                let sources = sources.await;
+
+                view! {
+                    <OverviewTable headings=table_headings>
+                        <For
+                            each = move || sources.clone()
+                            key = |source| source.id
+                            children = { move |source_descriptor| {
+                                let on_delete = move || {
+                                    refetch_registered_sources.notify();
+                                };
                                 view! {
-                                    <For
-                                        each = move || sources_table_rows.clone()
-                                        key = |source| source.id
-                                        children = { move |source_descriptor| {
-                                            let on_delete = move || {
-                                                refetch_registered_sources.notify();
-                                            };
-                                            view! {
-                                                <Row
-                                                    source_descriptor=RwSignal::new(source_descriptor)
-                                                    on_delete
-                                                />
-                                            }
-                                        }}
+                                    <Row
+                                        source_descriptor=RwSignal::new(source_descriptor)
+                                        on_delete
                                     />
                                 }
-                            })
-                        }}
-                    </Suspense>
-                </tbody>
-            </table>
+                            }}
+                        />
+                    </OverviewTable>
+                }
+            })}
         </BasePageContainer>
     }
 }
