@@ -31,7 +31,7 @@ x-telemetry-deploy-params: &telemetry-deploy-params
 name: opendut
 
 services:
-  provision-secrets:
+  provision-secrets: #gets run by a separate `docker compose up` call before running the rest, because provision-secrets needs to template a `.env` file with passwords, which is then used by the other containers
     container_name: opendut-provision-secrets
     build:
       context: ../../..
@@ -51,6 +51,7 @@ services:
     volumes:
       - provision-secrets-data:/provision
       - backup:/backup
+
 
   keycloak-postgres:
     container_name: opendut-keycloak-postgres

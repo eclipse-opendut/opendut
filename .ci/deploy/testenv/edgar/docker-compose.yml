@@ -56,7 +56,7 @@ x-default-edgar-params: &default-edgar-params
     - ../../../../target/ci/distribution/x86_64-unknown-linux-gnu/:/opt/artifacts:ro
     - "../../../../target/debug/:/usr/local/opendut/bin/debug/:ro"
     - opendut_provision-secrets-data:/provision:ro
-  sysctls:
+  sysctls: #necessary for NetBird: https://github.com/netbirdio/netbird/issues/2290
     - net.ipv4.conf.all.src_valid_mark=1
     - net.ipv4.conf.all.rp_filter=2
   extra_hosts:
