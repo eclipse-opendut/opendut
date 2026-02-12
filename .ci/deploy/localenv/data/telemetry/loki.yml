@@ -1,3 +1,5 @@
+# https://grafana.com/docs/loki/latest/configure/
+
 # Validate config with:
 # loki -config.file=/etc/loki/loki.yml -print-config-stderr -config.expand-env=true
 auth_enabled: false
@@ -19,11 +21,11 @@ common:
 
 compactor:
   working_directory: /loki/compactor
-  shared_store: filesystem
   retention_enabled: true
   compaction_interval: 10m
   retention_delete_delay: 2h
   retention_delete_worker_count: 150
+  delete_request_store: filesystem
 
 # https://grafana.com/docs/loki/latest/operations/storage/retention/
 limits_config:
@@ -32,12 +34,16 @@ limits_config:
   # If the requested time range is outside the allowed range, the request will not fail, but will be modified to only query data within the allowed time range.
   max_query_lookback: "${OPENDUT_TELEMETRY_RETENTION_TIME:-168h}"
 
+storage_config:
+  filesystem:
+    directory: /loki/
+
 schema_config:
   configs:
     - from: 2020-10-24
       store: tsdb
       object_store: filesystem
-      schema: v12
+      schema: v13
       index:
         prefix: index_
         period: 24h

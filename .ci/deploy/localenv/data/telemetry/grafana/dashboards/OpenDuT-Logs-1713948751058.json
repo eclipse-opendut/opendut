@@ -51,7 +51,7 @@
             "uid": "e7c01197-5081-40dc-b76b-2fd7a29de663"
           },
           "editorMode": "builder",
-          "expr": "{job=~\"$service_name\", level=~\"$severity\"} |= `$filter` | logfmt",
+          "expr": "{service_name=~\"$service_name\"} |= `$filter` | logfmt",
           "maxLines": 1000,
           "queryType": "range",
           "refId": "A"
@@ -90,7 +90,7 @@
             "uid": "e7c01197-5081-40dc-b76b-2fd7a29de663"
           },
           "editorMode": "builder",
-          "expr": "{job=~\"$service_name\", level=~\"ERROR\"} |= `$filter` | logfmt",
+          "expr": "{service_name=~\"$service_name\"} |= `$filter` | logfmt | detected_level =~ `$severity`",
           "queryType": "range",
           "refId": "A"
         }
@@ -367,7 +367,7 @@
         "name": "service_name",
         "options": [],
         "query": {
-          "label": "job",
+          "label": "service_name",
           "refId": "LokiVariableQueryEditor-VariableQuery",
           "stream": "",
           "type": 1
