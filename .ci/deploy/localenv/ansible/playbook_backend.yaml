@@ -47,7 +47,7 @@
               docker compose
                 --file .ci/deploy/localenv/docker-compose.yml
                 {% for path in docker_compose_override_files %}
-                --file .ci/deploy/localenv/docker-compose.override.yml
+                --file {{ path }}
                 {% endfor %}
                 --env-file {{ opendut_compose_environment_path }}
                 --env-file .ci/deploy/localenv/data/secrets/.env
