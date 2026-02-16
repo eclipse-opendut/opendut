@@ -1,4 +1,5 @@
 # https://grafana.com/docs/loki/latest/configure/
+# https://grafana.com/docs/loki/latest/configure/examples/configuration-examples/
 
 # Validate config with:
 # loki -config.file=/etc/loki/loki.yml -print-config-stderr -config.expand-env=true
@@ -16,6 +17,7 @@ common:
       rules_directory: /loki/rules
   replication_factor: 1
   ring:
+    instance_addr: 127.0.0.1
     kvstore:
       store: inmemory
 

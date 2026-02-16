@@ -156,7 +156,7 @@ services:
   # Public web entrypoint exposed to end users
   traefik:
     container_name: opendut-traefik
-    image: docker.io/traefik:v3.6.6
+    image: docker.io/traefik:v3.6.8
     restart: unless-stopped
     command:
       - --api.insecure=true
@@ -529,7 +529,7 @@ services:
 
   prometheus:
     container_name: opendut-prometheus
-    image: prom/prometheus:v2.51.1
+    image: prom/prometheus:v3.9.1
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--web.enable-remote-write-receiver"
@@ -546,25 +546,32 @@ services:
 
   tempo:
     container_name: opendut-tempo
-    image: grafana/tempo:2.4.1
+    # https://grafana.com/docs/tempo/latest/configuration/
+    #image: grafana/tempo:2.10.0
+    build:
+      context: ../../..
+      dockerfile: ./.ci/deploy/localenv/data/telemetry/Dockerfile_grafana-tempo
+      args:
+        OPENDUT_GRAFANA_TEMPO_VERSION: 2.10.0
     restart: unless-stopped
     command: [ "-config.file=/etc/tempo.yml", "-config.expand-env=true" ]
     deploy:
       <<: *telemetry-deploy-params
     volumes:
       - ./data/telemetry/tempo.yml:/etc/tempo.yml
-      - tempo-data:/tmp/tempo
+      - tempo-data:/var/tempo/
     healthcheck:
       interval: 5s
       retries: 10
-      test: wget --proxy off --no-verbose --tries=1 --spider http://tempo:3200/status || exit 1
+      test: [ 'CMD', 'wget', '--spider', 'http://localhost:3200/ready' ]
     networks:
       - opendut_local
 
   loki:
     container_name: opendut-loki
+    # https://grafana.com/docs/loki/latest/
     # https://hub.docker.com/r/grafana/loki/tags
-    image: grafana/loki:3.5.10
+    image: grafana/loki:3.6.5
     restart: unless-stopped
     deploy:
       <<: *telemetry-deploy-params
@@ -573,7 +580,7 @@ services:
       - loki-data:/loki
     command: [ "-config.file=/etc/loki/loki.yml", "-config.expand-env=true" ]
     healthcheck:
-      test: wget --proxy off --no-verbose --tries=1 --spider http://loki:3100/ready || exit 1
+      test: ["CMD", "/usr/bin/loki", "-health"]
       interval: 10s
       timeout: 7s
       retries: 5
@@ -582,7 +589,7 @@ services:
 
   alloy:
     container_name: opendut-alloy
-    image: grafana/alloy:v1.13.0
+    image: grafana/alloy:v1.13.1
     restart: unless-stopped
     deploy:
       <<: *telemetry-deploy-params
