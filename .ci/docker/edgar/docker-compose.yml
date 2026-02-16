@@ -1,0 +1,42 @@
+# Runs EDGAR in a container.
+#
+# Use like so:
+# ```
+# export OPENDUT_EDGAR_SETUP_STRING=F7UJUZSn...
+# docker compose up
+# ```
+#
+# Optionally, if you don't have proper DNS names, you can set this beforehand:
+# ```
+# export OPENDUT_BACKEND_IP=203.0.113.0  # replace with IP address of your backend
+# ```
+
+services:
+  edgar:
+    container_name: opendut-edgar
+    image: "${OPENDUT_DOCKER_IMAGE_HOST:-ghcr.io}/${OPENDUT_DOCKER_IMAGE_NAMESPACE:-eclipse-opendut}/opendut-edgar:${OPENDUT_EDGAR_IMAGE_VERSION:-0.10.0-alpha}"
+
+    environment:
+      - OPENDUT_EDGAR_SETUP_STRING
+      - OPENDUT_EDGAR_SERVICE_USER=root  # We don't currently support running the EDGAR container without root. See: https://github.com/eclipse-opendut/opendut/issues/459
+
+    network_mode: "host"  # Necessary for configuring arbitrary interfaces in the openDuT UIs (otherwise would need to always re-deploy EDGAR to passthrough different interfaces).
+
+    # Normally, Wireguard/NetBird needs the sysctl configuration below: https://github.com/netbirdio/netbird/issues/2290
+    # It does not need this with `network_mode: "host`. It is also illegal to specify both, see: https://docs.docker.com/reference/cli/docker/container/run/#currently-supported-sysctls
+    #
+    #  sysctls:
+    #    - net.ipv4.conf.all.src_valid_mark=1
+    #    - net.ipv4.conf.all.rp_filter=2
+
+    cap_add:
+      - NET_ADMIN
+
+    extra_hosts:
+      - "carl.opendut.local:${OPENDUT_BACKEND_IP:-0.0.0.0}"  # Set to a default which will not resolve, so that it is not mandatory to specify for those with proper DNS names, but can still be set when no DNS names are available.
+      - "auth.opendut.local:${OPENDUT_BACKEND_IP:-0.0.0.0}"
+      - "netbird.opendut.local:${OPENDUT_BACKEND_IP:-0.0.0.0}"
+      - "netbird-api.opendut.local:${OPENDUT_BACKEND_IP:-0.0.0.0}"
+      - "netbird-relay.opendut.local:${OPENDUT_BACKEND_IP:-0.0.0.0}"
+      - "signal.opendut.local:${OPENDUT_BACKEND_IP:-0.0.0.0}"
+      - "opentelemetry.opendut.local:${OPENDUT_BACKEND_IP:-0.0.0.0}"
