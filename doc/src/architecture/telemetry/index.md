@@ -22,3 +22,18 @@ Visualization: [Grafana](https://grafana.com/docs/grafana/latest/) uses these da
 
 Note: The use of third-party logos in architecture diagrams is solely for informational and attribution purposes. Their inclusion does not imply endorsement or partnership with any of the respective organizations. 
 All trademarks and logos remain the property of their respective owners.
+
+## Operational aspects
+
+Log retention and storage are important operational aspects to consider.
+Set the environment variable `OPENDUT_TELEMETRY_RETENTION_TIME` in the localenv to specify the retention time for telemetry data.
+See also the documentation of the respective databases for more information on configuring retention policies:
+* [Prometheus](https://prometheus.io/docs/prometheus/latest/storage/#operational-aspects)
+* [Tempo](https://grafana.com/docs/tempo/latest/configuration/)
+* [Loki](https://grafana.com/docs/loki/latest/configure/)
+
+## OpenTelemetry data model
+
+OpenTelemetry saves its log level in the following fields, see [OpenTelemetry data model](https://opentelemetry.io/docs/specs/otel/logs/data-model/):
+* `severity_number` (integer)
+* `severity_text` (string)

@@ -542,7 +542,9 @@ services:
       - "--web.enable-remote-write-receiver"
       - "--enable-feature=exemplar-storage"
       # https://prometheus.io/docs/prometheus/latest/storage/#operational-aspects
+      - "--storage.tsdb.path=/prometheus/"
       - "--storage.tsdb.retention.time=${OPENDUT_TELEMETRY_RETENTION_TIME:-168h}"
+      - "--storage.tsdb.retention.size=1GB"
     restart: unless-stopped
     healthcheck:
       <<: *common-healthcheck-params
@@ -550,6 +552,7 @@ services:
     deploy:
       <<: *telemetry-deploy-params
     volumes:
+      - prometheus-data:/prometheus/
       - ./data/telemetry/prometheus.yml:/etc/prometheus/prometheus.yml
     networks:
       - opendut_local
@@ -726,6 +729,7 @@ volumes:
   tempo-data:
   loki-data:
   grafana-storage:
+  prometheus-data:
   provision-secrets-data:
   backup:
   carl_data:
