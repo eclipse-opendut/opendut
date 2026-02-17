@@ -16,7 +16,8 @@ loki.process "docker_logs_scrape" {
 
 		stage.static_labels {
 			values = {
-				level = "DEFAULT",
+				service_name = "opendut-traefik",
+				severity_text = "DEFAULT",
 			}
 		}
 
@@ -27,14 +28,14 @@ loki.process "docker_logs_scrape" {
 				RequestPath    = "RequestPath",
 				ServiceName    = "ServiceName",
 				entryPointName = "entryPointName",
-				level          = "level",
+				severity_text  = "level",
 				message        = "msg",
 				time           = "time",
 			}
 		}
 
 		stage.template {
-			source   = "level"
+			source   = "severity_text"
 			template = "{{ ToUpper .Value }}"
 		}
 
@@ -50,7 +51,7 @@ loki.process "docker_logs_scrape" {
 				RequestPath    = null,
 				ServiceName    = null,
 				entryPointName = null,
-				level          = null,
+				severity_text  = null,
 				message        = null,
 			}
 		}
@@ -61,12 +62,13 @@ loki.process "docker_logs_scrape" {
 
 		stage.static_labels {
 			values = {
-				level = "DEFAULT",
+				service_name = "opendut-netbird-coturn",
+				severity_text = "DEFAULT",
 			}
 		}
 
 		stage.regex {
-			expression = "(?P<time>.+): \\((?P<thread>[0-9]+)\\): (?P<level>[A-Z]+):( session (?P<session>[0-9]+):)? (?P<message>.*)"
+			expression = "(?P<time>.+): \\((?P<thread>[0-9]+)\\): (?P<severity_text>[A-Z]+):( session (?P<session>[0-9]+):)? (?P<message>.*)"
 		}
 
 		stage.timestamp {
@@ -80,7 +82,7 @@ loki.process "docker_logs_scrape" {
 
 		stage.labels {
 			values = {
-				level   = null,
+				severity_text   = null,
 				session = null,
 			}
 		}
@@ -91,12 +93,13 @@ loki.process "docker_logs_scrape" {
 
 		stage.static_labels {
 			values = {
-				level = "DEFAULT",
+				service_name = "opendut-netbird-management",
+				severity_text = "DEFAULT",
 			}
 		}
 
 		stage.regex {
-			expression = "(?P<timestamp>[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z) (?P<level>[A-Z]+) (?P<message>.*)"
+			expression = "(?P<timestamp>[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z) (?P<severity_text>[A-Z]+) (?P<message>.*)"
 		}
 
 		stage.timestamp {
@@ -105,8 +108,8 @@ loki.process "docker_logs_scrape" {
 		}
 
 		stage.template {
-			source   = "level"
-			template = "{{ regexReplaceAllLiteral \"ERRO\" .level \"ERROR\" }}"
+			source   = "severity_text"
+			template = "{{ regexReplaceAllLiteral \"ERRO\" .severity_text \"ERROR\" }}"
 		}
 
 		stage.output {
@@ -115,7 +118,7 @@ loki.process "docker_logs_scrape" {
 
 		stage.labels {
 			values = {
-				level = null,
+				severity_text = null,
 			}
 		}
 	}
@@ -125,12 +128,13 @@ loki.process "docker_logs_scrape" {
 
 		stage.static_labels {
 			values = {
-				level = "DEFAULT",
+				service_name = "opendut-keycloak",
+				severity_text = "DEFAULT",
 			}
 		}
 
 		stage.regex {
-			expression = "(?P<timestamp>[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]+[A-Z]+)\\s+(?P<level>[A-Z]+)\\s+\\[(?P<category>[^\\]]+)\\] \\((?P<thread>[^\\)]+)\\) (?P<message>.*)"
+			expression = "(?P<timestamp>[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]+[A-Z]+)\\s+(?P<severity_text>[A-Z]+)\\s+\\[(?P<category>[^\\]]+)\\] \\((?P<thread>[^\\)]+)\\) (?P<message>.*)"
 		}
 
 		stage.timestamp {
@@ -145,7 +149,7 @@ loki.process "docker_logs_scrape" {
 		stage.labels {
 			values = {
 				category = null,
-				level    = null,
+				severity_text    = null,
 				thread   = null,
 			}
 		}
@@ -156,12 +160,13 @@ loki.process "docker_logs_scrape" {
 
 		stage.static_labels {
 			values = {
-				level = "DEBUG",
+				service_name = "opendut-keycloak-init",
+				severity_text = "DEBUG",
 			}
 		}
 
 		stage.regex {
-			expression = "^(?P<level>WARNING|INFO|DEBUG|ERROR|WARN)?(:\\s)*(?P<message>.+)"
+			expression = "^(?P<severity_text>WARNING|INFO|DEBUG|ERROR|WARN)?(:\\s)*(?P<message>.+)"
 		}
 
 		stage.drop {
@@ -169,8 +174,8 @@ loki.process "docker_logs_scrape" {
 		}
 
 		stage.template {
-			source   = "level"
-			template = "{{ regexReplaceAllLiteral \"WARNING\" .level \"WARN\" }}"
+			source   = "severity_text"
+			template = "{{ regexReplaceAllLiteral \"WARNING\" .severity_text \"WARN\" }}"
 		}
 
 		stage.output {
@@ -179,7 +184,7 @@ loki.process "docker_logs_scrape" {
 
 		stage.labels {
 			values = {
-				level = null,
+				severity_text = null,
 			}
 		}
 	}
@@ -189,12 +194,13 @@ loki.process "docker_logs_scrape" {
 
 		stage.static_labels {
 			values = {
-				level = "DEFAULT",
+			    service_name = "opendut-netbird-signal",
+				severity_text = "DEFAULT",
 			}
 		}
 
 		stage.regex {
-			expression = "(?P<timestamp>[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z) (?P<level>[A-Z]+) (?P<location>[^:]+:\\d+): (?P<message>.*)"
+			expression = "(?P<timestamp>[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z) (?P<severity_text>[A-Z]+) (?P<location>[^:]+:\\d+): (?P<message>.*)"
 		}
 
 		stage.timestamp {
@@ -208,8 +214,8 @@ loki.process "docker_logs_scrape" {
 
 		stage.labels {
 			values = {
-				level    = null,
-				location = null,
+				severity_text   = null,
+				location        = null,
 			}
 		}
 	}
@@ -217,28 +223,35 @@ loki.process "docker_logs_scrape" {
 	stage.match {
 		selector = "{job=~\"keycloak-postgres\"}"
 
+		stage.static_labels {
+			values = {
+			    service_name = "opendut-keycloak-postgres",
+				severity_text = "DEFAULT",
+			}
+		}
+
 		stage.multiline {
 			firstline = "^\\d{4}-\\d{2}-\\d{2}"
 			max_lines = 0
 		}
 
 		stage.regex {
-			expression = "^(?P<timestamp>[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]+ [A-Z]+) \\[[0-9]+\\] (?P<level>[A-Z]+):  (?P<message>.*)$"
+			expression = "^(?P<timestamp>[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]+ [A-Z]+) \\[[0-9]+\\] (?P<severity_text>[A-Z]+):  (?P<message>.*)$"
 		}
 
 		stage.template {
-			source   = "level"
-			template = "{{ regexReplaceAllLiteral \"DETAIL|STATEMENT|DEBUG1|DEBUG2|DEBUG3|DEBUG4|DEBUG5|DEBUG\" .level \"DEBUG\" }}"
+			source   = "severity_text"
+			template = "{{ regexReplaceAllLiteral \"DETAIL|STATEMENT|DEBUG1|DEBUG2|DEBUG3|DEBUG4|DEBUG5|DEBUG\" .severity_text \"DEBUG\" }}"
 		}
 
 		stage.template {
-			source   = "level"
-			template = "{{ regexReplaceAllLiteral \"INFO|NOTICE|LOG\" .level \"INFO\" }}"
+			source   = "severity_text"
+			template = "{{ regexReplaceAllLiteral \"INFO|NOTICE|LOG\" .severity_text \"INFO\" }}"
 		}
 
 		stage.template {
-			source   = "level"
-			template = "{{ regexReplaceAllLiteral \"ERROR|FATAL|PANIC\" .level \"ERROR\" }}"
+			source   = "severity_text"
+			template = "{{ regexReplaceAllLiteral \"ERROR|FATAL|PANIC\" .severity_text \"ERROR\" }}"
 		}
 
 		stage.timestamp {
@@ -252,7 +265,7 @@ loki.process "docker_logs_scrape" {
 
 		stage.labels {
 			values = {
-				level = null,
+				severity_text = null,
 			}
 		}
 	}

@@ -1,5 +1,6 @@
 apiVersion: 1
 datasources:
+  # Logs
   - name: Loki
     uid: loki
     type: loki
@@ -17,6 +18,8 @@ datasources:
       httpHeaderName1: "X-Scope-OrgID"
     secureJsonData:
       httpHeaderValue1: "tenant1"
+
+  # Traces
   - name: Tempo
     uid: tempo
     type: tempo
@@ -25,6 +28,8 @@ datasources:
     editable: false
     access: proxy
     url: http://tempo:3200
+
+  # Metrics
   - name: Prometheus
     uid: prometheus
     type: prometheus

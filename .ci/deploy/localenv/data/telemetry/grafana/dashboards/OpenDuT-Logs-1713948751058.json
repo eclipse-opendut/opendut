@@ -18,13 +18,17 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
+  "id": 2,
   "links": [],
-  "liveNow": false,
   "panels": [
     {
       "datasource": {
         "type": "loki",
         "uid": "loki"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
       },
       "gridPos": {
         "h": 21,
@@ -35,26 +39,41 @@
       "id": 3,
       "options": {
         "dedupStrategy": "none",
+        "enableInfiniteScrolling": false,
         "enableLogDetails": true,
         "prettifyLogMessage": false,
         "showCommonLabels": false,
+        "showControls": false,
         "showLabels": false,
         "showTime": true,
         "sortOrder": "Descending",
         "wrapLogMessage": true
       },
-      "pluginVersion": "10.3.1",
+      "pluginVersion": "12.3.3",
       "targets": [
         {
           "datasource": {
             "type": "loki",
             "uid": "e7c01197-5081-40dc-b76b-2fd7a29de663"
           },
+          "direction": "backward",
           "editorMode": "builder",
           "expr": "{service_name=~\"$service_name\"} |= `$filter` | logfmt",
           "maxLines": 1000,
           "queryType": "range",
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "direction": "backward",
+          "editorMode": "code",
+          "expr": "{severity_text=\"$severity\", service_name!~\"$service_name\"}",
+          "hide": false,
+          "queryType": "range",
+          "refId": "B"
         }
       ],
       "title": "Loki Logs - Last 1000",
@@ -65,6 +84,10 @@
         "type": "loki",
         "uid": "loki"
       },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
       "gridPos": {
         "h": 14,
         "w": 12,
@@ -74,23 +97,26 @@
       "id": 7,
       "options": {
         "dedupStrategy": "none",
+        "enableInfiniteScrolling": false,
         "enableLogDetails": true,
         "prettifyLogMessage": false,
         "showCommonLabels": false,
+        "showControls": false,
         "showLabels": false,
         "showTime": true,
         "sortOrder": "Descending",
         "wrapLogMessage": true
       },
-      "pluginVersion": "10.3.1",
+      "pluginVersion": "12.3.3",
       "targets": [
         {
           "datasource": {
             "type": "loki",
             "uid": "e7c01197-5081-40dc-b76b-2fd7a29de663"
           },
+          "direction": "backward",
           "editorMode": "builder",
-          "expr": "{service_name=~\"$service_name\"} |= `$filter` | logfmt | detected_level =~ `$severity`",
+          "expr": "{service_name=~\"$service_name\", severity_text=\"ERROR\"} |= `$filter` | logfmt",
           "queryType": "range",
           "refId": "A"
         }
@@ -249,20 +275,23 @@
           "fields": "",
           "values": true
         },
+        "sort": "desc",
         "tooltip": {
+          "hideZeros": false,
           "mode": "single",
           "sort": "none"
         }
       },
-      "pluginVersion": "10.3.3",
+      "pluginVersion": "12.3.3",
       "targets": [
         {
           "datasource": {
             "type": "loki",
             "uid": "e7c01197-5081-40dc-b76b-2fd7a29de663"
           },
-          "editorMode": "builder",
-          "expr": "sum by(level) (count_over_time({job=~\"$service_name\", level=~\"$severity\"} |= `$filter` | logfmt [$__auto]))",
+          "direction": "backward",
+          "editorMode": "code",
+          "expr": "sum by(severity_text) (count_over_time({service_name=~\"$service_name\", severity_text=~\"$severity\"} |= `$filter` | logfmt [$__auto]))",
           "queryType": "instant",
           "refId": "A"
         }
@@ -278,6 +307,7 @@
             },
             "includeByName": {},
             "indexByName": {},
+            "orderByMode": "manual",
             "renameByName": {
               "level": "Level"
             }
@@ -287,18 +317,17 @@
       "type": "piechart"
     }
   ],
+  "preload": false,
   "refresh": "",
-  "schemaVersion": 39,
+  "schemaVersion": 42,
   "tags": [],
   "templating": {
     "list": [
       {
         "current": {
-          "selected": false,
           "text": "",
           "value": ""
         },
-        "hide": 0,
         "label": "Full text",
         "name": "filter",
         "options": [
@@ -309,12 +338,11 @@
           }
         ],
         "query": "",
-        "skipUrlSync": false,
         "type": "textbox"
       },
       {
+        "allValue": "",
         "current": {
-          "selected": true,
           "text": [
             "All"
           ],
@@ -327,27 +355,23 @@
           "uid": "loki"
         },
         "definition": "",
-        "hide": 0,
         "includeAll": true,
-        "label": "Level",
+        "label": "LogLevel",
         "multi": true,
         "name": "severity",
         "options": [],
         "query": {
-          "label": "level",
+          "label": "severity_text",
           "refId": "LokiVariableQueryEditor-VariableQuery",
           "stream": "",
           "type": 1
         },
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
         "type": "query"
       },
       {
         "current": {
-          "selected": true,
           "text": [
             "All"
           ],
@@ -360,7 +384,6 @@
           "uid": "loki"
         },
         "definition": "",
-        "hide": 0,
         "includeAll": true,
         "label": "Service name",
         "multi": true,
@@ -374,19 +397,16 @@
         },
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
         "type": "query"
       },
       {
+        "baseFilters": [],
         "datasource": {
           "type": "loki",
           "uid": "loki"
         },
         "filters": [],
-        "hide": 0,
         "name": "Filters",
-        "skipUrlSync": false,
         "type": "adhoc"
       }
     ]
@@ -399,6 +419,5 @@
   "timezone": "",
   "title": "OpenDuT Logs",
   "uid": "e4c47d24-47ae-45c3-b0c9-3199b385f804",
-  "version": 1,
-  "weekStart": ""
+  "version": 1
 }

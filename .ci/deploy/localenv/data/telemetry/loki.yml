@@ -36,6 +36,17 @@ limits_config:
   # If the requested time range is outside the allowed range, the request will not fail, but will be modified to only query data within the allowed time range.
   max_query_lookback: "${OPENDUT_TELEMETRY_RETENTION_TIME:-168h}"
 
+  # List of default OTLP resource attributes to be picked as index labels
+  otlp_config:
+    resource_attributes:
+      attributes_config:
+        - action: index_label
+          attributes:
+            - severity.text
+            - severity.number
+            - service.name
+            - service.instance.id
+
 storage_config:
   filesystem:
     directory: /loki/

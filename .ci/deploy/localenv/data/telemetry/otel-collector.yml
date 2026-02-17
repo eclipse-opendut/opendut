@@ -13,23 +13,13 @@ processors:
   batch:
 
   # https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/attributesprocessor/README.md
-  attributes:
-    actions:
-      - action: insert
-        key: loki.attribute.labels
-        value: test
-
   # https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/resourceprocessor/README.md
   resource:
     attributes:
       # only insert if the attribute doesn't already exist, to avoid overwriting existing service names
       - action: insert
-        key: job
-        from_attribute: service.name  # resource attribute
-      - action: insert
         key: service.name
         from_attribute: job
-
 
 exporters:
   debug:
@@ -78,5 +68,5 @@ service:
       exporters: [ debug, prometheus ]
     logs:
       receivers: [ otlp ]
-      processors: [ batch, resource, attributes ]
+      processors: [ batch, resource ]
       exporters: [ debug, otlphttp/logs ]

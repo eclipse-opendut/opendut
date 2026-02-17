@@ -560,7 +560,6 @@ services:
   tempo:
     container_name: opendut-tempo
     # https://grafana.com/docs/tempo/latest/configuration/
-    #image: grafana/tempo:2.10.0
     build:
       context: ../../..
       dockerfile: ./.ci/deploy/localenv/data/telemetry/Dockerfile_grafana-tempo
