@@ -47,6 +47,14 @@ limits_config:
             - service.name
             - service.instance.id
 
+distributor:
+  otlp_config:
+    default_resource_attributes_as_index_labels:
+      - severity.text
+      - severity.number
+      - service.name
+      - service.instance.id
+
 storage_config:
   filesystem:
     directory: /loki/
