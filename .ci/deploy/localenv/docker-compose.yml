@@ -3,7 +3,7 @@ x-common-healthcheck-params: &common-healthcheck-params
   interval: 30s
   timeout: 10s
   retries: 5
-  start_period: 2m  # Probe failure during start will not be counted towards the maximum number of retries
+  start_period: 1m  # Probe failure during start will not be counted towards the maximum number of retries
   # start_interval: 5s  # This isn't yet supported on many hosts, as of 2025-01.
 
 
@@ -251,6 +251,11 @@ services:
       - traefik.http.services.netbird-signal.loadbalancer.server.scheme=h2c
       - logging=alloy
       - logging_job=netbird-signal
+    healthcheck:
+      <<: *common-healthcheck-params
+      # does not have proper support for health check, https://github.com/netbirdio/netbird/issues/4399
+      # expected return code: HTTP/1.1 405 Method Not Allowed
+      test: [ "CMD", "sh", "-c", "wget --proxy off --no-verbose --tries=1 --spider http://localhost:80 2>&1 | grep 405" ]
     networks:
       - opendut_local
 
@@ -377,9 +382,11 @@ services:
       - NB_EXPOSED_ADDRESS=rels://$OPENDUT_DOMAIN_NETBIRD_RELAY:443  # same as NETBIRD_RELAY_ENDPOINT
       - NB_AUTH_SECRET=$NETBIRD_RELAY_AUTH_SECRET
       - SSL_CERT_FILE=${OPENDUT_CERT_CA_PATH}
-    #healthcheck: does not support healthcheck, https://github.com/netbirdio/netbird/issues/4399
-    #  <<: *common-healthcheck-params
-    #  test: wget --proxy off --no-verbose --tries=1 --spider http://localhost:33080/relay || exit 1
+    healthcheck:
+      <<: *common-healthcheck-params
+      # does not have proper support for health check, https://github.com/netbirdio/netbird/issues/4399
+      # expected return code: HTTP/1.1 426 Upgrade Required
+      test: [ "CMD", "sh", "-c", "wget --proxy off --no-verbose --tries=1 --spider http://localhost:33080/relay 2>&1 | grep 426" ]
     labels:
       - traefik.enable=true
       - traefik.http.routers.netbird-relay.tls=true
@@ -537,6 +544,9 @@ services:
       # https://prometheus.io/docs/prometheus/latest/storage/#operational-aspects
       - "--storage.tsdb.retention.time=${OPENDUT_TELEMETRY_RETENTION_TIME:-168h}"
     restart: unless-stopped
+    healthcheck:
+      <<: *common-healthcheck-params
+      test: [ "CMD-SHELL", "wget --proxy off --no-verbose --tries=1 --spider http://localhost:9090" ]
     deploy:
       <<: *telemetry-deploy-params
     volumes:
@@ -597,6 +607,7 @@ services:
       - ./data/telemetry/config.alloy:/etc/alloy/config.alloy
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    # [Feature Request] Alloy container health check https://github.com/grafana/alloy/issues/1891
     depends_on:
       - loki
     networks:
