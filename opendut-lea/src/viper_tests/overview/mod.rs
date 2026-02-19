@@ -4,8 +4,8 @@ use leptos::prelude::*;
 use opendut_lea_components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, OverviewTable, TableHeading};
 use opendut_model::viper::ViperTestDescriptor;
 use crate::app::use_app_globals;
-use crate::tests::components::CreateTestButton;
-use crate::tests::overview::row::Row;
+use crate::viper_tests::components::CreateTestButton;
+use crate::viper_tests::overview::row::Row;
 
 #[component(transparent)]
 pub fn TestsOverview() -> impl IntoView {
@@ -23,7 +23,7 @@ pub fn TestsOverview() -> impl IntoView {
 
             async move {
                 let mut tests = carl.viper.list_viper_test_descriptors().await
-                    .expect("Failed to request the list of tests / run descriptors.");
+                    .expect("Failed to request the list of viper_tests / run descriptors.");
 
                 tests.sort_by(|test_a, test_b| {
                     test_a.name.value().to_lowercase()
@@ -37,7 +37,7 @@ pub fn TestsOverview() -> impl IntoView {
 
     let breadcrumbs = vec![
         Breadcrumb::new("Dashboard", "/"),
-        Breadcrumb::new("Tests", "/tests")
+        Breadcrumb::new("Tests", "/viper_tests")
     ];
 
     let table_headings = vec![
@@ -59,7 +59,7 @@ pub fn TestsOverview() -> impl IntoView {
                         color=ButtonColor::Light
                         size=ButtonSize::Normal
                         state=ButtonState::Enabled
-                        label="Refresh table of tests"
+                        label="Refresh table of viper_tests"
                         on_action=move || {
                             refetch_registered_tests.notify();
                         }

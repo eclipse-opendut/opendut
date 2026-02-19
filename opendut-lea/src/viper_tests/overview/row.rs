@@ -3,7 +3,7 @@ use opendut_lea_components::{ButtonColor, OverviewTableCell};
 use opendut_model::viper::ViperTestDescriptor;
 use crate::app::use_app_globals;
 use crate::components::ClickableOverviewTableRow;
-use crate::tests::components::DeleteTestButton;
+use crate::viper_tests::components::DeleteTestButton;
 
 #[component]
 pub(crate) fn Row<OnDeleteFn>(
@@ -48,7 +48,7 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
         }
     );
 
-    let configurator_href = Signal::derive(move || { format!("/tests/{}/configure/general", test_id.get()) });
+    let configurator_href = Signal::derive(move || { format!("/viper_tests/{}/configure/general", test_id.get()) });
     let source_configurator_href = move || { format!("/sources/{}/configure/general", test_source_id.get()) };
 
     view! {

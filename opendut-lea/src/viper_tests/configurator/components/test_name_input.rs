@@ -2,7 +2,7 @@ use leptos::prelude::*;
 
 use opendut_model::viper::{IllegalViperTestName, ViperTestName};
 use crate::components::{UserInput, UserInputValue};
-use crate::tests::configurator::types::UserTestConfiguration;
+use crate::viper_tests::configurator::types::UserTestConfiguration;
 
 #[component]
 pub fn TestNameInput(test_configuration: RwSignal<UserTestConfiguration>) -> impl IntoView {

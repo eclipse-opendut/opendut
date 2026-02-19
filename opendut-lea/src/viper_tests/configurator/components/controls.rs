@@ -6,8 +6,8 @@ use opendut_lea_components::{use_toaster, ButtonColor, ButtonSize, ButtonState, 
 use opendut_model::viper::ViperTestDescriptor;
 use crate::app::use_app_globals;
 use crate::routing::{navigate_to, WellKnownRoutes};
-use crate::tests::components::DeleteTestButton;
-use crate::tests::configurator::types::UserTestConfiguration;
+use crate::viper_tests::components::DeleteTestButton;
+use crate::viper_tests::configurator::types::UserTestConfiguration;
 
 #[component]
 pub fn Controls(

@@ -7,9 +7,9 @@ use opendut_model::viper::{ViperTestDescriptor, ViperTestId, ViperTestParameterV
 use crate::app::use_app_globals;
 use crate::components::use_active_tab;
 use crate::routing::{navigate_to, WellKnownRoutes};
-use crate::tests::configurator::components::Controls;
-use crate::tests::configurator::tabs::{ClusterTab, GeneralTab, SourceTab, SuiteTab, TabIdentifier};
-use crate::tests::configurator::types::{ClusterSelection, SourceSelection, UserTestConfiguration};
+use crate::viper_tests::configurator::components::Controls;
+use crate::viper_tests::configurator::tabs::{ClusterTab, GeneralTab, SourceTab, SuiteTab, TabIdentifier};
+use crate::viper_tests::configurator::types::{ClusterSelection, SourceSelection, UserTestConfiguration};
 
 mod tabs;
 mod types;
@@ -98,7 +98,7 @@ pub fn TestConfigurator() -> impl IntoView {
         let test_id = test_id_string.get();
         vec![
             Breadcrumb::new("Dashboard", "/"),
-            Breadcrumb::new("Tests", "tests"),
+            Breadcrumb::new("Tests", "viper_tests"),
             Breadcrumb::new(&test_id, format!("{test_id}/configure")),
         ]
     });

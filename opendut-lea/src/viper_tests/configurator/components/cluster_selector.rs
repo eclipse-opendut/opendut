@@ -2,7 +2,7 @@ use leptos::prelude::*;
 use opendut_lea_components::{SelectionTable, SelectionTableRow};
 use opendut_model::cluster::ClusterDescriptor;
 use crate::app::use_app_globals;
-use crate::tests::configurator::types::{ClusterSelection, UserTestConfiguration};
+use crate::viper_tests::configurator::types::{ClusterSelection, UserTestConfiguration};
 
 #[component]
 pub fn ClusterSelector(test_configuration: RwSignal<UserTestConfiguration>) -> impl IntoView {

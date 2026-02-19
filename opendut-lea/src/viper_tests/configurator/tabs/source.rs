@@ -1,6 +1,6 @@
 use leptos::prelude::*;
-use crate::tests::configurator::components::TestSourceSelector;
-use crate::tests::configurator::types::UserTestConfiguration;
+use crate::viper_tests::configurator::components::TestSourceSelector;
+use crate::viper_tests::configurator::types::UserTestConfiguration;
 
 #[component]
 pub fn SourceTab(test_configuration: RwSignal<UserTestConfiguration>) -> impl IntoView {

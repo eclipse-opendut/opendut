@@ -25,7 +25,7 @@ pub mod path {
     #[cfg(feature = "viper")]
     pub const sources_overview: &str = "/sources";
     #[cfg(feature = "viper")]
-    pub const tests_overview: &str = "/tests";
+    pub const tests_overview: &str = "/viper_tests";
 }
 
 #[derive(Clone)]
@@ -82,7 +82,7 @@ impl WellKnownRoutes {
             }
             #[cfg(feature = "viper")]
             WellKnownRoutes::TestConfigurator { id } => {
-                base.join(&format!("/tests/{}/configure/general", id.url_encode()))
+                base.join(&format!("/viper_tests/{}/configure/general", id.url_encode()))
                     .expect("TestConfigurator route should be valid.")
             }
             WellKnownRoutes::ErrorPage { title, text, details } => {
@@ -186,10 +186,10 @@ mod routes {
                     redirect_path=|| "/login"
                 />
                 <ProtectedRoute
-                    path=path!("/tests")
+                    path=path!("/viper_tests")
                     view=move || {
                         #[cfg(feature = "viper")]
-                        view! { <Initialized app_globals><crate::tests::TestsOverview/></Initialized> }
+                        view! { <Initialized app_globals><crate::viper_tests::TestsOverview/></Initialized> }
                         #[cfg(not(feature = "viper"))]
                         NotFound
                     }
@@ -198,10 +198,10 @@ mod routes {
                     redirect_path=|| "/login"
                 />
                 <ProtectedRoute
-                    path=path!("/tests/:id/configure/:tab")
+                    path=path!("/viper_tests/:id/configure/:tab")
                     view=move || {
                         #[cfg(feature = "viper")]
-                        view! { <Initialized app_globals><crate::tests::TestConfigurator/></Initialized> }
+                        view! { <Initialized app_globals><crate::viper_tests::TestConfigurator/></Initialized> }
                         #[cfg(not(feature = "viper"))]
                         NotFound
                     }

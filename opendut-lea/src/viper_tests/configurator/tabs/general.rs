@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 use opendut_lea_components::ReadOnlyInput;
-use crate::tests::configurator::components::TestNameInput;
-use crate::tests::configurator::types::UserTestConfiguration;
+use crate::viper_tests::configurator::components::TestNameInput;
+use crate::viper_tests::configurator::types::UserTestConfiguration;
 
 
 #[component]
