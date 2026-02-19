@@ -92,7 +92,7 @@ fn GenerateSetupStringTextForm(
 
 #[component]
 fn CopyToClipboardButton(
-    setup_string: String
+    setup_string: String,
 ) -> impl IntoView {
     let toaster = use_toaster();
 
@@ -120,6 +120,18 @@ fn CopyToClipboardButton(
                     );
                 }
             };
+        }
+    });
+
+    let auto_copy = RwSignal::new(true);
+
+    Effect::new({
+        let setup_string = Clone::clone(&setup_string);
+        move || {
+            if auto_copy.get() {
+                auto_copy.set(false);
+                copy_action.dispatch(setup_string.clone());
+            }
         }
     });
 
