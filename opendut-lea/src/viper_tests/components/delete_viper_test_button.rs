@@ -1,12 +1,12 @@
 use leptos::prelude::*;
 use tracing::{error, info};
 use opendut_lea_components::{use_toaster, ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, Toast};
-use opendut_model::viper::ViperSourceId;
+use opendut_model::viper::ViperTestId;
 use crate::app::use_app_globals;
 
 #[component]
-pub fn DeleteSourceButton<F>(
-    #[prop(into)] source_id: Signal<ViperSourceId>,
+pub fn DeleteViperTestButton<F>(
+    viper_test_id: Signal<ViperTestId>,
     #[prop(into)] button_color: Signal<ButtonColor>,
     on_delete: F
 ) -> impl IntoView
@@ -28,29 +28,29 @@ where F: Fn() + Clone + Send + 'static {
     let on_confirm = move || {
         let on_delete = on_delete.clone();
         let mut carl = globals.client.clone();
-        let id = source_id.get();
+        let id = viper_test_id.get();
         let toaster = toaster.clone();
 
         leptos::task::spawn_local(async move {
             pending.set(true);
 
-            let result = carl.viper.delete_viper_source_descriptor(id).await;
+            let result = carl.viper.delete_viper_test_descriptor(id).await;
 
             match result {
                 Ok(_) => {
-                    info!("Successfully deleted source: {:?}", source_id);
+                    info!("Successfully deleted viper test: {:?}", viper_test_id);
                     on_delete();
                     toaster.toast(
                         Toast::builder()
-                            .simple("Deleted source successfully.")
+                            .simple("Deleted viper test successfully.")
                             .success()
                     );
                 }
                 Err(cause) => {
-                    error!("Failed to delete source <{:?}>, due to error: {cause:?}", source_id);
+                    error!("Failed to delete viper test <{:?}>, due to error: {cause:?}", viper_test_id);
                     toaster.toast(
                         Toast::builder()
-                            .simple("Failed to delete source!")
+                            .simple("Failed to delete viper test!")
                             .error()
                     );
                 }
@@ -66,7 +66,7 @@ where F: Fn() + Clone + Send + 'static {
             color=button_color
             size=ButtonSize::Normal
             state=button_state
-            label="Remove Source?"
+            label="Remove Test?"
             on_confirm
         />
     }

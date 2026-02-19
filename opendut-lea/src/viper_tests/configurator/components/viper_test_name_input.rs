@@ -2,12 +2,12 @@ use leptos::prelude::*;
 
 use opendut_model::viper::{IllegalViperTestName, ViperTestName};
 use crate::components::{UserInput, UserInputValue};
-use crate::viper_tests::configurator::types::UserTestConfiguration;
+use crate::viper_tests::configurator::types::UserViperTestConfiguration;
 
 #[component]
-pub fn TestNameInput(test_configuration: RwSignal<UserTestConfiguration>) -> impl IntoView {
+pub fn ViperTestNameInput(viper_test_configuration: RwSignal<UserViperTestConfiguration>) -> impl IntoView {
 
-    let (getter, setter) = create_slice(test_configuration,
+    let (getter, setter) = create_slice(viper_test_configuration,
         |config| {
             Clone::clone(&config.name)
         },
@@ -25,21 +25,21 @@ pub fn TestNameInput(test_configuration: RwSignal<UserTestConfiguration>) -> imp
                 match cause {
                     IllegalViperTestName::TooShort { expected, actual, value } => {
                         if actual > 0 {
-                            UserInputValue::Both(format!("A test name must be at least {expected} characters long."), value)
+                            UserInputValue::Both(format!("A viper test name must be at least {expected} characters long."), value)
                         }
                         else {
-                            UserInputValue::Both("Enter a valid test name.".to_string(), value)
+                            UserInputValue::Both("Enter a valid viper test name.".to_string(), value)
                         }
                     }
                     IllegalViperTestName::TooLong { expected, value, .. } => {
-                        UserInputValue::Both(format!("A test name must be at most {expected} characters long."), value)
+                        UserInputValue::Both(format!("A viper test name must be at most {expected} characters long."), value)
                     },
                     IllegalViperTestName::InvalidStartEndCharacter { value } => {
-                        UserInputValue::Both("The test name starts/ends with an invalid character. \
+                        UserInputValue::Both("The viper test name starts/ends with an invalid character. \
                         Valid characters are a-z, A-Z and 0-9.".to_string(), value)
                     }
                     IllegalViperTestName::InvalidCharacter { value } => {
-                        UserInputValue::Both("The test name contains invalid characters.".to_string(), value)
+                        UserInputValue::Both("The viper test name contains invalid characters.".to_string(), value)
                     },
                 }
             }
@@ -48,11 +48,11 @@ pub fn TestNameInput(test_configuration: RwSignal<UserTestConfiguration>) -> imp
 
     view! {
         <UserInput
-            getter=getter
-            setter=setter
-            label="Test Name"
+            getter
+            setter
+            label="Viper Test Name"
             placeholder="MyAwesomeViperTest"
-            validator=validator
+            validator
         />
     }
 }

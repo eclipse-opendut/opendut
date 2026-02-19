@@ -13,59 +13,59 @@ pub type ClusterSelection = Ior<ClusterSelectionError, ClusterId>;
 
 #[derive(thiserror::Error, Clone, Debug, Eq, PartialEq, Hash)]
 #[allow(clippy::enum_variant_names)] // "all variants have the same prefix: `Invalid`"
-pub enum TestMisconfiguration {
-    #[error("Invalid test name")]
+pub enum ViperTestMisconfiguration {
+    #[error("Invalid viper test name")]
     InvalidName,
-    #[error("Invalid source ID")]
+    #[error("Invalid viper source ID")]
     InvalidSourceId,
-    #[error("Invalid test suite")]
+    #[error("Invalid viper test suite")]
     InvalidSuite,
     #[error("Invalid cluster ID")]
     InvalidClusterId,
-    #[error("Invalid test parameter key")]
+    #[error("Invalid viper test parameter key")]
     InvalidParameterKey,
-    #[error("Invalid test parameter value")]
+    #[error("Invalid viper test parameter value")]
     InvalidParameterValue,
 }
 
 #[derive(Clone, Debug)]
-pub struct UserTestConfiguration {
+pub struct UserViperTestConfiguration {
     pub id: ViperTestId,
     pub name: UserInputValue,
-    pub source: SourceSelection,
-    pub suite: UserInputValue,
+    pub viper_source: SourceSelection,
+    pub viper_test_suite: UserInputValue,
     pub cluster: ClusterSelection,
     pub parameters: HashMap<String, UserInputValue>,
     pub is_new: bool,
 }
 
-impl TryFrom<UserTestConfiguration> for ViperTestDescriptor {
-    type Error = TestMisconfiguration;
+impl TryFrom<UserViperTestConfiguration> for ViperTestDescriptor {
+    type Error = ViperTestMisconfiguration;
 
-    fn try_from(configuration: UserTestConfiguration) -> Result<Self, Self::Error> {
+    fn try_from(configuration: UserViperTestConfiguration) -> Result<Self, Self::Error> {
         let name = configuration
             .name
-            .right_ok_or(TestMisconfiguration::InvalidName)
+            .right_ok_or(ViperTestMisconfiguration::InvalidName)
             .and_then(|name| {
                 ViperTestName::try_from(name)
-                    .map_err(|_| TestMisconfiguration::InvalidName)
+                    .map_err(|_| ViperTestMisconfiguration::InvalidName)
             })?;
 
         let source = configuration
-            .source
-            .right_ok_or(TestMisconfiguration::InvalidSourceId)?;
+            .viper_source
+            .right_ok_or(ViperTestMisconfiguration::InvalidSourceId)?;
 
         let suite = configuration
-            .suite
-            .right_ok_or(TestMisconfiguration::InvalidSuite)
+            .viper_test_suite
+            .right_ok_or(ViperTestMisconfiguration::InvalidSuite)
             .and_then(|suite_id| {
                 ViperTestSuiteIdentifier::try_from(suite_id)
-                    .map_err(|_| TestMisconfiguration::InvalidSuite)
+                    .map_err(|_| ViperTestMisconfiguration::InvalidSuite)
             })?;
 
         let cluster = configuration
             .cluster
-            .right_ok_or(TestMisconfiguration::InvalidClusterId)?;
+            .right_ok_or(ViperTestMisconfiguration::InvalidClusterId)?;
 
         let mut parameters = HashMap::new();
 
@@ -76,7 +76,7 @@ impl TryFrom<UserTestConfiguration> for ViperTestDescriptor {
             };
 
             let value_string = value_input
-                .right_ok_or(TestMisconfiguration::InvalidParameterValue)?;
+                .right_ok_or(ViperTestMisconfiguration::InvalidParameterValue)?;
             let value = parse_parameter_value(&value_string);
 
             parameters.insert(key, value);

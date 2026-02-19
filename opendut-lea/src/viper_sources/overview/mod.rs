@@ -4,41 +4,41 @@ use leptos::prelude::*;
 use opendut_lea_components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, OverviewTable, TableHeading};
 use opendut_model::viper::ViperSourceDescriptor;
 use crate::app::use_app_globals;
-use crate::sources::components::CreateSourceButton;
-use crate::sources::overview::row::Row;
+use crate::viper_sources::components::CreateViperSourceButton;
+use crate::viper_sources::overview::row::Row;
 
 #[component(transparent)]
-pub fn SourcesOverview() -> impl IntoView {
+pub fn ViperSourcesOverview() -> impl IntoView {
 
     let globals = use_app_globals();
 
-    let refetch_registered_sources = RwSignal::new(());
+    let refetch_viper_sources = RwSignal::new(());
 
-    let sources: LocalResource<Vec<ViperSourceDescriptor>> = {
+    let viper_sources: LocalResource<Vec<ViperSourceDescriptor>> = {
         let carl = globals.client.clone();
 
         LocalResource::new(move || {
-            refetch_registered_sources.track();
+            refetch_viper_sources.track();
 
             let mut carl = carl.clone();
 
             async move {
-                let mut sources = carl.viper.list_viper_source_descriptors().await
-                    .expect("Failed to request the list of sources");
+                let mut viper_sources = carl.viper.list_viper_source_descriptors().await
+                    .expect("Failed to request the list of viper_sources");
 
-                sources.sort_by(|source_a, source_b| {
-                    source_a.name.value().to_lowercase()
-                        .cmp(&source_b.name.value().to_lowercase())
+                viper_sources.sort_by(|viper_source_a, viper_source_b| {
+                    viper_source_a.name.value().to_lowercase()
+                        .cmp(&viper_source_b.name.value().to_lowercase())
                 });
 
-                sources
+                viper_sources
             }
         })
     };
 
     let breadcrumbs = vec![
         Breadcrumb::new("Dashboard", "/"),
-        Breadcrumb::new("Sources", "/sources")
+        Breadcrumb::new("Viper Sources", "/viper_sources")
     ];
 
     let table_headings = vec![
@@ -53,15 +53,15 @@ pub fn SourcesOverview() -> impl IntoView {
             breadcrumbs
             controls=view! {
                 <div class="buttons">
-                    <CreateSourceButton />
+                    <CreateViperSourceButton />
                     <IconButton
                         icon=FontAwesomeIcon::ArrowsRotate
                         color=ButtonColor::Light
                         size=ButtonSize::Normal
                         state=ButtonState::Enabled
-                        label="Refresh table of sources"
+                        label="Refresh table of viper_sources"
                         on_action=move || {
-                            refetch_registered_sources.notify();
+                            refetch_viper_sources.notify();
                         }
                     />
                 </div>
@@ -69,20 +69,20 @@ pub fn SourcesOverview() -> impl IntoView {
         >
             <OverviewTable headings=table_headings>
                 { move || Suspend::new(async move {
-                    let sources = sources.await;
+                    let viper_sources = viper_sources.await;
                     view! {
                         <For
-                            each = move || sources.clone()
-                            key = |source| source.id
-                            children = { move |source_descriptor| {
+                            each = move || viper_sources.clone()
+                            key = |viper_source| viper_source.id
+                            children = { move |viper_source_descriptor| {
 
                                 let on_delete = move || {
-                                    refetch_registered_sources.notify();
+                                    refetch_viper_sources.notify();
                                 };
 
                                 view! {
                                     <Row
-                                        source_descriptor=RwSignal::new(source_descriptor)
+                                        viper_source_descriptor=RwSignal::new(viper_source_descriptor)
                                         on_delete
                                     />
                                 }

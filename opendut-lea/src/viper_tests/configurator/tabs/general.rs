@@ -1,13 +1,13 @@
 use leptos::prelude::*;
 use opendut_lea_components::ReadOnlyInput;
-use crate::viper_tests::configurator::components::TestNameInput;
-use crate::viper_tests::configurator::types::UserTestConfiguration;
+use crate::viper_tests::configurator::components::ViperTestNameInput;
+use crate::viper_tests::configurator::types::UserViperTestConfiguration;
 
 
 #[component]
-pub fn GeneralTab(test_configuration: RwSignal<UserTestConfiguration>) -> impl IntoView {
+pub fn GeneralTab(viper_test_configuration: RwSignal<UserViperTestConfiguration>) -> impl IntoView {
 
-    let test_id = Signal::derive(move || test_configuration.get().id.to_string());
+    let test_id = Signal::derive(move || viper_test_configuration.get().id.to_string());
 
     view! {
         <div>
@@ -15,8 +15,8 @@ pub fn GeneralTab(test_configuration: RwSignal<UserTestConfiguration>) -> impl I
                 label="Test ID"
                 value=test_id
             />
-            <TestNameInput
-                test_configuration
+            <ViperTestNameInput
+                viper_test_configuration
             />
         </div>
     }

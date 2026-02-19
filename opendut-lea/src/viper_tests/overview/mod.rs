@@ -4,64 +4,64 @@ use leptos::prelude::*;
 use opendut_lea_components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, OverviewTable, TableHeading};
 use opendut_model::viper::ViperTestDescriptor;
 use crate::app::use_app_globals;
-use crate::viper_tests::components::CreateTestButton;
+use crate::viper_tests::components::CreateViperTestButton;
 use crate::viper_tests::overview::row::Row;
 
 #[component(transparent)]
-pub fn TestsOverview() -> impl IntoView {
+pub fn ViperTestsOverview() -> impl IntoView {
 
     let globals = use_app_globals();
-    let refetch_registered_tests = RwSignal::new(());
+    let refetch_viper_tests = RwSignal::new(());
 
-    let tests: LocalResource<Vec<ViperTestDescriptor>> = {
+    let viper_tests: LocalResource<Vec<ViperTestDescriptor>> = {
         let carl = globals.client.clone();
 
         LocalResource::new(move || {
-            refetch_registered_tests.track();
+            refetch_viper_tests.track();
 
             let mut carl = carl.clone();
 
             async move {
-                let mut tests = carl.viper.list_viper_test_descriptors().await
-                    .expect("Failed to request the list of viper_tests / run descriptors.");
+                let mut viper_tests = carl.viper.list_viper_test_descriptors().await
+                    .expect("Failed to request the list of viper test descriptors.");
 
-                tests.sort_by(|test_a, test_b| {
-                    test_a.name.value().to_lowercase()
-                        .cmp(&test_b.name.value().to_lowercase())
+                viper_tests.sort_by(|viper_test_a, viper_test_b| {
+                    viper_test_a.name.value().to_lowercase()
+                        .cmp(&viper_test_b.name.value().to_lowercase())
                 });
 
-                tests
+                viper_tests
             }
         })
     };
 
     let breadcrumbs = vec![
         Breadcrumb::new("Dashboard", "/"),
-        Breadcrumb::new("Tests", "/viper_tests")
+        Breadcrumb::new("Viper Tests", "/viper_tests")
     ];
 
     let table_headings = vec![
         TableHeading::new(String::from("Name")),
-        TableHeading::new(String::from("Source")),
-        TableHeading::new(String::from("Suite")),
+        TableHeading::new(String::from("Viper Source")),
+        TableHeading::new(String::from("Viper Test Suite")),
         TableHeading::new(String::from("Action")).set_narrow(),
     ];
 
     view! {
         <BasePageContainer
-            title="Tests"
+            title="Viper Tests"
             breadcrumbs
             controls=view! {
                 <div class="buttons">
-                    <CreateTestButton />
+                    <CreateViperTestButton />
                     <IconButton
                         icon=FontAwesomeIcon::ArrowsRotate
                         color=ButtonColor::Light
                         size=ButtonSize::Normal
                         state=ButtonState::Enabled
-                        label="Refresh table of viper_tests"
+                        label="Refresh table of viper tests"
                         on_action=move || {
-                            refetch_registered_tests.notify();
+                            refetch_viper_tests.notify();
                         }
                     />
                 </div>
@@ -69,20 +69,20 @@ pub fn TestsOverview() -> impl IntoView {
         >
         <OverviewTable headings=table_headings>
             { move || Suspend::new(async move {
-                    let tests = tests.await;
+                    let viper_tests = viper_tests.await;
                     view! {
                         <For
-                            each = move || tests.clone()
-                            key = |tests| tests.id
-                            children = { move |tests_descriptor| {
+                            each = move || viper_tests.clone()
+                            key = |viper_tests| viper_tests.id
+                            children = { move |viper_test_descriptor| {
 
                                 let on_delete = move || {
-                                    refetch_registered_tests.notify();
+                                    refetch_viper_tests.notify();
                                 };
 
                                 view! {
                                     <Row
-                                        test_descriptor=RwSignal::new(tests_descriptor)
+                                        viper_test_descriptor=RwSignal::new(viper_test_descriptor)
                                         on_delete
                                     />
                                 }

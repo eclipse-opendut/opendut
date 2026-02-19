@@ -1,13 +1,13 @@
 use leptos::prelude::*;
 use crate::viper_tests::configurator::components::ClusterSelector;
-use crate::viper_tests::configurator::types::UserTestConfiguration;
+use crate::viper_tests::configurator::types::UserViperTestConfiguration;
 
 #[component]
-pub fn ClusterTab(test_configuration: RwSignal<UserTestConfiguration>) -> impl IntoView {
+pub fn ClusterTab(viper_test_configuration: RwSignal<UserViperTestConfiguration>) -> impl IntoView {
 
     view! {
         <div>
-            <ClusterSelector test_configuration />
+            <ClusterSelector viper_test_configuration />
         </div>
     }
 }

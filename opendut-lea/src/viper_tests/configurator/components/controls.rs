@@ -6,33 +6,33 @@ use opendut_lea_components::{use_toaster, ButtonColor, ButtonSize, ButtonState, 
 use opendut_model::viper::ViperTestDescriptor;
 use crate::app::use_app_globals;
 use crate::routing::{navigate_to, WellKnownRoutes};
-use crate::viper_tests::components::DeleteTestButton;
-use crate::viper_tests::configurator::types::UserTestConfiguration;
+use crate::viper_tests::components::DeleteViperTestButton;
+use crate::viper_tests::configurator::types::UserViperTestConfiguration;
 
 #[component]
 pub fn Controls(
-    configuration: RwSignal<UserTestConfiguration>,
-    is_valid_test_configuration: Signal<bool>,
+    configuration: RwSignal<UserViperTestConfiguration>,
+    #[prop(into)] is_valid_configuration: Signal<bool>,
 ) -> impl IntoView {
 
-    let test_id = Signal::derive(move || {
+    let viper_test_id = Signal::derive(move || {
         configuration.get().id
     });
 
     let use_navigate = use_navigate();
     let on_delete = { move || {
-        navigate_to(WellKnownRoutes::TestsOverview, use_navigate.clone())
+        navigate_to(WellKnownRoutes::ViperTestsOverview, use_navigate.clone())
     }};
 
     view! {
         <div class="is-flex">
-            <SaveTestButton
+            <SaveViperTestButton
                 configuration
-                is_valid_test_configuration
+                is_valid_configuration
             />
             <div class="px-1" />
-            <DeleteTestButton
-                test_id
+            <DeleteViperTestButton
+                viper_test_id
                 button_color=ButtonColor::Danger
                 on_delete
             />
@@ -41,9 +41,9 @@ pub fn Controls(
 }
 
 #[component]
-fn SaveTestButton(
-    configuration: RwSignal<UserTestConfiguration>,
-    is_valid_test_configuration: Signal<bool>,
+fn SaveViperTestButton(
+    configuration: RwSignal<UserViperTestConfiguration>,
+    is_valid_configuration: Signal<bool>,
 ) -> impl IntoView {
 
     let globals = use_app_globals();
@@ -61,7 +61,7 @@ fn SaveTestButton(
     let button_state = Signal::derive(move || {
         if pending.get() {
             ButtonState::Loading
-        } else if is_valid_test_configuration.get() {
+        } else if is_valid_configuration.get() {
             ButtonState::Enabled
         } else {
             ButtonState::Disabled
@@ -75,29 +75,29 @@ fn SaveTestButton(
         leptos::task::spawn_local(async move {
             pending.set(true);
 
-            let test_descriptor = ViperTestDescriptor::try_from(configuration.get_untracked());
-            match test_descriptor {
-                Ok(test_descriptor) => {
-                    let test_id = test_descriptor.id;
-                    let result = carl.viper.store_viper_test_descriptor(test_descriptor).await;
+            let viper_test_descriptor = ViperTestDescriptor::try_from(configuration.get_untracked());
+            match viper_test_descriptor {
+                Ok(viper_test_descriptor) => {
+                    let viper_test_id = viper_test_descriptor.id;
+                    let result = carl.viper.store_viper_test_descriptor(viper_test_descriptor).await;
                     match result {
                         Ok(_) => {
-                            debug!("Successfully stored test: {test_id}");
+                            debug!("Successfully stored viper test: {viper_test_id}");
                             toaster.toast(
                                 Toast::builder()
-                                    .simple("Successfully stored test configuration.")
+                                    .simple("Successfully stored viper test configuration.")
                                     .success(),
                             );
                             setter.set(false);
                         }
                         Err(cause) => {
-                            error!("Failed to create test <{test_id}>, due to error: {cause:?}");
-                            toaster.toast(Toast::builder().simple("Failed to store test!").error());
+                            error!("Failed to create viper test <{viper_test_id}>, due to error: {cause:?}");
+                            toaster.toast(Toast::builder().simple("Failed to store viper test!").error());
                         }
                     }
                 }
                 Err(error) => {
-                    error!("Failed to dispatch create test action, due to misconfiguration!\n  {error}");
+                    error!("Failed to dispatch create viper test action, due to misconfiguration!\n  {error}");
                 }
             };
 
@@ -111,7 +111,7 @@ fn SaveTestButton(
             color=ButtonColor::Info
             size=ButtonSize::Normal
             state=button_state
-            label="Save Test"
+            label="Save Viper Test"
             on_action
         />
     }

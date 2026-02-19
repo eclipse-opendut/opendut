@@ -23,9 +23,9 @@ pub mod path {
     pub const peers_overview: &str = "/peers";
     pub const user: &str = "/user";
     #[cfg(feature = "viper")]
-    pub const sources_overview: &str = "/sources";
+    pub const viper_sources_overview: &str = "/viper_sources";
     #[cfg(feature = "viper")]
-    pub const tests_overview: &str = "/viper_tests";
+    pub const viper_tests_overview: &str = "/viper_tests";
 }
 
 #[derive(Clone)]
@@ -35,13 +35,13 @@ pub enum WellKnownRoutes {
     PeersOverview,
     PeerConfigurator { id: PeerId },
     #[cfg(feature = "viper")]
-    SourcesOverview,
+    ViperSourcesOverview,
     #[cfg(feature = "viper")]
-    SourceConfigurator { id: opendut_model::viper::ViperSourceId },
+    ViperSourceConfigurator { id: opendut_model::viper::ViperSourceId },
     #[cfg(feature = "viper")]
-    TestsOverview,
+    ViperTestsOverview,
     #[cfg(feature = "viper")]
-    TestConfigurator { id: opendut_model::viper::ViperTestId },
+    ViperTestConfigurator { id: opendut_model::viper::ViperTestId },
     ErrorPage { title: String, text: String, details: Option<String> },
 }
 
@@ -66,22 +66,22 @@ impl WellKnownRoutes {
                     .expect("PeerConfigurator route should be valid.")
             },
             #[cfg(feature = "viper")]
-            WellKnownRoutes::SourcesOverview => {
-                base.join(path::sources_overview)
+            WellKnownRoutes::ViperSourcesOverview => {
+                base.join(path::viper_sources_overview)
                     .expect("SourcesOverview route should be valid.")
             }
             #[cfg(feature = "viper")]
-            WellKnownRoutes::SourceConfigurator { id } => {
-                base.join(&format!("/sources/{}/configure/general", id.url_encode()))
+            WellKnownRoutes::ViperSourceConfigurator { id } => {
+                base.join(&format!("/viper_sources/{}/configure/general", id.url_encode()))
                     .expect("SourcesConfigurator route should be valid.")
             }
             #[cfg(feature = "viper")]
-            WellKnownRoutes::TestsOverview => {
-                base.join(path::tests_overview)
+            WellKnownRoutes::ViperTestsOverview => {
+                base.join(path::viper_tests_overview)
                     .expect("TestsOverview route should be valid.")
             }
             #[cfg(feature = "viper")]
-            WellKnownRoutes::TestConfigurator { id } => {
+            WellKnownRoutes::ViperTestConfigurator { id } => {
                 base.join(&format!("/viper_tests/{}/configure/general", id.url_encode()))
                     .expect("TestConfigurator route should be valid.")
             }
@@ -162,10 +162,10 @@ mod routes {
                     redirect_path=|| "/login"
                 />
                 <ProtectedRoute
-                    path=path!("/sources")
+                    path=path!("/viper_sources")
                     view=move || {
                         #[cfg(feature = "viper")]
-                        view! { <Initialized app_globals><crate::sources::SourcesOverview/></Initialized> }
+                        view! { <Initialized app_globals><crate::viper_sources::ViperSourcesOverview/></Initialized> }
                         #[cfg(not(feature = "viper"))]
                         NotFound
                     }
@@ -174,10 +174,10 @@ mod routes {
                     redirect_path=|| "/login"
                 />
                 <ProtectedRoute
-                    path=path!("/sources/:id/configure/:tab")
+                    path=path!("/viper_sources/:id/configure/:tab")
                     view=move || {
                         #[cfg(feature = "viper")]
-                        view! { <Initialized app_globals><crate::sources::SourceConfigurator/></Initialized> }
+                        view! { <Initialized app_globals><crate::viper_sources::ViperSourceConfigurator/></Initialized> }
                         #[cfg(not(feature = "viper"))]
                         NotFound
                     }
@@ -189,7 +189,7 @@ mod routes {
                     path=path!("/viper_tests")
                     view=move || {
                         #[cfg(feature = "viper")]
-                        view! { <Initialized app_globals><crate::viper_tests::TestsOverview/></Initialized> }
+                        view! { <Initialized app_globals><crate::viper_tests::ViperTestsOverview/></Initialized> }
                         #[cfg(not(feature = "viper"))]
                         NotFound
                     }
@@ -201,7 +201,7 @@ mod routes {
                     path=path!("/viper_tests/:id/configure/:tab")
                     view=move || {
                         #[cfg(feature = "viper")]
-                        view! { <Initialized app_globals><crate::viper_tests::TestConfigurator/></Initialized> }
+                        view! { <Initialized app_globals><crate::viper_tests::ViperTestConfigurator/></Initialized> }
                         #[cfg(not(feature = "viper"))]
                         NotFound
                     }
