@@ -42,11 +42,6 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
         }
     });
 
-    let test_source = Signal::derive(move || {
-        test_source_descriptor.read().as_ref()
-            .map(|descriptor| descriptor.name.to_string())
-    });
-
     let test_suite = create_read_slice(test_descriptor,
         |test_descriptor| {
             test_descriptor.suite.to_string()
@@ -62,17 +57,17 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
                 <a href=configurator_href> { test_name } </a>
             </OverviewTableCell>
         
-            { move ||
-                test_source.get().map(|source_name| {
-                    view! {
-                        <OverviewTableCell>
-                            <a href=source_configurator_href on:click=move |ev| ev.stop_propagation()>
-                                { source_name }
-                            </a>
-                        </OverviewTableCell>
-                    }
-                })
-            }
+            { move || Suspend::new(async move {
+                let test_source = test_source_descriptor.await;
+                let source_name = test_source.name.to_string();
+                view! {
+                    <OverviewTableCell>
+                        <a href=source_configurator_href>
+                            { source_name }
+                        </a>
+                    </OverviewTableCell>
+                }
+            })}
         
             <OverviewTableCell>
                 <p> { test_suite } </p>
