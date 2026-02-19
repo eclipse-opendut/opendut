@@ -65,7 +65,7 @@ where
 
                             view! {
                                 <tr
-                                    class:has-background-link-light=move || is_selected.get()
+                                    class=("has-background-link-light", move || is_selected.get())
                                     style=move || if is_disabled.get() {"cursor: not-allowed; opacity: 0.8;"} else {"cursor: pointer;"}
                                     on:click=move |_| {
                                         if is_disabled.get() { return }

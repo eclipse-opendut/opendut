@@ -14,7 +14,7 @@ where F: Fn() + 'static {
             on:click=move |event| event.stop_propagation()
         >
             <label class="dut-toggle"
-                class:active = move || is_active.get()
+                class=("active", move || is_active.get())
                 on:click=move |_| on_action()
             />
             {

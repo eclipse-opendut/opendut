@@ -6,8 +6,8 @@ use opendut_lea_components::FontAwesomeIcon;
 #[component]
 pub fn Sidebar(menu_visible: RwSignal<bool>, hide_buttons: Signal<bool>) -> impl IntoView {
     view! {
-        <aside class="dut-menu is-left column" class:is-active=move || menu_visible.get()>
-            <ul class="dut-menu-list" class:is-hidden= move || hide_buttons.get()>
+        <aside class="dut-menu is-left column" class=("is-active", move || menu_visible.get())>
+            <ul class="dut-menu-list" class=("is-hidden", move || hide_buttons.get())>
                 <SidebarItem
                     icon= FontAwesomeIcon::Dashboard
                     label="Dashboard"
@@ -50,9 +50,9 @@ pub fn Sidebar(menu_visible: RwSignal<bool>, hide_buttons: Signal<bool>) -> impl
                 />
             </ul>
             <div class="px-2">
-                <div class="dut-divider" class:is-hidden= move || hide_buttons.get()/>
+                <div class="dut-divider" class=("is-hidden", move || hide_buttons.get()) />
                 <ul class="menu-label">
-                    <li class:is-hidden= move || hide_buttons.get()>
+                    <li class=("is-hidden", move || hide_buttons.get())>
                         <a href=routing::path::about> About </a>
                     </li>
                     <li>
@@ -76,7 +76,7 @@ pub fn SidebarItem(
 
     view! {
         <li>
-            <a class:is-active=is_active href=path.get()>
+            <a class=("is-active", is_active) href=path.get()>
                 <i class=icon.get().as_class() />
                 <span class="ml-2 is-size-6"> {label} </span>
             </a>

@@ -35,7 +35,7 @@ pub fn Navbar(menu_visible: RwSignal<bool>, hide_buttons: Signal<bool>) -> impl 
                     <img src="/logos/logo_onlight_wide.svg" alt="openDuT" />
                 </a>
             </div>
-            <div class="navbar-menu" class:is-hidden=move || hide_buttons.get()>
+            <div class="navbar-menu" class=("is-hidden", move || hide_buttons.get())>
                 <div class="navbar-end">
                     <NavbarButton
                         icon=FontAwesomeIcon::Cluster
@@ -74,7 +74,7 @@ pub fn Navbar(menu_visible: RwSignal<bool>, hide_buttons: Signal<bool>) -> impl 
                     />
                 </div>
             </div>
-            <div class="column is-narrow ml-auto p-1" class:is-hidden=move || hide_buttons.get()>
+            <div class="column is-narrow ml-auto p-1" class=("is-hidden", move || hide_buttons.get())>
                 <ProfileDropdown />
             </div>
         </nav>
