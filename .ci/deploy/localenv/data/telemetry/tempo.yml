@@ -35,6 +35,8 @@ metrics_generator:
     service_graphs:
     span_metrics:
       enable_target_info: true
+    local_blocks:
+      flush_to_storage: true
   registry:
     external_labels:
       source: tempo
@@ -56,4 +58,6 @@ storage:
 overrides:
   defaults:
     metrics_generator:
-      processors: [service-graphs, span-metrics]
+      # Activate and configure the local-blocks processor
+      # https://grafana.com/docs/tempo/latest/metrics-from-traces/metrics-queries/configure-traceql-metrics/
+      processors: [service-graphs, span-metrics, local-blocks]

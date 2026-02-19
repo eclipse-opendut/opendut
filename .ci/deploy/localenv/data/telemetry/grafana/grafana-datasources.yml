@@ -20,6 +20,8 @@ datasources:
       httpHeaderValue1: "tenant1"
 
   # Traces
+  # https://grafana.com/docs/grafana/latest/datasources/tempo/configure-tempo-data-source/
+  # https://grafana.com/docs/tempo/latest/metrics-from-traces/service_graphs/enable-service-graphs/
   - name: Tempo
     uid: tempo
     type: tempo
@@ -28,6 +30,10 @@ datasources:
     editable: false
     access: proxy
     url: http://tempo:3200
+    jsonData:
+      httpMethod: GET
+      serviceMap:
+        datasourceUid: 'prometheus'
 
   # Metrics
   - name: Prometheus
@@ -38,3 +44,5 @@ datasources:
     editable: false
     access: proxy
     url: http://prometheus:9090
+    jsonData:
+      httpMethod: GET

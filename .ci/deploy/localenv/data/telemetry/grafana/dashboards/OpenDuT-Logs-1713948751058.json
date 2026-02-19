@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 2,
+  "id": 0,
   "links": [],
   "panels": [
     {
@@ -31,53 +31,142 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 21,
-        "w": 12,
+        "h": 11,
+        "w": 17,
         "x": 0,
         "y": 0
       },
-      "id": 3,
+      "id": 2,
       "options": {
         "dedupStrategy": "none",
         "enableInfiniteScrolling": false,
         "enableLogDetails": true,
-        "prettifyLogMessage": false,
-        "showCommonLabels": false,
         "showControls": false,
-        "showLabels": false,
-        "showTime": true,
+        "showTime": false,
         "sortOrder": "Descending",
-        "wrapLogMessage": true
+        "wrapLogMessage": false
       },
       "pluginVersion": "12.3.3",
       "targets": [
         {
-          "datasource": {
-            "type": "loki",
-            "uid": "e7c01197-5081-40dc-b76b-2fd7a29de663"
-          },
-          "direction": "backward",
-          "editorMode": "builder",
-          "expr": "{service_name=~\"$service_name\"} |= `$filter` | logfmt",
-          "maxLines": 1000,
-          "queryType": "range",
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "loki",
-            "uid": "loki"
-          },
           "direction": "backward",
           "editorMode": "code",
-          "expr": "{severity_text=\"$severity\", service_name!~\"$service_name\"}",
-          "hide": false,
+          "expr": "{service_name=~\"$service_name\"} | logfmt | severity_text = `ERROR`",
           "queryType": "range",
-          "refId": "B"
+          "refId": "A"
         }
       ],
-      "title": "Loki Logs - Last 1000",
+      "title": "Errors",
       "type": "logs"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": true,
+            "footer": {
+              "reducers": []
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 7,
+        "x": 17,
+        "y": 0
+      },
+      "id": 4,
+      "options": {
+        "cellHeight": "sm",
+        "frameIndex": 21,
+        "showHeader": true
+      },
+      "pluginVersion": "12.3.3",
+      "targets": [
+        {
+          "direction": "backward",
+          "editorMode": "code",
+          "expr": "sum by(service_name) (count_over_time({service_name=~\"$service_name\"}| logfmt [$__auto]))",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Log lines grouped by service",
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "reducers": [
+              "sum"
+            ]
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "delimiter": ",",
+            "source": "Field"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Field": true
+            },
+            "includeByName": {},
+            "indexByName": {
+              "Field": 0,
+              "Total": 2,
+              "service_name": 1
+            },
+            "renameByName": {
+              "service_name": "Service name"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "desc": true,
+                "field": "Total"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "table"
     },
     {
       "datasource": {
@@ -89,39 +178,38 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 14,
-        "w": 12,
-        "x": 12,
-        "y": 0
+        "h": 22,
+        "w": 17,
+        "x": 0,
+        "y": 11
       },
-      "id": 7,
+      "id": 1,
       "options": {
         "dedupStrategy": "none",
         "enableInfiniteScrolling": false,
         "enableLogDetails": true,
-        "prettifyLogMessage": false,
-        "showCommonLabels": false,
         "showControls": false,
         "showLabels": false,
-        "showTime": true,
+        "showTime": false,
         "sortOrder": "Descending",
-        "wrapLogMessage": true
+        "syntaxHighlighting": true,
+        "wrapLogMessage": false
       },
       "pluginVersion": "12.3.3",
       "targets": [
         {
           "datasource": {
             "type": "loki",
-            "uid": "e7c01197-5081-40dc-b76b-2fd7a29de663"
+            "uid": "loki"
           },
           "direction": "backward",
-          "editorMode": "builder",
-          "expr": "{service_name=~\"$service_name\", severity_text=\"ERROR\"} |= `$filter` | logfmt",
+          "editorMode": "code",
+          "expr": "{service_name=~\"$service_name\"} | logfmt",
           "queryType": "range",
           "refId": "A"
         }
       ],
-      "title": "Loki Logs - ERRORS",
+      "title": "Logs",
       "type": "logs"
     },
     {
@@ -132,258 +220,121 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
           "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "footer": {
+              "reducers": []
+            },
             "hideFrom": {
-              "legend": false,
-              "tooltip": false,
               "viz": false
-            }
+            },
+            "inspect": false
           },
-          "mappings": []
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
         },
         "overrides": [
           {
             "matcher": {
               "id": "byName",
-              "options": "INFO"
+              "options": ""
             },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "green",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "DEBUG"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "blue",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "TRACE"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "purple",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "ERROR"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "red",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "WARN"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "yellow",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "DEFAULT"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#848380",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "WARNING"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "yellow",
-                  "mode": "fixed"
-                }
-              }
-            ]
+            "properties": []
           }
         ]
       },
       "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 12,
-        "y": 14
+        "h": 10,
+        "w": 7,
+        "x": 17,
+        "y": 12
       },
-      "id": 6,
+      "id": 3,
       "options": {
-        "displayLabels": [
-          "percent"
-        ],
-        "legend": {
-          "displayMode": "list",
-          "placement": "right",
-          "showLegend": true
-        },
-        "pieType": "donut",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": true
-        },
-        "sort": "desc",
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "single",
-          "sort": "none"
-        }
+        "cellHeight": "sm",
+        "showHeader": true
       },
       "pluginVersion": "12.3.3",
       "targets": [
         {
-          "datasource": {
-            "type": "loki",
-            "uid": "e7c01197-5081-40dc-b76b-2fd7a29de663"
-          },
           "direction": "backward",
           "editorMode": "code",
-          "expr": "sum by(severity_text) (count_over_time({service_name=~\"$service_name\", severity_text=~\"$severity\"} |= `$filter` | logfmt [$__auto]))",
-          "queryType": "instant",
+          "expr": "sum by(severity_text) (count_over_time({service_name=~\"$service_name\"} |= `$query_filter` | logfmt [$__auto]))",
+          "legendFormat": "",
+          "queryType": "range",
           "refId": "A"
         }
       ],
-      "title": "Loki Log Levels",
+      "title": "Levels",
       "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "reducers": [
+              "sum"
+            ]
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "delimiter": ",",
+            "source": "Field"
+          }
+        },
         {
           "id": "organize",
           "options": {
             "excludeByName": {
-              "Time": true,
-              "Value #A": false
+              "Field": true
             },
             "includeByName": {},
-            "indexByName": {},
-            "orderByMode": "manual",
+            "indexByName": {
+              "Field": 0,
+              "Total": 2,
+              "severity_text": 1
+            },
             "renameByName": {
-              "level": "Level"
+              "Total": "",
+              "severity_text": "Level"
             }
           }
         }
       ],
-      "type": "piechart"
+      "type": "table"
     }
   ],
   "preload": false,
-  "refresh": "",
   "schemaVersion": 42,
   "tags": [],
   "templating": {
     "list": [
       {
         "current": {
-          "text": "",
-          "value": ""
-        },
-        "label": "Full text",
-        "name": "filter",
-        "options": [
-          {
-            "selected": true,
-            "text": "",
-            "value": ""
-          }
-        ],
-        "query": "",
-        "type": "textbox"
-      },
-      {
-        "allValue": "",
-        "current": {
-          "text": [
-            "All"
-          ],
+          "text": "All",
           "value": [
             "$__all"
           ]
         },
-        "datasource": {
-          "type": "loki",
-          "uid": "loki"
-        },
         "definition": "",
-        "includeAll": true,
-        "label": "LogLevel",
-        "multi": true,
-        "name": "severity",
-        "options": [],
-        "query": {
-          "label": "severity_text",
-          "refId": "LokiVariableQueryEditor-VariableQuery",
-          "stream": "",
-          "type": 1
-        },
-        "refresh": 1,
-        "regex": "",
-        "type": "query"
-      },
-      {
-        "current": {
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
-        },
-        "datasource": {
-          "type": "loki",
-          "uid": "loki"
-        },
-        "definition": "",
+        "description": "OpenTelemetry field service_name",
         "includeAll": true,
         "label": "Service name",
         "multi": true,
@@ -395,7 +346,7 @@
           "stream": "",
           "type": 1
         },
-        "refresh": 1,
+        "refresh": 2,
         "regex": "",
         "type": "query"
       },
@@ -406,18 +357,18 @@
           "uid": "loki"
         },
         "filters": [],
-        "name": "Filters",
+        "name": "query_filter",
         "type": "adhoc"
       }
     ]
   },
   "time": {
-    "from": "now-30m",
+    "from": "now-2d",
     "to": "now"
   },
   "timepicker": {},
-  "timezone": "",
+  "timezone": "browser",
   "title": "OpenDuT Logs",
-  "uid": "e4c47d24-47ae-45c3-b0c9-3199b385f804",
-  "version": 1
+  "uid": "adld7lt",
+  "version": 4
 }

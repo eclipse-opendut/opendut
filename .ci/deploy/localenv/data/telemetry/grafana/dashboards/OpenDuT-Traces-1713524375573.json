@@ -18,9 +18,8 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 11,
+  "id": 3,
   "links": [],
-  "liveNow": false,
   "panels": [
     {
       "collapsed": false,
@@ -53,6 +52,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "points",
             "fillOpacity": 0,
             "gradientMode": "none",
@@ -72,6 +72,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -87,7 +88,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -221,8 +222,8 @@
         ]
       },
       "gridPos": {
-        "h": 8,
-        "w": 12,
+        "h": 10,
+        "w": 11,
         "x": 0,
         "y": 1
       },
@@ -235,11 +236,12 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "none"
         }
       },
-      "pluginVersion": "10.3.3",
+      "pluginVersion": "12.3.3",
       "targets": [
         {
           "datasource": {
@@ -264,9 +266,11 @@
             }
           ],
           "limit": 20,
+          "metricsQueryType": "range",
           "query": "{resource.service.name=~\"$service_name\" && rootName=~\"$root_name\" && resource.service.instance.id=~\"$peer_id\"} ",
           "queryType": "traceql",
           "refId": "A",
+          "serviceMapUseNativeHistograms": false,
           "tableType": "traces"
         }
       ],
@@ -320,6 +324,9 @@
             "cellOptions": {
               "type": "auto"
             },
+            "footer": {
+              "reducers": []
+            },
             "inspect": false
           },
           "mappings": [],
@@ -328,7 +335,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -393,22 +400,14 @@
         ]
       },
       "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
+        "h": 22,
+        "w": 13,
+        "x": 11,
         "y": 1
       },
       "id": 24,
       "options": {
         "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
         "showHeader": true,
         "sortBy": [
           {
@@ -417,7 +416,7 @@
           }
         ]
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "12.3.3",
       "targets": [
         {
           "datasource": {
@@ -460,14 +459,14 @@
       "type": "table"
     }
   ],
+  "preload": false,
   "refresh": "",
-  "schemaVersion": 39,
+  "schemaVersion": 42,
   "tags": [],
   "templating": {
     "list": [
       {
         "current": {
-          "selected": true,
           "text": [
             "All"
           ],
@@ -480,7 +479,6 @@
           "uid": "tempo"
         },
         "definition": "",
-        "hide": 0,
         "includeAll": true,
         "label": "Service name",
         "multi": true,
@@ -493,13 +491,10 @@
         },
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
         "type": "query"
       },
       {
         "current": {
-          "selected": true,
           "text": [
             "All"
           ],
@@ -512,7 +507,6 @@
           "uid": "tempo"
         },
         "definition": "",
-        "hide": 0,
         "includeAll": true,
         "label": "Service Instance ID",
         "multi": true,
@@ -525,13 +519,10 @@
         },
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
         "type": "query"
       },
       {
         "current": {
-          "selected": true,
           "text": [
             "All"
           ],
@@ -544,7 +535,6 @@
           "uid": "tempo"
         },
         "definition": "",
-        "hide": 0,
         "includeAll": true,
         "label": "Root name",
         "multi": true,
@@ -557,8 +547,6 @@
         },
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
         "type": "query"
       }
     ]
@@ -571,6 +559,5 @@
   "timezone": "",
   "title": "OpenDuT Traces",
   "uid": "a0a4c37c-6df6-4ae4-8cb7-1428bad66f28",
-  "version": 1,
-  "weekStart": ""
+  "version": 1
 }
