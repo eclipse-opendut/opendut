@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 
 use crate::components::{UserInput, UserInputValue};
-use crate::tests::configurator::types::UserTestConfiguration;
+use crate::viper_tests::configurator::types::UserTestConfiguration;
 
 #[component]
 pub fn TestSuiteSelector(test_configuration: RwSignal<UserTestConfiguration>) -> impl IntoView {

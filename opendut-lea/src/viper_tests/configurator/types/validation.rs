@@ -1,4 +1,4 @@
-use crate::tests::configurator::types::UserTestConfiguration;
+use crate::viper_tests::configurator::types::UserTestConfiguration;
 
 impl UserTestConfiguration {
     pub fn is_valid(&self) -> bool {

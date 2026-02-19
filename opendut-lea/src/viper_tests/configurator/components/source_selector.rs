@@ -2,7 +2,7 @@ use leptos::prelude::*;
 use opendut_lea_components::{SelectionTable, SelectionTableRow};
 use opendut_model::viper::ViperSourceDescriptor;
 use crate::app::use_app_globals;
-use crate::tests::configurator::types::{SourceSelection, UserTestConfiguration};
+use crate::viper_tests::configurator::types::{SourceSelection, UserTestConfiguration};
 
 #[component]
 pub fn TestSourceSelector(test_configuration: RwSignal<UserTestConfiguration>) -> impl IntoView {
