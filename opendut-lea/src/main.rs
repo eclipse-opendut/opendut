@@ -24,7 +24,7 @@ mod util;
 mod components;
 mod nav;
 #[cfg(feature = "viper")]
-mod sources;
+mod viper_sources;
 #[cfg(feature = "viper")]
 mod viper_tests;
 

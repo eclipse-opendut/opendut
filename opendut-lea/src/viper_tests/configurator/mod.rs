@@ -9,61 +9,61 @@ use crate::components::use_active_tab;
 use crate::routing::{navigate_to, WellKnownRoutes};
 use crate::viper_tests::configurator::components::Controls;
 use crate::viper_tests::configurator::tabs::{ClusterTab, GeneralTab, SourceTab, SuiteTab, TabIdentifier};
-use crate::viper_tests::configurator::types::{ClusterSelection, SourceSelection, UserTestConfiguration};
+use crate::viper_tests::configurator::types::{ClusterSelection, SourceSelection, UserViperTestConfiguration};
 
 mod tabs;
 mod types;
 mod components;
 
 #[component(transparent)]
-pub fn TestConfigurator() -> impl IntoView {
+pub fn ViperTestConfigurator() -> impl IntoView {
 
     let globals = use_app_globals();
     let params = use_params_map();
 
-    let (test_configuration, test_configuration_resource, is_valid_test_configuration) = {
-        let test_id = {
-            let test_id = params.with_untracked(|params| {
+    let (viper_test_configuration, viper_test_configuration_resource, is_valid_configuration) = {
+        let viper_test_id = {
+            let viper_test_id = params.with_untracked(|params| {
                 params.get("id").and_then(|id| ViperTestId::try_from(id.as_str()).ok())
             });
-            match test_id {
+            match viper_test_id {
                 None => {
                     let use_navigate = use_navigate();
                     navigate_to(WellKnownRoutes::ErrorPage {
-                        title: String::from("Invalid TestId"),
-                        text: String::from("Could not parse the provided value as TestId!"),
+                        title: String::from("Invalid ViperTestId"),
+                        text: String::from("Could not parse the provided value as ViperTestId!"),
                         details: None,
                     }, use_navigate);
                     ViperTestId::random()
                 }
-                Some(test_id) => {
-                    test_id
+                Some(viper_test_id) => {
+                    viper_test_id
                 }
             }
         };
 
-        let test_configuration = RwSignal::new(
-            UserTestConfiguration {
-                id: test_id,
-                name: UserInputValue::Left(UserInputError::from("Enter a valid test name.")),
-                source: SourceSelection::Left(String::from("Select a test source.")),
-                suite: UserInputValue::Left(String::from("Enter a test suite.")),
+        let viper_test_configuration = RwSignal::new(
+            UserViperTestConfiguration {
+                id: viper_test_id,
+                name: UserInputValue::Left(UserInputError::from("Enter a valid viper test name.")),
+                viper_source: SourceSelection::Left(String::from("Select a viper test source.")),
+                viper_test_suite: UserInputValue::Left(String::from("Enter a viper test suite.")),
                 cluster: ClusterSelection::Left(String::from("Enter a cluster.")),
                 parameters: HashMap::new(),
                 is_new: true,
             }
         );
 
-        let test_configuration_resource = LocalResource::new(move || {
+        let viper_test_configuration_resource = LocalResource::new(move || {
             let mut carl = globals.client.clone();
             async move {
-                if let Ok(configuration) = carl.viper.get_viper_test_descriptor(test_id).await {
-                    test_configuration.update(|user_configuration| {
-                        let ViperTestDescriptor { id: _, name, source, suite, cluster, parameters } = configuration;
+                if let Ok(configuration) = carl.viper.get_viper_test_descriptor(viper_test_id).await {
+                    viper_test_configuration.update(|user_configuration| {
+                        let ViperTestDescriptor { id: _, name, source: viper_source, suite: viper_test_suite, cluster, parameters } = configuration;
 
                         user_configuration.name = UserInputValue::Right(name.value().to_owned());
-                        user_configuration.source = SourceSelection::Right(source);
-                        user_configuration.suite = UserInputValue::Right(suite.to_string());
+                        user_configuration.viper_source = SourceSelection::Right(viper_source);
+                        user_configuration.viper_test_suite = UserInputValue::Right(viper_test_suite.to_string());
                         user_configuration.cluster = ClusterSelection::Right(cluster);
 
                         let mut configured_parameters: HashMap<String, UserInputValue> = HashMap::new();
@@ -85,26 +85,26 @@ pub fn TestConfigurator() -> impl IntoView {
             }
         });
 
-        let is_valid_test_configuration = Memo::new(move |_| {
-            test_configuration.with(|config| config.is_valid())
+        let is_valid_configuration = Memo::new(move |_| {
+            viper_test_configuration.with(|config| config.is_valid())
         });
 
-        (test_configuration, test_configuration_resource, is_valid_test_configuration)
+        (viper_test_configuration, viper_test_configuration_resource, is_valid_configuration)
     };
 
-    let test_id_string = create_read_slice(test_configuration, |config| config.id.to_string());
+    let viper_test_id_string = create_read_slice(viper_test_configuration, |config| config.id.to_string());
 
     let breadcrumbs = Signal::derive(move || {
-        let test_id = test_id_string.get();
+        let viper_test_id = viper_test_id_string.get();
         vec![
             Breadcrumb::new("Dashboard", "/"),
-            Breadcrumb::new("Tests", "viper_tests"),
-            Breadcrumb::new(&test_id, format!("{test_id}/configure")),
+            Breadcrumb::new("Viper Tests", "viper_tests"),
+            Breadcrumb::new(&viper_test_id, format!("{viper_test_id}/configure")),
         ]
     });
 
     let subtitle = Signal::derive(move || {
-        if let UserInputValue::Right(name) = test_configuration.get().name {
+        if let UserInputValue::Right(name) = viper_test_configuration.get().name {
             name
         } else {
             String::new()
@@ -116,22 +116,22 @@ pub fn TestConfigurator() -> impl IntoView {
             Tab::from_title_and_href(
                 String::from("General"),
                 TabIdentifier::General.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || !test_configuration.read().valid_general_tab())),
+            ).with_is_error(Signal::derive(move || !viper_test_configuration.read().valid_general_tab())),
 
             Tab::from_title_and_href(
-                String::from("Source"),
-                TabIdentifier::Source.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || !test_configuration.read().valid_source_tab())),
+                String::from("Viper Source"),
+                TabIdentifier::ViperSource.as_str().to_owned()
+            ).with_is_error(Signal::derive(move || !viper_test_configuration.read().valid_viper_source_tab())),
 
             Tab::from_title_and_href(
-                String::from("Suite"),
-                TabIdentifier::Suite.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || !test_configuration.read().valid_suite_tab())),
+                String::from("Viper Test Suite"),
+                TabIdentifier::ViperTestSuite.as_str().to_owned()
+            ).with_is_error(Signal::derive(move || !viper_test_configuration.read().valid_viper_test_suite_tab())),
 
             Tab::from_title_and_href(
                 String::from("Cluster"),
                 TabIdentifier::Cluster.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || !test_configuration.read().valid_cluster_tab())),
+            ).with_is_error(Signal::derive(move || !viper_test_configuration.read().valid_cluster_tab())),
         ]
     });
 
@@ -139,25 +139,25 @@ pub fn TestConfigurator() -> impl IntoView {
 
     view! {
         <BasePageContainer
-            title="Configure Test"
+            title="Configure Viper Test"
             subtitle
             breadcrumbs
-            controls=view! { <Controls configuration=test_configuration is_valid_test_configuration=is_valid_test_configuration.into() /> }
+            controls=view! { <Controls configuration=viper_test_configuration is_valid_configuration /> }
         >
             <Suspense
                 fallback=move || view! { <LoadingSpinner /> }
             >
                 {
                     move || Suspend::new(async move {
-                        test_configuration_resource.await;
+                        viper_test_configuration_resource.await;
 
                         view! {
                             <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
                                 { move || match active_tab.get() {
-                                    TabIdentifier::General => view! { <GeneralTab test_configuration /> }.into_any(),
-                                    TabIdentifier::Source => view! { <SourceTab test_configuration /> }.into_any(),
-                                    TabIdentifier::Suite => view! { <SuiteTab test_configuration /> }.into_any(),
-                                    TabIdentifier::Cluster => view! { <ClusterTab test_configuration /> }.into_any(),
+                                    TabIdentifier::General => view! { <GeneralTab viper_test_configuration /> }.into_any(),
+                                    TabIdentifier::ViperSource => view! { <SourceTab viper_test_configuration /> }.into_any(),
+                                    TabIdentifier::ViperTestSuite => view! { <SuiteTab viper_test_configuration /> }.into_any(),
+                                    TabIdentifier::Cluster => view! { <ClusterTab viper_test_configuration /> }.into_any(),
                                 }}
                             </Tabs>
                         }

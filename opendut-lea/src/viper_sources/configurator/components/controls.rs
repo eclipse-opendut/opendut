@@ -6,33 +6,33 @@ use opendut_lea_components::{use_toaster, ButtonColor, ButtonSize, ButtonState, 
 use opendut_model::viper::ViperSourceDescriptor;
 use crate::app::use_app_globals;
 use crate::routing::{navigate_to, WellKnownRoutes};
-use crate::sources::components::DeleteSourceButton;
-use crate::sources::configurator::types::UserSourceConfiguration;
+use crate::viper_sources::components::DeleteViperSourceButton;
+use crate::viper_sources::configurator::types::UserViperSourceConfiguration;
 
 #[component]
 pub fn Controls(
-    configuration: RwSignal<UserSourceConfiguration>,
-    is_valid_source_configuration: Signal<bool>,
+    configuration: RwSignal<UserViperSourceConfiguration>,
+    #[prop(into)] is_valid_configuration: Signal<bool>,
 ) -> impl IntoView {
 
-    let source_id = Signal::derive(move || {
+    let viper_source_id = Signal::derive(move || {
         configuration.get().id
     });
 
     let use_navigate = use_navigate();
     let on_delete = { move || {
-        navigate_to(WellKnownRoutes::SourcesOverview, use_navigate.clone())
+        navigate_to(WellKnownRoutes::ViperSourcesOverview, use_navigate.clone())
     }};
 
     view! {
         <div class="is-flex">
-            <SaveSourceButton
+            <SaveViperSourceButton
                 configuration
-                is_valid_source_configuration
+                is_valid_configuration
             />
             <div class="px-1" />
-            <DeleteSourceButton
-                source_id
+            <DeleteViperSourceButton
+                viper_source_id
                 button_color=ButtonColor::Danger
                 on_delete
             />
@@ -41,9 +41,9 @@ pub fn Controls(
 }
 
 #[component]
-fn SaveSourceButton(
-    configuration: RwSignal<UserSourceConfiguration>,
-    is_valid_source_configuration: Signal<bool>,
+fn SaveViperSourceButton(
+    configuration: RwSignal<UserViperSourceConfiguration>,
+    is_valid_configuration: Signal<bool>,
 ) -> impl IntoView {
 
     let globals = use_app_globals();
@@ -61,7 +61,7 @@ fn SaveSourceButton(
     let button_state = Signal::derive(move || {
         if pending.get() {
             ButtonState::Loading
-        } else if is_valid_source_configuration.get() {
+        } else if is_valid_configuration.get() {
             ButtonState::Enabled
         } else {
             ButtonState::Disabled
@@ -75,29 +75,29 @@ fn SaveSourceButton(
         leptos::task::spawn_local(async move {
             pending.set(true);
 
-            let source_descriptor = ViperSourceDescriptor::try_from(configuration.get_untracked());
-            match source_descriptor {
-                Ok(source_descriptor) => {
-                    let source_id = source_descriptor.id;
-                    let result = carl.viper.store_viper_source_descriptor(source_descriptor).await;
+            let viper_source_descriptor = ViperSourceDescriptor::try_from(configuration.get_untracked());
+            match viper_source_descriptor {
+                Ok(viper_source_descriptor) => {
+                    let viper_source_id = viper_source_descriptor.id;
+                    let result = carl.viper.store_viper_source_descriptor(viper_source_descriptor).await;
                     match result {
                         Ok(_) => {
-                            debug!("Successfully stored source: {source_id}");
+                            debug!("Successfully stored viper source: {viper_source_id}");
                             toaster.toast(
                                 Toast::builder()
-                                    .simple("Successfully stored source configuration.")
+                                    .simple("Successfully stored viper source configuration.")
                                     .success(),
                             );
                             setter.set(false);
                         }
                         Err(cause) => {
-                            error!("Failed to create source <{source_id}>, due to error: {cause:?}");
-                            toaster.toast(Toast::builder().simple("Failed to store source!").error());
+                            error!("Failed to create viper source <{viper_source_id}>, due to error: {cause:?}");
+                            toaster.toast(Toast::builder().simple("Failed to store viper source!").error());
                         }
                     }
                 }
                 Err(error) => {
-                    error!("Failed to dispatch create source action, due to misconfiguration!\n  {error}");
+                    error!("Failed to dispatch create viper source action, due to misconfiguration!\n  {error}");
                 }
             };
 
@@ -111,7 +111,7 @@ fn SaveSourceButton(
             color=ButtonColor::Info
             size=ButtonSize::Normal
             state=button_state
-            label="Save Source"
+            label="Save Viper Source"
             on_action
         />
     }

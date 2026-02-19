@@ -1,5 +1,5 @@
-mod create_test_button;
-mod delete_test_button;
+mod create_viper_test_button;
+mod delete_viper_test_button;
 
-pub use create_test_button::CreateTestButton;
-pub use delete_test_button::DeleteTestButton;
+pub use create_viper_test_button::CreateViperTestButton;
+pub use delete_viper_test_button::DeleteViperTestButton;

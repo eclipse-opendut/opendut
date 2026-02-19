@@ -2,5 +2,5 @@ mod components;
 mod configurator;
 mod overview;
 
-pub use overview::TestsOverview;
-pub use configurator::TestConfigurator;
+pub use overview::ViperTestsOverview;
+pub use configurator::ViperTestConfigurator;

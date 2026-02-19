@@ -3,80 +3,80 @@ use opendut_lea_components::{ButtonColor, OverviewTableCell};
 use opendut_model::viper::ViperTestDescriptor;
 use crate::app::use_app_globals;
 use crate::components::ClickableOverviewTableRow;
-use crate::viper_tests::components::DeleteTestButton;
+use crate::viper_tests::components::DeleteViperTestButton;
 
 #[component]
 pub(crate) fn Row<OnDeleteFn>(
-    test_descriptor: RwSignal<ViperTestDescriptor>,
+    viper_test_descriptor: RwSignal<ViperTestDescriptor>,
     on_delete: OnDeleteFn,
 ) -> impl IntoView
 where OnDeleteFn: Fn() + Copy + Send + 'static, {
 
     let globals = use_app_globals();
 
-    let test_id = create_read_slice(test_descriptor,
-        |test_descriptor| {
-            test_descriptor.id
+    let viper_test_id = create_read_slice(viper_test_descriptor,
+        |viper_test_descriptor| {
+            viper_test_descriptor.id
         }
     );
 
-    let test_name = create_read_slice(test_descriptor,
-        |test_descriptor| {
-            test_descriptor.name.to_string()
+    let viper_test_name = create_read_slice(viper_test_descriptor,
+        |viper_test_descriptor| {
+            viper_test_descriptor.name.to_string()
         }
     );
 
-    let test_source_id = create_read_slice(test_descriptor,
-        |test_descriptor| {
-            test_descriptor.source
+    let viper_source_id = create_read_slice(viper_test_descriptor,
+        |viper_test_descriptor| {
+            viper_test_descriptor.source
         }
     );
 
-    let test_source_descriptor = LocalResource::new(move || {
+    let viper_source_descriptor = LocalResource::new(move || {
         let mut carl = globals.client.clone();
-        let source_id = test_source_id.get();
+        let viper_source_id = viper_source_id.get();
 
         async move {
-            carl.viper.get_viper_source_descriptor(source_id).await
+            carl.viper.get_viper_source_descriptor(viper_source_id).await
                 .expect("Failed to request the viper source by id.")
         }
     });
 
-    let test_suite = create_read_slice(test_descriptor,
-        |test_descriptor| {
-            test_descriptor.suite.to_string()
+    let viper_test_suite = create_read_slice(viper_test_descriptor,
+        |viper_test_descriptor| {
+            viper_test_descriptor.suite.to_string()
         }
     );
 
-    let configurator_href = Signal::derive(move || { format!("/viper_tests/{}/configure/general", test_id.get()) });
-    let source_configurator_href = move || { format!("/sources/{}/configure/general", test_source_id.get()) };
+    let configurator_href = Signal::derive(move || { format!("/viper_tests/{}/configure/general", viper_test_id.get()) });
+    let viper_source_configurator_href = move || { format!("/viper_sources/{}/configure/general", viper_source_id.get()) };
 
     view! {
         <ClickableOverviewTableRow configurator_href>
             <OverviewTableCell>
-                <a href=configurator_href> { test_name } </a>
+                <a href=configurator_href> { viper_test_name } </a>
             </OverviewTableCell>
         
             { move || Suspend::new(async move {
-                let test_source = test_source_descriptor.await;
-                let source_name = test_source.name.to_string();
+                let viper_source = viper_source_descriptor.await;
+                let viper_source_name = viper_source.name.to_string();
                 view! {
                     <OverviewTableCell>
-                        <a href=source_configurator_href>
-                            { source_name }
+                        <a href=viper_source_configurator_href>
+                            { viper_source_name }
                         </a>
                     </OverviewTableCell>
                 }
             })}
         
             <OverviewTableCell>
-                <p> { test_suite } </p>
+                <p> { viper_test_suite } </p>
             </OverviewTableCell>
         
             <OverviewTableCell>
                 <div class="is-pulled-right">
-                    <DeleteTestButton
-                        test_id
+                    <DeleteViperTestButton
+                        viper_test_id
                         button_color=ButtonColor::TextDanger
                         on_delete
                     />

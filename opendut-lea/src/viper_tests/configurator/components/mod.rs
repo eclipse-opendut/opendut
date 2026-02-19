@@ -1,11 +1,11 @@
 mod cluster_selector;
 mod controls;
-mod source_selector;
-mod suite_selector;
-mod test_name_input;
+mod viper_source_selector;
+mod viper_test_suite_selector;
+mod viper_test_name_input;
 
 pub use cluster_selector::ClusterSelector;
 pub use controls::Controls;
-pub use source_selector::TestSourceSelector;
-pub use suite_selector::TestSuiteSelector;
-pub use test_name_input::TestNameInput;
+pub use viper_source_selector::ViperTestSourceSelector;
+pub use viper_test_suite_selector::ViperTestSuiteSelector;
+pub use viper_test_name_input::ViperTestNameInput;
