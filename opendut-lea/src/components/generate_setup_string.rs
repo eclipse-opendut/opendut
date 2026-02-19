@@ -1,4 +1,5 @@
 use leptos::{either::Either, prelude::*};
+use opendut_lea_components::{ButtonSize, FontAwesomeIcon, IconButton};
 use crate::components::{use_toaster, ButtonColor, ButtonState, SimpleButton, Toast, WarningMessage};
 use opendut_model::peer::PeerId;
 use crate::app::use_app_globals;
@@ -123,17 +124,16 @@ fn CopyToClipboardButton(
     });
 
     view! {
-        <button
-            class="button is-light"
-            title="Copy to clipboard"
-            on:click=move |_| {
+        <IconButton
+            icon=FontAwesomeIcon::Copy
+            color=ButtonColor::Light
+            size=ButtonSize::Normal
+            state=ButtonState::Enabled
+            label="Copy to clipboard"
+            on_action=move || {
                 copy_action.dispatch(setup_string.clone());
             }
-        >
-            <span class="icon">
-                <i class="fa-regular fa-copy"></i>
-            </span>
-        </button>
+        />
     }
 }
 
