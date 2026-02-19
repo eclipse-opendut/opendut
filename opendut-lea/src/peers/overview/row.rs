@@ -31,8 +31,8 @@ where
 
     let dropdown_active = RwSignal::new(false);
     let dropdown = NodeRef::<Div>::new();
-
     let _ = on_click_outside(dropdown, move |_| dropdown_active.set(false));
+
     let used_clusters_length = RwSignal::new(0);
 
     let cluster_columns = move || {

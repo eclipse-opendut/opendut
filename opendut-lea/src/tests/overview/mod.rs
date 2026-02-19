@@ -89,7 +89,8 @@ pub fn TestsOverview() -> impl IntoView {
                             }}
                         />
                     }
-                })}
+                })
+            }
             </OverviewTable>
         </BasePageContainer>
     }

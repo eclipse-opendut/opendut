@@ -1,6 +1,5 @@
 use crate::clusters::IsDeployed;
 use crate::clusters::components::DeleteClusterButton;
-use leptos::html::Div;
 use leptos::prelude::*;
 use opendut_lea_components::tooltip::Tooltip;
 use opendut_lea_components::{ButtonColor, OverviewTableCell, Toggle};
@@ -31,11 +30,6 @@ where
     });
 
     let configurator_href = Signal::derive(move || format!("/clusters/{}/configure/general", cluster_id.get()));
-
-    let dropdown_active = RwSignal::new(false);
-    let dropdown = NodeRef::<Div>::new();
-
-    let _ = leptos_use::on_click_outside(dropdown, move |_| dropdown_active.set(false));
 
     let tooltip_text = Signal::derive(move || {
         if is_deployed.get().0 {
