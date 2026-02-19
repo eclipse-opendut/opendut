@@ -1,6 +1,4 @@
-use leptos::html::Div;
 use leptos::prelude::*;
-use leptos_use::on_click_outside;
 use opendut_lea_components::{ButtonColor, OverviewTableCell};
 use opendut_model::viper::ViperSourceDescriptor;
 use crate::components::ClickableOverviewTableRow;
@@ -32,12 +30,7 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
     );
 
     let configurator_href = Signal::derive(move || { format!("/sources/{}/configure/general", source_id.get()) });
-
-    let dropdown_active = RwSignal::new(false);
-    let dropdown = NodeRef::<Div>::new();
-
-    let _ = on_click_outside(dropdown, move |_| dropdown_active.set(false));
-
+    
     view! {
         <ClickableOverviewTableRow configurator_href>
             <OverviewTableCell>
