@@ -46,9 +46,20 @@ Always create a database backup before upgrading CARL.
 ### Breaking changes
 
 * Deleting the old volumes of the telemetry stack is required to avoid any conflicts. Stop the docker containers and delete the volumes:
-```shell
-docker volume rm opendut_grafana-storage opendut_loki-data opendut_tempo-data
-```
+  ```shell
+  docker volume rm opendut_grafana-storage opendut_loki-data opendut_tempo-data
+  ```
+* Update NetBird datastore encryption key in the localenv deployment:
+  ```shell
+  docker compose -f .ci/deploy/localenv/docker-compose.yml --env-file .ci/deploy/localenv/.env.development run --name opendut-update-secret --entrypoint="" -d provision-secrets sleep infinity
+  docker exec -ti opendut-update-secret bash
+  
+  NETBIRD_DATASTORE_ENC_KEY=$(openssl rand -base64 32)
+  sed -i "s#NETBIRD_DATASTORE_ENC_KEY=.*#NETBIRD_DATASTORE_ENC_KEY=$NETBIRD_DATASTORE_ENC_KEY#" /provision/.env
+  
+  docker kill opendut-update-secret
+  docker rm opendut-update-secret
+  ```
 
 ## [0.9.0] - 2025-12-19
 
