@@ -33,6 +33,7 @@ pub use util::table_row_selection::has_text_selection;
 pub use doorhanger::{Doorhanger, DoorhangerAlignment};
 pub use icon_text::IconText;
 pub use toggle::Toggle;
+pub use tables::multiple_selection_table::{MultipleSelectionTable, MultipleSelectionTableRow, CollapsableInfo};
 pub use tables::selection_table::{SelectionTable, SelectionTableRow};
 pub use tables::overview_table::{TableHeading, OverviewTable, OverviewTableRow, OverviewTableCell};
 
@@ -145,6 +146,7 @@ pub enum ButtonColor {
     Danger,
     Info,
     Light,
+    Link,
     Primary,
     Success,
     TextDanger,
@@ -160,6 +162,7 @@ impl ButtonColor {
             ButtonColor::Danger => "is-danger",
             ButtonColor::Info => "is-info",
             ButtonColor::Light => "is-light",
+            ButtonColor::Link => "is-link",
             ButtonColor::Primary => "is-primary",
             ButtonColor::Success => "is-success",
             ButtonColor::TextDanger => "is-white has-text-danger",
