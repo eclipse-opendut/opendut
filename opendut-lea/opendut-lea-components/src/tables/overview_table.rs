@@ -30,7 +30,7 @@ pub fn OverviewTable(
 ) -> impl IntoView {
 
     view! {
-        <table class="table is-hoverable is-fullwidth">
+        <table class="dut-table">
             <thead>
                 <tr>
                     <For

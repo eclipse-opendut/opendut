@@ -92,7 +92,6 @@ pub fn DeviceSelector(
         rows
     });
 
-
     let header = vec![
         String::from("Name"),
         String::from("Peer"),
