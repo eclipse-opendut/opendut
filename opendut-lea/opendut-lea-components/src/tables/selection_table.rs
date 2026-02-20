@@ -30,8 +30,8 @@ where
 
     view! {
         <p class="help has-text-danger"> { help_text } </p>
-        <div class="table-container mt-2">
-            <table class="table is-hoverable is-fullwidth">
+        <div class="dut-table-container">
+            <table class="dut-table">
                 <thead>
                     <tr>
                         <For
@@ -65,8 +65,9 @@ where
 
                             view! {
                                 <tr
-                                    class=("has-background-link-light", move || is_selected.get())
-                                    style=move || if is_disabled.get() {"cursor: not-allowed; opacity: 0.8;"} else {"cursor: pointer;"}
+                                    class="dut-row"
+                                    class=("selected", move || is_selected.get())
+                                    class=("disabled", move || is_disabled.get())
                                     on:click=move |_| {
                                         if is_disabled.get() { return }
                                         let row_id = Clone::clone(&row_id);
