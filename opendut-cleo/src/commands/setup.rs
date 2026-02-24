@@ -6,8 +6,7 @@ use clap::ValueEnum;
 use indoc::formatdoc;
 
 use opendut_model::cleo::CleoSetup;
-use opendut_model::util::net::AuthConfig;
-use opendut_util::pem::Pem;
+use opendut_model::util::net::{AuthConfig, Certificate};
 use opendut_util::settings::SetupType;
 
 const READ_FROM_STDIN: &str = "-";
@@ -42,7 +41,7 @@ impl SetupCli {
 
         match persistent {
             Some(persistence_type) => {
-                let cleo_certificate_path = try_write_certificate("cleo", setup_string.clone().ca.0, SetupType::from(persistence_type));
+                let cleo_certificate_path = try_write_certificate("cleo", setup_string.clone().ca, SetupType::from(persistence_type));
                 let new_settings_string = prepare_cleo_configuration(setup_string, &cleo_certificate_path);
                 opendut_util::settings::write_config("cleo", &new_settings_string, SetupType::User);
                 Ok(())
@@ -177,21 +176,24 @@ impl From<CleoSetupType> for SetupType {
 /// * A system configuration, write to `/etc/opendut/{name}-ca.pem`
 /// * A user configuration, write to `[XDG_DATA_HOME|~/.local/share]/opendut/{name}/ca.pem`
 ///
-pub fn try_write_certificate(name: &str, ca: Pem, user_type: SetupType) -> PathBuf {
+pub fn try_write_certificate(name: &str, ca: Certificate, setup_type: SetupType) -> PathBuf {
 
-    let certificate = match user_type {
-        SetupType::System => { format!("/etc/opendut/{name}-ca.pem") }
-        SetupType::User => { format!("opendut/{name}/ca.pem") }
+    let certificate_path = match setup_type {
+        SetupType::System => PathBuf::from(format!("/etc/opendut/{name}-ca.pem")),
+        SetupType::User => {
+            let xdg_data_home = match std::env::var("XDG_DATA_HOME") {
+                Ok(xdg_data_home) => {
+                    PathBuf::from(xdg_data_home)
+                }
+                Err(_) => {
+                    home_dir().unwrap().join(".local/share")
+                }
+            };
+
+            xdg_data_home.join(format!("opendut/{name}/ca.pem"))
+        }
     };
 
-    let certificate_path = match std::env::var("XDG_DATA_HOME") {
-        Ok(xdg_data_home) => {
-            PathBuf::from(xdg_data_home).join(certificate)
-        }
-        Err(_) => {
-            home_dir().map(|path| path.join(".local/share").join(certificate)).unwrap()
-        }
-    };
 
     let cleo_ca_certificate_dir = certificate_path.parent().unwrap();
     fs::create_dir_all(cleo_ca_certificate_dir)
@@ -199,9 +201,9 @@ pub fn try_write_certificate(name: &str, ca: Pem, user_type: SetupType) -> PathB
 
     fs::write(
         certificate_path.clone(),
-        ca.to_string() //FIXME use shared certificate encode library
+        ca.encode_as_string()
     ).unwrap_or_else(|error| panic!(
-        "Write CA certificate was not successful at location {:?}: {}", &certificate_path, error
+        "Write CA certificate was not successful at location {certificate_path:?}: {error}"
     ));
     certificate_path
 }
