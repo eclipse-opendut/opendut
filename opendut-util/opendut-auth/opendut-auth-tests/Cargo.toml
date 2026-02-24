@@ -7,7 +7,7 @@ license.workspace = true
 
 [dependencies]
 opendut-auth = { workspace = true, features = ["registration_client"] }
-opendut-util-core = { workspace = true, features = ["testing"] }
+opendut-util = { workspace = true, features = ["testing"] }
 opendut-model = { workspace = true }
 
 anyhow = { workspace = true }
@@ -23,4 +23,4 @@ tokio = { workspace = true }
 
 [dev-dependencies]
 test-with = { workspace = true }
-opendut-util-core = { workspace = true, features = ["testing", "reqwest"] }
+opendut-util = { workspace = true, features = ["testing", "reqwest"] }

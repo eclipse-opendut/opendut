@@ -7,28 +7,37 @@ license.workspace = true
 
 [features]
 client-auth = ["pem", "dep:anyhow", "dep:config"]
+config = ["dep:config"]
 crypto = ["dep:rustls"]
-future = ["opendut-util-core/future"]
-pem = ["opendut-util-core/pem"]
-project = ["opendut-util-core/project"]
+future = []
+pem = ["project", "dep:anyhow", "dep:config", "dep:pem", "dep:tracing", "dep:x509-parser"]
+project = ["dep:anyhow", "dep:thiserror"]
 proto = ["dep:thiserror"]
-reqwest = ["opendut-util-core/reqwest"]
+reqwest = ["pem", "dep:reqwest", "config"]
 serde = ["dep:serde"]
 settings = ["project", "dep:config", "dep:thiserror"]
-testing = ["opendut-util-core/testing"]
+testing = ["project", "dep:dotenvy"]
+
 
 [dependencies]
-opendut-util-core = { workspace = true, optional = true }
-
 anyhow = { workspace = true, optional = true }
 config = { workspace = true, optional = true }
+dotenvy = { workspace = true, optional = true }
+pem = { workspace = true, optional = true }
 prost = { workspace = true, optional = true }
+reqwest = { workspace = true, optional = true }
 serde = { workspace = true, optional = true }
 thiserror = { workspace = true, optional = true }
-tracing = { workspace = true }
+tracing = { workspace = true, optional = true }
+x509-parser = { workspace = true, optional = true }
+
+[dev-dependencies]
+repo_path = { workspace = true }
+test-log = { workspace = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 rustls = { workspace = true, optional = true }
+
 
 [lints]
 workspace = true

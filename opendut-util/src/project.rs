@@ -22,7 +22,7 @@ type Result<T> = std::result::Result<T, Error>;
 ///   * the executable, when in production.
 /// ```
 /// use std::path::PathBuf;
-/// use opendut_util_core::project;
+/// use opendut_util::project;
 ///
 /// let absolute_path = PathBuf::from("/tmp/test");
 /// assert_eq!(project::make_path_absolute(&absolute_path).unwrap(), absolute_path);
@@ -59,7 +59,7 @@ pub fn is_running_in_development() -> bool {
 
 /// Retrieve the directory at the root of the Cargo workspace. Only works in a development environment.
 /// ```
-/// use opendut_util_core::project::workspace_dir;
+/// use opendut_util::project::workspace_dir;
 ///
 /// let path = if let Ok(cargo_executable) = std::env::var("CARGO") {
 ///     workspace_dir(&cargo_executable).unwrap()

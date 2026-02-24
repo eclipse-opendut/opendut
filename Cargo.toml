@@ -14,7 +14,6 @@ members = [
     "opendut-util",
     "opendut-util/opendut-auth",
     "opendut-util/opendut-auth/opendut-auth-tests",
-    "opendut-util/opendut-util-core",
     "opendut-viper/viper-cli",
     "opendut-viper/viper-py",
     "opendut-viper/viper-py/viper-pygen",
@@ -51,7 +50,6 @@ opendut-model = { path = "opendut-model" }
 opendut-telemetry = { path = "opendut-telemetry" }
 opendut-theo = { path = ".ci/deploy/opendut-theo" }
 opendut-util = { path = "opendut-util" }
-opendut-util-core = { path = "opendut-util/opendut-util-core" }
 opendut-viper-py = { path = "opendut-viper/viper-py", default-features = false }
 opendut-viper-pygen = { path = "opendut-viper/viper-py/viper-pygen", default-features = false }
 opendut-viper-rt = { path = "opendut-viper/viper-rt", default-features = false }

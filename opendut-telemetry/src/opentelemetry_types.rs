@@ -3,10 +3,10 @@ use opendut_auth::confidential::error::ConfidentialClientError;
 use std::time::Duration;
 use tonic::transport::{Certificate, ClientTlsConfig, Identity};
 use url::Url;
-use opendut_util_core::pem::{self, Pem, PemFromConfig};
+use opendut_util::pem::{self, Pem, PemFromConfig};
 use std::fmt::Debug;
 use config::Config;
-use opendut_util_core::config::ConfigExt;
+use opendut_util::config::ConfigExt;
 
 pub struct OpentelemetryConfig {
     pub(crate) confidential_client: Option<ConfidentialClientRef>,

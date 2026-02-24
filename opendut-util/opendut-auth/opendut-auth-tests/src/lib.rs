@@ -3,7 +3,7 @@ mod client;
 
 use anyhow::anyhow;
 use oauth2::{ClientId, ClientSecret, RedirectUrl};
-use opendut_util_core::{expect_env_var, reqwest_client};
+use opendut_util::{expect_env_var, reqwest_client};
 use openidconnect::RegistrationUrl;
 use pem::Pem;
 use url::Url;
@@ -16,9 +16,9 @@ use opendut_auth::registration::client::{
 };
 use opendut_auth::registration::config::RegistrationClientConfig;
 use opendut_auth::registration::resources::ResourceHomeUrl;
-use opendut_util_core::pem::PemFromConfig;
-use opendut_util_core::project;
-use opendut_util_core::reqwest_client::ReqwestClient;
+use opendut_util::pem::PemFromConfig;
+use opendut_util::project;
+use opendut_util::reqwest_client::ReqwestClient;
 
 pub async fn localenv_reqwest_client() -> ReqwestClient {
     let ca_path =
@@ -36,7 +36,7 @@ pub async fn localenv_reqwest_client() -> ReqwestClient {
 pub async fn confidential_carl_client() -> ConfidentialClientRef {
     let localenv_reqwest_client = localenv_reqwest_client().await;
 
-    opendut_util_core::testing::init_localenv_secrets();
+    opendut_util::testing::init_localenv_secrets();
     let issuer_url = IssuerUrl::try_from("https://auth.opendut.local/realms/opendut/").unwrap(); // This is the URL for the keycloak server in the test environment
 
     let client_config = OidcClientConfig::Confidential(OidcConfidentialClientConfig::new(

@@ -4243,7 +4243,7 @@ dependencies = [
  "leptos_oidc",
  "oauth2",
  "opendut-model",
- "opendut-util-core",
+ "opendut-util",
  "openidconnect",
  "pem",
  "reqwest",
@@ -4270,7 +4270,7 @@ dependencies = [
  "oauth2",
  "opendut-auth",
  "opendut-model",
- "opendut-util-core",
+ "opendut-util",
  "openidconnect",
  "pem",
  "serde",
@@ -4632,7 +4632,7 @@ dependencies = [
  "anyhow",
  "config",
  "opendut-auth",
- "opendut-util-core",
+ "opendut-util",
  "opentelemetry",
  "opentelemetry-appender-tracing",
  "opentelemetry-otlp",
@@ -4677,24 +4677,13 @@ version = "0.10.0-alpha"
 dependencies = [
  "anyhow",
  "config",
- "opendut-util-core",
- "prost",
- "rustls",
- "serde",
- "thiserror 2.0.18",
- "tracing",
-]
-
-[[package]]
-name = "opendut-util-core"
-version = "0.10.0-alpha"
-dependencies = [
- "anyhow",
- "config",
  "dotenvy",
  "pem",
+ "prost",
  "repo_path",
  "reqwest",
+ "rustls",
+ "serde",
  "test-log",
  "thiserror 2.0.18",
  "tracing",

@@ -5,7 +5,7 @@ use crate::confidential::error::WrappedRequestTokenError;
 use async_trait::async_trait;
 use oauth2::TokenResponse;
 use oauth2::Scope as OAuthScope;
-use opendut_util_core::future::ExplicitSendFutureWrapper;
+use opendut_util::future::ExplicitSendFutureWrapper;
 
 
 #[async_trait::async_trait]

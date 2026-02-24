@@ -18,7 +18,7 @@ use backon::Retryable;
 use reqwest_middleware::ClientWithMiddleware;
 use tokio::runtime::Handle;
 use oauth2::Scope as OAuthScope;
-use opendut_util_core::reqwest_client;
+use opendut_util::reqwest_client;
 use crate::confidential::config::{OidcClientConfig, ConfiguredClient, OidcConfigEnabled};
 use crate::confidential::error::{ConfidentialClientError, OidcClientError, WrappedRequestTokenError};
 use crate::confidential::IssuerUrl;

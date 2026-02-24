@@ -6,7 +6,7 @@ use opendut_auth::confidential::IssuerUrl;
 use crate::localenv_reqwest_client;
 
 async fn confidential_edgar_client() -> ConfidentialClientRef {
-    opendut_util_core::testing::init_localenv_secrets();
+    opendut_util::testing::init_localenv_secrets();
     let client_config = OidcClientConfig::Confidential(OidcConfidentialClientConfig::new(
         ClientId::new("opendut-edgar-client".to_string()),
         ClientSecret::new(
@@ -23,7 +23,7 @@ async fn confidential_edgar_client() -> ConfidentialClientRef {
 }
 
 async fn confidential_netbird_client() -> ConfidentialClientRef {
-    opendut_util_core::testing::init_localenv_secrets();
+    opendut_util::testing::init_localenv_secrets();
     let reqwest_client = localenv_reqwest_client().await;
     let client_config = OidcClientConfig::Confidential(OidcConfidentialClientConfig::new(
         ClientId::new("netbird-backend".to_string()),

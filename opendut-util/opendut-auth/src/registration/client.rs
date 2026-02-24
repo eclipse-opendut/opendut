@@ -12,7 +12,7 @@ use openidconnect::{ClientName, ClientUrl};
 use serde::Deserialize;
 use tracing::error;
 use url::Url;
-use opendut_util_core::future::ExplicitSendFutureWrapper;
+use opendut_util::future::ExplicitSendFutureWrapper;
 use crate::confidential::client::{ConfidentialClient, ConfidentialClientRef};
 use crate::confidential::client::async_http_client;
 use crate::registration::config::RegistrationClientConfig;
