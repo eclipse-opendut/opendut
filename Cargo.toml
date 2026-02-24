@@ -210,10 +210,10 @@ rperf.version = "0.1.8"
 
 
 [workspace.metadata.cicero.commands.dependencies] #CLI tool crates used in CI (not libraries)
-cargo-bundle-licenses = "4.0.0"
-cargo-deny = "0.18.9"
+cargo-bundle-licenses = "4.2.0"
+cargo-deny = "0.19.0"
 cargo-sbom = "0.10.0"
-cargo-tarpaulin = "0.34.1"
+cargo-tarpaulin = "0.35.2"
 cross = "0.2.5"
 mdbook = "0.5.*"
 mdbook-plantuml = "2.0.0"
