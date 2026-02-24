@@ -833,9 +833,9 @@ dependencies = [
 
 [[package]]
 name = "cicero"
-version = "0.8.1"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ee9089e9d549277ec4285254ebfd9e8c9d67caea20f6a68c5baa088a51c51d0"
+checksum = "848dccfa59a4cf6adae24c565a44c5fcfcbbc83031a24dd7836ed17f984c56e5"
 dependencies = [
  "cicero_cache",
  "cicero_commands",
@@ -850,12 +850,11 @@ dependencies = [
 
 [[package]]
 name = "cicero_cache"
-version = "0.8.1"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fbab52ba365d2201341e2cf273fca050954302051fe5d7c6e8a391e80272cdca"
+checksum = "9a05d65c5e0c1cb3c3f3019ad6c48016a421122077f79fd87624916cf5d81da7"
 dependencies = [
  "cicero_core",
- "cicero_path_core",
  "fs-err",
  "serde",
  "serde_json",
@@ -866,14 +865,13 @@ dependencies = [
 
 [[package]]
 name = "cicero_commands"
-version = "0.8.1"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "693ad0df81f83a8ce45a36c30714fec66cd2f5758c7bafdf4392142e77377eb9"
+checksum = "1d59849e54b829def9cd4ec41d594c83a307bb7bd1d3fcce6bd8037e0b775a79"
 dependencies = [
  "cicero_core",
  "cicero_macro",
  "cicero_path",
- "cicero_path_core",
  "clap",
  "indoc",
  "repo_path_lib",
@@ -883,25 +881,25 @@ dependencies = [
 
 [[package]]
 name = "cicero_core"
-version = "0.8.1"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2368e881c87be1c3c632f1bed7c87f2648c6278989aa86b99593a7803563d9e"
+checksum = "4edbfec2bdcd770c6822d78dba7d8e84295080e5554ca9d4d749dfe084c71756"
 dependencies = [
  "anyhow",
+ "cargo_metadata",
 ]
 
 [[package]]
 name = "cicero_distribution"
-version = "0.8.1"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fb8866a42a2c7369c8864f134fd2ef2949b0e82c009b5aa7e19ea1c37d1859f3"
+checksum = "7725ec5866d3dd88e783a024aa6d9e09856d5c453d808b3568adfe1831b74a4d"
 dependencies = [
  "cargo_metadata",
  "cicero_cache",
  "cicero_core",
  "cicero_macro",
  "cicero_path",
- "cicero_path_core",
  "clap",
  "fs-err",
  "glob",
@@ -913,9 +911,9 @@ dependencies = [
 
 [[package]]
 name = "cicero_macro"
-version = "0.8.1"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4759d236067e34ee7aa3901ac70230493a513cb9036ffd6af90fcc06ee1674af"
+checksum = "adffaf9c065c3eef6f04ab08dd8227b6aadbb914f97320457c8371d79c8842d0"
 dependencies = [
  "cicero_core",
  "current_platform",
@@ -926,22 +924,12 @@ dependencies = [
 
 [[package]]
 name = "cicero_path"
-version = "0.8.1"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0436fe9a5dea955c629df4a92a15efbbe6090abcf9bb94aa1a870bfbdd271fcf"
+checksum = "70b725157f91e66a963bd991da816c7f5bc16b5228a8b6ea6558fd81e132770a"
 dependencies = [
- "cicero_path_core",
+ "cicero_core",
  "repo_path",
-]
-
-[[package]]
-name = "cicero_path_core"
-version = "0.8.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0665119e6eb25bf6a419401fc0854d3038cfbf3e069bd5d3d0e2cb72c341fe76"
-dependencies = [
- "cargo_metadata",
- "tracing",
 ]
 
 [[package]]
@@ -2154,9 +2142,9 @@ checksum = "28dd6caf6059519a65843af8fe2a3ae298b14b80179855aeb4adc2c1934ee619"
 
 [[package]]
 name = "fs-err"
-version = "3.2.2"
+version = "3.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "baf68cef89750956493a66a10f512b9e58d9db21f2a573c079c0bdf1207a54a7"
+checksum = "73fde052dbfc920003cfd2c8e2c6e6d4cc7c1091538c3a24226cec0665ab08c0"
 dependencies = [
  "autocfg",
  "tokio",
@@ -2342,6 +2330,19 @@ dependencies = [
  "r-efi",
  "wasip2",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "getrandom"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "139ef39800118c7683f2fd3c98c1b23c09ae076556b435f8e9064ae108aaeeec"
+dependencies = [
+ "cfg-if",
+ "libc",
+ "r-efi",
+ "wasip2",
+ "wasip3",
 ]
 
 [[package]]
@@ -3316,6 +3317,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ce2162c453100c7d6bc0b6f188ef1df582e35c2458caf6cb69fcddc87619c0db"
 dependencies = [
  "cfg-if",
+ "codee",
+ "default-struct-builder",
+ "js-sys",
+ "lazy_static",
+ "leptos",
+ "paste",
+ "send_wrapper",
+ "thiserror 2.0.18",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+]
+
+[[package]]
+name = "leptos-use"
+version = "0.18.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e652389aa67f810bab687dd32566346a1d0dc4d25b44370d952ffc2ca4c627c0"
+dependencies = [
+ "cfg-if",
  "chrono",
  "codee",
  "cookie",
@@ -3413,7 +3434,7 @@ dependencies = [
  "codee",
  "jsonwebtoken 9.3.1",
  "leptos",
- "leptos-use",
+ "leptos-use 0.16.3",
  "leptos_router",
  "oauth2",
  "reqwest",
@@ -4540,7 +4561,7 @@ dependencies = [
  "console_error_panic_hook",
  "gloo-net",
  "leptos",
- "leptos-use",
+ "leptos-use 0.18.0",
  "leptos_oidc",
  "leptos_router",
  "opendut-auth",
@@ -4566,7 +4587,7 @@ version = "0.10.0-alpha"
 dependencies = [
  "chrono",
  "leptos",
- "leptos-use",
+ "leptos-use 0.18.0",
  "opendut-model",
  "slotmap",
  "tracing",
@@ -8375,11 +8396,11 @@ checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
 
 [[package]]
 name = "uuid"
-version = "1.20.0"
+version = "1.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee48d38b119b0cd71fe4141b30f5ba9c7c5d9f4e7a3a8b4a674e4b6ef789976f"
+checksum = "b672338555252d43fd2240c714dc444b8c6fb0a5c5335e65a07bba7742735ddb"
 dependencies = [
- "getrandom 0.3.4",
+ "getrandom 0.4.1",
  "js-sys",
  "serde_core",
  "sha1_smol",
@@ -8440,6 +8461,15 @@ name = "wasip2"
 version = "1.0.2+wasi-0.2.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9517f9239f02c069db75e65f174b3da828fe5f5b945c4dd26bd25d89c03ebcf5"
+dependencies = [
+ "wit-bindgen",
+]
+
+[[package]]
+name = "wasip3"
+version = "0.4.0+wasi-0.3.0-rc-2026-01-06"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5428f8bf88ea5ddc08faddef2ac4a67e390b88186c703ce6dbd955e1c145aca5"
 dependencies = [
  "wit-bindgen",
 ]
