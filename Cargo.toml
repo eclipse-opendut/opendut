@@ -1,5 +1,7 @@
 [workspace]
 members = [
+    "opendut-auth",
+    "opendut-auth/opendut-auth-tests",
     "opendut-carl",
     "opendut-carl/opendut-carl-api",
     "opendut-cleo",
@@ -12,8 +14,6 @@ members = [
     "opendut-model",
     "opendut-telemetry",
     "opendut-util",
-    "opendut-util/opendut-auth",
-    "opendut-util/opendut-auth/opendut-auth-tests",
     "opendut-viper/viper-cli",
     "opendut-viper/viper-py",
     "opendut-viper/viper-py/viper-pygen",
@@ -36,8 +36,8 @@ license = "Apache-2.0"
 repository = "https://github.com/eclipse-opendut/opendut"
 
 [workspace.dependencies]
-opendut-auth = { path = "opendut-util/opendut-auth" }
-opendut-auth-tests = { path = "opendut-util/opendut-auth/opendut-auth-tests" }
+opendut-auth = { path = "opendut-auth" }
+opendut-auth-tests = { path = "opendut-auth/opendut-auth-tests" }
 opendut-carl = { path = "opendut-carl" }
 opendut-carl-api = { path = "opendut-carl/opendut-carl-api" }
 opendut-ci = { path = ".ci/cargo-ci" }
