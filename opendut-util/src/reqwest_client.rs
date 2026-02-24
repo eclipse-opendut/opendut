@@ -68,8 +68,7 @@ pub mod oidc {
     ) -> anyhow::Result<ReqwestClient> {
 
         let mut client = ReqwestClient::builder()
-            .redirect(reqwest::redirect::Policy::none())
-            .tls_built_in_root_certs(true);
+            .redirect(reqwest::redirect::Policy::none());
 
         for ca_certificate in ca_certificates  {
             debug!("Constructing reqwest client with CA certificate provided.");
