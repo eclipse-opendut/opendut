@@ -239,7 +239,7 @@ async fn execute() -> Result<()> {
     let args = Args::parse();
 
     let mut telemetry_shutdown_handle = {
-        let mut config = opendut_telemetry::logging::LoggingConfig::load(&settings.config)
+        let mut config = opendut_telemetry::logging::LoggingConfig::load(&settings)
             .map_err(|error| format!("Error while loading logging configuration: {error}"))?;
 
         config.log_level_override =
@@ -269,7 +269,7 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
             implementation.execute().await?;
         },
         Commands::List { resource, output } => {
-            let mut carl = create_carl_client(&settings.config).await;
+            let mut carl = create_carl_client(settings).await;
             match resource {
                 ListResource::ClusterDescriptors(implementation) => {
                     implementation.execute(&mut carl, output).await?;
@@ -289,33 +289,33 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
             }
         }
         Commands::Apply(implementation) => {
-            let mut carl = create_carl_client(&settings.config).await;
+            let mut carl = create_carl_client(settings).await;
             implementation.execute(&mut carl).await?;
         }
         Commands::Create { resource, output } => {
             match *resource {
                 CreateResource::ClusterDescriptor(implementation) => {
-                    let mut carl = create_carl_client(&settings.config).await;
+                    let mut carl = create_carl_client(settings).await;
                     implementation.execute(&mut carl, output).await?;
                 }
                 CreateResource::ClusterDeployment(implementation) => {
-                    let mut carl = create_carl_client(&settings.config).await;
+                    let mut carl = create_carl_client(settings).await;
                     implementation.execute(&mut carl, output).await?;
                 }
                 CreateResource::Peer(implementation) => {
-                    let mut carl = create_carl_client(&settings.config).await;
+                    let mut carl = create_carl_client(settings).await;
                     implementation.execute(&mut carl, output).await?;
                 }
                 CreateResource::ContainerExecutor(implementation) => {
-                    let mut carl = create_carl_client(&settings.config).await;
+                    let mut carl = create_carl_client(settings).await;
                     implementation.execute(&mut carl, output).await?;
                 }
                 CreateResource::NetworkInterface(implementation) => {
-                    let mut carl = create_carl_client(&settings.config).await;
+                    let mut carl = create_carl_client(settings).await;
                     implementation.execute(&mut carl, output).await?;
                 }
                 CreateResource::Device(implementation) => {
-                    let mut carl = create_carl_client(&settings.config).await;
+                    let mut carl = create_carl_client(settings).await;
                     implementation.execute(&mut carl, output).await?;
                 }
                 CreateResource::Uuid => {
@@ -324,15 +324,15 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
             }
         }
         Commands::GenerateSetupString(implementation) => {
-            let mut carl = create_carl_client(&settings.config).await;
-            let cleo_oidc_client_id = get_cleo_oidc_client_id(&settings.config).await;
+            let mut carl = create_carl_client(settings).await;
+            let cleo_oidc_client_id = get_cleo_oidc_client_id(settings).await;
             implementation.execute(&mut carl, cleo_oidc_client_id).await?;
         }
         Commands::DecodeSetupString(implementation) => {
             implementation.execute().await?;
         }
         Commands::Describe { resource, output } => {
-            let mut carl = create_carl_client(&settings.config).await;
+            let mut carl = create_carl_client(settings).await;
             match resource {
                 DescribeResource::ClusterDescriptor(implementation)=> {
                     implementation.execute(&mut carl, output).await?
@@ -346,7 +346,7 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
             }
         }
         Commands::Delete { resource} => {
-            let mut carl = create_carl_client(&settings.config).await;
+            let mut carl = create_carl_client(settings).await;
             match resource {
                 DeleteResource::ClusterDescriptor(implementation) => {
                     implementation.execute(&mut carl).await?;
@@ -369,7 +369,7 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
             }
         }
         Commands::Find { resource, output } => {
-            let mut carl = create_carl_client(&settings.config).await;
+            let mut carl = create_carl_client(settings).await;
             match resource {
                 FindResource::Device(implementation) => {
                     implementation.execute(&mut carl, output).await?;
@@ -384,7 +384,7 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
             commands::completions::print_completions(shell, &mut cmd);
         }
         Commands::Await { resource } => {
-            let mut carl = create_carl_client(&settings.config).await;
+            let mut carl = create_carl_client(settings).await;
             match resource {
                 AwaitResource::PeerOnline(cli) => {
                     cli.execute(&mut carl).await?;

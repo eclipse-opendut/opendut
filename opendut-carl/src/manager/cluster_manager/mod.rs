@@ -741,10 +741,10 @@ mod test {
             let resource_manager = ResourceManager::new_in_memory();
             let peer_messaging_broker = PeerMessagingBroker::new(
                 Arc::clone(&resource_manager),
-                PeerMessagingBrokerOptions::load(&settings.config).unwrap(),
+                PeerMessagingBrokerOptions::load(&settings).unwrap(),
             ).await;
 
-            let cluster_manager_options = ClusterManagerOptions::load(&settings.config).unwrap();
+            let cluster_manager_options = ClusterManagerOptions::load(&settings).unwrap();
 
             let testee = ClusterManager::create(
                 Arc::clone(&resource_manager),

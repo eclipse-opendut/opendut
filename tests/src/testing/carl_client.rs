@@ -19,7 +19,7 @@ impl TestCarlClient {
 
         let edgar_config = util::load_edgar_config(carl_port, peer_id)?;
 
-        let carl_client = opendut_edgar::testing::carl::connect(&edgar_config.config).await
+        let carl_client = opendut_edgar::testing::carl::connect(&edgar_config).await
             .expect("Failed to connect to CARL for state checks");
 
         let inner = Mutex::new(carl_client);

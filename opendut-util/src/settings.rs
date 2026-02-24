@@ -1,6 +1,7 @@
 use std::env::home_dir;
 use std::fmt::Debug;
 use std::fs;
+use std::ops::Deref;
 use std::path::{PathBuf};
 
 pub use config::{Config, ConfigError, FileFormat};
@@ -26,8 +27,8 @@ pub enum WriteError {
 
 #[derive(Clone)]
 pub struct LoadedConfig {
-    pub config: Config,
-    pub redacted_config: Config,
+    config: Config,
+    redacted_config: Config,
     pub config_files_used: Vec<PathBuf>,
     pub config_files_declared: Vec<PathBuf>,
 }
@@ -39,6 +40,14 @@ impl Debug for LoadedConfig {
             .field("config_files_used", &self.config_files_used)
             .field("config_files_declared", &self.config_files_declared)
             .finish()
+    }
+}
+
+impl Deref for LoadedConfig {
+    type Target = Config;
+
+    fn deref(&self) -> &Self::Target {
+        &self.config
     }
 }
 

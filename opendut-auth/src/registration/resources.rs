@@ -33,11 +33,11 @@ impl TryFrom<&Config> for ResourceHomeUrl {
 
 impl ResourceHomeUrl {
     pub fn new(url: Url) -> Self { Self(url) }
-    
+
     pub fn value(&self) -> Url {
         self.0.clone()
     }
-    
+
     pub fn resource_url(&self, resource_id: resources::Id, user_id: UserId) -> Result<Url, ResourceHomeUrlError> {
         let path = format!("/resources/{}/{}", user_id.value, resource_id.value());
         self.0.join(&path)
