@@ -54,10 +54,10 @@ mod tests {
         #[test]
         fn should_be_enabled_when_explicitly_enabled() -> anyhow::Result<()> {
             let config = config::Config::builder()
-                .set_override(crate::pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_ENABLED, true)?
-                .set_override(crate::pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_ENABLED, false)?
+                .set_override(crate::pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH.enabled, true)?
+                .set_override(crate::pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH.enabled, false)?
                 .build()?;
-            let is_enabled = config.get_bool_with_fallback(crate::pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_ENABLED, crate::pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_ENABLED)?;
+            let is_enabled = config.get_bool_with_fallback(crate::pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH.enabled, crate::pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH.enabled)?;
             assert!(is_enabled, "Expected value to be enabled when explicitly enabled.");
             Ok(())
         }
@@ -65,10 +65,10 @@ mod tests {
         #[test]
         fn should_be_disabled_when_explicitly_disabled() -> anyhow::Result<()> {
             let config = config::Config::builder()
-                .set_override(crate::pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_ENABLED, false)?
-                .set_override(crate::pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_ENABLED, true)?
+                .set_override(crate::pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH.enabled, false)?
+                .set_override(crate::pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH.enabled, true)?
                 .build()?;
-            let is_enabled = config.get_bool_with_fallback(crate::pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_ENABLED, crate::pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_ENABLED)?;
+            let is_enabled = config.get_bool_with_fallback(crate::pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH.enabled, crate::pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH.enabled)?;
             assert!(!is_enabled, "Expected value be disable when explicitly disabled.");
             Ok(())
         }
@@ -76,10 +76,10 @@ mod tests {
         #[test]
         fn should_use_default_true_when_explicit_config_cannot_be_loaded() -> anyhow::Result<()> {
             let config = config::Config::builder()
-                .set_override(crate::pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_ENABLED, CONFIG_OPTIONAL_BOOL_UNSET_STRING_VALUE)?
-                .set_override(crate::pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_ENABLED, true)?
+                .set_override(crate::pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH.enabled, CONFIG_OPTIONAL_BOOL_UNSET_STRING_VALUE)?
+                .set_override(crate::pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH.enabled, true)?
                 .build()?;
-            let is_enabled = config.get_bool_with_fallback(crate::pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_ENABLED, crate::pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_ENABLED)?;
+            let is_enabled = config.get_bool_with_fallback(crate::pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH.enabled, crate::pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH.enabled)?;
             assert!(is_enabled, "Expected value be enabled when falling back to default.");
             Ok(())
         }
@@ -87,10 +87,10 @@ mod tests {
         #[test]
         fn should_use_default_false_when_explicit_config_cannot_be_loaded() -> anyhow::Result<()> {
             let config = config::Config::builder()
-                .set_override(crate::pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_ENABLED, CONFIG_OPTIONAL_BOOL_UNSET_STRING_VALUE)?
-                .set_override(crate::pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_ENABLED, false)?
+                .set_override(crate::pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH.enabled, CONFIG_OPTIONAL_BOOL_UNSET_STRING_VALUE)?
+                .set_override(crate::pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH.enabled, false)?
                 .build()?;
-            let is_enabled = config.get_bool_with_fallback(crate::pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_ENABLED, crate::pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_ENABLED)?;
+            let is_enabled = config.get_bool_with_fallback(crate::pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH.enabled, crate::pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH.enabled)?;
             assert!(!is_enabled, "Expected value be enabled when falling back to default.");
             Ok(())
         }

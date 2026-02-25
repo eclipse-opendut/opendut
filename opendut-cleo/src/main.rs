@@ -409,7 +409,7 @@ pub async fn create_carl_client(config: &config::Config) -> CarlClient {
     let ca_certs = Pem::read_from_configured_path_or_content(pem::config_keys::DEFAULT_NETWORK_TLS_CA, None, config)
         .expect("Error while reading CA certificate.");
 
-    let client_auth = ClientAuth::load_from_config(config)
+    let client_auth = ClientAuth::load_from_config_for_carl_connection(config)
         .expect("Error while loading configuration for client authentication");
 
     let domain_name_override = {

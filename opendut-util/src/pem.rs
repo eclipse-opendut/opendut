@@ -10,24 +10,34 @@ use tracing::{debug, error, trace, warn};
 
 /// Constants for configuration keys used throughout the codebase.
 pub mod config_keys {
-    pub const DEFAULT_NETWORK_TLS_CA: &str =                      "network.tls.ca";
-    pub const DEFAULT_NETWORK_TLS_CERTIFICATE: &str =              "network.tls.certificate";
-    pub const DEFAULT_NETWORK_TLS_KEY: &str =                      "network.tls.key";
-    pub const DEFAULT_NETWORK_TLS_SERVER_AUTH_CA: &str =           "network.tls.server.auth.ca";
+    #[derive(Clone, Copy)]
+    pub struct ClientAuthConfigKeys {
+        pub enabled: &'static str,
+        pub certificate: &'static str,
+        pub key: &'static str,
+    }
+    macro_rules! ClientAuthConfigKeys {
+        ($prefix:expr) => {
+            ClientAuthConfigKeys {
+                enabled:     ::const_format::formatcp!("{}.enabled", $prefix),
+                certificate: ::const_format::formatcp!("{}.certificate", $prefix),
+                key:         ::const_format::formatcp!("{}.key", $prefix),
+            }
+        };
+    }
 
-    pub const DEFAULT_NETWORK_TLS_CLIENT_AUTH_ENABLED: &str =     "network.tls.client.auth.enabled";
-    pub const DEFAULT_NETWORK_TLS_CLIENT_AUTH_CERTIFICATE: &str = "network.tls.client.auth.certificate";
-    pub const DEFAULT_NETWORK_TLS_CLIENT_AUTH_KEY: &str =         "network.tls.client.auth.key";
+    pub const DEFAULT_NETWORK_TLS_CA: &str =             "network.tls.ca";
+    pub const DEFAULT_NETWORK_TLS_CERTIFICATE: &str =    "network.tls.certificate";
+    pub const DEFAULT_NETWORK_TLS_KEY: &str =            "network.tls.key";
+    pub const DEFAULT_NETWORK_TLS_SERVER_AUTH_CA: &str = "network.tls.server.auth.ca";
 
-    pub const NETWORK_OIDC_CLIENT_TLS_CA: &str =                      "network.oidc.client.tls.ca";
-    pub const NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH_ENABLED: &str =     "network.oidc.client.tls.client.auth.enabled";
-    pub const NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH_CERTIFICATE: &str = "network.oidc.client.tls.client.auth.certificate";
-    pub const NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH_KEY: &str =         "network.oidc.client.tls.client.auth.key";
+    pub const DEFAULT_NETWORK_TLS_CLIENT_AUTH: ClientAuthConfigKeys = ClientAuthConfigKeys!("network.tls.client.auth");
 
-    pub const OPENTELEMETRY_TLS_CA: &str =                      "opentelemetry.tls.ca";
-    pub const OPENTELEMETRY_TLS_CLIENT_AUTH_ENABLED: &str =     "opentelemetry.tls.client.auth.enabled";
-    pub const OPENTELEMETRY_TLS_CLIENT_AUTH_CERTIFICATE: &str = "opentelemetry.tls.client.auth.certificate";
-    pub const OPENTELEMETRY_TLS_CLIENT_AUTH_KEY: &str =         "opentelemetry.tls.client.auth.key";
+    pub const NETWORK_OIDC_CLIENT_TLS_CA: &str = "network.oidc.client.tls.ca";
+    pub const NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH: ClientAuthConfigKeys = ClientAuthConfigKeys!("network.oidc.client.tls.client.auth");
+
+    pub const OPENTELEMETRY_TLS_CA: &str = "opentelemetry.tls.ca";
+    pub const OPENTELEMETRY_TLS_CLIENT_AUTH: ClientAuthConfigKeys = ClientAuthConfigKeys!("opentelemetry.tls.client.auth");
 }
 
 pub trait PemFromConfig {

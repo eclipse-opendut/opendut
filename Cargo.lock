@@ -4747,6 +4747,7 @@ version = "0.10.0-alpha"
 dependencies = [
  "anyhow",
  "config",
+ "const_format",
  "dotenvy",
  "pem",
  "prost",

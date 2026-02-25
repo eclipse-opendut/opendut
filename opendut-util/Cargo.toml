@@ -10,7 +10,7 @@ client-auth = ["pem", "dep:anyhow", "dep:config"]
 config = ["dep:config"]
 crypto = ["dep:rustls"]
 future = []
-pem = ["project", "dep:anyhow", "dep:config", "dep:pem", "dep:tracing", "dep:x509-parser"]
+pem = ["project", "dep:anyhow", "dep:config", "dep:const_format", "dep:pem", "dep:tracing", "dep:x509-parser"]
 project = ["dep:anyhow", "dep:thiserror"]
 proto = ["dep:thiserror"]
 reqwest = ["pem", "dep:reqwest", "config"]
@@ -22,6 +22,7 @@ testing = ["project", "dep:dotenvy"]
 [dependencies]
 anyhow = { workspace = true, optional = true }
 config = { workspace = true, optional = true }
+const_format = { workspace = true, optional = true }
 dotenvy = { workspace = true, optional = true }
 pem = { workspace = true, optional = true }
 prost = { workspace = true, optional = true }

@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Context};
 use config::Config;
-use crate::pem::{self, Pem, PemFromConfig};
+use crate::pem::{self, config_keys::ClientAuthConfigKeys, Pem, PemFromConfig};
 
 
 pub enum ClientAuth {
@@ -9,14 +9,22 @@ pub enum ClientAuth {
 }
 
 impl ClientAuth {
-    pub fn load_from_config(config: &Config) -> anyhow::Result<Self> {
+    pub fn load_from_config_for_carl_connection(config: &Config) -> anyhow::Result<Self> {
+        Self::load_from_config(pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH, None, config)
+    }
 
-        if config.get_bool(pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_ENABLED)? {
+    pub fn load_from_config(
+        config_keys: ClientAuthConfigKeys,
+        fallback_config_keys: Option<ClientAuthConfigKeys>,
+        config: &Config,
+    ) -> anyhow::Result<Self> {
 
-            let certs = Pem::read_from_configured_path_or_content(pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_CERTIFICATE, None, config)
+        if config.get_bool(config_keys.enabled)? {
+
+            let certs = Pem::read_from_configured_path_or_content(config_keys.certificate, fallback_config_keys.map(|fallback| fallback.certificate), config)
                 .context("No client authentication certificate found in configured locations.")?;
 
-            let key = Pem::read_from_configured_path_or_content(pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_KEY, None, config)
+            let key = Pem::read_from_configured_path_or_content(config_keys.key, fallback_config_keys.map(|fallback| fallback.key), config)
                 .context("Could not read client authentication key found in configured locations.")?
                 .first().cloned().ok_or(anyhow!("No client authentication key found in configured locations."))?;
 

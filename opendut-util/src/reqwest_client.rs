@@ -15,7 +15,7 @@ pub mod oidc {
     /// Determines whether OIDC client authentication is enabled,
     /// based on the specific OIDC setting or falling back to the default setting.
     pub(crate) fn oidc_client_auth_enabled(config: &Config) -> Result<bool, ConfigError> {
-        config.get_bool_with_fallback(pem::config_keys::NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH_ENABLED, pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_ENABLED)
+        config.get_bool_with_fallback(pem::config_keys::NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH.enabled, pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH.enabled)
     }
 
     #[tracing::instrument(name="oidc_client_create", skip_all)]
@@ -29,8 +29,8 @@ pub mod oidc {
         let identity =
             if oidc_client_auth_enabled(config)? {
                 let certificates = Pem::read_from_configured_path_or_content(
-                    pem::config_keys::NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH_CERTIFICATE,
-                    Some(pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_CERTIFICATE),
+                    pem::config_keys::NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH.certificate,
+                    Some(pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH.certificate),
                     config
                 )?;
                 if certificates.is_empty() {
@@ -38,8 +38,8 @@ pub mod oidc {
                 }
 
                 let key = Pem::read_from_configured_path_or_content(
-                    pem::config_keys::NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH_KEY,
-                    Some(pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_KEY),
+                    pem::config_keys::NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH.key,
+                    Some(pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH.key),
                     config
                 )?.first().cloned();
                 match key {
@@ -132,8 +132,8 @@ mod tests {
     #[test]
     fn should_enable_client_auth_when_oidc_client_auth_is_explicitly_enabled() -> anyhow::Result<()> {
         let config = config::Config::builder()
-            .set_override(crate::pem::config_keys::NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH_ENABLED, true)?
-            .set_override(crate::pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_ENABLED, false)?
+            .set_override(crate::pem::config_keys::NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH.enabled, true)?
+            .set_override(crate::pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH.enabled, false)?
             .build()?;
         let is_enabled = oidc::oidc_client_auth_enabled(&config)?;
         assert!(is_enabled, "Expected client auth to be enabled when OIDC client auth is explicitly enabled.");
@@ -143,8 +143,8 @@ mod tests {
     #[test]
     fn should_disable_client_auth_when_oidc_client_auth_is_explicitly_disabled() -> anyhow::Result<()> {
         let config = config::Config::builder()
-            .set_override(crate::pem::config_keys::NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH_ENABLED, false)?
-            .set_override(crate::pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_ENABLED, true)?
+            .set_override(crate::pem::config_keys::NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH.enabled, false)?
+            .set_override(crate::pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH.enabled, true)?
             .build()?;
         let is_enabled = oidc::oidc_client_auth_enabled(&config)?;
         assert!(!is_enabled, "Expected client auth to be disabled when OIDC client auth is explicitly disabled.");
@@ -154,8 +154,8 @@ mod tests {
     #[test]
     fn should_return_error_when_default_value_contains_nonsense() -> anyhow::Result<()> {
         let config = config::Config::builder()
-            .set_override(crate::pem::config_keys::NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH_ENABLED, true)?
-            .set_override(crate::pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_ENABLED, "nonsense")?
+            .set_override(crate::pem::config_keys::NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH.enabled, true)?
+            .set_override(crate::pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH.enabled, "nonsense")?
             .build()?;
         let result = oidc::oidc_client_auth_enabled(&config);
         assert!(result.is_err(), "Expected error due to invalid config.");
@@ -165,8 +165,8 @@ mod tests {
     #[test]
     fn should_use_default_true_client_auth_when_oidc_client_auth_is_set_to_a_non_boolean_value() -> anyhow::Result<()> {
         let config = config::Config::builder()
-            .set_override(crate::pem::config_keys::NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH_ENABLED, CONFIG_OPTIONAL_BOOL_UNSET_STRING_VALUE)?
-            .set_override(crate::pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_ENABLED, true)?
+            .set_override(crate::pem::config_keys::NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH.enabled, CONFIG_OPTIONAL_BOOL_UNSET_STRING_VALUE)?
+            .set_override(crate::pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH.enabled, true)?
             .build()?;
         let is_enabled = oidc::oidc_client_auth_enabled(&config)?;
         assert!(is_enabled);
@@ -176,8 +176,8 @@ mod tests {
     #[test]
     fn should_use_default_false_client_auth_when_oidc_client_auth_is_set_to_a_non_boolean_value() -> anyhow::Result<()> {
         let config = config::Config::builder()
-            .set_override(crate::pem::config_keys::NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH_ENABLED, CONFIG_OPTIONAL_BOOL_UNSET_STRING_VALUE)?
-            .set_override(crate::pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_ENABLED, false)?
+            .set_override(crate::pem::config_keys::NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH.enabled, CONFIG_OPTIONAL_BOOL_UNSET_STRING_VALUE)?
+            .set_override(crate::pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH.enabled, false)?
             .build()?;
         let is_enabled = oidc::oidc_client_auth_enabled(&config)?;
         assert!(!is_enabled);
@@ -187,8 +187,8 @@ mod tests {
     #[test]
     fn should_evaluate_to_false_when_config_contains_nonsense_values() -> anyhow::Result<()> {
         let config = config::Config::builder()
-            .set_override(crate::pem::config_keys::NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH_ENABLED, "nonsense")?
-            .set_override(crate::pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_ENABLED, "nonsense")?
+            .set_override(crate::pem::config_keys::NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH.enabled, "nonsense")?
+            .set_override(crate::pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH.enabled, "nonsense")?
             .build()?;
         let result = oidc::oidc_client_auth_enabled(&config);
         assert!(result.is_err(), "Expected error due to invalid config.");

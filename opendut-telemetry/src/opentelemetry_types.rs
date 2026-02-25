@@ -168,25 +168,25 @@ impl Opentelemetry {
 
                 {
                     fn opentelemetry_client_auth_enabled(config: &Config) -> Result<bool, OpentelemetryConfigError> {
-                        config.get_bool_with_fallback(pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_ENABLED, pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_ENABLED)
+                        config.get_bool_with_fallback(pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH.enabled, pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH.enabled)
                             .map_err(|error| OpentelemetryConfigError::InvalidValueError {
-                                field: [pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_ENABLED, pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_ENABLED].join(" | "),
+                                field: [pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH.enabled, pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH.enabled].join(" | "),
                                 message: format!("Failed to parse config due to error: {}", error)
                             })
                     }
 
                     if opentelemetry_client_auth_enabled(config)? {
                         let mtls_certificates = load_pem(
-                            pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_CERTIFICATE,
-                            pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_CERTIFICATE,
+                            pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH.certificate,
+                            pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH.certificate,
                         ).map_err(|error| OpentelemetryConfigError::ClientAuthentication {
                             message: String::from("None of the configured fields provided a valid mTLS client authentication certificate."),
                             cause: error.to_string(),
                         })?;
 
                         let mtls_key = load_pem(
-                            pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_KEY,
-                            pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_KEY,
+                            pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH.key,
+                            pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH.key,
                         ).map_err(|error| OpentelemetryConfigError::ClientAuthentication {
                             message: String::from("None of the configured fields provided a valid mTLS client authentication key."),
                             cause: error.to_string(),
