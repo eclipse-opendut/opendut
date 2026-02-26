@@ -3,10 +3,8 @@ use opendut_auth::confidential::error::ConfidentialClientError;
 use std::time::Duration;
 use tonic::transport::{Certificate, ClientTlsConfig, Identity};
 use url::Url;
-use opendut_util::pem::{self, Pem, PemFromConfig};
+use opendut_util::pem::{self, ClientAuth, Pem, PemFromConfig};
 use std::fmt::Debug;
-use config::Config;
-use opendut_util::config::ConfigExt;
 
 pub struct OpentelemetryConfig {
     pub(crate) confidential_client: Option<ConfidentialClientRef>,
@@ -166,41 +164,23 @@ impl Opentelemetry {
                     client_tls_config = client_tls_config.ca_certificates(opendut_cas);
                 }
 
-                {
-                    fn opentelemetry_client_auth_enabled(config: &Config) -> Result<bool, OpentelemetryConfigError> {
-                        config.get_bool_with_fallback(pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH.enabled, pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH.enabled)
-                            .map_err(|error| OpentelemetryConfigError::InvalidValueError {
-                                field: [pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH.enabled, pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH.enabled].join(" | "),
-                                message: format!("Failed to parse config due to error: {}", error)
-                            })
-                    }
+                let client_auth = ClientAuth::load_from_config(pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH, Some(pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH), config)
+                    .map_err(|cause| OpentelemetryConfigError::ValueParseError {
+                        field: [pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH.prefix, pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH.prefix].join(" | "),
+                        cause: format!("Failed to read mTLS client auth configuration: {cause}"),
+                    })?;
 
-                    if opentelemetry_client_auth_enabled(config)? {
-                        let mtls_certificates = load_pem(
-                            pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH.certificate,
-                            pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH.certificate,
-                        ).map_err(|error| OpentelemetryConfigError::ClientAuthentication {
-                            message: String::from("None of the configured fields provided a valid mTLS client authentication certificate."),
-                            cause: error.to_string(),
-                        })?;
-
-                        let mtls_key = load_pem(
-                            pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH.key,
-                            pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH.key,
-                        ).map_err(|error| OpentelemetryConfigError::ClientAuthentication {
-                            message: String::from("None of the configured fields provided a valid mTLS client authentication key."),
-                            cause: error.to_string(),
-                        })?.first().cloned().ok_or(OpentelemetryConfigError::ClientAuthentication {
-                            message: String::from("None of the configured fields provided a valid mTLS client authentication key."),
-                            cause: "error".to_string(),
-                        })?;
-                        let all_certs = mtls_certificates.iter().map(|cert| cert.to_string()).collect::<Vec<_>>().join("\n");
-                        let end_user_certificate = mtls_certificates.first().cloned().expect("No certificate found for mTLS client authentication in OpenTelemetry");
+                match client_auth {
+                    ClientAuth::Enabled { certs, key } => {
+                        let all_certs = certs.iter().map(|cert| cert.to_string()).collect::<Vec<_>>().join("\n");
+                        let end_user_certificate = certs.first().cloned().expect("No certificate found for mTLS client authentication in OpenTelemetry");
                         let name = pem::read_certificate_subject(&end_user_certificate);
-                        let identity = Identity::from_pem(all_certs, mtls_key.to_string());
+                        let identity = Identity::from_pem(all_certs, key.to_string());
+
                         startup_message!("Client authentication (mTLS) enabled. Client certificate subject <{:?}>.", name);
                         client_tls_config = client_tls_config.identity(identity);
-                    } else {
+                    },
+                    ClientAuth::Disabled => {
                         startup_message!("Client authentication (mTLS) disabled.");
                     }
                 }

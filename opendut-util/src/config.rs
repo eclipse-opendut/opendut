@@ -152,7 +152,5 @@ mod tests {
             assert!(result.is_err(), "Expected error when config value contains something else than unset value.");
             Ok(())
         }
-
     }
-
 }

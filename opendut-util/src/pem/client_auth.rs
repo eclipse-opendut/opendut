@@ -1,5 +1,7 @@
 use anyhow::{anyhow, Context};
 use config::Config;
+use crate::config::ConfigExt;
+
 use super::{Pem, PemFromConfig};
 
 
@@ -19,14 +21,34 @@ impl ClientAuth {
         config: &Config,
     ) -> anyhow::Result<Self> {
 
-        if config.get_bool(config_keys.enabled)? {
+        let is_enabled = match fallback_config_keys {
+            Some(fallback_config_keys) => config.get_bool_with_fallback(config_keys.enabled, fallback_config_keys.enabled),
+            None => config.get_bool(config_keys.enabled),
+        }?;
 
-            let certs = Pem::read_from_configured_path_or_content(config_keys.certificate, fallback_config_keys.map(|fallback| fallback.certificate), config)
+        if is_enabled {
+            let certs =
+                Pem::read_from_configured_path_or_content(
+                    config_keys.certificate,
+                    fallback_config_keys.map(|fallback| fallback.certificate),
+                    config
+                )
                 .context("No client authentication certificate found in configured locations.")?;
 
-            let key = Pem::read_from_configured_path_or_content(config_keys.key, fallback_config_keys.map(|fallback| fallback.key), config)
+            if certs.is_empty() {
+                return Err(anyhow!("No certificate found for mTLS client authentication in configured locations."))
+            }
+
+            let key =
+                Pem::read_from_configured_path_or_content(
+                    config_keys.key,
+                    fallback_config_keys.map(|fallback| fallback.key),
+                    config
+                )
                 .context("Could not read client authentication key found in configured locations.")?
-                .first().cloned().ok_or(anyhow!("No client authentication key found in configured locations."))?;
+                .first()
+                .ok_or(anyhow!("No key found for mTLS client authentication in configured locations."))?
+                .clone();
 
             Ok(Self::Enabled { certs, key })
         } else {
@@ -39,6 +61,7 @@ impl ClientAuth {
 
 #[derive(Clone, Copy)]
 pub struct ClientAuthConfigKeys {
+    pub prefix: &'static str,
     pub enabled: &'static str,
     pub certificate: &'static str,
     pub key: &'static str,
@@ -46,6 +69,7 @@ pub struct ClientAuthConfigKeys {
 macro_rules! client_auth_config_keys {
     ($prefix:expr) => {
         ClientAuthConfigKeys {
+            prefix:      $prefix,
             enabled:     ::const_format::formatcp!("{}.enabled", $prefix),
             certificate: ::const_format::formatcp!("{}.certificate", $prefix),
             key:         ::const_format::formatcp!("{}.key", $prefix),
