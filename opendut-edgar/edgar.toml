@@ -49,6 +49,14 @@ remote.host = ""
 [vpn.netbird.client]
 log.level = "WARN"
 
+[vpn.netbird.client.tls.client.auth] #mTLS
+enabled = "unset"  # use default defined in network.tls.client.auth, otherwise set this to 'true' or 'false'
+certificate = ""
+key = ""
+[vpn.netbird.client.config.keys.mtls]
+certificate = "MgmtClientCertPath"
+key = "MgmtClientKeyPath"
+
 [logging.pipe]
 enabled = true
 stream = "stdout"

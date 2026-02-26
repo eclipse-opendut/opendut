@@ -13,8 +13,8 @@ use opendut_model::util::net::AuthConfig;
 
 use crate::common::settings;
 use crate::common::settings::CONFIG_APPLICATION_PREFIX;
+use crate::common::util::create_file_and_ensure_it_can_only_be_read_or_modified_by_owner;
 use crate::setup::constants;
-use crate::setup::util::create_file_and_ensure_it_can_only_be_read_or_modified_by_owner;
 
 #[derive(Clone)]
 pub struct ConfigOverride {

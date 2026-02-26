@@ -4529,6 +4529,7 @@ dependencies = [
  "predicates",
  "rand 0.10.0",
  "regex",
+ "repo_path",
  "reqwest 0.13.2",
  "rtnetlink",
  "serde",
