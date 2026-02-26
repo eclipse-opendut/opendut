@@ -101,7 +101,7 @@ mod tests {
             resources.delete_cluster_descriptor(DeleteClusterDescriptorParams { cluster_id: cluster.id })
         ).await??;
 
-        assert_eq!(result, cluster.configuration);
+        assert_eq!(result, cluster.descriptor);
         Ok(())
     }
 }

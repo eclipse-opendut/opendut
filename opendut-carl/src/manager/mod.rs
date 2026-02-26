@@ -30,7 +30,7 @@ pub(crate) mod testing {
         pub device_2: DeviceId,
     }
     impl PeerFixture {
-        pub fn new() -> PeerFixture {
+        pub fn new() -> Self {
             let id = PeerId::random();
             let network_interface_1 = NetworkInterfaceId::random();
             let network_interface_2 = NetworkInterfaceId::random();
@@ -78,7 +78,7 @@ pub(crate) mod testing {
                     executors: vec![],
                 }
             };
-            PeerFixture {
+            Self {
                 id,
                 descriptor,
                 device_1,
@@ -91,13 +91,13 @@ pub(crate) mod testing {
 
     pub struct ClusterFixture {
         pub id: ClusterId,
-        pub configuration: ClusterDescriptor,
+        pub descriptor: ClusterDescriptor,
         pub peer_a: PeerFixture,
         pub peer_b: PeerFixture,
     }
 
     impl ClusterFixture {
-        pub async fn create(resource_manager: ResourceManagerRef) -> anyhow::Result<ClusterFixture> {
+        pub async fn create(resource_manager: ResourceManagerRef) -> anyhow::Result<Self> {
             let peer_a = PeerFixture::new();
             let peer_b = PeerFixture::new();
 
@@ -113,13 +113,12 @@ pub(crate) mod testing {
             };
             resource_manager.insert(cluster_id, cluster_descriptor.clone()).await?;
 
-            Ok(ClusterFixture {
+            Ok(Self {
                 id: cluster_id,
-                configuration: cluster_descriptor,
+                descriptor: cluster_descriptor,
                 peer_a,
                 peer_b,
             })
-
         }
     }
 }
