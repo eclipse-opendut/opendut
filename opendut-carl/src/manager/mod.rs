@@ -3,6 +3,8 @@ pub mod cluster_manager;
 pub mod grpc;
 pub mod peer_manager;
 pub mod observer_messaging_broker;
+#[cfg(feature = "viper")]
+pub mod test_manager;
 
 #[cfg(test)]
 pub(crate) mod testing {
@@ -95,7 +97,6 @@ pub(crate) mod testing {
         pub peer_a: PeerFixture,
         pub peer_b: PeerFixture,
     }
-
     impl ClusterFixture {
         pub async fn create(resource_manager: ResourceManagerRef) -> anyhow::Result<Self> {
             let peer_a = PeerFixture::new();
@@ -119,6 +120,77 @@ pub(crate) mod testing {
                 peer_a,
                 peer_b,
             })
+        }
+    }
+
+
+    #[cfg(feature = "viper")]
+    pub use viper::*;
+    #[cfg(feature = "viper")]
+    mod viper {
+        use super::*;
+        use opendut_model::viper::{ViperSourceDescriptor, ViperSourceId, ViperSourceName, ViperTestDescriptor, ViperTestId, ViperTestName, ViperTestParameterKey, ViperTestParameterValue, ViperTestSuiteIdentifier};
+        use url::Url;
+        use std::collections::HashMap;
+
+        pub struct ViperSourceFixture {
+            pub id: ViperSourceId,
+            pub descriptor: ViperSourceDescriptor,
+        }
+        impl ViperSourceFixture {
+            pub async fn create(resource_manager: ResourceManagerRef) -> anyhow::Result<Self> {
+                let source_id = ViperSourceId::random();
+                let source_descriptor = ViperSourceDescriptor {
+                    id: source_id,
+                    name: ViperSourceName::try_from(format!("ViperSource-{source_id}"))?,
+                    url: Url::parse("http://localhost")?,
+                };
+
+                resource_manager.insert(source_id, source_descriptor.clone()).await?;
+
+                Ok(Self {
+                    id: source_id,
+                    descriptor: source_descriptor,
+                })
+            }
+        }
+
+        pub struct ViperTestFixture {
+            pub id: ViperTestId,
+            pub descriptor: ViperTestDescriptor,
+        }
+        impl ViperTestFixture {
+            pub async fn create(resource_manager: ResourceManagerRef) -> anyhow::Result<Self> {
+                let source = ViperSourceFixture::create(resource_manager.clone()).await?;
+                let cluster = ClusterFixture::create(resource_manager.clone()).await?;
+
+                let test_id = ViperTestId::random();
+
+                let parameters = {
+                    let mut parameters: HashMap<ViperTestParameterKey, ViperTestParameterValue> = HashMap::new();
+                    parameters.insert(
+                        ViperTestParameterKey { inner: String::from("parameter-key") },
+                        ViperTestParameterValue::Boolean(true),
+                    );
+                    parameters
+                };
+
+                let test_descriptor = ViperTestDescriptor {
+                    id: test_id,
+                    name: ViperTestName::try_from(format!("ViperTest-{test_id}"))?,
+                    source: source.id,
+                    suite: ViperTestSuiteIdentifier::try_from(format!("ViperTestSuite-{test_id}"))?,
+                    cluster: cluster.id,
+                    parameters,
+                };
+
+                resource_manager.insert(test_id, test_descriptor.clone()).await?;
+
+                Ok(Self {
+                    id: test_id,
+                    descriptor: test_descriptor,
+                })
+            }
         }
     }
 }

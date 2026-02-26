@@ -26,10 +26,10 @@ pub enum DeleteViperSourceDescriptorError {
     SourceNotFound {
         source_id: ViperSourceId,
     },
-    #[error("VIPER source <{source_id}> could not be deleted, because a cluster deployment <{cluster_id}> using this source still exists!")]
-    ClusterDeploymentExists {
+    #[error("VIPER source <{source_id}> could not be deleted, because a test <{test_id}> using this source still exists!")]
+    TestExists {
         source_id: ViperSourceId,
-        cluster_id: ClusterId,
+        test_id: ViperTestId,
     },
     #[error("VIPER source {source} deleted with internal errors:\n  {cause}", source=format_id_with_optional_name(source_id, source_name))]
     Internal {

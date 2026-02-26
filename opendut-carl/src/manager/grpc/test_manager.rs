@@ -7,8 +7,9 @@ use opendut_carl_api::proto::services::test_manager::test_manager_server::{TestM
 use opendut_model::viper::{ViperRunDeployment, ViperTestDescriptor, ViperTestId, ViperSourceDescriptor, ViperRunId, ViperSourceId};
 use crate::manager::grpc::error::LogApiErr;
 use crate::manager::grpc::extract;
+use crate::manager::test_manager::delete_viper_source_descriptor::DeleteViperSourceDescriptorError;
 use crate::resource::manager::ResourceManagerRef;
-use crate::resource::persistence::error::PersistenceError;
+use crate::resource::persistence::error::{MapErrToInner, PersistenceError};
 
 pub struct TestManagerFacade {
     pub resource_manager: ResourceManagerRef,
@@ -68,13 +69,17 @@ impl TestManagerService for TestManagerFacade {
         trace!("Received request to delete test suite source descriptor for source <{source_id}>.");
 
         let result =
-            self.resource_manager.remove::<ViperSourceDescriptor>(source_id).await
-                .log_api_err()
-                .map_err(|_: PersistenceError| opendut_carl_api::carl::viper::DeleteViperSourceDescriptorError::Internal {
-                    source_id,
-                    source_name: None,
-                    cause: String::from("Error when accessing persistence while storing test suite source descriptor"),
-                });
+            self.resource_manager.resources_mut(async |resources|
+                resources.delete_viper_source_descriptor(source_id).await
+            ).await
+            .map_err_to_inner(|cause| DeleteViperSourceDescriptorError::Persistence {
+                source_id,
+                source_name: None,
+                cause: cause.context("Persistence error in transaction for deleting VIPER source descriptor"),
+            })
+            .log_api_err()
+            .map_err(opendut_carl_api::carl::viper::DeleteViperSourceDescriptorError::from);
+
 
         let response = match result {
             Ok(_) => delete_viper_source_descriptor_response::Reply::Success(

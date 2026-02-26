@@ -82,7 +82,7 @@ message DeleteViperSourceDescriptorFailure {
   oneof error {
     DeleteViperSourceDescriptorFailureSourceNotFound source_not_found = 1;
     DeleteViperSourceDescriptorFailureInternal internal = 4;
-    DeleteViperSourceDescriptorFailureDeploymentExists deployment_exists = 5;
+    DeleteViperSourceDescriptorFailureTestExists test_exists = 5;
   }
 }
 
@@ -96,9 +96,9 @@ message DeleteViperSourceDescriptorFailureInternal {
   string cause = 3;
 }
 
-message DeleteViperSourceDescriptorFailureDeploymentExists {
+message DeleteViperSourceDescriptorFailureTestExists {
   opendut.model.viper.ViperSourceId source_id = 1;
-  opendut.model.cluster.ClusterId cluster_id = 2;
+  opendut.model.viper.ViperTestId test_id = 2;
 }
 
 
