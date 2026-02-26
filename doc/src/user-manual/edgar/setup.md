@@ -163,7 +163,7 @@ If you need separate or no certificates and keys for OIDC or OpenTelemetry,
 you can additionally set the respective variables for OIDC and OpenTelemetry:
 ```
 export OPENDUT_EDGAR_NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH_ENABLED=true
-export OPENDUT_EDGAR_OPENTELEMETRY_TLS_CLIENT_AUTH.enabled=true
+export OPENDUT_EDGAR_OPENTELEMETRY_TLS_CLIENT_AUTH_ENABLED=true
 ```
 The variables ending on `_CERTIFICATE` and `_KEY` define different certificates and keys.  
 Without setting these, the value from `OPENDUT_EDGAR_NETWORK_TLS_CLIENT_AUTH_{CERTIFICATE,KEY}` will be used.
