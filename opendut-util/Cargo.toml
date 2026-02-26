@@ -6,7 +6,6 @@ edition.workspace = true
 license.workspace = true
 
 [features]
-client-auth = ["pem", "dep:anyhow", "dep:config"]
 config = ["dep:config"]
 crypto = ["dep:rustls"]
 future = []

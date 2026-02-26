@@ -1,6 +1,3 @@
-#[cfg(feature = "client-auth")]
-pub mod client_auth;
-
 #[cfg(feature = "config")]
 pub mod config;
 

@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Context};
 use config::Config;
-use crate::pem::{self, config_keys::ClientAuthConfigKeys, Pem, PemFromConfig};
+use super::{Pem, PemFromConfig};
 
 
 pub enum ClientAuth {
@@ -10,7 +10,7 @@ pub enum ClientAuth {
 
 impl ClientAuth {
     pub fn load_from_config_for_carl_connection(config: &Config) -> anyhow::Result<Self> {
-        Self::load_from_config(pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH, None, config)
+        Self::load_from_config(crate::pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH, None, config)
     }
 
     pub fn load_from_config(
@@ -34,3 +34,22 @@ impl ClientAuth {
         }
     }
 }
+
+
+
+#[derive(Clone, Copy)]
+pub struct ClientAuthConfigKeys {
+    pub enabled: &'static str,
+    pub certificate: &'static str,
+    pub key: &'static str,
+}
+macro_rules! client_auth_config_keys {
+    ($prefix:expr) => {
+        ClientAuthConfigKeys {
+            enabled:     ::const_format::formatcp!("{}.enabled", $prefix),
+            certificate: ::const_format::formatcp!("{}.certificate", $prefix),
+            key:         ::const_format::formatcp!("{}.key", $prefix),
+        }
+    };
+}
+pub(crate) use client_auth_config_keys;

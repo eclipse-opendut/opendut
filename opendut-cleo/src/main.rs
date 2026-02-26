@@ -8,8 +8,7 @@ use uuid::Uuid;
 use opendut_carl_api::carl::CarlClient;
 use opendut_carl_api::carl::metadata::version_compatibility::VersionCompatibilityInfo;
 use opendut_model::topology::{DeviceId, DeviceName};
-use opendut_util::pem::{self, Pem, PemFromConfig};
-use opendut_util::client_auth::ClientAuth;
+use opendut_util::pem::{self, ClientAuth, Pem, PemFromConfig};
 use opendut_util::settings::{load_config, FileFormat, LoadedConfig};
 
 mod commands;

@@ -9,8 +9,7 @@ use tracing::{debug, info, warn};
 use opendut_carl_api::carl::broker::stream_header;
 use opendut_carl_api::carl::{broker, CarlClient};
 use opendut_model::peer::PeerId;
-use opendut_util::client_auth::ClientAuth;
-use opendut_util::pem::{self, Pem, PemFromConfig};
+use opendut_util::pem::{self, ClientAuth, Pem, PemFromConfig};
 
 
 /// Separate function which just opens a connection without extracting the version,

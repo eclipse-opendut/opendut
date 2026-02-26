@@ -20,7 +20,6 @@ client = [
     "tonic/tls-ring",
     "dep:tonic-prost-build",
     "opendut-util/pem",
-    "opendut-util/client-auth",
     "opendut-util/project",
 ]
 wasm-client = [
