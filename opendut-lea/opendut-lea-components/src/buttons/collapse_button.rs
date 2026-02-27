@@ -20,7 +20,10 @@ pub fn CollapseButton(
             class="dut-collapse-button"
             role="button"
             aria-label=label
-            on:click=move |_| collapsed.update(|collapsed| *collapsed = collapsed.not())
+            on:click=move |event| {
+                event.stop_propagation();
+                collapsed.update(|collapsed| *collapsed = collapsed.not())
+            }
         >
             <i class=move || collapse_button_icon.get().as_class()/>
         </div>
