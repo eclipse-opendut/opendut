@@ -168,7 +168,6 @@ message ListViperSourceDescriptorsFailureInternal {
 
 
 
-
 //////////////////////////////
 // ViperTestSuiteDescriptor //
 //////////////////////////////
@@ -266,6 +265,7 @@ message DeleteViperTestRunDescriptorFailure {
     DeleteViperTestRunDescriptorFailureTestNotFound test_not_found = 1;
     DeleteViperTestRunDescriptorFailureInternal internal = 4;
     DeleteViperTestRunDescriptorFailureDeploymentExists deployment_exists = 5;
+    DeleteViperTestDescriptorFailureViperRunDeploymentExists viper_run_deployment_exists = 6;
   }
 }
 
@@ -281,6 +281,11 @@ message DeleteViperTestRunDescriptorFailureInternal {
 message DeleteViperTestRunDescriptorFailureDeploymentExists {
   opendut.model.viper.ViperTestId test_id = 1;
   opendut.model.cluster.ClusterId cluster_id = 2;
+}
+
+message DeleteViperTestDescriptorFailureViperRunDeploymentExists {
+  opendut.model.viper.ViperTestId test_id = 1;
+  opendut.model.viper.ViperRunId run_id = 2;
 }
 
 
