@@ -23,6 +23,12 @@ pub enum DeleteClusterDescriptorError {
     ClusterDeploymentFound {
         cluster_id: ClusterId
     },
+    #[cfg(feature="viper")]
+    #[error("ClusterDescriptor <{cluster_id}> could not be deleted, because the VIPER test <{test_id}> uses it!")]
+    ViperTestFound {
+        cluster_id: ClusterId,
+        test_id: opendut_model::viper::ViperTestId,
+    },
     #[error("ClusterDescriptor <{cluster_id}> could not be deleted, because a ClusterDescriptor with that ID does not exist!")]
     ClusterDescriptorNotFound {
         cluster_id: ClusterId

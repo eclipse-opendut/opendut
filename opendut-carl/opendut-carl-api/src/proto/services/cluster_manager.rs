@@ -130,6 +130,13 @@ impl From<DeleteClusterDescriptorError> for DeleteClusterDescriptorFailure {
                     cluster_id: Some(cluster_id.into()),
                 })
             }
+            #[cfg(feature="viper")]
+            DeleteClusterDescriptorError::ViperTestFound { cluster_id, test_id } => {
+                delete_cluster_descriptor_failure::Error::ViperTestExists(DeleteClusterDescriptorFailureViperTestExists {
+                    cluster_id: Some(cluster_id.into()),
+                    test_id: Some(test_id.into()),
+                })
+            }
         };
         DeleteClusterDescriptorFailure {
             error: Some(proto_error)
@@ -156,6 +163,13 @@ impl TryFrom<DeleteClusterDescriptorFailure> for DeleteClusterDescriptorError {
             delete_cluster_descriptor_failure::Error::ClusterDeploymentExists(error) => {
                 error.try_into()?
             }
+            delete_cluster_descriptor_failure::Error::ViperTestExists(_error) => {
+                #[cfg(not(feature="viper"))]
+                unimplemented!("VIPER feature flag is off, so no conversion available.");
+
+                #[cfg(feature="viper")]
+                _error.try_into()?
+            }
         };
         Ok(error)
     }
@@ -181,6 +195,25 @@ impl TryFrom<DeleteClusterDescriptorFailureClusterDeploymentExists> for DeleteCl
             .ok_or_else(|| ErrorBuilder::field_not_set("cluster_id"))?
             .try_into()?;
         Ok(DeleteClusterDescriptorError::ClusterDeploymentFound { cluster_id })
+    }
+}
+
+#[cfg(feature="viper")]
+impl TryFrom<DeleteClusterDescriptorFailureViperTestExists> for DeleteClusterDescriptorError {
+    type Error = ConversionError;
+
+    fn try_from(failure: DeleteClusterDescriptorFailureViperTestExists) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<DeleteClusterDescriptorFailureClusterDeploymentExists, DeleteClusterDescriptorError>;
+
+        let cluster_id: ClusterId = failure.cluster_id
+            .ok_or_else(|| ErrorBuilder::field_not_set("cluster_id"))?
+            .try_into()?;
+
+        let test_id = failure.test_id
+            .ok_or_else(|| ErrorBuilder::field_not_set("test_id"))?
+            .try_into()?;
+
+        Ok(DeleteClusterDescriptorError::ViperTestFound { cluster_id, test_id })
     }
 }
 
