@@ -90,7 +90,6 @@ pub(crate) mod testing {
     }
 
 
-
     pub struct ClusterFixture {
         pub id: ClusterId,
         pub descriptor: ClusterDescriptor,
