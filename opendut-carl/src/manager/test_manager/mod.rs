@@ -1,2 +1,3 @@
 pub mod delete_viper_source_descriptor;
+pub mod delete_viper_test_descriptor;
 pub mod get_viper_test_suite_descriptor;

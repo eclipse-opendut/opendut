@@ -293,6 +293,12 @@ conversion! {
                     cluster_id: Some(cluster_id.into()),
                 })
             }
+            Model::ViperRunDeploymentExists { test_id, run_id } => {
+                delete_viper_test_run_descriptor_failure::Error::ViperRunDeploymentExists(DeleteViperTestDescriptorFailureViperRunDeploymentExists {
+                    test_id: Some(test_id.into()),
+                    run_id: Some(run_id.into()),
+                })
+            }
         };
         Proto {
             error: Some(proto_error)
@@ -310,6 +316,7 @@ conversion! {
             delete_viper_test_run_descriptor_failure::Error::Internal(error) => {
                 let test_id = extract!(error.test_id)?.try_into()?;
                 let cause = error.cause;
+
                 Ok(Model::Internal {
                     test_id,
                     cause,
@@ -322,6 +329,15 @@ conversion! {
                 Ok(Model::ClusterDeploymentExists {
                     test_id,
                     cluster_id,
+                })
+            }
+            delete_viper_test_run_descriptor_failure::Error::ViperRunDeploymentExists(error) => {
+                let test_id = extract!(error.test_id)?.try_into()?;
+                let run_id = extract!(error.run_id)?.try_into()?;
+
+                Ok(Model::ViperRunDeploymentExists {
+                    test_id,
+                    run_id,
                 })
             }
         }

@@ -9,7 +9,7 @@ use crate::viper::ViperSourceId;
 use super::ViperTestSuiteIdentifier;
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ViperTestRunDescriptor {
     pub id: ViperTestId,
     pub name: ViperTestName,
@@ -126,7 +126,7 @@ impl FromStr for ViperTestName {
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct ViperTestParameterKey { pub inner: String }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum ViperTestParameterValue {
     Boolean(bool),
     Number(i64),

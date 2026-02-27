@@ -185,7 +185,7 @@ mod peer_manager {
 
 #[cfg(feature = "viper")]
 mod test_manager {
-    use opendut_carl_api::carl::viper::{DeleteViperSourceDescriptorError, GetViperTestSuiteDescriptorError};
+    use opendut_carl_api::carl::viper::{DeleteViperSourceDescriptorError, DeleteViperTestRunDescriptorError, GetViperTestSuiteDescriptorError};
     use crate::manager::test_manager;
 
     impl From<test_manager::delete_viper_source_descriptor::DeleteViperSourceDescriptorError> for DeleteViperSourceDescriptorError {
@@ -204,6 +204,25 @@ mod test_manager {
             }
         }
     }
+
+    impl From<test_manager::delete_viper_test_descriptor::DeleteViperTestDescriptorError> for DeleteViperTestRunDescriptorError {
+        fn from(value: test_manager::delete_viper_test_descriptor::DeleteViperTestDescriptorError) -> Self {
+            match value {
+                test_manager::delete_viper_test_descriptor::DeleteViperTestDescriptorError::TestNotFound { test_id } =>
+                    Self::TestNotFound { test_id },
+                test_manager::delete_viper_test_descriptor::DeleteViperTestDescriptorError::ClusterDeploymentExists { test_id, cluster_id } =>
+                    Self::ClusterDeploymentExists { test_id, cluster_id },
+                test_manager::delete_viper_test_descriptor::DeleteViperTestDescriptorError::ViperRunDeploymentExists { test_id, run_id } =>
+                    Self::ViperRunDeploymentExists { test_id, run_id },
+                test_manager::delete_viper_test_descriptor::DeleteViperTestDescriptorError::Persistence { test_id, cause: _ } =>
+                    Self::Internal {
+                        test_id,
+                        cause: String::from("Error when accessing persistence while deleting VIPER test descriptor"),
+                    }
+            }
+        }
+    }
+
 
     impl From<test_manager::get_viper_test_suite_descriptor::GetViperTestSuiteDescriptorError> for GetViperTestSuiteDescriptorError {
         fn from(value: test_manager::get_viper_test_suite_descriptor::GetViperTestSuiteDescriptorError) -> Self {

@@ -129,7 +129,7 @@ pub(crate) mod testing {
     #[cfg(feature = "viper")]
     mod viper {
         use super::*;
-        use opendut_model::viper::{ViperSourceDescriptor, ViperSourceId, ViperSourceName, ViperTestRunDescriptor, ViperTestId, ViperTestName, ViperTestParameterKey, ViperTestParameterValue, ViperTestSuiteIdentifier};
+        use opendut_model::viper::{ViperRunDeployment, ViperRunId, ViperSourceDescriptor, ViperSourceId, ViperSourceName, ViperTestRunDescriptor, ViperTestId, ViperTestName, ViperTestParameterKey, ViperTestParameterValue, ViperTestSuiteIdentifier};
         use url::Url;
         use std::collections::HashMap;
 
@@ -189,6 +189,31 @@ pub(crate) mod testing {
                 Ok(Self {
                     id: test_id,
                     descriptor: test_descriptor,
+                })
+            }
+        }
+
+        pub struct ViperRunDeploymentFixture {
+            pub id: ViperRunId,
+            pub deployment: ViperRunDeployment
+        }
+
+        impl ViperRunDeploymentFixture {
+            pub async fn create(resource_manager: ResourceManagerRef) -> anyhow::Result<Self> {
+                let test = ViperTestFixture::create(resource_manager.clone()).await?;
+
+                let run_id = ViperRunId::random();
+
+                let deployment = ViperRunDeployment {
+                    run_id,
+                    test_id: test.id,
+                };
+
+                resource_manager.insert(run_id, deployment.clone()).await?;
+
+                Ok(Self {
+                    id: run_id,
+                    deployment,
                 })
             }
         }

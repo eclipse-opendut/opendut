@@ -103,6 +103,11 @@ pub enum DeleteViperTestRunDescriptorError {
         test_id: ViperTestId,
         cluster_id: ClusterId,
     },
+    #[error("Test <{test_id}> could not be deleted, because a viper run deployment <{run_id}> using this test still exists!")]
+    ViperRunDeploymentExists {
+        test_id: ViperTestId,
+        run_id: ViperRunId,
+    },
     #[error("Test <{test_id}> deleted with internal errors:\n  {cause}")]
     Internal {
         test_id: ViperTestId,
