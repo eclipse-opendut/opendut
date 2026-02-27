@@ -185,6 +185,43 @@ conversion! {
 
 
 //
+// ViperTestSuiteDescriptor
+//
+
+conversion! {
+    type Model = crate::carl::viper::ListViperTestSuiteDescriptorsError;
+    type Proto = ListViperTestSuiteDescriptorsFailure;
+
+    fn from(value: Model) -> Proto {
+        let proto_error = match value {
+            Model::Internal { cause } => {
+                list_viper_test_suite_descriptors_failure::Error::Internal(ListViperTestSuiteDescriptorsFailureInternal {
+                    cause
+                })
+            }
+        };
+        Proto {
+            error: Some(proto_error)
+        }
+    }
+
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let error = extract!(value.error)?;
+
+        match error {
+            list_viper_test_suite_descriptors_failure::Error::Internal(error) => {
+                let cause = error.cause;
+                Ok(Model::Internal {
+                    cause,
+                })
+            }
+        }
+    }
+}
+
+
+
+//
 // ViperTestDescriptor
 //
 

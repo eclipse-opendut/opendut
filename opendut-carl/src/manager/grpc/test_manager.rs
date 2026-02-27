@@ -1,13 +1,14 @@
 use tonic::{Request, Response, Status};
 use tracing::{error, trace};
-use opendut_carl_api::proto::services::test_manager::{delete_viper_source_descriptor_response, get_viper_source_descriptor_response, list_viper_source_descriptors_response, store_viper_source_descriptor_response, DeleteViperSourceDescriptorRequest, DeleteViperSourceDescriptorResponse, DeleteViperSourceDescriptorSuccess, GetViperSourceDescriptorRequest, GetViperSourceDescriptorResponse, GetViperSourceDescriptorSuccess, ListViperSourceDescriptorsRequest, ListViperSourceDescriptorsResponse, ListViperSourceDescriptorsSuccess, StoreViperSourceDescriptorRequest, StoreViperSourceDescriptorResponse, StoreViperSourceDescriptorSuccess};
+use opendut_carl_api::proto::services::test_manager::{delete_viper_source_descriptor_response, get_viper_source_descriptor_response, list_viper_source_descriptors_response, list_viper_test_suite_descriptors_response, store_viper_source_descriptor_response, DeleteViperSourceDescriptorRequest, DeleteViperSourceDescriptorResponse, DeleteViperSourceDescriptorSuccess, GetViperSourceDescriptorRequest, GetViperSourceDescriptorResponse, GetViperSourceDescriptorSuccess, ListViperSourceDescriptorsRequest, ListViperSourceDescriptorsResponse, ListViperSourceDescriptorsSuccess, ListViperTestSuiteDescriptorsRequest, ListViperTestSuiteDescriptorsResponse, ListViperTestSuiteDescriptorsSuccess, StoreViperSourceDescriptorRequest, StoreViperSourceDescriptorResponse, StoreViperSourceDescriptorSuccess};
 use opendut_carl_api::proto::services::test_manager::{delete_viper_test_descriptor_response, get_viper_test_descriptor_response, list_viper_test_descriptors_response, store_viper_test_descriptor_response, DeleteViperTestDescriptorRequest, DeleteViperTestDescriptorResponse, DeleteViperTestDescriptorSuccess, GetViperTestDescriptorRequest, GetViperTestDescriptorResponse, GetViperTestDescriptorSuccess, ListViperTestDescriptorsRequest, ListViperTestDescriptorsResponse, ListViperTestDescriptorsSuccess, StoreViperTestDescriptorRequest, StoreViperTestDescriptorResponse, StoreViperTestDescriptorSuccess};
 use opendut_carl_api::proto::services::test_manager::{delete_viper_run_deployment_response, get_viper_run_deployment_response, list_viper_run_deployments_response, store_viper_run_deployment_response, DeleteViperRunDeploymentRequest, DeleteViperRunDeploymentResponse, DeleteViperRunDeploymentSuccess, GetViperRunDeploymentRequest, GetViperRunDeploymentResponse, GetViperRunDeploymentSuccess, ListViperRunDeploymentsRequest, ListViperRunDeploymentsResponse, ListViperRunDeploymentsSuccess, StoreViperRunDeploymentRequest, StoreViperRunDeploymentResponse, StoreViperRunDeploymentSuccess};
 use opendut_carl_api::proto::services::test_manager::test_manager_server::{TestManager as TestManagerService, TestManagerServer};
-use opendut_model::viper::{ViperRunDeployment, ViperTestDescriptor, ViperTestId, ViperSourceDescriptor, ViperRunId, ViperSourceId};
+use opendut_model::viper::{ViperRunDeployment, ViperRunId, ViperSourceDescriptor, ViperSourceId, ViperTestDescriptor, ViperTestId};
 use crate::manager::grpc::error::LogApiErr;
 use crate::manager::grpc::extract;
 use crate::manager::test_manager::delete_viper_source_descriptor::DeleteViperSourceDescriptorError;
+use crate::manager::test_manager::list_viper_test_suite_descriptors::ListViperTestSuiteDescriptorsError;
 use crate::resource::manager::ResourceManagerRef;
 use crate::resource::persistence::error::{MapErrToInner, PersistenceError};
 
@@ -159,6 +160,43 @@ impl TestManagerService for TestManagerFacade {
         }))
     }
 
+
+    //
+    // ViperSuiteDescriptor
+    //
+
+    #[tracing::instrument(skip_all, level="trace")]
+    async fn list_viper_test_suite_descriptors(&self, _: Request<ListViperTestSuiteDescriptorsRequest>) -> Result<Response<ListViperTestSuiteDescriptorsResponse>, Status> {
+
+        trace!("Received request to list test suite descriptors.");
+
+        let result =
+            self.resource_manager.resources_mut(async |resources|
+                resources.list_viper_test_suite_descriptors().await
+            ).await
+            .map_err_to_inner(|cause| ListViperTestSuiteDescriptorsError::Persistence {
+                cause: cause.context("Persistence error in transaction for listing VIPER test suite descriptors"),
+            })
+            .log_api_err()
+            .map_err(opendut_carl_api::carl::viper::ListViperTestSuiteDescriptorsError::from);
+
+        let response = match result {
+            Ok(suites) => {
+                let suites = suites.into_iter()
+                    .map(From::from)
+                    .collect::<Vec<_>>();
+
+                list_viper_test_suite_descriptors_response::Reply::Success(
+                    ListViperTestSuiteDescriptorsSuccess { suites }
+                )
+            }
+            Err(error) => list_viper_test_suite_descriptors_response::Reply::Failure(error.into())
+        };
+
+        Ok(Response::new(ListViperTestSuiteDescriptorsResponse {
+            reply: Some(response)
+        }))
+    }
 
 
     //
