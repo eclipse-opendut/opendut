@@ -1,7 +1,7 @@
 use crate::fs;
 use std::path::PathBuf;
 
-use anyhow::anyhow;
+use anyhow::{anyhow, bail, Context};
 use cicero::distribution::build::Target;
 use tracing::debug;
 
@@ -141,7 +141,6 @@ pub mod distribution {
 
 
     pub mod netbird {
-        use anyhow::bail;
         use super::*;
 
         #[tracing::instrument(skip_all)]
@@ -174,7 +173,7 @@ pub mod distribution {
                 debug!("Retrieved {} bytes.", bytes.len());
 
                 fs::write(&netbird_artifact, bytes)
-                    .map_err(|cause| anyhow!("Error while writing to '{}': {cause}", netbird_artifact.display()))?;
+                    .context(format!("Error while writing to {netbird_artifact:?}"))?;
             }
             assert!(netbird_artifact.exists());
 
@@ -182,8 +181,8 @@ pub mod distribution {
             fs::create_dir_all(out_file.parent().unwrap())?;
 
             fs::copy(&netbird_artifact, &out_file)
-                .map_err(|cause| anyhow!("Error while copying from '{}' to '{}': {cause}", netbird_artifact.display(), out_file.display()))?;
-            debug!("Placed NetBird distribution into: {}", out_file.display());
+                .context(format!("Error while copying from {netbird_artifact:?} to {out_file:?}"))?;
+            debug!("Placed NetBird distribution into: {out_file:?}");
 
             Ok(())
         }
@@ -247,8 +246,8 @@ pub mod distribution {
 
             fs::create_dir_all(out_file.parent().unwrap())?;
             fs::copy(&rperf_binary, &out_file)
-                .map_err(|cause| anyhow!("Error while copying from '{}' to '{}': {cause}", rperf_binary.display(), out_file.display()))?;
-            debug!("Placed rperf distribution into: {}", out_file.display());
+                .context(format!("Error while copying from {rperf_binary:?} to {out_file:?}"))?;
+            debug!("Placed rperf distribution into: {out_file:?}");
 
             Ok(())
         }
@@ -262,7 +261,7 @@ pub mod distribution {
             debug!("Retrieved {} bytes.", bytes.len());
 
             fs::write(rperf_artifact, bytes)
-                .map_err(|cause| anyhow!("Error while writing to '{}': {cause}", rperf_artifact.display()))?;
+                .context(format!("Error while writing to {rperf_artifact:?}"))?;
             Ok(())
         }
         fn unpack_rperf_repository(rperf_artifact: &Path, temp_dir_path: &Path, version: &str) -> Result<PathBuf, anyhow::Error> {

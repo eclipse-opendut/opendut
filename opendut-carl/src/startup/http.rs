@@ -1,4 +1,4 @@
-use anyhow::anyhow;
+use anyhow::Context;
 use axum::routing::get;
 use config::Config;
 use tower_http::services::{ServeDir, ServeFile};
@@ -60,7 +60,7 @@ pub fn create_http_state(
     let oidc_enabled = settings.get_bool("network.oidc.enabled").unwrap_or(false);
     let lea_idp_config = if oidc_enabled {
         let lea_idp_config = LoadableLeaIdentityProviderConfig::try_from(settings)
-            .map_err(|_| anyhow!("Failed to create LeaIdentityProviderConfig from settings."))?;
+            .context("Failed to create LeaIdentityProviderConfig from settings.")?;
         info!("OIDC is enabled.");
         Some(lea_idp_config)
     } else {

@@ -24,15 +24,15 @@ impl TryFrom<&Config> for LoadableLeaIdentityProviderConfig {
     fn try_from(config: &Config) -> anyhow::Result<Self> {
 
         let client_id = config.get_string(LoadableLeaIdentityProviderConfig::CLIENT_ID)
-            .map_err(|error| anyhow!("Failed to find configuration for `{}`. {}", LoadableLeaIdentityProviderConfig::CLIENT_ID, error))?;
+            .context(format!("Failed to find configuration for `{}`.", LoadableLeaIdentityProviderConfig::CLIENT_ID))?;
         let issuer = config.get_string(LoadableLeaIdentityProviderConfig::ISSUER_URL)
-            .map_err(|error| anyhow!("Failed to find configuration for `{}`. {}", LoadableLeaIdentityProviderConfig::ISSUER_URL, error))?;
+            .context(format!("Failed to find configuration for `{}`.", LoadableLeaIdentityProviderConfig::ISSUER_URL))?;
 
         let issuer_url = Url::parse(&issuer)
             .context(format!("Failed to parse OIDC issuer URL `{issuer}`."))?;
 
         let lea_raw_scopes = config.get_string(LoadableLeaIdentityProviderConfig::SCOPES)
-            .map_err(|error| anyhow!("Failed to find configuration for `{}`. {}", LoadableLeaIdentityProviderConfig::SCOPES, error))?;
+            .context(format!("Failed to find configuration for `{}`", LoadableLeaIdentityProviderConfig::SCOPES))?;
 
         let scopes = OidcConfidentialClientConfig::parse_scopes(&client_id, lea_raw_scopes).into_iter()
             .map(|scope| scope.to_string())

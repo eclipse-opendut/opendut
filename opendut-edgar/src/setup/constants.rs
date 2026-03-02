@@ -1,6 +1,8 @@
 use std::path::PathBuf;
 
 use anyhow::Context;
+use opendut_util::project;
+
 use crate::common::constants::edgar_install_directory;
 
 
@@ -48,24 +50,18 @@ pub fn default_config_merge_suggestion_file_path() -> PathBuf {
 
 
 pub mod netbird {
-    use std::path::PathBuf;
-
-    use anyhow::anyhow;
-
-    use opendut_util::project;
-
-    use crate::common::constants::edgar_install_directory;
+    use super::*;
 
     pub fn path_in_edgar_distribution() -> anyhow::Result<PathBuf> {
         let path = PathBuf::from("install/netbird.tar.gz");
         project::make_path_absolute(&path)
-            .map_err(|cause| anyhow!("Failed to determine absolute path of NetBird in the unpacked EDGAR distribution, which is supposed to be at '{path:?}': {cause}"))
+            .context(format!("Failed to determine absolute path of NetBird in the unpacked EDGAR distribution, which is supposed to be at '{path:?}'"))
     }
 
     pub fn unpack_dir() -> anyhow::Result<PathBuf> {
         let path = edgar_install_directory().join("netbird");
         project::make_path_absolute(&path)
-            .map_err(|cause| anyhow!("Failed to determine absolute path where NetBird should be unpacked to, which is supposed to be at {path:?}: {cause}"))
+            .context(format!("Failed to determine absolute path where NetBird should be unpacked to, which is supposed to be at {path:?}"))
     }
 
     pub fn netbird_binary_file() -> PathBuf {
@@ -87,14 +83,12 @@ pub mod netbird {
 }
 
 pub mod rperf {
-    use std::path::PathBuf;
-    use anyhow::anyhow;
-    use opendut_util::project;
+    use super::*;
 
     pub fn path_in_edgar_distribution() -> anyhow::Result<PathBuf> {
         let path = PathBuf::from("install/rperf");
         project::make_path_absolute(&path)
-            .map_err(|cause| anyhow!("Failed to determine absolute path of rperf in the unpacked EDGAR distribution, which is supposed to be at '{path:?}': {cause}"))
+            .context(format!("Failed to determine absolute path of rperf in the unpacked EDGAR distribution, which is supposed to be at '{path:?}'"))
     }
 }
 

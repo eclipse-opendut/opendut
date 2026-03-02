@@ -1,7 +1,7 @@
 use std::thread::sleep;
 use std::time::Duration;
 
-use anyhow::{anyhow, Error};
+use anyhow::{anyhow, Context, Error};
 use tracing::debug;
 use status::EdgarDeploymentStatus;
 use crate::core::TheoError;
@@ -112,7 +112,7 @@ fn set_dut_bridge_ip_address_for_pinging() -> Result<(), Error> {
         DockerCommand::new_exec(&edgar_name)
             .arg("/opt/set-dut-local-ip-address.sh")
             .expect_show_status("Failed to set dut bridge ip for EDGAR.")
-            .map_err(|err| anyhow!("Failed to set dut bridge ip for EDGAR {}. Error: {}", edgar_name, err))?;
+            .context(format!("Failed to set dut bridge ip for EDGAR {edgar_name}"))?;
     }
     Ok(())
 }

@@ -2,7 +2,7 @@ use clap::ArgAction;
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
-use anyhow::{anyhow, Context};
+use anyhow::Context;
 use home::home_dir;
 use crate::core::carl_config::CarlConfiguration;
 use crate::core::docker::command::DockerCommand;
@@ -52,8 +52,8 @@ impl DevCli {
                 fs::write(&config_path, carl_config.config_toml())
                     .context("Failed to write carl config to temporary location.")?;
 
-                let carl_config_path = config_path.into_os_string().into_string()
-                    .map_err(|_| anyhow!("Failed to convert config path to string."))?;
+                let carl_config_path = config_path.to_str()
+                    .context("Failed to convert config path to string.")?;
 
                 let localenv_root_ca = PathBuf::project_path_buf()
                     .join(".ci/deploy/localenv/data/secrets/pki/opendut-ca.pem");

@@ -6,7 +6,7 @@ use reqwest::Identity;
 pub mod oidc {
     use super::{construct_reqwest_identity_from_two_pems, ReqwestClient};
     use crate::pem::{self, ClientAuth, Pem, PemFromConfig};
-    use anyhow::{anyhow, Context};
+    use anyhow::Context;
     use config::Config;
     use reqwest::{Certificate, Identity};
     use tracing::debug;
@@ -49,8 +49,7 @@ pub mod oidc {
 
         for ca_certificate in ca_certificates  {
             debug!("Constructing reqwest client with CA certificate provided.");
-            let reqwest_certificate = Certificate::from_pem(ca_certificate.to_string().as_bytes())
-                .map_err(|cause| anyhow!(cause.to_string()))?;
+            let reqwest_certificate = Certificate::from_pem(ca_certificate.to_string().as_bytes())?;
 
             client = client.add_root_certificate(reqwest_certificate);
         }

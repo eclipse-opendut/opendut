@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod client;
 
-use anyhow::anyhow;
+use anyhow::Context;
 use oauth2::{ClientId, ClientSecret, RedirectUrl};
 use opendut_util::{expect_env_var, reqwest_client};
 use openidconnect::RegistrationUrl;
@@ -29,7 +29,7 @@ pub async fn localenv_reqwest_client() -> ReqwestClient {
         .expect("Could not load localenv CA");
 
     reqwest_client::oidc::create_with_ca(pems)
-        .map_err(|cause| anyhow!("Failed to create reqwest client. Error: {}", cause))
+        .context("Failed to create reqwest client.")
         .expect("Could not create localenv reqwest client")
 }
 

@@ -171,9 +171,9 @@ async fn modify_can_route(src: &NetworkInterfaceName, dst: &NetworkInterfaceName
         cmd.arg("-X");
     }
 
-    trace!("{operation:?} CAN route, executing command: {:?}", cmd);
+    trace!("{operation:?} CAN route, executing command: {cmd:?}");
     let output = cmd.output().await
-        .map_err(|cause| anyhow!(Error::CommandLineProgramExecution { command: "cangw".to_string(), cause }))?;
+        .map_err(|cause| Error::CommandLineProgramExecution { command: "cangw".to_string(), cause })?;
 
     if output.status.success() {
         Ok(())
