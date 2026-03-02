@@ -51,7 +51,7 @@ fn write_with_options(options: WriteConfigurationOptions) -> anyhow::Result<()> 
         user_attended,
     } = options;
 
-    let original_settings = load_current_settings(&config_file_to_write_to)
+    let original_settings = load_current_settings_from_file_and_env(&config_file_to_write_to)
         .unwrap_or_else(|| {
             debug!("Could not load settings from configuration file at {config_file_to_write_to:?}. Continuing as if no previous configuration exists.");
             toml_edit::DocumentMut::new()
@@ -59,7 +59,7 @@ fn write_with_options(options: WriteConfigurationOptions) -> anyhow::Result<()> 
 
     let new_settings_string = update_settings(original_settings.clone(), &config_override).to_string();
 
-    if original_settings.to_string() == new_settings_string {
+    if !needs_writing_to_config_file(&new_settings_string, &config_file_to_write_to)? {
         debug!("The configuration on disk already matches the overrides we wanted to apply.");
         return Ok(())
     }
@@ -67,6 +67,7 @@ fn write_with_options(options: WriteConfigurationOptions) -> anyhow::Result<()> 
     let target_file_empty =
         config_file_to_write_to.exists().not()
         || config_file_to_write_to.metadata()?.len() == 0;
+
 
     let should_overwrite =
         if target_file_empty || no_confirm {
@@ -97,7 +98,7 @@ fn write_with_options(options: WriteConfigurationOptions) -> anyhow::Result<()> 
     }
 }
 
-fn load_current_settings(path: &Path) -> Option<toml_edit::DocumentMut> {
+fn load_current_settings_from_file_and_env(path: &Path) -> Option<toml_edit::DocumentMut> {
 
     let config = opendut_util::settings::add_files_and_env_to_config_builder( //load from config file + env, so that envs specified during Setup are persisted for Service
         vec![path.to_path_buf()],
@@ -118,6 +119,28 @@ fn load_current_settings(path: &Path) -> Option<toml_edit::DocumentMut> {
             None
         }
     }
+}
+
+fn needs_writing_to_config_file(new_settings: &str, config_file: &Path) -> anyhow::Result<bool> {
+
+    if config_file.exists().not() {
+        debug!("Original config file does not exist. Assuming it needs to be written.");
+        return Ok(true);
+    }
+
+    let current_settings = match fs::read_to_string(config_file) { //read anew from config file, because we do not want ENVs to be included here
+        Ok(content) => content,
+        Err(cause) => {
+            error!("Failed to read existing configuration file at {config_file:?}. Will assume, it needs to be written.\n  {cause}");
+            return Ok(true);
+        }
+    };
+    let current_settings = toml::Table::from_str(&current_settings)?;
+
+    let new_settings = toml::Table::from_str(new_settings)?; //cannot compare `toml_edit::DocumentMut` (no `PartialEq`) and comparing strings is error-prone due to re-ordered strings
+
+    let result = (current_settings == new_settings).not();
+    Ok(result)
 }
 
 
@@ -191,8 +214,8 @@ fn write_settings(target: &Path, settings_string: &str) -> anyhow::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use std::any::Any;
-    use std::sync::RwLock;
+    use std::sync::Mutex;
+    use std::sync::MutexGuard;
     use assert_fs::fixture::ChildPath;
     use assert_fs::prelude::*;
     use assert_fs::TempDir;
@@ -200,6 +223,7 @@ mod tests {
     use predicates::boolean::PredicateBooleanExt;
     use predicates::Predicate;
     use predicates::prelude::predicate;
+    use toml::toml;
     use uuid::uuid;
     use googletest::prelude::*;
     use opendut_model::util::net::{ClientId, ClientSecret, OAuthScope};
@@ -213,8 +237,6 @@ mod tests {
     const OIDC_ENABLED: bool = true;
     const ISSUER_URL: &str = "https://test.com:1234/";
     const SCOPES: &str = "test";
-
-    static ENV_ACCESS: RwLock<()> = RwLock::new(());
 
 
     #[test]
@@ -282,7 +304,7 @@ mod tests {
     }
 
     #[test]
-    fn should_provide_an_merge_suggestion_for_an_already_existing_configuration_but_should_not_delete_existing_unknown_keys() -> anyhow::Result<()> {
+    fn should_provide_a_merge_suggestion_for_an_already_existing_configuration_but_should_not_delete_existing_unknown_keys() -> anyhow::Result<()> {
         let fixture = Fixture::new();
         let options = create_write_configuration_options(&fixture, AuthEnabled::Yes);
 
@@ -315,7 +337,7 @@ mod tests {
     }
 
     #[test]
-    fn should_provide_an_merge_suggestion_for_an_already_existing_configuration_with_auth_config_disabled() -> anyhow::Result<()> {
+    fn should_provide_a_merge_suggestion_for_an_already_existing_configuration_with_auth_config_disabled() -> anyhow::Result<()> {
         let fixture = Fixture::new();
         let options = create_write_configuration_options(&fixture, AuthEnabled::No);
 
@@ -386,34 +408,79 @@ mod tests {
         Ok(())
     }
 
-    #[test]
-    fn should_persist_config_values_configured_via_envs_into_file() -> anyhow::Result<()> {
-        const ENV_VALUE: &str = "123456789";
+    mod env {
+        use super::*;
 
-        let fixture = Fixture::new_with_env_write(true);
-        let options = create_write_configuration_options(&fixture, AuthEnabled::No);
+        #[test]
+        fn should_persist_config_values_configured_via_envs_into_empty_file() -> anyhow::Result<()> {
+            let fixture = Fixture::new();
+            let options = create_write_configuration_options(&fixture, AuthEnabled::No);
 
-        let path = options.config_file_to_write_to.clone();
+            let path = options.config_file_to_write_to.clone();
 
-        fn with_env(code: &impl Fn() -> anyhow::Result<()>) -> anyhow::Result<()> {
-            let env_key = "OPENDUT_EDGAR_NETWORK_CONNECT_RETRIES";
+            let env_value = with_env(&||
+                write_with_options(options.clone())
+            )?;
 
-            unsafe { std::env::set_var(env_key, ENV_VALUE); }
-
-            let result = code();
-
-            unsafe { std::env::remove_var(env_key); }
-            result
+            let file_content = fs::read_to_string(&path)?;
+            assert!(file_content.contains(env_value));
+            Ok(())
         }
 
-        with_env(&||
-            write_with_options(options.clone())
-        )?;
+        /// The envs should not be included into the existing settings when comparing with the new settings (which include the envs),
+        /// while determining whether the configuration file should be written, as we do want to persist these environment variable values
+        /// and they should therefore appear in the configuration file, going forward.
+        #[test]
+        fn should_take_envs_into_consideration_for_determining_when_an_override_is_needed() -> anyhow::Result<()> {
+            let fixture = Fixture::new();
+            let options = create_write_configuration_options(&fixture, AuthEnabled::No);
 
-        let file_content = fs::read_to_string(&path)?;
-        assert!(file_content.contains(ENV_VALUE));
+            write_with_options(options.clone())?; //pre-create to force override
+
+
+            let result = with_env(&||
+                write_with_options(options.clone())
+            );
+
+
+            assert!(result.is_err());
+            assert!(predicate::path::exists().eval(&options.config_merge_suggestion_file));
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn should_determine_whether_the_configuration_needs_writing() -> anyhow::Result<()> {
+        let file = assert_fs::NamedTempFile::new("opendut-test-should_determine_whether_the_configuration_needs_writing.txt")?;
+
+        let new_settings = toml! {
+            [peer]
+            id = "ffffffff-048b-4c5b-9a2f-43bf1d6d5a03"
+        };
+
+        let needed = needs_writing_to_config_file(&new_settings.to_string(), file.path())?;
+        assert!(needed, "Should need to be written, when no file exists.");
+
+
+        let current_settings = toml! {
+            [peer]
+            id = "00000000-fe18-4a4c-aa9b-4ef15e59cbdc"
+        };
+        file.write_str(&current_settings.to_string())?;
+
+        let needed = needs_writing_to_config_file(&new_settings.to_string(), file.path())?;
+        assert!(needed, "Should need to be written, when the new settings differ from the current settings.");
+
+
+        let new_settings = current_settings.clone();
+        let needed = needs_writing_to_config_file(&new_settings.to_string(), file.path())?;
+        assert!(needed.not(), "Should not need to be written, when the new and current settings are equivalent.");
+
         Ok(())
     }
+
+
+
 
     fn create_write_configuration_options(
         fixture: &Fixture,
@@ -448,21 +515,20 @@ mod tests {
     }
     enum AuthEnabled { Yes, No }
 
-    struct Fixture {
+
+
+    struct Fixture<'a> {
         _temp_dir: TempDir,
         config_file_to_write_to: ChildPath,
         config_merge_suggestion_file: ChildPath,
         peer_id: PeerId,
-        _env_access_guard: Box<dyn Any>, //carry along to drop guard at the end of the test
-    }
-    impl Fixture {
-        fn new() -> Self {
-            Self::new_with_env_write(false)
-        }
-
         /// Blocks other tests from reading the envs while the given test is running.
         /// Otherwise, the modified env will influence other tests running in parallel.
-        fn new_with_env_write(env_write: bool) -> Self {
+        _env_access_guard: MutexGuard<'a, ()>, //carry along to drop guard at the end of the test
+    }
+    impl Fixture<'_> {
+
+        fn new() -> Self {
             let temp_dir = TempDir::new().unwrap();
 
             let config_file_to_write_to = temp_dir.child("edgar.toml");
@@ -471,12 +537,7 @@ mod tests {
 
             let peer_id = PeerId::from(uuid!("dc72f6d9-d700-455f-8c31-9f15438e7503"));
 
-            let _env_access_guard: Box<dyn Any> =
-                if env_write {
-                    Box::new(ENV_ACCESS.read().unwrap())
-                } else {
-                    Box::new(ENV_ACCESS.write().unwrap())
-                };
+            let _env_access_guard = ENV_ACCESS.lock().unwrap();
 
             Self {
                 _temp_dir: temp_dir,
@@ -486,5 +547,20 @@ mod tests {
                 _env_access_guard,
             }
         }
+    }
+
+    static ENV_ACCESS: Mutex<()> = Mutex::new(()); //decided against using `RwLock`, because we couldn't hand out the `RwLock{Read,Write}Guard` with the Fixture, without the lifetime being dropped immediately and therefore the tests not blocking each other after all. (Tried sticking them in `Box<dyn Any>` and in an enum.)
+
+    fn with_env(code: &impl Fn() -> anyhow::Result<()>) -> anyhow::Result<&'static str> {
+        let env_key = "OPENDUT_EDGAR_NETWORK_CONNECT_RETRIES";
+        let env_value = "123456789";
+
+        unsafe { std::env::set_var(env_key, env_value); }
+
+        let result = code();
+
+        unsafe { std::env::remove_var(env_key); }
+        result
+            .map(|_| env_value)
     }
 }
