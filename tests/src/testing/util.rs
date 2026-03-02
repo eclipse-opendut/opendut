@@ -58,7 +58,7 @@ pub async fn spawn_edgar_with_peer_configuration_receiver(peer_id: PeerId, carl_
 
     let (tx_peer_configuration, rx_peer_configuration) = mpsc::channel(100);
     tokio::spawn(async move {
-        let carl = opendut_edgar::testing::carl::connect(&edgar_config.config).await
+        let carl = opendut_edgar::testing::carl::connect(&edgar_config).await
             .expect("Could not connect to CARL for spawning EDGAR");
 
         let mut peer_messaging_client = opendut_edgar::testing::service::peer_messaging_client::PeerMessagingClient::create(peer_id, carl, edgar_config, tx_peer_configuration)

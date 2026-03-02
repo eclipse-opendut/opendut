@@ -4,8 +4,7 @@ use tower::ServiceBuilder;
 
 use opendut_auth::confidential::client::ConfidentialClient;
 use opendut_auth::confidential::tonic_service::TonicAuthenticationService;
-use opendut_util::pem::{join_pem_objects, Pem};
-use opendut_util::client_auth::ClientAuth;
+use opendut_util::pem::{join_pem_objects, Pem, ClientAuth};
 
 use crate::carl::cluster::ClusterManager;
 use crate::carl::metadata::MetadataProvider;

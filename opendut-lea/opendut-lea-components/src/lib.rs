@@ -18,7 +18,6 @@ pub use buttons::icon_button::IconButton;
 pub use buttons::collapse_button::CollapseButton;
 pub use inputs::{UserInputError, UserInputValue};
 pub use inputs::readonly_input::ReadOnlyInput;
-pub use inputs::selection_table::{SelectionTable, SelectionTableRow};
 pub use inputs::user_input::UserInput;
 pub use inputs::user_select::{UserSelect, SelectionOption};
 pub use inputs::user_textarea::UserTextarea;
@@ -30,9 +29,13 @@ pub use warning_message::WarningMessage;
 pub use util::ior::Ior;
 pub use util::net::UserNetworkInterfaceConfiguration;
 pub use util::signal::{ButtonStateSignalProvider, ToggleSignal, Toggled};
+pub use util::table_row_selection::has_text_selection;
 pub use doorhanger::{Doorhanger, DoorhangerAlignment};
 pub use icon_text::IconText;
 pub use toggle::Toggle;
+pub use tables::multiple_selection_table::{MultipleSelectionTable, MultipleSelectionTableRow, CollapsableInfo};
+pub use tables::selection_table::{SelectionTable, SelectionTableRow};
+pub use tables::overview_table::{TableHeading, OverviewTable, OverviewTableRow, OverviewTableCell};
 
 pub mod health;
 pub mod tooltip;
@@ -49,6 +52,7 @@ mod warning_message;
 mod util;
 mod icon_text;
 mod toggle;
+mod tables;
 
 pub const NON_BREAKING_SPACE: &str = "\u{a0}";
 
@@ -64,6 +68,7 @@ pub enum FontAwesomeIcon {
     CircleNotch,
     Cluster,
     Code,
+    Copy,
     Dashboard,
     Downloads,
     EllipsisVertical,
@@ -94,6 +99,7 @@ impl FontAwesomeIcon {
             FontAwesomeIcon::CircleNotch => "fa-solid fa-circle-notch",
             FontAwesomeIcon::Cluster => "fa-solid fa-circle-nodes",
             FontAwesomeIcon::Code => "fa-solid fa-code",
+            FontAwesomeIcon::Copy => "fa-regular fa-copy",
             FontAwesomeIcon::Dashboard => "fa-solid fa-gauge-high",
             FontAwesomeIcon::Downloads => "fa-solid fa-download",
             FontAwesomeIcon::EllipsisVertical => "fa-solid fa-ellipsis-vertical",
@@ -140,6 +146,7 @@ pub enum ButtonColor {
     Danger,
     Info,
     Light,
+    Link,
     Primary,
     Success,
     TextDanger,
@@ -155,6 +162,7 @@ impl ButtonColor {
             ButtonColor::Danger => "is-danger",
             ButtonColor::Info => "is-info",
             ButtonColor::Light => "is-light",
+            ButtonColor::Link => "is-link",
             ButtonColor::Primary => "is-primary",
             ButtonColor::Success => "is-success",
             ButtonColor::TextDanger => "is-white has-text-danger",

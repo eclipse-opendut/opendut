@@ -11,6 +11,7 @@
 @import "profile-dropdown";
 @import "nav-flyout";
 @import "panel-ghost";
+@import "table";
 @import "toast";
 @import "toggle";
 @import "tooltip";
@@ -68,4 +69,16 @@
 
 .dut-hr-title:after {
   margin-left: 10px
+}
+
+.is-transparent {
+  border: none !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.dut-collapse-button {
+  @extend .button, .is-small, .is-transparent;
+  cursor: pointer !important;
+  opacity: 1 !important;
 }

@@ -17,9 +17,9 @@ pub struct NetworkMetricsManager {
 impl NetworkMetricsManager {
     pub fn load(settings: &LoadedConfig) -> anyhow::Result<NetworkMetricsManagerRef> {
 
-        let ping_interval = Duration::from_millis(settings.config.get::<u64>("opentelemetry.metrics.cluster.ping.interval.ms")?);
-        let target_bandwidth_kbit_per_second = settings.config.get::<u64>("opentelemetry.metrics.cluster.target.bandwidth.kilobit.per.second")?;
-        let rperf_backoff_max_elapsed_time = Duration::from_millis(settings.config.get::<u64>("opentelemetry.metrics.cluster.rperf.backoff.max.elapsed.time.ms")?);
+        let ping_interval = Duration::from_millis(settings.get::<u64>("opentelemetry.metrics.cluster.ping.interval.ms")?);
+        let target_bandwidth_kbit_per_second = settings.get::<u64>("opentelemetry.metrics.cluster.target.bandwidth.kilobit.per.second")?;
+        let rperf_backoff_max_elapsed_time = Duration::from_millis(settings.get::<u64>("opentelemetry.metrics.cluster.rperf.backoff.max.elapsed.time.ms")?);
 
         let options = NetworkMetricsOptions {
             ping_interval,

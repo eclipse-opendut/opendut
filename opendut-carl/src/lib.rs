@@ -63,12 +63,12 @@ pub async fn create(settings_override: config::Config, startup_options: StartupO
     let settings = settings::load_with_overrides(settings_override)?;
 
     let telemetry_handle = if startup_options.telemetry_enabled {
-        let logging_config = LoggingConfig::load(&settings.config)?;
+        let logging_config = LoggingConfig::load(&settings)?;
         let service_metadata = opentelemetry_types::ServiceMetadata {
             instance_id: format!("carl-{}", Uuid::new_v4()),
             version: app_info::PKG_VERSION.to_owned(),
         };
-        let opentelemetry = Opentelemetry::load(&settings.config, service_metadata).await?;
+        let opentelemetry = Opentelemetry::load(&settings, service_metadata).await?;
 
         Some(opendut_telemetry::initialize_with_config(logging_config, opentelemetry).await?)
     } else {
@@ -88,7 +88,7 @@ pub async fn create(settings_override: config::Config, startup_options: StartupO
 async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::Result<CreateResult> {
 
     info!("Started with configuration: {settings:?}");
-    let settings = settings.config;
+    let settings = settings;
 
     let resource_manager = ResourceManager::load_from_config(&settings).await
         .context("Creating ResourceManager failed")?;
@@ -99,7 +99,7 @@ async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::
         return Ok(CreateResult::ResourceManagerRef(resource_manager));
     }
 
-    let carl_url = ResourceHomeUrl::try_from(&settings)?;
+    let carl_url = ResourceHomeUrl::try_from(&*settings)?;
 
     let ca_certificate = Pem::read_from_configured_path_or_content(pem::config_keys::DEFAULT_NETWORK_TLS_CA, None, &settings)
         .expect("Could not find openDuT certificate authority.")

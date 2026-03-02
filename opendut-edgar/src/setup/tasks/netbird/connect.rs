@@ -9,7 +9,6 @@ use tracing::{debug, info};
 use url::Url;
 
 use opendut_model::vpn::netbird::SetupKey;
-use crate::common;
 use crate::common::settings::netbird::{NetbirdClientConfig, NetbirdLogLevel};
 use crate::common::task::{Success, Task, TaskStateFulfilled};
 use crate::service::vpn::VpnProcess;
@@ -45,7 +44,6 @@ impl Task for Connect {
             let process::Output { status, stdout, stderr } =
                 Command::new(constants::netbird::unpacked_executable()?.as_os_str())
                     .arg("up")
-                    .arg("--config").arg(common::settings::netbird_config_file_path()) //TODO this flag is deprecated, see: https://github.com/eclipse-opendut/opendut/issues/456
                     .arg("--management-url").arg(self.management_url.as_str())
                     .arg("--setup-key").arg(&self.setup_key.value)
                     .arg("--mtu").arg(self.mtu.to_string())

@@ -12,12 +12,22 @@ pub fn executable_install_path() -> anyhow::Result<PathBuf> {
     Ok(edgar_install_directory().join(executable_name))
 }
 
+/// Directory where we will link our executable to make it available as
+/// a command without specifying a path, so that it can be run like this:
+/// $ opendut-edgar --help
 #[allow(non_snake_case)]
-pub fn PATH_dir() -> PathBuf { PathBuf::from("/usr/bin/") }
+pub fn default_PATH_dir() -> PathBuf { PathBuf::from("/usr/bin/") }
 
+
+pub fn passwd_file() -> PathBuf { PathBuf::from("/etc/passwd") }
+
+
+pub fn systemd_service_dir() -> PathBuf { PathBuf::from("/etc/systemd/system/") }
 pub const SYSTEMD_SERVICE_FILE_NAME: &str = "opendut-edgar.service";
 
+
 pub const KERNEL_MODULE_LOAD_RULE_PREFIX: &str = "opendut-edgar";
+
 
 pub fn default_carl_ca_certificate_path() -> PathBuf {
     PathBuf::from("/etc/opendut/tls/ca.pem")

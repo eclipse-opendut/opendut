@@ -1,0 +1,20 @@
+.dut-table-container {
+  @extend .table-container, .mt-2;
+}
+
+.dut-table {
+  @extend .table, .is-hoverable, .is-fullwidth;
+}
+
+.dut-row {
+  cursor: pointer;
+}
+
+.dut-row.disabled {
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.dut-row.selected {
+  @extend .has-background-info-light;
+}

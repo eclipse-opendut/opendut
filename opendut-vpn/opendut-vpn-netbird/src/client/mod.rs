@@ -73,7 +73,6 @@ impl DefaultClient {
             }
 
             client
-                .tls_built_in_root_certs(true)
                 .build()
                 .expect("Failed to construct client.")
         };

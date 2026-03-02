@@ -1,5 +1,4 @@
 use crate::fs;
-use std::path::PathBuf;
 use std::process::Command;
 
 use anyhow::{Context, Result};
@@ -9,7 +8,6 @@ use crate::setup::User;
 use crate::common::task::{Success, Task, TaskStateFulfilled};
 use crate::setup::util::EvaluateRequiringSuccess;
 
-fn passwd_file() -> PathBuf { PathBuf::from("/etc/passwd") }
 
 pub struct CreateUser {
     pub service_user: User,
@@ -22,7 +20,7 @@ impl Task for CreateUser {
     }
 
     async fn check_present(&self) -> Result<TaskStateFulfilled> {
-        let passwd = fs::read_to_string(passwd_file())?;
+        let passwd = fs::read_to_string(crate::setup::constants::passwd_file())?;
 
         let user_exists = passwd.lines()
             .any(|line| match line.split(':').next() {

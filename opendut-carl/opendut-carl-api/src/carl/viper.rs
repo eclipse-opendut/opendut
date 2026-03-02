@@ -26,10 +26,10 @@ pub enum DeleteViperSourceDescriptorError {
     SourceNotFound {
         source_id: ViperSourceId,
     },
-    #[error("VIPER source <{source_id}> could not be deleted, because a cluster deployment <{cluster_id}> using this source still exists!")]
-    ClusterDeploymentExists {
+    #[error("VIPER source <{source_id}> could not be deleted, because a test <{test_id}> using this source still exists!")]
+    TestExists {
         source_id: ViperSourceId,
-        cluster_id: ClusterId,
+        test_id: ViperTestId,
     },
     #[error("VIPER source {source} deleted with internal errors:\n  {cause}", source=format_id_with_optional_name(source_id, source_name))]
     Internal {
@@ -55,6 +55,19 @@ pub enum GetViperSourceDescriptorError {
 #[derive(thiserror::Error, Debug)]
 pub enum ListViperSourceDescriptorsError {
     #[error("An internal error occurred computing the list of VIPER sources:\n  {cause}")]
+    Internal {
+        cause: String
+    }
+}
+
+
+//
+// ViperTestSuiteDescriptor
+//
+
+#[derive(thiserror::Error, Debug)]
+pub enum ListViperTestSuiteDescriptorsError {
+    #[error("An internal error occurred computing the list of VIPER test suites:\n  {cause}")]
     Internal {
         cause: String
     }
@@ -166,7 +179,7 @@ pub enum ListViperRunDeploymentsError {
 mod client {
     use super::*;
     use tonic::codegen::{Body, Bytes, http, InterceptedService, StdError};
-    use opendut_model::viper::{ViperTestDescriptor, ViperTestId, ViperSourceDescriptor, ViperSourceId};
+    use opendut_model::viper::{ViperSourceDescriptor, ViperSourceId, ViperTestDescriptor, ViperTestId, ViperTestSuiteDescriptor};
     use crate::carl::{extract, ClientError};
     use crate::proto::services::test_manager;
     use crate::proto::services::test_manager::test_manager_client::TestManagerClient;
@@ -291,6 +304,28 @@ mod client {
                 test_manager::list_viper_source_descriptors_response::Reply::Success(success) => {
                     Ok(success.sources.into_iter()
                         .map(ViperSourceDescriptor::try_from)
+                        .collect::<Result<Vec<_>, _>>()?
+                    )
+                }
+            }
+        }
+
+
+        pub async fn list_viper_test_suite_descriptors(&mut self) -> Result<Vec<ViperTestSuiteDescriptor>, ClientError<ListViperTestSuiteDescriptorsError>> {
+
+            let request = tonic::Request::new(test_manager::ListViperTestSuiteDescriptorsRequest {});
+
+            let response = self.inner.list_viper_test_suite_descriptors(request).await?
+                .into_inner();
+
+            match extract!(response.reply)? {
+                test_manager::list_viper_test_suite_descriptors_response::Reply::Failure(failure) => {
+                    let error = ListViperTestSuiteDescriptorsError::try_from(failure)?;
+                    Err(ClientError::UsageError(error))
+                }
+                test_manager::list_viper_test_suite_descriptors_response::Reply::Success(success) => {
+                    Ok(success.suites.into_iter()
+                        .map(ViperTestSuiteDescriptor::try_from)
                         .collect::<Result<Vec<_>, _>>()?
                     )
                 }

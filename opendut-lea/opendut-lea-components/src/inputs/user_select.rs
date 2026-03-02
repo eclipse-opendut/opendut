@@ -42,7 +42,7 @@ pub fn UserSelect(
         <div class="field">
             <label class="label">{ label }</label>
             <div class="control">
-                <div class="select" class:is-danger=has_error>
+                <div class="select" class=("is-danger", has_error)>
                     <select
                         aria-label=move || label.get()
                         prop:value=selected_value

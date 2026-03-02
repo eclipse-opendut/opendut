@@ -64,10 +64,10 @@ conversion! {
                     cause
                 })
             }
-            Model::ClusterDeploymentExists { source_id, cluster_id } => {
-                delete_viper_source_descriptor_failure::Error::DeploymentExists(DeleteViperSourceDescriptorFailureDeploymentExists {
+            Model::TestExists { source_id, test_id } => {
+                delete_viper_source_descriptor_failure::Error::TestExists(DeleteViperSourceDescriptorFailureTestExists {
                     source_id: Some(source_id.into()),
-                    cluster_id: Some(cluster_id.into()),
+                    test_id: Some(test_id.into()),
                 })
             }
         };
@@ -96,13 +96,13 @@ conversion! {
                     cause,
                 })
             }
-            delete_viper_source_descriptor_failure::Error::DeploymentExists(error) => {
+            delete_viper_source_descriptor_failure::Error::TestExists(error) => {
                 let source_id = extract!(error.source_id)?.try_into()?;
-                let cluster_id = extract!(error.cluster_id)?.try_into()?;
+                let test_id = extract!(error.test_id)?.try_into()?;
 
-                Ok(Model::ClusterDeploymentExists {
+                Ok(Model::TestExists {
                     source_id,
-                    cluster_id,
+                    test_id,
                 })
             }
         }
@@ -182,6 +182,43 @@ conversion! {
         }
     }
 }
+
+
+//
+// ViperTestSuiteDescriptor
+//
+
+conversion! {
+    type Model = crate::carl::viper::ListViperTestSuiteDescriptorsError;
+    type Proto = ListViperTestSuiteDescriptorsFailure;
+
+    fn from(value: Model) -> Proto {
+        let proto_error = match value {
+            Model::Internal { cause } => {
+                list_viper_test_suite_descriptors_failure::Error::Internal(ListViperTestSuiteDescriptorsFailureInternal {
+                    cause
+                })
+            }
+        };
+        Proto {
+            error: Some(proto_error)
+        }
+    }
+
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let error = extract!(value.error)?;
+
+        match error {
+            list_viper_test_suite_descriptors_failure::Error::Internal(error) => {
+                let cause = error.cause;
+                Ok(Model::Internal {
+                    cause,
+                })
+            }
+        }
+    }
+}
+
 
 
 //

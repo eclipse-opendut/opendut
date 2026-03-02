@@ -12,7 +12,9 @@ pub fn SetupTab(peer_configuration: ReadSignal<UserPeerConfiguration>) -> impl I
     view! {
         <div class="field">
             <GenerateSetupStringForm kind />
-            <WarningMessage>"Setup-Strings may only be used to set up one host. For setting up multiple hosts, you should create a peer for each host."</WarningMessage>
+            <WarningMessage>
+                Setup-Strings may only be used to set up one host. For setting up multiple hosts, you should create a peer for each host.
+            </WarningMessage>
         </div>
     }
 }

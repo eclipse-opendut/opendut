@@ -1,6 +1,6 @@
-use std::env::home_dir;
 use std::fmt::Debug;
-use std::fs;
+use std::{env, fs};
+use std::ops::Deref;
 use std::path::{PathBuf};
 
 pub use config::{Config, ConfigError, FileFormat};
@@ -26,8 +26,8 @@ pub enum WriteError {
 
 #[derive(Clone)]
 pub struct LoadedConfig {
-    pub config: Config,
-    pub redacted_config: Config,
+    config: Config,
+    redacted_config: Config,
     pub config_files_used: Vec<PathBuf>,
     pub config_files_declared: Vec<PathBuf>,
 }
@@ -39,6 +39,14 @@ impl Debug for LoadedConfig {
             .field("config_files_used", &self.config_files_used)
             .field("config_files_declared", &self.config_files_declared)
             .finish()
+    }
+}
+
+impl Deref for LoadedConfig {
+    type Target = Config;
+
+    fn deref(&self) -> &Self::Target {
+        &self.config
     }
 }
 
@@ -70,12 +78,12 @@ pub fn load_config(name: &str, defaults: &str, defaults_format: FileFormat, over
 
     config_files.push(Some(PathBuf::from(system_config)));
 
-    match std::env::var("XDG_CONFIG_HOME") {
+    match env::var("XDG_CONFIG_HOME") {
         Ok(xdg_config_home) => {
             config_files.push(Some(PathBuf::from(xdg_config_home).join(user_config)));
         }
         Err(_) => {
-            config_files.push(home_dir().map(|path| path.join(".config").join(user_config)));
+            config_files.push(env::home_dir().map(|path| path.join(".config").join(user_config)));
         }
     }
 
@@ -86,7 +94,7 @@ pub fn load_config(name: &str, defaults: &str, defaults_format: FileFormat, over
     */
     let name_upper_case = name.to_uppercase();
     let custom_config_path_env_key = format!("OPENDUT_{name_upper_case}_CUSTOM_CONFIG_PATH");
-    if let Ok(config_path) = std::env::var(custom_config_path_env_key) {
+    if let Ok(config_path) = env::var(custom_config_path_env_key) {
         config_files.push(Some(PathBuf::from(config_path)));
     }
 
@@ -143,20 +151,22 @@ pub enum SetupType {
 /// * A system configuration, write to `/etc/opendut/{name}.toml`
 /// * A user configuration, write to `[XDG_CONFIG_HOME|~/.config]/opendut/{name}/config.toml`
 ///
-pub fn write_config(name: &str, settings_string: &str, user_type: SetupType) {
-    
-    let config = match user_type {
-        SetupType::System => { format!("/etc/opendut/{name}.toml") } //FIXME PathBuf::from
-        SetupType::User => { format!("opendut/{name}/config.toml") }
-    };
+pub fn write_config(name: &str, settings_string: &str, setup_type: SetupType) {
 
-    let config_path = match std::env::var("XDG_CONFIG_HOME") {
-        Ok(xdg_config_home) => {
-            PathBuf::from(xdg_config_home).join(config) //FIXME don't join when system
-        }
-        Err(_) => {
-            home_dir().map(|path| path.join(".config").join(config)).unwrap()
-        }
+    let config_path = match setup_type {
+        SetupType::System => PathBuf::from(format!("/etc/opendut/{name}.toml")),
+        SetupType::User => {
+            let xdg_config_home = match env::var("XDG_CONFIG_HOME") {
+                Ok(xdg_config_home) => {
+                    PathBuf::from(xdg_config_home)
+                }
+                Err(_) => {
+                    env::home_dir().unwrap().join(".config")
+                }
+            };
+
+            xdg_config_home.join(format!("opendut/{name}/config.toml"))
+        },
     };
 
     let parent_dir = config_path

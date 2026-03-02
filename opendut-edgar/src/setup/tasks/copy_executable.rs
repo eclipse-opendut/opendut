@@ -4,7 +4,7 @@ use std::process::Command;
 
 use anyhow::{Context, Result};
 use async_trait::async_trait;
-use crate::setup::constants::{executable_install_path, PATH_dir, SYSTEMD_SERVICE_FILE_NAME};
+use crate::setup::constants::{executable_install_path, default_PATH_dir, SYSTEMD_SERVICE_FILE_NAME};
 use crate::common::task::{Success, Task, TaskStateFulfilled};
 use crate::setup::util;
 
@@ -44,7 +44,7 @@ impl Task for CopyExecutable {
         fs::copy(&executable_path, &target_path)
             .context(format!("Error while copying file from '{}' to '{}'", executable_path.display(), target_path.display()))?;
 
-        let link_path = PATH_dir().join(executable_name);
+        let link_path = default_PATH_dir().join(executable_name);
         if link_path.exists() {
             fs::remove_file(&link_path)?;
         }

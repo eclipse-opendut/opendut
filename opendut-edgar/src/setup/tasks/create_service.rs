@@ -6,17 +6,9 @@ use anyhow::{Context, Result};
 use async_trait::async_trait;
 use crate::common::task::{Success, Task, TaskStateFulfilled};
 use crate::setup::constants::executable_install_path;
-use crate::setup::constants::SYSTEMD_SERVICE_FILE_NAME;
 use crate::setup::{User, util};
 use crate::setup::util::CommandRunner;
 
-pub fn default_systemd_file_path() -> PathBuf {
-    PathBuf::from(format!("/etc/systemd/system/{SYSTEMD_SERVICE_FILE_NAME}"))
-}
-
-pub fn default_checksum_systemd_file_path() -> PathBuf {
-    PathBuf::from("/etc/systemd/system/.opendut-edgar.service.checksum")
-}
 
 fn systemd_file_content(service_user: &User) -> String {
     let executable = executable_install_path().unwrap();
@@ -107,11 +99,24 @@ impl CreateServiceFile {
     }
 }
 
+fn default_systemd_file_path() -> PathBuf {
+    crate::setup::constants::systemd_service_dir()
+        .join(crate::setup::constants::SYSTEMD_SERVICE_FILE_NAME)
+}
+
+fn default_checksum_systemd_file_path() -> PathBuf {
+    crate::setup::constants::systemd_service_dir()
+        .join(".opendut-edgar.service.checksum")
+}
+
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use assert_fs::prelude::*;
     use assert_fs::TempDir;
+    use crate::setup::constants::SYSTEMD_SERVICE_FILE_NAME;
 
     #[tokio::test]
    async fn should_check_task_is_fulfilled() -> anyhow::Result<()> {

@@ -35,7 +35,7 @@ pub fn Navbar(menu_visible: RwSignal<bool>, hide_buttons: Signal<bool>) -> impl 
                     <img src="/logos/logo_onlight_wide.svg" alt="openDuT" />
                 </a>
             </div>
-            <div class="navbar-menu" class:is-hidden=move || hide_buttons.get()>
+            <div class="navbar-menu" class=("is-hidden", move || hide_buttons.get())>
                 <div class="navbar-end">
                     <NavbarButton
                         icon=FontAwesomeIcon::Cluster
@@ -52,8 +52,8 @@ pub fn Navbar(menu_visible: RwSignal<bool>, hide_buttons: Signal<bool>) -> impl 
                         view! {
                             <NavbarButton
                                 icon=FontAwesomeIcon::Link
-                                label="Sources"
-                                path=routing::path::sources_overview
+                                label="Viper Sources"
+                                path=routing::path::viper_sources_overview
                             />
                         }
                     }
@@ -62,8 +62,8 @@ pub fn Navbar(menu_visible: RwSignal<bool>, hide_buttons: Signal<bool>) -> impl 
                         view! {
                             <NavbarButton
                                 icon=FontAwesomeIcon::Code
-                                label="Tests"
-                                path=routing::path::tests_overview
+                                label="Viper Tests"
+                                path=routing::path::viper_tests_overview
                             />
                         }
                     }
@@ -74,7 +74,7 @@ pub fn Navbar(menu_visible: RwSignal<bool>, hide_buttons: Signal<bool>) -> impl 
                     />
                 </div>
             </div>
-            <div class="column is-narrow ml-auto p-1" class:is-hidden=move || hide_buttons.get()>
+            <div class="column is-narrow ml-auto p-1" class=("is-hidden", move || hide_buttons.get())>
                 <ProfileDropdown />
             </div>
         </nav>
