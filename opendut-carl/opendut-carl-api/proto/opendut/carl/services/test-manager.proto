@@ -5,6 +5,7 @@ package opendut.carl.services.test_manager;
 import "opendut/model/cluster/cluster.proto";
 import "opendut/model/viper/run.proto";
 import "opendut/model/viper/test.proto";
+import "opendut/model/viper_test_id.proto";
 import "opendut/model/viper/source.proto";
 import "opendut/model/viper/suite.proto";
 

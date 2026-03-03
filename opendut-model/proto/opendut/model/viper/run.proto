@@ -4,6 +4,7 @@ package opendut.model.viper;
 
 import "opendut/model/util/uuid.proto";
 import "opendut/model/viper/test.proto";
+import "opendut/model/viper_test_id.proto";
 
 
 message ViperRunDeployment {

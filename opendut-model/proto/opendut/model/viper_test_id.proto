@@ -1,0 +1,15 @@
+// Separate file from `viper/test.proto`, because we want to include it unconditionally,
+// whether the `viper` feature is enabled or not.
+// It is used in the ClusterConfiguration API, where we could not use flags
+// for excluding it from compilation.
+// See the `build.rs` file for the inclusion logic.
+
+syntax = "proto3";
+
+package opendut.model.viper;
+
+import "opendut/model/util/uuid.proto";
+
+message ViperTestId {
+  opendut.model.util.Uuid uuid = 1;
+}
