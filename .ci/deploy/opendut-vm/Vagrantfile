@@ -78,7 +78,6 @@ TERMINAL_OUTPUT
         vb.customize ["modifyvm", :id, "--vram", "128"]
         vb.customize ["modifyvm", :id, "--graphicscontroller", vm_graphics_controller] # default is VMSVGA for Linux guests, alternative: VBoxSVGA
         vb.customize ["modifyvm", :id, "--accelerate3d", "off"]
-        vb.customize ["modifyvm", :id, "--accelerate2dvideo", "off"]
         vb.customize ["modifyvm", :id, "--nested-hw-virt", vm_nested_hw_virtualization]
 
     end
