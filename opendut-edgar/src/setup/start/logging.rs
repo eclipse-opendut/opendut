@@ -22,6 +22,7 @@ pub async fn init(log_file: &Option<PathBuf>) -> anyhow::Result<()> {
         pipe_logging,
         file_logging,
         log_level_override: None,
+        log_level_default_directive: "info,opendut=trace",
     };
     let opentelemetry_config = Opentelemetry::Disabled;
 

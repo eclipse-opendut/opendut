@@ -10,11 +10,11 @@ use serde::Deserialize;
 use tonic::transport::ClientTlsConfig;
 use tracing::level_filters::LevelFilter;
 
-#[derive(Default)]
 pub struct LoggingConfig {
     pub pipe_logging: PipeLogging,
     pub file_logging: Option<PathBuf>,
     pub log_level_override: Option<LevelFilter>,
+    pub log_level_default_directive: &'static str,
 }
 
 #[derive(Default)]
@@ -58,6 +58,7 @@ impl LoggingConfig {
             pipe_logging,
             file_logging: None,
             log_level_override: None,
+            log_level_default_directive: "info,opendut=trace",
         })
     }
 }
