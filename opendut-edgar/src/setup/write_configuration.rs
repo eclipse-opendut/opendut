@@ -137,10 +137,9 @@ fn needs_writing_to_config_file(new_settings: &str, config_file: &Path) -> anyho
     };
     let current_settings = toml::Table::from_str(&current_settings)?;
 
-    let new_settings = toml::Table::from_str(new_settings)?; //cannot compare `toml_edit::DocumentMut` (no `PartialEq`) and comparing strings is error-prone due to re-ordered strings
+    let new_settings = toml::Table::from_str(new_settings)?; //cannot compare `toml_edit::DocumentMut` (no `PartialEq`) and comparing strings is error-prone due to re-ordered lines
 
-    let result = (current_settings == new_settings).not();
-    Ok(result)
+    Ok(current_settings != new_settings)
 }
 
 
