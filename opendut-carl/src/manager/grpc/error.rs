@@ -213,8 +213,6 @@ mod test_manager {
             match value {
                 test_manager::delete_viper_test_descriptor::DeleteViperTestDescriptorError::TestNotFound { test_id } =>
                     Self::TestNotFound { test_id },
-                test_manager::delete_viper_test_descriptor::DeleteViperTestDescriptorError::ClusterDeploymentExists { test_id, cluster_id } =>
-                    Self::ClusterDeploymentExists { test_id, cluster_id },
                 test_manager::delete_viper_test_descriptor::DeleteViperTestDescriptorError::ViperRunDeploymentExists { test_id, run_id } =>
                     Self::ViperRunDeploymentExists { test_id, run_id },
                 test_manager::delete_viper_test_descriptor::DeleteViperTestDescriptorError::Persistence { test_id, cause: _ } =>

@@ -1,7 +1,6 @@
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 pub use client::*;
 
-use opendut_model::cluster::ClusterId;
 use opendut_model::viper::{ViperTestId, ViperSourceId, ViperSourceName, ViperRunId};
 use opendut_model::format::{format_id_with_name, format_id_with_optional_name};
 
@@ -97,11 +96,6 @@ pub enum DeleteViperTestRunDescriptorError {
     #[error("Test <{test_id}> could not be deleted, because a test with that ID does not exist!")]
     TestNotFound {
         test_id: ViperTestId,
-    },
-    #[error("Test <{test_id}> could not be deleted, because a cluster deployment <{cluster_id}> using this test still exists!")]
-    ClusterDeploymentExists {
-        test_id: ViperTestId,
-        cluster_id: ClusterId,
     },
     #[error("Test <{test_id}> could not be deleted, because a viper run deployment <{run_id}> using this test still exists!")]
     ViperRunDeploymentExists {
