@@ -265,8 +265,7 @@ message DeleteViperTestRunDescriptorFailure {
   oneof error {
     DeleteViperTestRunDescriptorFailureTestNotFound test_not_found = 1;
     DeleteViperTestRunDescriptorFailureInternal internal = 4;
-    DeleteViperTestRunDescriptorFailureDeploymentExists deployment_exists = 5;
-    DeleteViperTestDescriptorFailureViperRunDeploymentExists viper_run_deployment_exists = 6;
+    DeleteViperTestDescriptorFailureViperRunDeploymentExists viper_run_deployment_exists = 5;
   }
 }
 

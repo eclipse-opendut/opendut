@@ -1,6 +1,5 @@
 use opendut_model::{viper::{ViperTestRunDescriptor, ViperTestId}};
 use tracing::debug;
-use opendut_model::cluster::ClusterId;
 use opendut_model::viper::{ViperRunDeployment, ViperRunId};
 use crate::resource::{api::resources::Resources, persistence::error::PersistenceError, storage::ResourcesStorageApi};
 
@@ -8,8 +7,6 @@ use crate::resource::{api::resources::Resources, persistence::error::Persistence
 impl Resources<'_> {
     #[tracing::instrument(skip_all, level="trace")]
     pub async fn delete_viper_test_descriptor(&mut self, test_id: ViperTestId) -> Result<ViperTestRunDescriptor, DeleteViperTestDescriptorError> {
-
-        // Todo: Return Error when the cluster, which is used in the test, is deployed.
 
         debug!("Fetching list of VIPER run deployments that might be using VIPER test <{test_id}>.");
         let runs = self.list::<ViperRunDeployment>()
@@ -43,12 +40,6 @@ pub enum DeleteViperTestDescriptorError {
     #[error("Test <{test_id}> could not be deleted, because a test with that ID does not exist!")]
     TestNotFound {
         test_id: ViperTestId,
-    },
-
-    #[error("Test <{test_id}> could not be deleted, because a cluster deployment <{cluster_id}> using this test still exists!")]
-    ClusterDeploymentExists {
-        test_id: ViperTestId,
-        cluster_id: ClusterId
     },
 
     #[error("Test <{test_id}> could not be deleted, because a viper run deployment <{run_id}> using this test still exists!")]

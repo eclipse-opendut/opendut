@@ -287,12 +287,6 @@ conversion! {
                     cause
                 })
             }
-            Model::ClusterDeploymentExists { test_id, cluster_id } => {
-                delete_viper_test_run_descriptor_failure::Error::DeploymentExists(DeleteViperTestRunDescriptorFailureDeploymentExists {
-                    test_id: Some(test_id.into()),
-                    cluster_id: Some(cluster_id.into()),
-                })
-            }
             Model::ViperRunDeploymentExists { test_id, run_id } => {
                 delete_viper_test_run_descriptor_failure::Error::ViperRunDeploymentExists(DeleteViperTestDescriptorFailureViperRunDeploymentExists {
                     test_id: Some(test_id.into()),
@@ -320,15 +314,6 @@ conversion! {
                 Ok(Model::Internal {
                     test_id,
                     cause,
-                })
-            }
-            delete_viper_test_run_descriptor_failure::Error::DeploymentExists(error) => {
-                let test_id = extract!(error.test_id)?.try_into()?;
-                let cluster_id = extract!(error.cluster_id)?.try_into()?;
-
-                Ok(Model::ClusterDeploymentExists {
-                    test_id,
-                    cluster_id,
                 })
             }
             delete_viper_test_run_descriptor_failure::Error::ViperRunDeploymentExists(error) => {
