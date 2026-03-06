@@ -47,8 +47,8 @@ pub mod oidc {
         let mut client = ReqwestClient::builder()
             .redirect(reqwest::redirect::Policy::none());
 
+        debug!("Constructing reqwest client with CA certificates provided.");
         for ca_certificate in ca_certificates  {
-            debug!("Constructing reqwest client with CA certificate provided.");
             let reqwest_certificate = Certificate::from_pem(ca_certificate.to_string().as_bytes())?;
 
             client = client.add_root_certificate(reqwest_certificate);
