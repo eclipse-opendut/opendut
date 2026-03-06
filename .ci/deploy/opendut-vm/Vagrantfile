@@ -20,6 +20,7 @@ vm_https_proxy = (ENV["OPENDUT_VM_HTTPS_PROXY"] || ENV["OPENDUT_VM_HTTP_PROXY"])
 vm_no_proxy = (ENV["OPENDUT_VM_NO_PROXY"] || "opendut.local") + "," + vm_default_no_proxy
 custom_root_ca = ENV["CUSTOM_ROOT_CA"]
 disable_private_network = (ENV["OPENDUT_DISABLE_PRIVATE_NETWORK"] || "false").to_s == "true"
+enable_port_forwarding = (ENV["OPENDUT_VM_ENABLE_PORT_FORWARDING"] || "true").to_s == "true"
 
 machine = {
     :hostname => vm_name,
@@ -59,8 +60,10 @@ TERMINAL_OUTPUT
     config.vm.synced_folder ".", "/vagrant", disabled: false, SharedFoldersEnableSymlinksCreate: false
 
     # normal user is allowed to forward ports > 1024, restrict host_ip to localhost only (avoids publishing to all interfaces)
-    config.vm.network :forwarded_port, guest: 3000, host: 3000, host_ip: "127.0.0.1"
-    config.vm.network :forwarded_port, guest: 8081, host: 8081, host_ip: "127.0.0.1"
+    if enable_port_forwarding then
+        config.vm.network :forwarded_port, guest: 3000, host: 3000, host_ip: "127.0.0.1"
+        config.vm.network :forwarded_port, guest: 8081, host: 8081, host_ip: "127.0.0.1"
+    end
 
     # Bridge an Ethernet interface from the host system into the VM, if the respective variable is set
     if vm_bridged_interface.nil? == false
