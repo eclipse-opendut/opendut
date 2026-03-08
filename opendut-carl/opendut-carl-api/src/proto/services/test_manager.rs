@@ -189,13 +189,19 @@ conversion! {
 //
 
 conversion! {
-    type Model = crate::carl::viper::ListViperTestSuiteDescriptorsError;
-    type Proto = ListViperTestSuiteDescriptorsFailure;
+    type Model = crate::carl::viper::GetViperTestSuiteDescriptorError;
+    type Proto = GetViperTestSuiteDescriptorFailure;
 
     fn from(value: Model) -> Proto {
         let proto_error = match value {
-            Model::Internal { cause } => {
-                list_viper_test_suite_descriptors_failure::Error::Internal(ListViperTestSuiteDescriptorsFailureInternal {
+            Model::SourceNotFound { source_id } => {
+                get_viper_test_suite_descriptor_failure::Error::SourceNotFound(GetViperTestSuiteDescriptorFailureSourceNotFound {
+                    source_id: Some(source_id.into()),
+                })
+            }
+            Model::Internal { source_id, cause } => {
+                get_viper_test_suite_descriptor_failure::Error::Internal(GetViperTestSuiteDescriptorFailureInternal {
+                    source_id: Some(source_id.into()),
                     cause
                 })
             }
@@ -209,16 +215,20 @@ conversion! {
         let error = extract!(value.error)?;
 
         match error {
-            list_viper_test_suite_descriptors_failure::Error::Internal(error) => {
+            get_viper_test_suite_descriptor_failure::Error::SourceNotFound(error) => {
+                let source_id = extract!(error.source_id)?.try_into()?;
+
+                Ok(Model::SourceNotFound { source_id })
+            }
+            get_viper_test_suite_descriptor_failure::Error::Internal(error) => {
+                let source_id = extract!(error.source_id)?.try_into()?;
                 let cause = error.cause;
-                Ok(Model::Internal {
-                    cause,
-                })
+
+                Ok(Model::Internal { source_id, cause })
             }
         }
     }
 }
-
 
 
 //

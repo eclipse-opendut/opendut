@@ -14,7 +14,7 @@ service TestManager {
   rpc GetViperSourceDescriptor(GetViperSourceDescriptorRequest) returns (GetViperSourceDescriptorResponse) {}
   rpc ListViperSourceDescriptors(ListViperSourceDescriptorsRequest) returns (ListViperSourceDescriptorsResponse) {}
 
-  rpc ListViperTestSuiteDescriptors(ListViperTestSuiteDescriptorsRequest) returns (ListViperTestSuiteDescriptorsResponse) {}
+  rpc GetViperTestSuiteDescriptor(GetViperTestSuiteDescriptorRequest) returns (GetViperTestSuiteDescriptorResponse) {}
 
   rpc StoreViperTestDescriptor(StoreViperTestDescriptorRequest) returns (StoreViperTestDescriptorResponse) {}
   rpc DeleteViperTestDescriptor(DeleteViperTestDescriptorRequest) returns (DeleteViperTestDescriptorResponse) {}
@@ -168,34 +168,43 @@ message ListViperSourceDescriptorsFailureInternal {
 
 
 
+
 //////////////////////////////
 // ViperTestSuiteDescriptor //
 //////////////////////////////
 
 //
-// ListViperTestSuiteDescriptors
+// GetViperTestSuiteDescriptor
 //
-message ListViperTestSuiteDescriptorsRequest {}
+message GetViperTestSuiteDescriptorRequest {
+  opendut.model.viper.ViperSourceId source_id = 1;
+}
 
-message ListViperTestSuiteDescriptorsResponse {
+message GetViperTestSuiteDescriptorResponse {
   oneof reply {
-    ListViperTestSuiteDescriptorsSuccess success = 1;
-    ListViperTestSuiteDescriptorsFailure failure = 2;
+    GetViperTestSuiteDescriptorSuccess success = 1;
+    GetViperTestSuiteDescriptorFailure failure = 2;
   }
 }
 
-message ListViperTestSuiteDescriptorsSuccess {
-  repeated opendut.model.viper.ViperTestSuiteDescriptor suites = 1;
+message GetViperTestSuiteDescriptorSuccess {
+  opendut.model.viper.ViperTestSuiteDescriptor descriptor = 1;
 }
 
-message ListViperTestSuiteDescriptorsFailure {
+message GetViperTestSuiteDescriptorFailure {
   oneof error {
-      ListViperTestSuiteDescriptorsFailureInternal internal = 1;
+    GetViperTestSuiteDescriptorFailureSourceNotFound source_not_found = 1;
+    GetViperTestSuiteDescriptorFailureInternal internal = 2;
   }
 }
 
-message ListViperTestSuiteDescriptorsFailureInternal {
-  string cause = 1;
+message GetViperTestSuiteDescriptorFailureSourceNotFound {
+  opendut.model.viper.ViperSourceId source_id = 1;
+}
+
+message GetViperTestSuiteDescriptorFailureInternal {
+  opendut.model.viper.ViperSourceId source_id = 1;
+  string cause = 2;
 }
 
 

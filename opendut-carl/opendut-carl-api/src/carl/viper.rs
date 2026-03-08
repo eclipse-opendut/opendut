@@ -66,10 +66,15 @@ pub enum ListViperSourceDescriptorsError {
 //
 
 #[derive(thiserror::Error, Debug)]
-pub enum ListViperTestSuiteDescriptorsError {
-    #[error("An internal error occurred computing the list of VIPER test suites:\n  {cause}")]
+pub enum GetViperTestSuiteDescriptorError {
+    #[error("A VIPER source with ID <{source_id}> could not be found, while fetching VIPER test suite descriptor.")]
+    SourceNotFound {
+        source_id: ViperSourceId,
+    },
+    #[error("An internal error occurred while fetching the VIPER test suite descriptor for source <{source_id}>:\n  {cause}")]
     Internal {
-        cause: String
+        source_id: ViperSourceId,
+        cause: String,
     }
 }
 
@@ -311,23 +316,23 @@ mod client {
         }
 
 
-        pub async fn list_viper_test_suite_descriptors(&mut self) -> Result<Vec<ViperTestSuiteDescriptor>, ClientError<ListViperTestSuiteDescriptorsError>> {
+        pub async fn get_viper_test_suite_descriptor(&mut self, source_id: ViperSourceId) -> Result<ViperTestSuiteDescriptor, ClientError<GetViperTestSuiteDescriptorError>> {
 
-            let request = tonic::Request::new(test_manager::ListViperTestSuiteDescriptorsRequest {});
+            let request = tonic::Request::new(test_manager::GetViperTestSuiteDescriptorRequest {
+                source_id: Some(source_id.into()),
+            });
 
-            let response = self.inner.list_viper_test_suite_descriptors(request).await?
+            let response = self.inner.get_viper_test_suite_descriptor(request).await?
                 .into_inner();
 
             match extract!(response.reply)? {
-                test_manager::list_viper_test_suite_descriptors_response::Reply::Failure(failure) => {
-                    let error = ListViperTestSuiteDescriptorsError::try_from(failure)?;
+                test_manager::get_viper_test_suite_descriptor_response::Reply::Failure(failure) => {
+                    let error = GetViperTestSuiteDescriptorError::try_from(failure)?;
                     Err(ClientError::UsageError(error))
                 }
-                test_manager::list_viper_test_suite_descriptors_response::Reply::Success(success) => {
-                    Ok(success.suites.into_iter()
-                        .map(ViperTestSuiteDescriptor::try_from)
-                        .collect::<Result<Vec<_>, _>>()?
-                    )
+                test_manager::get_viper_test_suite_descriptor_response::Reply::Success(success) => {
+                    let peer_descriptor = extract!(success.descriptor)?;
+                    Ok(peer_descriptor)
                 }
             }
         }
