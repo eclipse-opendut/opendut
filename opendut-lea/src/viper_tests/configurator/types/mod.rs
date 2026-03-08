@@ -3,7 +3,7 @@ pub mod validation;
 use std::collections::HashMap;
 use opendut_lea_components::{Ior, UserInputValue};
 use opendut_model::cluster::ClusterId;
-use opendut_model::viper::{ViperTestDescriptor, ViperTestId, ViperTestName, ViperTestParameterKey, ViperTestParameterValue, ViperSourceId, ViperTestSuiteIdentifier};
+use opendut_model::viper::{ViperTestRunDescriptor, ViperTestId, ViperTestName, ViperTestParameterKey, ViperTestParameterValue, ViperSourceId, ViperTestSuiteIdentifier};
 
 pub type SourceSelectionError = String;
 pub type SourceSelection = Ior<SourceSelectionError, ViperSourceId>;
@@ -39,7 +39,7 @@ pub struct UserViperTestConfiguration {
     pub is_new: bool,
 }
 
-impl TryFrom<UserViperTestConfiguration> for ViperTestDescriptor {
+impl TryFrom<UserViperTestConfiguration> for ViperTestRunDescriptor {
     type Error = ViperTestMisconfiguration;
 
     fn try_from(configuration: UserViperTestConfiguration) -> Result<Self, Self::Error> {
@@ -82,7 +82,7 @@ impl TryFrom<UserViperTestConfiguration> for ViperTestDescriptor {
             parameters.insert(key, value);
         }
 
-        Ok(ViperTestDescriptor {
+        Ok(ViperTestRunDescriptor {
             id: configuration.id,
             name,
             source,

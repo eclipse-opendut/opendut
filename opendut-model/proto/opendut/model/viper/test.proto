@@ -8,7 +8,7 @@ import "opendut/viper/rt/test_suite.proto";
 import "opendut/model/cluster/cluster.proto";
 
 
-message ViperTestDescriptor {
+message ViperTestRunDescriptor {
   ViperTestId id = 1;
   ViperTestName name = 2;
   opendut.model.viper.ViperSourceId source = 3;

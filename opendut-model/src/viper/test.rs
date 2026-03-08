@@ -10,7 +10,7 @@ use super::ViperTestSuiteIdentifier;
 
 
 #[derive(Clone, Debug)]
-pub struct ViperTestDescriptor {
+pub struct ViperTestRunDescriptor {
     pub id: ViperTestId,
     pub name: ViperTestName,
     pub source: ViperSourceId,

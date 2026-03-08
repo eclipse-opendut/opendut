@@ -147,8 +147,8 @@ conversion! {
 //
 
 conversion! {
-    type Model = crate::viper::ViperTestDescriptor;
-    type Proto = ViperTestDescriptor;
+    type Model = crate::viper::ViperTestRunDescriptor;
+    type Proto = ViperTestRunDescriptor;
 
     fn from(value: Model) -> Proto {
         let parameters = value.parameters.into_iter()

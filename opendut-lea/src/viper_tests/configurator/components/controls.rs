@@ -3,7 +3,7 @@ use leptos::prelude::*;
 use leptos_router::hooks::use_navigate;
 use tracing::{debug, error};
 use opendut_lea_components::{use_toaster, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, Toast};
-use opendut_model::viper::ViperTestDescriptor;
+use opendut_model::viper::ViperTestRunDescriptor;
 use crate::app::use_app_globals;
 use crate::routing::{navigate_to, WellKnownRoutes};
 use crate::viper_tests::components::DeleteViperTestButton;
@@ -75,11 +75,11 @@ fn SaveViperTestButton(
         leptos::task::spawn_local(async move {
             pending.set(true);
 
-            let viper_test_descriptor = ViperTestDescriptor::try_from(configuration.get_untracked());
-            match viper_test_descriptor {
-                Ok(viper_test_descriptor) => {
-                    let viper_test_id = viper_test_descriptor.id;
-                    let result = carl.viper.store_viper_test_descriptor(viper_test_descriptor).await;
+            let viper_test_run_descriptor = ViperTestRunDescriptor::try_from(configuration.get_untracked());
+            match viper_test_run_descriptor {
+                Ok(viper_test_run_descriptor) => {
+                    let viper_test_id = viper_test_run_descriptor.id;
+                    let result = carl.viper.store_viper_test_run_descriptor(viper_test_run_descriptor).await;
                     match result {
                         Ok(_) => {
                             debug!("Successfully stored viper test: {viper_test_id}");

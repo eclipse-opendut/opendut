@@ -1,4 +1,4 @@
-use opendut_model::{format::format_id_with_optional_name, viper::{ViperSourceDescriptor, ViperSourceId, ViperSourceName, ViperTestDescriptor, ViperTestId}};
+use opendut_model::{format::format_id_with_optional_name, viper::{ViperSourceDescriptor, ViperSourceId, ViperSourceName, ViperTestRunDescriptor, ViperTestId}};
 use tracing::debug;
 
 use crate::resource::{api::resources::Resources, persistence::error::PersistenceError, storage::ResourcesStorageApi};
@@ -9,7 +9,7 @@ impl Resources<'_> {
     pub async fn delete_viper_source_descriptor(&mut self, source_id: ViperSourceId) -> Result<ViperSourceDescriptor, DeleteViperSourceDescriptorError> {
 
         debug!("Fetching list of VIPER tests that might be using VIPER source <{source_id}>.");
-        let tests = self.list::<ViperTestDescriptor>()
+        let tests = self.list::<ViperTestRunDescriptor>()
             .map_err(|cause| DeleteViperSourceDescriptorError::Persistence { source_id, source_name: None, cause })?;
 
         match tests.values().find(|test| test.source == source_id) {

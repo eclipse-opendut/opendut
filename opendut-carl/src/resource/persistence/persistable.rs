@@ -10,7 +10,7 @@ use prost::Message;
 use std::fmt::Debug;
 
 #[cfg(feature = "viper")]
-use opendut_model::viper::{ViperRunDeployment, ViperTestDescriptor, ViperSourceDescriptor};
+use opendut_model::viper::{ViperRunDeployment, ViperTestRunDescriptor, ViperSourceDescriptor};
 
 impl Persistable for ClusterDeployment {
     type Proto = opendut_model::proto::cluster::ClusterDeployment;
@@ -64,9 +64,9 @@ impl Persistable for ViperSourceDescriptor {
 }
 
 #[cfg(feature = "viper")]
-impl Persistable for ViperTestDescriptor {
-    type Proto = opendut_model::proto::viper::ViperTestDescriptor;
-    const TABLE: &'static str = "viper_test_descriptor";
+impl Persistable for ViperTestRunDescriptor {
+    type Proto = opendut_model::proto::viper::ViperTestRunDescriptor;
+    const TABLE: &'static str = "viper_test_run_descriptor";
     const STORAGE: StorageKind = StorageKind::Persistent;
 }
 

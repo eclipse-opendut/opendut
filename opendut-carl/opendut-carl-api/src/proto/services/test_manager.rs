@@ -232,18 +232,18 @@ conversion! {
 
 
 //
-// ViperTestDescriptor
+// ViperTestRunDescriptor
 //
 
 conversion! {
-    type Model = crate::carl::viper::StoreViperTestDescriptorError;
-    type Proto = StoreViperTestDescriptorFailure;
+    type Model = crate::carl::viper::StoreViperTestRunDescriptorError;
+    type Proto = StoreViperTestRunDescriptorFailure;
 
     fn from(value: Model) -> Proto {
         let error = match value {
             Model::Internal { test_id, cause } => {
-                store_viper_test_descriptor_failure::Error::Internal(
-                    StoreViperTestDescriptorFailureInternal {
+                store_viper_test_run_descriptor_failure::Error::Internal(
+                    StoreViperTestRunDescriptorFailureInternal {
                         test_id: Some(test_id.into()),
                         cause,
                     }
@@ -256,8 +256,8 @@ conversion! {
 
     fn try_from(value: Proto) -> ConversionResult<Model> {
         let error = match extract!(value.error)? {
-            store_viper_test_descriptor_failure::Error::Internal(
-                StoreViperTestDescriptorFailureInternal { test_id, cause }
+            store_viper_test_run_descriptor_failure::Error::Internal(
+                StoreViperTestRunDescriptorFailureInternal { test_id, cause }
             ) => {
                 Model::Internal {
                     test_id: extract!(test_id)?.try_into()?,
@@ -271,24 +271,24 @@ conversion! {
 }
 
 conversion! {
-    type Model = crate::carl::viper::DeleteViperTestDescriptorError;
-    type Proto = DeleteViperTestDescriptorFailure;
+    type Model = crate::carl::viper::DeleteViperTestRunDescriptorError;
+    type Proto = DeleteViperTestRunDescriptorFailure;
 
     fn from(value: Model) -> Proto {
         let proto_error = match value {
             Model::TestNotFound { test_id } => {
-                delete_viper_test_descriptor_failure::Error::TestNotFound(DeleteViperTestDescriptorFailureTestNotFound {
+                delete_viper_test_run_descriptor_failure::Error::TestNotFound(DeleteViperTestRunDescriptorFailureTestNotFound {
                     test_id: Some(test_id.into())
                 })
             }
             Model::Internal { test_id, cause } => {
-                delete_viper_test_descriptor_failure::Error::Internal(DeleteViperTestDescriptorFailureInternal {
+                delete_viper_test_run_descriptor_failure::Error::Internal(DeleteViperTestRunDescriptorFailureInternal {
                     test_id: Some(test_id.into()),
                     cause
                 })
             }
             Model::ClusterDeploymentExists { test_id, cluster_id } => {
-                delete_viper_test_descriptor_failure::Error::DeploymentExists(DeleteViperTestDescriptorFailureDeploymentExists {
+                delete_viper_test_run_descriptor_failure::Error::DeploymentExists(DeleteViperTestRunDescriptorFailureDeploymentExists {
                     test_id: Some(test_id.into()),
                     cluster_id: Some(cluster_id.into()),
                 })
@@ -303,11 +303,11 @@ conversion! {
         let error = extract!(value.error)?;
 
         match error {
-            delete_viper_test_descriptor_failure::Error::TestNotFound(error) => {
+            delete_viper_test_run_descriptor_failure::Error::TestNotFound(error) => {
                 let test_id = extract!(error.test_id)?.try_into()?;
                 Ok(Model::TestNotFound { test_id })
             }
-            delete_viper_test_descriptor_failure::Error::Internal(error) => {
+            delete_viper_test_run_descriptor_failure::Error::Internal(error) => {
                 let test_id = extract!(error.test_id)?.try_into()?;
                 let cause = error.cause;
                 Ok(Model::Internal {
@@ -315,7 +315,7 @@ conversion! {
                     cause,
                 })
             }
-            delete_viper_test_descriptor_failure::Error::DeploymentExists(error) => {
+            delete_viper_test_run_descriptor_failure::Error::DeploymentExists(error) => {
                 let test_id = extract!(error.test_id)?.try_into()?;
                 let cluster_id = extract!(error.cluster_id)?.try_into()?;
 
@@ -329,18 +329,18 @@ conversion! {
 }
 
 conversion! {
-    type Model = crate::carl::viper::GetViperTestDescriptorError;
-    type Proto = GetViperTestDescriptorFailure;
+    type Model = crate::carl::viper::GetViperTestRunDescriptorError;
+    type Proto = GetViperTestRunDescriptorFailure;
 
     fn from(value: Model) -> Proto {
         let proto_error = match value {
             Model::TestNotFound { test_id } => {
-                get_viper_test_descriptor_failure::Error::TestNotFound(GetViperTestDescriptorFailureTestNotFound {
+                get_viper_test_run_descriptor_failure::Error::TestNotFound(GetViperTestRunDescriptorFailureTestNotFound {
                     test_id: Some(test_id.into())
                 })
             }
             Model::Internal { test_id, cause } => {
-                get_viper_test_descriptor_failure::Error::Internal(GetViperTestDescriptorFailureInternal {
+                get_viper_test_run_descriptor_failure::Error::Internal(GetViperTestRunDescriptorFailureInternal {
                     test_id: Some(test_id.into()),
                     cause
                 })
@@ -355,11 +355,11 @@ conversion! {
         let error = extract!(value.error)?;
 
         match error {
-            get_viper_test_descriptor_failure::Error::TestNotFound(error) => {
+            get_viper_test_run_descriptor_failure::Error::TestNotFound(error) => {
                 let test_id = extract!(error.test_id)?.try_into()?;
                 Ok(Model::TestNotFound { test_id })
             }
-            get_viper_test_descriptor_failure::Error::Internal(error) => {
+            get_viper_test_run_descriptor_failure::Error::Internal(error) => {
                 let test_id = extract!(error.test_id)?.try_into()?;
                 let cause = error.cause;
                 Ok(Model::Internal {
@@ -372,13 +372,13 @@ conversion! {
 }
 
 conversion! {
-    type Model = crate::carl::viper::ListViperTestDescriptorsError;
-    type Proto = ListViperTestDescriptorsFailure;
+    type Model = crate::carl::viper::ListViperTestRunDescriptorsError;
+    type Proto = ListViperTestRunDescriptorsFailure;
 
     fn from(value: Model) -> Proto {
         let proto_error = match value {
             Model::Internal { cause } => {
-                list_viper_test_descriptors_failure::Error::Internal(ListViperTestDescriptorsFailureInternal {
+                list_viper_test_run_descriptors_failure::Error::Internal(ListViperTestRunDescriptorsFailureInternal {
                     cause
                 })
             }
@@ -392,7 +392,7 @@ conversion! {
         let error = extract!(value.error)?;
 
         match error {
-            list_viper_test_descriptors_failure::Error::Internal(error) => {
+            list_viper_test_run_descriptors_failure::Error::Internal(error) => {
                 let cause = error.cause;
                 Ok(Model::Internal {
                     cause,

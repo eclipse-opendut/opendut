@@ -3,7 +3,7 @@ use leptos::prelude::*;
 use leptos_router::hooks::{use_navigate, use_params_map};
 use opendut_lea_components::{BasePageContainer, Breadcrumb, LoadingSpinner, UserInputError, UserInputValue};
 use opendut_lea_components::tabs::{Tab, Tabs};
-use opendut_model::viper::{ViperTestDescriptor, ViperTestId, ViperTestParameterValue};
+use opendut_model::viper::{ViperTestRunDescriptor, ViperTestId, ViperTestParameterValue};
 use crate::app::use_app_globals;
 use crate::components::use_active_tab;
 use crate::routing::{navigate_to, WellKnownRoutes};
@@ -57,9 +57,9 @@ pub fn ViperTestConfigurator() -> impl IntoView {
         let viper_test_configuration_resource = LocalResource::new(move || {
             let mut carl = globals.client.clone();
             async move {
-                if let Ok(configuration) = carl.viper.get_viper_test_descriptor(viper_test_id).await {
+                if let Ok(configuration) = carl.viper.get_viper_test_run_descriptor(viper_test_id).await {
                     viper_test_configuration.update(|user_configuration| {
-                        let ViperTestDescriptor { id: _, name, source: viper_source, suite: viper_test_suite, cluster, parameters } = configuration;
+                        let ViperTestRunDescriptor { id: _, name, source: viper_source, suite: viper_test_suite, cluster, parameters } = configuration;
 
                         user_configuration.name = UserInputValue::Right(name.value().to_owned());
                         user_configuration.viper_source = SourceSelection::Right(viper_source);

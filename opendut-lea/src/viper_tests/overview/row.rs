@@ -1,34 +1,34 @@
 use leptos::prelude::*;
 use opendut_lea_components::{ButtonColor, OverviewTableCell};
-use opendut_model::viper::ViperTestDescriptor;
+use opendut_model::viper::ViperTestRunDescriptor;
 use crate::app::use_app_globals;
 use crate::components::ClickableOverviewTableRow;
 use crate::viper_tests::components::DeleteViperTestButton;
 
 #[component]
 pub(crate) fn Row<OnDeleteFn>(
-    viper_test_descriptor: RwSignal<ViperTestDescriptor>,
+    viper_test_run_descriptor: RwSignal<ViperTestRunDescriptor>,
     on_delete: OnDeleteFn,
 ) -> impl IntoView
 where OnDeleteFn: Fn() + Copy + Send + 'static, {
 
     let globals = use_app_globals();
 
-    let viper_test_id = create_read_slice(viper_test_descriptor,
-        |viper_test_descriptor| {
-            viper_test_descriptor.id
+    let viper_test_id = create_read_slice(viper_test_run_descriptor,
+        |viper_test_run_descriptor| {
+            viper_test_run_descriptor.id
         }
     );
 
-    let viper_test_name = create_read_slice(viper_test_descriptor,
-        |viper_test_descriptor| {
-            viper_test_descriptor.name.to_string()
+    let viper_test_name = create_read_slice(viper_test_run_descriptor,
+        |viper_test_run_descriptor| {
+            viper_test_run_descriptor.name.to_string()
         }
     );
 
-    let viper_source_id = create_read_slice(viper_test_descriptor,
-        |viper_test_descriptor| {
-            viper_test_descriptor.source
+    let viper_source_id = create_read_slice(viper_test_run_descriptor,
+        |viper_test_run_descriptor| {
+            viper_test_run_descriptor.source
         }
     );
 
@@ -42,9 +42,9 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
         }
     });
 
-    let viper_test_suite = create_read_slice(viper_test_descriptor,
-        |viper_test_descriptor| {
-            viper_test_descriptor.suite.to_string()
+    let viper_test_suite = create_read_slice(viper_test_run_descriptor,
+        |viper_test_run_descriptor| {
+            viper_test_run_descriptor.suite.to_string()
         }
     );
 
