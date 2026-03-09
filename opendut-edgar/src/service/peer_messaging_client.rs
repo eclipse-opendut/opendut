@@ -5,7 +5,7 @@ use std::time::Duration;
 use anyhow::anyhow;
 use opentelemetry::propagation::TextMapPropagator;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, Mutex};
 use tokio::sync::mpsc::Receiver;
 use tokio::time::sleep;
 use tonic::Code;
@@ -27,93 +27,65 @@ use crate::service::test_execution::executor_manager::{ExecutorManager, Executor
 
 
 pub struct PeerMessagingClient {
-    carl: CarlClient,
-    handle_stream_info: HandleStreamInfo,
-    settings: LoadedConfig,
+    self_id: PeerId,
+    network_interface_management: NetworkInterfaceManagement,
+    executor_manager: ExecutorManagerRef,
+    metrics_manager: NetworkMetricsManagerRef,
+    carl_disconnect_timeout: Duration,
     tx_peer_configuration: mpsc::Sender<ApplyPeerConfigurationParams>,
 }
 
-pub struct HandleStreamInfo {
-    pub self_id: PeerId,
-    pub network_interface_management: NetworkInterfaceManagement,
-    pub executor_manager: ExecutorManagerRef,
-    pub metrics_manager: NetworkMetricsManagerRef,
-}
 
 impl PeerMessagingClient {
     pub async fn create(
        self_id: PeerId,
-       carl: CarlClient,
-       settings: LoadedConfig,
+       settings: &LoadedConfig,
        tx_peer_configuration: mpsc::Sender<ApplyPeerConfigurationParams>,
     ) -> anyhow::Result<Self> {
         info!("Started with ID <{self_id}> and configuration: {settings:?}");
 
-        let handle_stream_info = {
-            let executor_manager: ExecutorManagerRef = ExecutorManager::create();
+        let carl_disconnect_timeout = Duration::from_millis(settings.get::<u64>("carl.disconnect.timeout.ms")?);
 
-            let network_interface_management = {
-                let network_interface_management_enabled = settings.get::<bool>("network.interface.management.enabled")?;
-                if network_interface_management_enabled {
-                    let network_interface_manager: NetworkInterfaceManagerRef = NetworkInterfaceManager::create()?;
-                    let can_manager = CanManager::create();
+        let executor_manager: ExecutorManagerRef = ExecutorManager::create();
 
-                    NetworkInterfaceManagement::Enabled { network_interface_manager, can_manager }
-                } else {
-                    NetworkInterfaceManagement::Disabled
-                }
-            };
+        let network_interface_management = {
+            let network_interface_management_enabled = settings.get::<bool>("network.interface.management.enabled")?;
+            if network_interface_management_enabled {
+                let network_interface_manager: NetworkInterfaceManagerRef = NetworkInterfaceManager::create()?;
+                let can_manager = CanManager::create();
 
-            let metrics_manager: NetworkMetricsManagerRef = NetworkMetricsManager::load(&settings)?;
-
-
-            HandleStreamInfo {
-                self_id,
-                network_interface_management,
-                executor_manager,
-                metrics_manager,
+                NetworkInterfaceManagement::Enabled { network_interface_manager, can_manager }
+            } else {
+                NetworkInterfaceManagement::Disabled
             }
         };
 
+        let metrics_manager: NetworkMetricsManagerRef = NetworkMetricsManager::load(settings)?;
+
+
         Ok(PeerMessagingClient {
-            carl,
-            handle_stream_info,
-            settings,
+            self_id,
+            network_interface_management,
+            executor_manager,
+            metrics_manager,
+            carl_disconnect_timeout,
             tx_peer_configuration,
         })
     }
-    
-    async fn spawn_peer_configuration_state_sender(&self, mut rx_peer_configuration_state: Receiver<EdgePeerConfigurationState>, tx_outbound: Upstream) {
-        tokio::spawn(async move {
-            loop {
-                let message = rx_peer_configuration_state.recv().await;
-                match message {
-                    None => {
-                        info!("Peer configuration state channel closed");
-                        break  // exit the loop and end the EdgePeerConfigurationState sender task
-                    }
-                    Some(message) => {
-                        let _send_result = tx_outbound.send(message.clone()).await
-                            .inspect_err(|error| {
-                                error!("Failed to send PeerConfigurationState {message:?} to CARL. Encountered error was: {error}");
-                            });
-                    }
-                }
-            }
-        });
 
-    }
+    pub async fn process_messages_loop(
+        &self,
+        carl: &mut CarlClient,
+        rx_peer_configuration_state: Arc<Mutex<Receiver<EdgePeerConfigurationState>>>,
+        remote_address: IpAddr,
+    ) -> anyhow::Result<()> {
 
-    pub async fn process_messages_loop(&mut self, rx_peer_configuration_state: Receiver<EdgePeerConfigurationState>, remote_address: IpAddr) -> anyhow::Result<()> {
-
-        let timeout_duration = Duration::from_millis(self.settings.get::<u64>("carl.disconnect.timeout.ms")?);
-
-        let (mut rx_inbound, tx_outbound) = carl::open_stream(self.handle_stream_info.self_id, &remote_address, &mut self.carl).await?;
+        let (mut rx_inbound, tx_outbound) = carl::open_stream(self.self_id, &remote_address, carl).await?;
 
         self.spawn_peer_configuration_state_sender(rx_peer_configuration_state, tx_outbound.clone()).await;
 
         loop {
-            let received = tokio::time::timeout(timeout_duration, rx_inbound.receive()).await;
+            let received = tokio::time::timeout(self.carl_disconnect_timeout, rx_inbound.receive()).await;
 
             match received {
                 Ok(received) => match received {
@@ -157,22 +129,53 @@ impl PeerMessagingClient {
                     }
                 }
                 Err(_) => {
-                    error!("No message from CARL within {} ms.", timeout_duration.as_millis());
+                    error!("No message from CARL within {:?}.", self.carl_disconnect_timeout);
                     break;
                 }
             }
         }
 
-        // Shutdown processes of the can manager if enabled
-        match self.handle_stream_info.network_interface_management.clone() {
+        Ok(())
+    }
+
+    pub(super) async fn destroy(self) {
+        // Shutdown processes of the CAN manager if enabled
+        match self.network_interface_management.clone() {
             NetworkInterfaceManagement::Enabled { can_manager, .. } => {
                 let can_manager = can_manager.lock().await;
                 can_manager.shutdown().await;
             }
             NetworkInterfaceManagement::Disabled => {}
         }
-        Ok(())
     }
+
+
+    async fn spawn_peer_configuration_state_sender(
+        &self,
+        rx_peer_configuration_state: Arc<Mutex<Receiver<EdgePeerConfigurationState>>>,
+        tx_outbound: Upstream,
+    ) {
+        tokio::spawn(async move {
+            loop {
+                let message = rx_peer_configuration_state.lock().await
+                    .recv().await;
+
+                match message {
+                    None => {
+                        info!("Peer configuration state channel closed.");
+                        break  // exit the loop and end the EdgePeerConfigurationState sender task
+                    }
+                    Some(message) => {
+                        let _send_result = tx_outbound.send(message.clone()).await
+                            .inspect_err(|error| {
+                                error!("Failed to send PeerConfigurationState {message:?} to CARL. Encountered error was: {error}");
+                            });
+                    }
+                }
+            }
+        });
+    }
+
 
     async fn handle_stream_message(
         &self,
@@ -189,6 +192,7 @@ impl PeerMessagingClient {
         match message {
             broker::DownstreamMessagePayload::Pong => {
                 sleep(Duration::from_secs(5)).await;
+
                 let message = broker::UpstreamMessage {
                     payload: broker::UpstreamMessagePayload::Ping,
                     context: None,
@@ -197,7 +201,7 @@ impl PeerMessagingClient {
                     tx_outbound.send(message).await
                         .inspect_err(|cause| debug!("Failed to send ping to CARL: {cause}"));
             }
-            broker::DownstreamMessagePayload::ApplyPeerConfiguration(message) => apply_peer_configuration_raw(message, context, &self.handle_stream_info, peer_configuration_sender).await?,
+            broker::DownstreamMessagePayload::ApplyPeerConfiguration(message) => self.apply_peer_configuration_raw(message, context, peer_configuration_sender).await?,
             broker::DownstreamMessagePayload::DisconnectNotice => {
                 return Err(anyhow!("CARL sent a disconnect notice. Shutting down now."))
             }
@@ -205,31 +209,33 @@ impl PeerMessagingClient {
 
         Ok(())
     }
+
+
+    async fn apply_peer_configuration_raw(
+        &self,
+        message: Box<broker::ApplyPeerConfiguration>,
+        context: Option<broker::TracingContext>,
+        peer_configuration_sender: &mpsc::Sender<ApplyPeerConfigurationParams>,
+    ) -> anyhow::Result<()> {
+
+        let span = Span::current();
+        set_parent_context(&span, context)?;
+        let _span = span.enter();
+
+        let broker::ApplyPeerConfiguration { configuration } = *message;
+
+        let apply_config_params = ApplyPeerConfigurationParams {
+            peer_configuration: configuration,
+            network_interface_management: self.network_interface_management.clone(),
+            executor_manager: Arc::clone(&self.executor_manager),
+            metrics_manager: Arc::clone(&self.metrics_manager),
+        };
+        peer_configuration_sender.send(apply_config_params).await?;
+
+        Ok(())
+    }
 }
 
-async fn apply_peer_configuration_raw(
-    message: Box<broker::ApplyPeerConfiguration>,
-    context: Option<broker::TracingContext>,
-    handle_stream_info: &HandleStreamInfo,
-    peer_configuration_sender: &mpsc::Sender<ApplyPeerConfigurationParams>,
-) -> anyhow::Result<()> {
-
-    let span = Span::current();
-    set_parent_context(&span, context)?;
-    let _span = span.enter();
-
-    let broker::ApplyPeerConfiguration { configuration } = *message;
-
-    let apply_config_params = ApplyPeerConfigurationParams {
-        peer_configuration: configuration,
-        network_interface_management: handle_stream_info.network_interface_management.clone(),
-        executor_manager: Arc::clone(&handle_stream_info.executor_manager),
-        metrics_manager: Arc::clone(&handle_stream_info.metrics_manager),
-    };
-    peer_configuration_sender.send(apply_config_params).await?;
-
-    Ok(())
-}
 
 fn set_parent_context(span: &Span, context: Option<broker::TracingContext>) -> anyhow::Result<()> {
     if let Some(context) = context {

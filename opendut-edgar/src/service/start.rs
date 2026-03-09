@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::app_info;
 use crate::common::{carl, settings};
 use anyhow::Context;
@@ -6,8 +8,8 @@ use opendut_model::peer::PeerId;
 use opendut_telemetry::logging::LoggingConfig;
 use opendut_telemetry::opentelemetry_types;
 use opendut_telemetry::opentelemetry_types::Opentelemetry;
-use tokio::sync::mpsc;
-use tracing::info;
+use tokio::sync::{mpsc, Mutex};
+use tracing::{error, info, warn};
 use crate::service::peer_messaging_client::PeerMessagingClient;
 use crate::service::vpn::VpnProcess;
 
@@ -43,22 +45,49 @@ pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow:
 
 
     let vpn = VpnProcess::spawn_from_config(&settings).await?;
+    let remote_address = vpn.retrieve_remote_host(&settings).await?;
 
 
     let (tx_peer_configuration, rx_peer_configuration) = mpsc::channel(100);
     let (tx_peer_configuration_state, rx_peer_configuration_state) = mpsc::channel::<EdgePeerConfigurationState>(100);
     crate::service::peer_configuration::spawn_peer_configurations_handler(rx_peer_configuration, tx_peer_configuration_state).await?;
 
-    let mut carl = carl::connect(&settings).await?;
-    carl::log_version_compatibility(&mut carl).await?;
 
-    let remote_address = vpn.retrieve_remote_host(&settings).await?;
+    let peer_messaging_client = PeerMessagingClient::create(self_id, &settings, tx_peer_configuration).await?;
 
-    let mut peer_messaging_client = PeerMessagingClient::create(self_id, carl, settings, tx_peer_configuration).await?;
-    peer_messaging_client.process_messages_loop(rx_peer_configuration_state, remote_address).await?;
+    let rx_peer_configuration_state = Arc::new(Mutex::new(rx_peer_configuration_state));
+
+    loop {
+        let result: anyhow::Result<()> =
+            async {
+                let mut carl = carl::connect(&settings).await?;
+                carl::log_version_compatibility(&mut carl).await?;
+
+                peer_messaging_client.process_messages_loop(
+                    &mut carl,
+                    rx_peer_configuration_state.clone(),
+                    remote_address,
+                ).await?;
+
+                Ok(())
+            }.await;
+
+        match result {
+            Ok(()) => {
+                warn!("Connection to CARL was interrupted. Reconnecting...");
+                continue
+            }
+            Err(cause) => {
+                error!("Irrecoverable error in connection to CARL. Terminating. Error was: {cause}");
+                break
+            }
+        }
+    }
 
     {
         info!("EDGAR is terminating...");
+
+        peer_messaging_client.destroy().await;
 
         vpn.terminate().await?;
 
@@ -66,6 +95,7 @@ pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow:
     }
     Ok(())
 }
+
 
 fn log_edgar_metadata(self_id: PeerId) -> anyhow::Result<()> {
     let user = nix::unistd::User::from_uid(

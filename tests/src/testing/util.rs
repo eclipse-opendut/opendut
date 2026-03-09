@@ -1,10 +1,11 @@
 use std::net::IpAddr;
 use std::str::FromStr;
+use std::sync::Arc;
 use crate::testing::peer_configuration_listener::PeerConfigurationReceiver;
 use opendut_model::peer::PeerId;
 use opendut_model::util::Port;
 use opendut_util::settings::LoadedConfig;
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, Mutex};
 use tracing::info;
 use opendut_model::peer::configuration::EdgePeerConfigurationState;
 
@@ -53,22 +54,25 @@ pub async fn spawn_edgar_with_default_behavior(peer_id: PeerId, carl_port: Port)
 
 pub async fn spawn_edgar_with_peer_configuration_receiver(peer_id: PeerId, carl_port: Port) -> anyhow::Result<PeerConfigurationReceiver> {
     let (tx_peer_configuration_state, rx_peer_configuration_state) = mpsc::channel::<EdgePeerConfigurationState>(100);
+    let rx_peer_configuration_state = Arc::new(Mutex::new(rx_peer_configuration_state));
 
     let edgar_config = load_edgar_config(carl_port, peer_id)?;
 
     let (tx_peer_configuration, rx_peer_configuration) = mpsc::channel(100);
     tokio::spawn(async move {
-        let carl = opendut_edgar::testing::carl::connect(&edgar_config).await
+        let mut carl = opendut_edgar::testing::carl::connect(&edgar_config).await
             .expect("Could not connect to CARL for spawning EDGAR");
 
-        let mut peer_messaging_client = opendut_edgar::testing::service::peer_messaging_client::PeerMessagingClient::create(peer_id, carl, edgar_config, tx_peer_configuration)
-            .await
-            .expect("Could not create EDGAR peer messaging client");
+        let peer_messaging_client =
+            opendut_edgar::testing::service::peer_messaging_client::PeerMessagingClient::create(peer_id, &edgar_config, tx_peer_configuration).await
+                .expect("Could not create EDGAR peer messaging client");
+
         peer_messaging_client.process_messages_loop(
+            &mut carl,
             rx_peer_configuration_state,
             IpAddr::from_str("127.0.0.1").unwrap()
         ).await
-            .expect("Could not communicate with CARL. EDGAR test instance.");
+        .expect("Could not communicate with CARL. EDGAR test instance.");
     });
     Ok(PeerConfigurationReceiver { inner: rx_peer_configuration, tx_peer_configuration_state })
 }
