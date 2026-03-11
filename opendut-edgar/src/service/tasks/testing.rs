@@ -1,5 +1,5 @@
 use opendut_model::util::net::NetworkInterfaceName;
-use rand::Rng;
+use rand::RngExt;
 
 pub trait NetworkInterfaceNameExt {
     fn with_random_suffix(base: &str) -> Self;

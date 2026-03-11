@@ -44,7 +44,7 @@ sudo = { workspace = true }
 tar = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
-toml = { workspace = true, default-features = false, features = ["display", "serde"] }
+toml = { workspace = true, default-features = false, features = ["display", "parse", "serde"] }
 toml_edit = { workspace = true }
 tonic = { workspace = true, features = ["tls-ring"] }
 tracing = { workspace = true }
