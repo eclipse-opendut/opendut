@@ -2,7 +2,6 @@ use opendut_model::cluster::ClusterDisplay;
 use opendut_model::ShortName;
 use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId, ClusterName};
 use opendut_model::cluster::state::ClusterState;
-use opendut_model::viper::ViperTestRunDescriptor;
 use crate::resource::api::resources::Resources;
 use crate::resource::persistence::error::PersistenceError;
 use crate::resource::storage::ResourcesStorageApi;
@@ -24,14 +23,18 @@ impl Resources<'_> {
             return Err(DeleteClusterDescriptorError::ClusterDeploymentFound { cluster_id: cluster_deployment.id })
         };
 
-        let viper_tests = self.list::<ViperTestRunDescriptor>()
-            .map_err(|source| DeleteClusterDescriptorError::Persistence { cluster_id, cluster_name: None, source })?;
+        #[cfg(feature = "viper")] {
+            use opendut_model::viper::ViperTestRunDescriptor;
 
-        if let Some(test_descriptor) = viper_tests.values().find(|test| test.cluster == cluster_id) {
-            return Err(DeleteClusterDescriptorError::ViperTestFound {
-                cluster_id,
-                test_id: test_descriptor.id,
-            })
+            let viper_tests = self.list::<ViperTestRunDescriptor>()
+                .map_err(|source| DeleteClusterDescriptorError::Persistence { cluster_id, cluster_name: None, source })?;
+
+            if let Some(test_descriptor) = viper_tests.values().find(|test| test.cluster == cluster_id) {
+                return Err(DeleteClusterDescriptorError::ViperTestFound {
+                    cluster_id,
+                    test_id: test_descriptor.id,
+                })
+            }
         }
 
         self.remove::<ClusterDescriptor>(cluster_id)
@@ -79,7 +82,7 @@ pub enum DeleteClusterDescriptorError {
 
 #[cfg(test)]
 mod tests {
-    use crate::manager::testing::{ClusterFixture, ViperTestFixture};
+    use crate::manager::testing::ClusterFixture;
     use crate::resource::manager::ResourceManager;
     use super::*;
 
@@ -100,8 +103,11 @@ mod tests {
         Ok(())
     }
 
+    #[cfg(feature = "viper")]
     #[tokio::test]
     async fn block_deletion_of_cluster_descriptor_if_viper_test_uses_it() -> anyhow::Result<()> {
+        use crate::manager::testing::ViperTestFixture;
+
         let resource_manager = ResourceManager::new_in_memory();
 
         let viper_test = ViperTestFixture::create(resource_manager.clone()).await?;
