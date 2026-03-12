@@ -27,20 +27,20 @@ impl Source {
         Self::new(identifier, SourceLocation::Embedded(code.into()))
     }
 
-    pub fn try_from_url(identifier: TestSuiteIdentifier, url: Url) -> Result<Self, InvalidSourceLocationError> {
-        Ok(Self::new(identifier, SourceLocation::Url(url)))
+    pub fn from_url(identifier: TestSuiteIdentifier, url: Url) -> Self {
+        Self::new(identifier, SourceLocation::Url(url))
     }
 
     pub fn try_from_url_str(identifier: TestSuiteIdentifier, url: &str) -> Result<Self, InvalidSourceLocationError> {
         let url = Url::parse(url)
             .map_err(|error| InvalidSourceLocationError::new_invalid_url_error(url, error.to_string()))?;
-        Self::try_from_url(identifier, url)
+        Ok(Self::from_url(identifier, url))
     }
 
     #[cfg(not(target_arch = "wasm32"))]
     pub fn try_from_path(identifier: TestSuiteIdentifier, path: &std::path::PathBuf) -> Result<Self, InvalidSourceLocationError> {
         let url = Url::from_file_path(path)
             .map_err(|_| InvalidSourceLocationError::new_non_absolute_path_error(Clone::clone(path)))?;
-        Self::try_from_url(identifier, url)
+        Ok(Self::from_url(identifier, url))
     }
 }
