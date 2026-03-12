@@ -16,6 +16,7 @@ opendut-vpn-netbird = { workspace = true }
 opendut-model = { workspace = true }
 opendut-telemetry = { workspace = true }
 opendut-util = { workspace = true, features = ["crypto", "pem", "reqwest", "settings"] }
+opendut-viper-rt = { workspace = true, features = ["compile"] }
 opendut-vpn = { workspace = true }
 
 anyhow = { workspace = true }

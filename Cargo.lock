@@ -4371,6 +4371,7 @@ dependencies = [
  "opendut-model",
  "opendut-telemetry",
  "opendut-util",
+ "opendut-viper-rt",
  "opendut-vpn",
  "opendut-vpn-netbird",
  "openidconnect",
