@@ -24,7 +24,6 @@ impl Resources<'_> {
 
 
 async fn discover_suite(source: ViperSourceDescriptor) -> Result<Option<ViperTestSuiteDescriptor>, GetViperTestSuiteDescriptorError>  {
-    let viper_runtime = ViperRuntime::default();
     let ViperSourceDescriptor { id: source_id, name, url } = source;
 
     let name = TestSuiteIdentifier::try_from(name.value())
@@ -33,8 +32,14 @@ async fn discover_suite(source: ViperSourceDescriptor) -> Result<Option<ViperTes
 
     let source = Source::from_url(name, url);
 
-    let compilation = viper_runtime.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await
-        .expect("Compilation failed"); //FIXME introduce error case
+
+    let compilation = futures::executor::block_on(async { //Rustpython's types cannot be sent between threads (see e.g. the `NonNull` type), so not even wrapping in a `Mutex` allows them to be used in the async context underneath the gRPC interface, and we instead opt for explicit blocking of the thread until completion, which means the types will not get sent between threads.
+        let viper_runtime = ViperRuntime::default();
+
+        viper_runtime.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await
+    })
+    .expect("Compilation failed"); //FIXME introduce error case
+
 
     let parameters = compilation.parameters().iter()
         .map(|parameter_descriptor| {
