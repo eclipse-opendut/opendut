@@ -56,6 +56,12 @@ impl IntoIterator for ParameterDescriptors {
     }
 }
 
+impl From<Vec<ParameterDescriptor>> for ParameterDescriptors {
+    fn from(value: Vec<ParameterDescriptor>) -> Self {
+        Self { parameters: value }
+    }
+}
+
 /// A `ParameterName` is an identifier for a parameter.
 ///
 /// # Examples
