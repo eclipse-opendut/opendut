@@ -67,7 +67,6 @@ uuid = { workspace = true }
 assert_fs = { workspace = true }
 opendut-auth-tests = { workspace = true }
 predicates = { workspace = true }
-rstest = { workspace = true }
 test-log = { workspace = true }
 test-with = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }

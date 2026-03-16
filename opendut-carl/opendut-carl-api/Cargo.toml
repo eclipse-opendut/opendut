@@ -63,7 +63,6 @@ tonic-prost-build = { workspace = true, optional = true }
 
 [dev-dependencies]
 googletest = { workspace = true }
-rstest = { workspace = true }
 
 [lints]
 workspace = true

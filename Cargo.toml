@@ -137,7 +137,6 @@ repo_path = "1"
 reqwest = "0.13"
 reqwest-middleware = "0.5"
 reqwest-retry = "0.9"
-rstest = "0.26"
 rtnetlink = "0.18"
 rustls = { version = "*", default-features = false, features = ["ring"] }
 rustpython-vm = "0.4"

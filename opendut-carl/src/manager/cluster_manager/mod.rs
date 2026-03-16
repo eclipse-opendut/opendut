@@ -524,7 +524,6 @@ mod test {
     use std::time::Duration;
 
     use googletest::prelude::*;
-    use rstest::{fixture, rstest};
     use tokio::sync::mpsc;
 
     use opendut_model::cluster::ClusterName;
@@ -545,12 +544,10 @@ mod test {
         use opendut_model::peer::configuration::{parameter, PeerConfiguration};
         use crate::manager::peer_manager::StorePeerDescriptorParams;
 
-        #[rstest]
         #[test_log::test(tokio::test)]
-        async fn test_rollout_cluster(
-            peer_a: PeerFixture,
-            peer_b: PeerFixture,
-        ) -> anyhow::Result<()> {
+        async fn test_rollout_cluster() -> anyhow::Result<()> {
+            let peer_a = PeerFixture::new("PeerA");
+            let peer_b = PeerFixture::new("PeerB");
             let fixture = Fixture::create().await;
 
             let leader_id = peer_a.id;
@@ -761,79 +758,72 @@ mod test {
         }
     }
 
-    #[fixture]
-    fn peer_a() -> PeerFixture {
-        peer_fixture("PeerA")
-    }
-    #[fixture]
-    fn peer_b() -> PeerFixture {
-        peer_fixture("PeerB")
-    }
-
     struct PeerFixture {
         id: PeerId,
         device: DeviceId,
         remote_host: IpAddr,
         descriptor: PeerDescriptor,
     }
-    fn peer_fixture(peer_name: &str) -> PeerFixture {
-        let device = DeviceId::random();
+    impl PeerFixture {
+        fn new(peer_name: &str) -> Self {
+            let device = DeviceId::random();
 
-        let id = PeerId::random();
-        let remote_host = IpAddr::from_str("1.1.1.1").unwrap();
-        let network_interface_id = NetworkInterfaceId::random();
-        let interfaces = vec![
-            NetworkInterfaceDescriptor {
-                id: network_interface_id,
-                name: NetworkInterfaceName::try_from("eth0").unwrap(),
-                configuration: NetworkInterfaceConfiguration::Ethernet,
+            let id = PeerId::random();
+            let remote_host = IpAddr::from_str("1.1.1.1").unwrap();
+            let network_interface_id = NetworkInterfaceId::random();
+            let interfaces = vec![
+                NetworkInterfaceDescriptor {
+                    id: network_interface_id,
+                    name: NetworkInterfaceName::try_from("eth0").unwrap(),
+                    configuration: NetworkInterfaceConfiguration::Ethernet,
+                }
+            ];
+
+            let descriptor = PeerDescriptor {
+                id,
+                name: PeerName::try_from(peer_name).unwrap(),
+                location: PeerLocation::try_from("Ulm").ok(),
+                network: PeerNetworkDescriptor {
+                    interfaces,
+                    bridge_name: Some(NetworkInterfaceName::try_from("br-opendut-1").unwrap()),
+                },
+                topology: Topology {
+                    devices: vec![
+                        DeviceDescriptor {
+                            id: device,
+                            name: DeviceName::try_from(format!("{peer_name}_Device_1")).unwrap(),
+                            description: DeviceDescription::try_from("Huii").ok(),
+                            interface: network_interface_id,
+                            tags: vec![],
+                        }
+                    ]
+                },
+                executors: ExecutorDescriptors {
+                    executors: vec![
+                        ExecutorDescriptor {
+                            id: ExecutorId::random(),
+                            kind: ExecutorKind::Container {
+                                engine: Engine::Docker,
+                                name: ContainerName::Empty,
+                                image: ContainerImage::try_from("testUrl").unwrap(),
+                                volumes: vec![],
+                                devices: vec![],
+                                envs: vec![],
+                                ports: vec![],
+                                command: ContainerCommand::Default,
+                                args: vec![],
+                            },
+                            results_url: None,
+                        }
+                    ],
+                },
+            };
+            PeerFixture {
+                id,
+                device,
+                remote_host,
+                descriptor
             }
-        ];
-
-        let descriptor = PeerDescriptor {
-            id,
-            name: PeerName::try_from(peer_name).unwrap(),
-            location: PeerLocation::try_from("Ulm").ok(),
-            network: PeerNetworkDescriptor {
-                interfaces,
-                bridge_name: Some(NetworkInterfaceName::try_from("br-opendut-1").unwrap()),
-            },
-            topology: Topology {
-                devices: vec![
-                    DeviceDescriptor {
-                        id: device,
-                        name: DeviceName::try_from(format!("{peer_name}_Device_1")).unwrap(),
-                        description: DeviceDescription::try_from("Huii").ok(),
-                        interface: network_interface_id,
-                        tags: vec![],
-                    }
-                ]
-            },
-            executors: ExecutorDescriptors {
-                executors: vec![
-                    ExecutorDescriptor {
-                        id: ExecutorId::random(),
-                        kind: ExecutorKind::Container {
-                            engine: Engine::Docker,
-                            name: ContainerName::Empty,
-                            image: ContainerImage::try_from("testUrl").unwrap(),
-                            volumes: vec![],
-                            devices: vec![],
-                            envs: vec![],
-                            ports: vec![],
-                            command: ContainerCommand::Default,
-                            args: vec![],
-                        },
-                        results_url: None,
-                    }
-                ],
-            },
-        };
-        PeerFixture {
-            id,
-            device,
-            remote_host,
-            descriptor
         }
     }
 }
