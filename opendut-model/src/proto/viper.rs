@@ -78,28 +78,6 @@ mod conversions {
     //
 
     conversion! {
-        type Model = crate::viper::ViperTestParameterValueKind;
-        type Proto = ViperTestParameterValueKind;
-
-        fn from(value_kind: Model) -> Proto {
-            match value_kind {
-                crate::viper::ViperTestParameterValueKind::Boolean => ViperTestParameterValueKind::Boolean,
-                crate::viper::ViperTestParameterValueKind::Number => ViperTestParameterValueKind::Number,
-                crate::viper::ViperTestParameterValueKind::Text => ViperTestParameterValueKind::Text,
-            }
-        }
-
-        fn try_from(value_kind: Proto) -> ConversionResult<Model> {
-            let result = match value_kind {
-                ViperTestParameterValueKind::Boolean => crate::viper::ViperTestParameterValueKind::Boolean,
-                ViperTestParameterValueKind::Number => crate::viper::ViperTestParameterValueKind::Number,
-                ViperTestParameterValueKind::Text => crate::viper::ViperTestParameterValueKind::Text,
-            };
-            Ok(result)
-        }
-    }
-
-    conversion! {
         type Model = crate::viper::ViperTestSuiteDescriptor;
         type Proto = ViperTestSuiteDescriptor;
 
@@ -107,12 +85,7 @@ mod conversions {
             let Model { id, source, parameters } = value;
 
             let parameters = parameters.into_iter()
-                .map(|(key, value_kind)| ViperTestParameterDescriptor {
-                    key: key.inner,
-                    value_kind: i32::from(
-                        ViperTestParameterValueKind::from(value_kind)
-                    ),
-                })
+                .map(opendut_viper_rt::proto::test_suite::ViperParameterDescriptor::from)
                 .collect::<Vec<_>>();
 
             Proto {
@@ -130,15 +103,10 @@ mod conversions {
                 .try_into()?;
 
             let parameters = value.parameters.into_iter()
-                .map(|ViperTestParameterDescriptor { key, value_kind }| {
-                    let key = crate::viper::ViperTestParameterKey { inner: key };
-                    let value_kind = crate::viper::ViperTestParameterValueKind::try_from(
-                        ViperTestParameterValueKind::try_from(value_kind)
-                            .map_err(|cause| ErrorBuilder::message(format!("Unknown enum variant: {cause}")))?
-                    )?;
-                    Ok((key, value_kind))
-                })
-                .collect::<ConversionResult<HashMap<_, _>>>()?;
+                .map(crate::viper::ViperParameterDescriptor::try_from)
+                .collect::<ConversionResult<Vec<_>>>()?;
+
+            let parameters = crate::viper::ViperParameterDescriptors::from(parameters);
 
             Ok(Model { id, source, parameters })
         }
