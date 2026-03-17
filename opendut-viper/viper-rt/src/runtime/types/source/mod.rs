@@ -4,9 +4,12 @@ use crate::runtime::types::source::error::InvalidSourceLocationError;
 use url::Url;
 use crate::common::TestSuiteIdentifier;
 
+/// Description for how to load a single test suite.
 #[derive(Clone, Debug)]
 pub struct Source {
+    /// Name of the test source and the test suite, for reporting to the user which test suite failed.
     pub identifier: TestSuiteIdentifier,
+    /// Where to load the test suite from.
     pub location: SourceLocation,
 }
 
