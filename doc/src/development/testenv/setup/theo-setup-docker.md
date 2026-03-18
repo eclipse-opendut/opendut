@@ -19,13 +19,8 @@
   ```
   Alternatively, see <https://docs.docker.com/compose/install/linux/>.
 
-* Add your user into the `docker` group, to be allowed to use Docker commands without root permissions. (Mind that this has security implications.)
-   ```sh
-   sudo groupadd docker  # create `docker` group, if it does not exist
-   sudo gpasswd --add $USER docker  # add your user to the `docker` group
-   newgrp docker  # attempt to activate group without re-login
-   ```
-  You may need to log out your user account and log back in for this to take effect.
+
+* Add your user into the `docker` group, to be allowed to use Docker commands without root permissions: <https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user>
 
 
 * Update /etc/hosts
