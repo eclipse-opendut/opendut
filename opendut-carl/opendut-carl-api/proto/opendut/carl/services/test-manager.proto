@@ -195,10 +195,26 @@ message GetViperTestSuiteDescriptorFailure {
   oneof error {
     GetViperTestSuiteDescriptorFailureSourceNotFound source_not_found = 1;
     GetViperTestSuiteDescriptorFailureInternal internal = 2;
+    GetViperTestSuiteDescriptorFailureCompilation compilation = 3;
+    GetViperTestSuiteDescriptorFailureTaskJoin task_join = 4;
+    GetViperTestSuiteDescriptorFailureViperRuntime viper_runtime = 5;
   }
 }
 
 message GetViperTestSuiteDescriptorFailureSourceNotFound {
+  opendut.model.viper.ViperSourceId source_id = 1;
+}
+
+message GetViperTestSuiteDescriptorFailureCompilation {
+  opendut.model.viper.ViperSourceId source_id = 1;
+}
+
+message GetViperTestSuiteDescriptorFailureTaskJoin {
+  opendut.model.viper.ViperSourceId source_id = 1;
+  string cause = 2;
+}
+
+message GetViperTestSuiteDescriptorFailureViperRuntime {
   opendut.model.viper.ViperSourceId source_id = 1;
 }
 

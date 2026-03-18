@@ -228,6 +228,12 @@ mod test_manager {
     impl From<test_manager::get_viper_test_suite_descriptor::GetViperTestSuiteDescriptorError> for GetViperTestSuiteDescriptorError {
         fn from(value: test_manager::get_viper_test_suite_descriptor::GetViperTestSuiteDescriptorError) -> Self {
             match value {
+                test_manager::get_viper_test_suite_descriptor::GetViperTestSuiteDescriptorError::Compilation { source_id } => 
+                    Self::Compilation { source_id },
+                test_manager::get_viper_test_suite_descriptor::GetViperTestSuiteDescriptorError::TaskJoin { source_id, cause } => 
+                    Self::TaskJoin { source_id, cause: cause.to_string() },
+                test_manager::get_viper_test_suite_descriptor::GetViperTestSuiteDescriptorError::ViperRuntime { source_id } => 
+                    Self::ViperRuntime { source_id },
                 test_manager::get_viper_test_suite_descriptor::GetViperTestSuiteDescriptorError::Persistence { source_id, cause: _ } =>
                     Self::Internal {
                         source_id,

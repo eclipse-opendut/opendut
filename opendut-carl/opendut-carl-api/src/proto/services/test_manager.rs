@@ -199,6 +199,22 @@ conversion! {
                     source_id: Some(source_id.into()),
                 })
             }
+            Model::Compilation { source_id } => {
+                get_viper_test_suite_descriptor_failure::Error::Compilation(GetViperTestSuiteDescriptorFailureCompilation {
+                    source_id: Some(source_id.into()),
+                })
+            }
+            Model::TaskJoin { source_id, cause } => {
+                get_viper_test_suite_descriptor_failure::Error::TaskJoin(GetViperTestSuiteDescriptorFailureTaskJoin {
+                    source_id: Some(source_id.into()),
+                    cause
+                })
+            }
+            Model::ViperRuntime { source_id } => {
+                get_viper_test_suite_descriptor_failure::Error::ViperRuntime(GetViperTestSuiteDescriptorFailureViperRuntime {
+                    source_id: Some(source_id.into()),
+                })
+            }
             Model::Internal { source_id, cause } => {
                 get_viper_test_suite_descriptor_failure::Error::Internal(GetViperTestSuiteDescriptorFailureInternal {
                     source_id: Some(source_id.into()),
@@ -219,6 +235,22 @@ conversion! {
                 let source_id = extract!(error.source_id)?.try_into()?;
 
                 Ok(Model::SourceNotFound { source_id })
+            }
+            get_viper_test_suite_descriptor_failure::Error::Compilation(error) => {
+                let source_id = extract!(error.source_id)?.try_into()?;
+                
+                Ok(Model::Compilation { source_id })
+            }
+            get_viper_test_suite_descriptor_failure::Error::TaskJoin(error) => {
+                let source_id = extract!(error.source_id)?.try_into()?;
+                let cause = error.cause;
+                
+                Ok(Model::TaskJoin{ source_id, cause })
+            }
+            get_viper_test_suite_descriptor_failure::Error::ViperRuntime(error) => {
+                let source_id = extract!(error.source_id)?.try_into()?;
+                
+                Ok(Model::ViperRuntime{ source_id })
             }
             get_viper_test_suite_descriptor_failure::Error::Internal(error) => {
                 let source_id = extract!(error.source_id)?.try_into()?;

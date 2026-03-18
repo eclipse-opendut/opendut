@@ -70,6 +70,19 @@ pub enum GetViperTestSuiteDescriptorError {
     SourceNotFound {
         source_id: ViperSourceId,
     },
+    #[error("Compilation failed while getting VIPER test suite descriptor for source <{source_id}>.")]
+    Compilation {
+        source_id: ViperSourceId,
+    },
+    #[error("Task failed while getting VIPER test suite descriptor for source <{source_id}>.")]
+    TaskJoin {
+        source_id: ViperSourceId,
+        cause: String,
+    },
+    #[error("Error while initializing VIPER runtime for VIPER test source <{source_id}>.")]
+    ViperRuntime {
+        source_id: ViperSourceId,
+    },
     #[error("An internal error occurred while fetching the VIPER test suite descriptor for source <{source_id}>:\n  {cause}")]
     Internal {
         source_id: ViperSourceId,
