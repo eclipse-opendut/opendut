@@ -230,8 +230,11 @@ mod test_manager {
             match value {
                 test_manager::get_viper_test_suite_descriptor::GetViperTestSuiteDescriptorError::Compilation { source_id } => 
                     Self::Compilation { source_id },
-                test_manager::get_viper_test_suite_descriptor::GetViperTestSuiteDescriptorError::TaskJoin { source_id, cause } => 
-                    Self::TaskJoin { source_id, cause: cause.to_string() },
+                test_manager::get_viper_test_suite_descriptor::GetViperTestSuiteDescriptorError::TaskJoin { source_id, when, cause: _ } =>
+                    Self::Internal {
+                        source_id,
+                        cause: format!("Internal error when {when} to completion while retrieving VIPER test suite descriptor"),
+                    },
                 test_manager::get_viper_test_suite_descriptor::GetViperTestSuiteDescriptorError::ViperRuntime { source_id } => 
                     Self::ViperRuntime { source_id },
                 test_manager::get_viper_test_suite_descriptor::GetViperTestSuiteDescriptorError::Persistence { source_id, cause: _ } =>
