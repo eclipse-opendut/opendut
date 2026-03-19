@@ -25,6 +25,12 @@ Before creating the request, please ensure the following:
 After opening your request, we will also check these in addition to a technical review.
 
 
+Our goal is to keep the `development` branch in a releasable state.  
+Try to make atomic changes or if a change has to be split in such a way that the intermediate steps are not functional,
+then ideally introduce a feature toggle until the new working state is reached.  
+If this is ensured, it also allows us to merge your changes early on, to reduce unnecessary busywork from merge conflicts.
+
+
 ## Contact
 
 Contact the project developers via chat, the project's "dev" mailing list or raise an issue.
