@@ -51,7 +51,7 @@ async fn discover_suite(source: ViperSourceDescriptor) -> Result<Option<ViperTes
     debug!("VIPER compilation completed.");
 
     let (identifier, parameters) = handle.await
-        .map_err(|cause| GetViperTestSuiteDescriptorError::TaskJoin { source_id, cause })??;
+        .map_err(|cause| GetViperTestSuiteDescriptorError::TaskJoin { source_id, when: "compiling VIPER source", cause })??;
 
     Ok(Some(ViperTestSuiteDescriptor {
         id: identifier,
@@ -67,9 +67,10 @@ pub enum GetViperTestSuiteDescriptorError {
     Compilation {
         source_id: ViperSourceId,
     },
-    #[error("Task failed while getting VIPER test suite descriptor for source <{source_id}>.")]
+    #[error("Async task failed when {when} while getting VIPER test suite descriptor for source <{source_id}>.")]
     TaskJoin {
         source_id: ViperSourceId,
+        when: &'static str,
         #[source] cause: tokio::task::JoinError,
     },
     #[error("Error while initializing VIPER runtime for VIPER test source <{source_id}>.")]

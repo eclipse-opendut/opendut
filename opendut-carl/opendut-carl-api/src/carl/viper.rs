@@ -74,11 +74,6 @@ pub enum GetViperTestSuiteDescriptorError {
     Compilation {
         source_id: ViperSourceId,
     },
-    #[error("Task failed while getting VIPER test suite descriptor for source <{source_id}>.")]
-    TaskJoin {
-        source_id: ViperSourceId,
-        cause: String,
-    },
     #[error("Error while initializing VIPER runtime for VIPER test source <{source_id}>.")]
     ViperRuntime {
         source_id: ViperSourceId,
