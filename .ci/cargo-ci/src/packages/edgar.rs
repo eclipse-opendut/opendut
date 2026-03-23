@@ -242,7 +242,7 @@ pub mod distribution {
 
             let out_file = out_file(SELF_PACKAGE, target);
 
-            dbg!(&rperf_binary.exists());
+            assert!(&rperf_binary.exists());
 
             fs::create_dir_all(out_file.parent().unwrap())?;
             fs::copy(&rperf_binary, &out_file)
