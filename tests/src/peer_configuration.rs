@@ -12,6 +12,7 @@ use opendut_model::util::Port;
 use std::collections::HashSet;
 use std::net::{IpAddr, Ipv4Addr};
 use std::str::FromStr;
+use tokio_util::sync::CancellationToken;
 use tracing::info;
 
 #[test_log::test(
@@ -19,11 +20,11 @@ use tracing::info;
 )]
 async fn carl_should_send_peer_configurations_in_happy_flow() -> anyhow::Result<()> {
     let fixture = Fixture::create().await?;
-    let carl = fixture.carl;
+    let carl = &fixture.carl;
 
     let peer_a = testing::peer_descriptor::store_peer_descriptor(&carl.client).await?;
 
-    let mut receiver_a = util::spawn_edgar_with_peer_configuration_receiver(peer_a.id, carl.port).await?;
+    let mut receiver_a = util::spawn_edgar_with_peer_configuration_receiver(peer_a.id, carl.port, fixture.cancel_token.clone()).await?;
     carl.client.await_peer_up(peer_a.id).await?;
     {
         let peer_configuration_a = receiver_a.receive_peer_configuration().await?;
@@ -33,7 +34,7 @@ async fn carl_should_send_peer_configurations_in_happy_flow() -> anyhow::Result<
 
     let peer_b = testing::peer_descriptor::store_peer_descriptor(&carl.client).await?;
 
-    let mut receiver_b = util::spawn_edgar_with_peer_configuration_receiver(peer_b.id, carl.port).await?;
+    let mut receiver_b = util::spawn_edgar_with_peer_configuration_receiver(peer_b.id, carl.port, fixture.cancel_token.clone()).await?;
     carl.client.await_peer_up(peer_b.id).await?;
     {
         let peer_configuration_b = receiver_b.receive_peer_configuration().await?;
@@ -206,11 +207,11 @@ fn validate_peer_configuration(peer_descriptor: PeerDescriptor, check_remote_pee
 )]
 async fn carl_should_send_cluster_related_peer_configuration_if_a_peer_comes_online_later() -> anyhow::Result<()> {
     let fixture = Fixture::create().await?;
-    let carl = fixture.carl;
+    let carl = &fixture.carl;
 
     let peer_a = testing::peer_descriptor::store_peer_descriptor(&carl.client).await?;
 
-    let mut receiver_a = util::spawn_edgar_with_peer_configuration_receiver(peer_a.id, carl.port).await?;
+    let mut receiver_a = util::spawn_edgar_with_peer_configuration_receiver(peer_a.id, carl.port, fixture.cancel_token.clone()).await?;
     carl.client.await_peer_up(peer_a.id).await?; // Peer A comes online
     {
         let peer_configuration_a = receiver_a.receive_peer_configuration().await?;
@@ -231,7 +232,7 @@ async fn carl_should_send_cluster_related_peer_configuration_if_a_peer_comes_onl
     receiver_a.expect_no_peer_configuration().await;  // No configuration sent yet
 
     // ACT
-    let mut receiver_b = util::spawn_edgar_with_peer_configuration_receiver(peer_b.id, carl.port).await?;
+    let mut receiver_b = util::spawn_edgar_with_peer_configuration_receiver(peer_b.id, carl.port, fixture.cancel_token.clone()).await?;
     {
         carl.client.await_peer_up(peer_b.id).await?; // Peer B comes online later
         let peer_configuration_b = receiver_b.receive_peer_configuration().await?;
@@ -255,6 +256,7 @@ async fn carl_should_send_cluster_related_peer_configuration_if_a_peer_comes_onl
 struct Fixture {
     carl: CarlFixture,
     empty_peer_configuration: PeerConfiguration,
+    cancel_token: CancellationToken,
 }
 impl Fixture {
     async fn create() -> anyhow::Result<Self> {
@@ -269,12 +271,19 @@ impl Fixture {
         Ok(Fixture {
             carl,
             empty_peer_configuration,
+            cancel_token: CancellationToken::new(),
         })
     }
 }
 struct CarlFixture {
     client: TestCarlClient,
     port: Port,
+}
+
+impl Drop for Fixture {
+    fn drop(&mut self) {
+        self.cancel_token.cancel();
+    }
 }
 
 async fn store_cluster_descriptor(leader: PeerId, devices: impl Iterator<Item=&DeviceDescriptor>, carl_client: &TestCarlClient) -> anyhow::Result<ClusterDescriptor> {

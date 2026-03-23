@@ -4543,6 +4543,7 @@ dependencies = [
  "test-with",
  "thiserror 2.0.18",
  "tokio",
+ "tokio-util",
  "toml 1.0.6+spec-1.1.0",
  "toml_edit 0.25.4+spec-1.1.0",
  "tonic",
@@ -4590,6 +4591,7 @@ dependencies = [
  "serde_json",
  "test-log",
  "tokio",
+ "tokio-util",
  "tracing",
 ]
 

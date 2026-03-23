@@ -6,7 +6,9 @@ use opendut_carl_api::carl::CarlClient;
 use opendut_model::peer::state::PeerConnectionState;
 use opendut_model::peer::PeerId;
 use opendut_model::util::Port;
-use tokio::sync::{Mutex, MutexGuard};
+use tokio::sync::{mpsc, Mutex, MutexGuard};
+use tokio_util::sync::CancellationToken;
+use opendut_edgar::testing::service::start::ConnectAndStart;
 
 pub struct TestCarlClient {
     client: Mutex<CarlClient>,
@@ -19,8 +21,16 @@ impl TestCarlClient {
 
         let edgar_config = util::load_edgar_config(carl_port, peer_id)?;
 
-        let carl_client = opendut_edgar::testing::carl::connect(&edgar_config).await
+        let (carl_sender, mut carl_receiver) = mpsc::channel(1);
+
+        opendut_edgar::testing::service::start::connect_and_start(
+            &ConnectAndStart::CarlClient { out: Some(carl_sender) },
+            &edgar_config,
+            CancellationToken::new(), //unused here
+        ).await
             .expect("Failed to connect to CARL for state checks");
+
+        let carl_client = carl_receiver.recv().await.unwrap();
 
         let inner = Mutex::new(carl_client);
         Ok(TestCarlClient { client: inner })

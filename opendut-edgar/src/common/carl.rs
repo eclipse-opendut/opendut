@@ -1,58 +1,11 @@
 use std::net::IpAddr;
-use std::ops::Not;
-use std::time::Duration;
 
-use anyhow::{bail, Context};
-use config::Config;
-use tracing::{debug, info, warn};
+use tracing::{debug, info};
 
 use opendut_carl_api::carl::broker::stream_header;
 use opendut_carl_api::carl::{broker, CarlClient};
 use opendut_model::peer::PeerId;
-use opendut_util::pem::{self, ClientAuth, Pem, PemFromConfig};
 
-
-/// Separate function which just opens a connection without extracting the version,
-/// since the separate metadata-request causes it to not be able to send between threads safely anymore.
-#[tracing::instrument(skip_all)]
-pub async fn connect(settings: &Config) -> anyhow::Result<CarlClient> {
-    opendut_util::crypto::install_default_provider();
-
-    debug!("Connecting to CARL...");
-
-    let host = settings.get_string("network.carl.host")?;
-    let port = u16::try_from(settings.get_int("network.carl.port")?)?;
-
-    let ca_certs = Pem::read_from_configured_path_or_content(pem::config_keys::DEFAULT_NETWORK_TLS_CA, None, settings)
-        .context("No CA certificates found in configured locations")?;
-
-    let client_auth = ClientAuth::load_from_config_for_carl_connection(settings)
-        .context("Error while loading configuration for client authentication")?;
-
-    let domain_name_override = {
-        let domain_name_override = settings.get_string("network.tls.domain.name.override")?;
-        domain_name_override.is_empty().not().then_some(domain_name_override)
-    };
-
-    let retries = settings.get_int("network.connect.retries")?;
-    let interval = Duration::from_millis(u64::try_from(settings.get_int("network.connect.interval.ms")?)?);
-
-    for retries_left in (0..retries).rev() {
-        match CarlClient::create(&host, port, &ca_certs, &client_auth, &domain_name_override, settings).await {
-            Ok(carl) => {
-                return Ok(carl);
-            }
-            Err(cause) => {
-                let error = opendut_util::error::render_error_message(&cause, "Encountered the following error.");
-                warn!("Could not connect to CARL at '{host}:{port}'. Retrying in {interval} ms. {retries_left} retries left. {error}", interval=interval.as_millis());
-                if retries_left > 0 {
-                    tokio::time::sleep(interval).await;
-                }
-            }
-        }
-    }
-    bail!("Failed to connect to CARL after {retries}*{interval} ms.", interval=interval.as_millis());
-}
 
 pub async fn open_stream(
     self_id: PeerId,

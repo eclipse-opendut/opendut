@@ -8,6 +8,7 @@ use opentelemetry_sdk::propagation::TraceContextPropagator;
 use tokio::sync::{mpsc, Mutex};
 use tokio::sync::mpsc::Receiver;
 use tokio::time::sleep;
+use tokio_util::sync::CancellationToken;
 use tonic::Code;
 use tracing::{debug, error, info, trace, warn, Span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
@@ -77,59 +78,74 @@ impl PeerMessagingClient {
         &self,
         carl: &mut CarlClient,
         rx_peer_configuration_state: Arc<Mutex<Receiver<EdgePeerConfigurationState>>>,
-        remote_address: IpAddr,
+        remote_address: &IpAddr,
+        on_connect_success: &impl Fn(),
+        cancel_token: &CancellationToken,
     ) -> anyhow::Result<()> {
 
-        let (mut rx_inbound, tx_outbound) = carl::open_stream(self.self_id, &remote_address, carl).await?;
+        let (mut rx_inbound, tx_outbound) = carl::open_stream(self.self_id, remote_address, carl).await?;
 
         self.spawn_peer_configuration_state_sender(rx_peer_configuration_state, tx_outbound.clone()).await;
 
+        on_connect_success();
+
         loop {
-            let received = tokio::time::timeout(self.carl_disconnect_timeout, rx_inbound.receive()).await;
-
-            match received {
-                Ok(received) => match received {
-                    Ok(Some(message)) => {
-                        self.handle_stream_message(
-                            message,
-                            &tx_outbound,
-                            &self.tx_peer_configuration,
-                        ).await?
-                    }
-                    Err(status) => {
-                        warn!("CARL sent a gRPC error status: {status}");
-
-                        match status.code() {
-                            Code::Ok | Code::AlreadyExists => continue, //ignore
-
-                            Code::DeadlineExceeded | Code::Unavailable => { //ignore, but delay reading the stream again, as this may result in rapid triggering of errors otherwise
-                                tokio::time::sleep(Duration::from_secs(1)).await;
-                                continue
+            tokio::select! {
+                received = tokio::time::timeout(self.carl_disconnect_timeout, rx_inbound.receive()) => {
+                    match received {
+                        Ok(received) => match received {
+                            Ok(Some(message)) => {
+                                self.handle_stream_message(
+                                    message,
+                                    &tx_outbound,
+                                    &self.tx_peer_configuration,
+                                    cancel_token,
+                                ).await?
                             }
+                            Err(status) => {
+                                warn!("CARL sent a gRPC error status: {status}");
 
-                            Code::Aborted
-                            | Code::Cancelled
-                            | Code::DataLoss
-                            | Code::FailedPrecondition
-                            | Code::Internal
-                            | Code::InvalidArgument
-                            | Code::NotFound
-                            | Code::OutOfRange
-                            | Code::PermissionDenied
-                            | Code::ResourceExhausted
-                            | Code::Unimplemented
-                            | Code::Unauthenticated
-                            | Code::Unknown
-                            => panic!("Received potentially bad gRPC error: {status}"), //In production, SystemD will restart EDGAR with a delay. A crash is mainly more visible.
+                                match status.code() {
+                                    Code::Ok | Code::AlreadyExists => continue, //ignore
+
+                                    Code::DeadlineExceeded | Code::Unavailable => { //ignore, but delay reading the stream again, as this may result in rapid triggering of errors otherwise
+                                        tokio::time::sleep(Duration::from_secs(1)).await;
+                                        continue
+                                    }
+
+                                    Code::Unknown => {
+                                        debug!("Triggering reconnect to CARL after receiving gRPC error status.");
+                                        break
+                                    }
+
+                                    Code::Aborted
+                                    | Code::Cancelled
+                                    | Code::DataLoss
+                                    | Code::FailedPrecondition
+                                    | Code::Internal
+                                    | Code::InvalidArgument
+                                    | Code::NotFound
+                                    | Code::OutOfRange
+                                    | Code::PermissionDenied
+                                    | Code::ResourceExhausted
+                                    | Code::Unimplemented
+                                    | Code::Unauthenticated
+                                    => panic!("Received potentially bad gRPC error: {status}"), //In production, SystemD will restart EDGAR with a delay. A crash is mainly more visible.
+                                }
+                            }
+                            Ok(None) => {
+                                info!("CARL disconnected!");
+                                break;
+                            }
+                        }
+                        Err(_) => {
+                            error!("No message from CARL within {:?}.", self.carl_disconnect_timeout);
+                            break;
                         }
                     }
-                    Ok(None) => {
-                        info!("CARL disconnected!");
-                        break;
-                    }
                 }
-                Err(_) => {
-                    error!("No message from CARL within {:?}.", self.carl_disconnect_timeout);
+                _ = cancel_token.cancelled() => {
+                    debug!("PeerMessagingClient message processing is being cancelled.");
                     break;
                 }
             }
@@ -182,6 +198,7 @@ impl PeerMessagingClient {
         message: broker::DownstreamMessage,
         tx_outbound: &GrpcUpstream,
         peer_configuration_sender: &mpsc::Sender<ApplyPeerConfigurationParams>,
+        cancel_token: &CancellationToken,
     ) -> anyhow::Result<()> {
         let broker::DownstreamMessage { payload: message, context } = message;
 
@@ -191,15 +208,20 @@ impl PeerMessagingClient {
 
         match message {
             broker::DownstreamMessagePayload::Pong => {
-                sleep(Duration::from_secs(5)).await;
-
-                let message = broker::UpstreamMessage {
-                    payload: broker::UpstreamMessagePayload::Ping,
-                    context: None,
-                };
-                let _ignore_error =
-                    tx_outbound.send(message).await
-                        .inspect_err(|cause| debug!("Failed to send ping to CARL: {cause}"));
+                tokio::select! {
+                    _ = sleep(Duration::from_secs(5)) => {
+                        let message = broker::UpstreamMessage {
+                            payload: broker::UpstreamMessagePayload::Ping,
+                            context: None,
+                        };
+                        let _ignore_error =
+                            tx_outbound.send(message).await
+                                .inspect_err(|cause| debug!("Failed to send ping to CARL: {cause:?}"));
+                    }
+                    _ = cancel_token.cancelled() => {
+                        debug!("Responding with Pong message cancelled.");
+                    }
+                }
             }
             broker::DownstreamMessagePayload::ApplyPeerConfiguration(message) => self.apply_peer_configuration_raw(message, context, peer_configuration_sender).await?,
             broker::DownstreamMessagePayload::DisconnectNotice => {

@@ -18,7 +18,4 @@ pub mod testing {
         pub use crate::service::peer_messaging_client;
         pub use crate::service::peer_configuration;
     }
-    pub mod carl {
-        pub use crate::common::carl::connect;
-    }
 }

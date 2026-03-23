@@ -7,7 +7,7 @@ id = ""
 [network]
 carl.host = "localhost"
 carl.port = 8080
-connect.retries = 10
+connect.retries = 250
 connect.interval.ms = 5000
 
 [network.tls]

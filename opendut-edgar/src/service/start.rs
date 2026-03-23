@@ -1,17 +1,26 @@
-use std::sync::Arc;
-
 use crate::app_info;
-use crate::common::{carl, settings};
+use crate::common::settings;
+use crate::service::peer_messaging_client::PeerMessagingClient;
+use crate::service::vpn::VpnProcess;
 use anyhow::Context;
 use opendut_model::peer::configuration::EdgePeerConfigurationState;
 use opendut_model::peer::PeerId;
 use opendut_telemetry::logging::LoggingConfig;
 use opendut_telemetry::opentelemetry_types;
 use opendut_telemetry::opentelemetry_types::Opentelemetry;
+use opendut_util::settings::LoadedConfig;
+use std::net::IpAddr;
+use std::ops::Not;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
+use std::time::Duration;
 use tokio::sync::{mpsc, Mutex};
-use tracing::{error, info, warn};
-use crate::service::peer_messaging_client::PeerMessagingClient;
-use crate::service::vpn::VpnProcess;
+use tokio_util::sync::CancellationToken;
+use tracing::{debug, error, info, trace, warn};
+use opendut_carl_api::carl::CarlClient;
+use opendut_util::pem;
+use opendut_util::pem::{ClientAuth, Pem, PemFromConfig};
+use crate::common::carl::log_version_compatibility;
 
 
 pub async fn launch(id_override: Option<PeerId>) -> anyhow::Result<()> {
@@ -50,50 +59,157 @@ pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow:
 
     let (tx_peer_configuration, rx_peer_configuration) = mpsc::channel(100);
     let (tx_peer_configuration_state, rx_peer_configuration_state) = mpsc::channel::<EdgePeerConfigurationState>(100);
-    crate::service::peer_configuration::spawn_peer_configurations_handler(rx_peer_configuration, tx_peer_configuration_state).await?;
+
+    let cancel_token = CancellationToken::new();
+    crate::service::peer_configuration::spawn_peer_configurations_handler(
+        rx_peer_configuration,
+        tx_peer_configuration_state,
+        cancel_token.clone(),
+    ).await?;
 
 
     let peer_messaging_client = PeerMessagingClient::create(self_id, &settings, tx_peer_configuration).await?;
 
     let rx_peer_configuration_state = Arc::new(Mutex::new(rx_peer_configuration_state));
 
-    loop {
-        let result: anyhow::Result<()> =
-            async {
-                let mut carl = carl::connect(&settings).await?;
-                carl::log_version_compatibility(&mut carl).await?;
-
-                peer_messaging_client.process_messages_loop(
-                    &mut carl,
-                    rx_peer_configuration_state.clone(),
-                    remote_address,
-                ).await?;
-
-                Ok(())
-            }.await;
-
-        match result {
-            Ok(()) => {
-                warn!("Connection to CARL was interrupted. Reconnecting...");
-                continue
-            }
-            Err(cause) => {
-                error!("Irrecoverable error in connection to CARL. Terminating. Error was: {cause}");
-                break
-            }
-        }
-    }
+    connect_and_start(
+        &ConnectAndStart::Service {
+            peer_messaging_client: &peer_messaging_client,
+            rx_peer_configuration_state,
+            remote_address,
+        },
+        &settings,
+        cancel_token.clone(),
+    ).await?;
 
     {
         info!("EDGAR is terminating...");
 
         peer_messaging_client.destroy().await;
 
+        cancel_token.cancel();
+
         vpn.terminate().await?;
 
         metrics_shutdown_handle.shutdown();
     }
     Ok(())
+}
+
+pub async fn connect_and_start(config: &ConnectAndStart<'_>, settings: &LoadedConfig, cancel_token: CancellationToken) -> anyhow::Result<()> {
+
+    let ConnectOptions { host, port, ca_certs, client_auth, domain_name_override, retries: maximum_retries, interval } =
+        ConnectOptions::load_from_config(settings)?;
+
+    let remaining_retries = AtomicUsize::new(maximum_retries);
+
+    let on_connect_success = || { //reset the number of retries after a connection is established
+        remaining_retries.store(maximum_retries, Ordering::Relaxed);
+    };
+
+    opendut_util::crypto::install_default_provider();
+
+    loop {
+        let result: anyhow::Result<()> = async {
+            debug!("Connecting to CARL...");
+
+            let mut carl = CarlClient::create(&host, port, &ca_certs, &client_auth, &domain_name_override, settings).await
+                .context(format!("Could not connect to CARL at '{host}:{port}'."))?;
+
+            log_version_compatibility(&mut carl).await?;
+
+            match config {
+                ConnectAndStart::Service { peer_messaging_client, rx_peer_configuration_state, remote_address } => {
+                    trace!("Starting to process messages from CARL...");
+                    peer_messaging_client.process_messages_loop(
+                        &mut carl,
+                        rx_peer_configuration_state.clone(),
+                        remote_address,
+                        &on_connect_success,
+                        &cancel_token,
+                    ).await?;
+                }
+                ConnectAndStart::CarlClient { out } => {
+                    trace!("Connection check to CARL succeeded.");
+                    if let Some(out) = out {
+                        out.send(carl).await?;
+                    }
+                }
+            }
+            Ok(())
+        }.await;
+
+        match result {
+            Ok(()) => match config {
+                ConnectAndStart::Service { .. } => {
+                    warn!("Connection to CARL was interrupted. Reconnecting...");
+                }
+                ConnectAndStart::CarlClient { .. } => {
+                    return Ok(());
+                }
+            }
+            Err(cause) => {
+                if remaining_retries.load(Ordering::Relaxed) > 0 {
+                    let reconnect_interval = interval;
+                    let retries_left = remaining_retries.fetch_sub(1, Ordering::Relaxed);
+                    error!("Error in connection to CARL. Reconnecting in {reconnect_interval:?}. {retries_left} retries left. Error was: {cause:?}");
+
+                    tokio::select! {
+                        _ = tokio::time::sleep(reconnect_interval) => {}
+                        _ = cancel_token.cancelled() => return Ok(()),
+                    }
+                } else {
+                    error!("Error in connection to CARL. No retries left. Terminating EDGAR. Error was: {cause:?}");
+                    break;
+                }
+            }
+        };
+    }
+
+    Ok(())
+}
+pub enum ConnectAndStart<'a> {
+    Service {
+        peer_messaging_client: &'a PeerMessagingClient,
+        rx_peer_configuration_state: Arc<Mutex<mpsc::Receiver<EdgePeerConfigurationState>>>,
+        remote_address: IpAddr,
+    },
+    CarlClient {
+        out: Option<mpsc::Sender<CarlClient>>,
+    },
+}
+
+
+pub struct ConnectOptions {
+    pub host: String,
+    pub port: u16,
+    pub ca_certs: Vec<Pem>,
+    pub client_auth: ClientAuth,
+    pub domain_name_override: Option<String>,
+    pub retries: usize,
+    pub interval: Duration,
+}
+impl ConnectOptions {
+    pub fn load_from_config(settings: &LoadedConfig) -> anyhow::Result<Self> {
+        let host = settings.get_string("network.carl.host")?;
+        let port = u16::try_from(settings.get_int("network.carl.port")?)?;
+
+        let ca_certs = Pem::read_from_configured_path_or_content(pem::config_keys::DEFAULT_NETWORK_TLS_CA, None, settings)
+            .context("No CA certificates found in configured locations")?;
+
+        let client_auth = ClientAuth::load_from_config_for_carl_connection(settings)
+            .context("Error while loading configuration for client authentication")?;
+
+        let domain_name_override = {
+            let domain_name_override = settings.get_string("network.tls.domain.name.override")?;
+            domain_name_override.is_empty().not().then_some(domain_name_override)
+        };
+
+        let retries = settings.get::<usize>("network.connect.retries")?;
+        let interval = Duration::from_millis(u64::try_from(settings.get_int("network.connect.interval.ms")?)?);
+
+        Ok(Self { host, port, ca_certs, client_auth, domain_name_override, retries, interval })
+    }
 }
 
 
