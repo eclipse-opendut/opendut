@@ -42,7 +42,6 @@ allow = [
     "MIT-0",
     # "MPL-2.0",  # Banned for now, as it adds complications for how openDuT can be used (e.g. Apache-2.0 allows proprietary forks, MPL-2.0 does not). See this discussion for more nuance: https://github.com/eclipse-zenoh/zenoh/issues/765
     "Python-2.0.1",
-    "OpenSSL",
     "Unicode-3.0",
     "Unicode-DFS-2016",
     "Zlib",
