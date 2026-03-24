@@ -6,7 +6,6 @@ use serde::{Deserialize, Serialize};
 use crate::cluster::ClusterId;
 use crate::create_id_type;
 use crate::viper::ViperSourceId;
-use super::ViperTestSuiteIdentifier;
 
 
 #[derive(Clone, Debug, PartialEq)]
@@ -14,7 +13,6 @@ pub struct ViperTestRunDescriptor {
     pub id: ViperTestId,
     pub name: ViperTestName,
     pub source: ViperSourceId,
-    pub suite: ViperTestSuiteIdentifier,
     pub cluster: ClusterId,
     pub parameters: HashMap<ViperTestParameterKey, ViperTestParameterValue>,
 }
