@@ -7,8 +7,8 @@ id = ""
 [network]
 carl.host = "localhost"
 carl.port = 8080
-connect.retries = 250
-connect.interval.ms = 5000
+connect.retries = 30
+connect.interval.ms = 60000  # maximum delay between connection attempts (uses exponential backoff)
 
 [network.tls]
 ca = "/etc/opendut/tls/ca.pem"

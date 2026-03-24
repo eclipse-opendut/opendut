@@ -11,9 +11,9 @@ use opendut_telemetry::opentelemetry_types::Opentelemetry;
 use opendut_util::settings::LoadedConfig;
 use std::net::IpAddr;
 use std::ops::Not;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
+use backon::{BackoffBuilder, ExponentialBuilder};
 use tokio::sync::{mpsc, Mutex};
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, error, info, trace, warn};
@@ -98,13 +98,19 @@ pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow:
 
 pub async fn connect_and_start(config: &ConnectAndStart<'_>, settings: &LoadedConfig, cancel_token: CancellationToken) -> anyhow::Result<()> {
 
-    let ConnectOptions { host, port, ca_certs, client_auth, domain_name_override, retries: maximum_retries, interval } =
+    let ConnectOptions { host, port, ca_certs, client_auth, domain_name_override, retries, interval } =
         ConnectOptions::load_from_config(settings)?;
 
-    let remaining_retries = AtomicUsize::new(maximum_retries);
+    let initial_backoff = ExponentialBuilder::new()
+        .with_max_times(retries)
+        .with_max_delay(interval);
 
-    let on_connect_success = || { //reset the number of retries after a connection is established
-        remaining_retries.store(maximum_retries, Ordering::Relaxed);
+    let backoff = Arc::new(Mutex::new(initial_backoff.build()));
+
+    let on_connect_success = async || { //reset the number of retries after a connection is established
+        let mut backoff = backoff.lock().await;
+
+        *backoff = initial_backoff.build();
     };
 
     opendut_util::crypto::install_default_provider();
@@ -149,12 +155,13 @@ pub async fn connect_and_start(config: &ConnectAndStart<'_>, settings: &LoadedCo
                 }
             }
             Err(cause) => {
-                if remaining_retries.load(Ordering::Relaxed) > 0 {
-                    let retries_left = remaining_retries.fetch_sub(1, Ordering::Relaxed);
-                    error!("Error in connection to CARL. Reconnecting in {interval:?}. {retries_left} retries left. Error was: {cause:?}");
+                let mut backoff = backoff.lock().await;
+
+                if let Some(delay) = backoff.next() {
+                    error!("Error in connection to CARL. Reconnecting in {delay:?}. Error was: {cause:?}");
 
                     tokio::select! {
-                        _ = tokio::time::sleep(interval) => {}
+                        _ = tokio::time::sleep(delay) => {}
                         _ = cancel_token.cancelled() => return Ok(()),
                     }
                 } else {

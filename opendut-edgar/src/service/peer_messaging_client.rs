@@ -79,7 +79,7 @@ impl PeerMessagingClient {
         carl: &mut CarlClient,
         rx_peer_configuration_state: Arc<Mutex<Receiver<EdgePeerConfigurationState>>>,
         remote_address: &IpAddr,
-        on_connect_success: &impl Fn(),
+        on_connect_success: &impl AsyncFn(),
         cancel_token: &CancellationToken,
     ) -> anyhow::Result<()> {
 
@@ -92,7 +92,7 @@ impl PeerMessagingClient {
             peer_configuration_state_sender_cancel.clone()
         ).await;
 
-        on_connect_success();
+        on_connect_success().await;
 
         loop {
             tokio::select! {
