@@ -45,7 +45,8 @@ impl NetbirdProcess {
                     .arg("--daemon-addr=unix:///var/run/netbird.sock")
                     .arg("--log-level").arg(config.log_level.to_string())
                     .arg("--log-file=console")
-                    .arg("--disable-profiles"); //not needed, since we manage the entire configuration and leads to errors when the NetBird process isn't running privileged
+                    .arg("--disable-profiles") //not needed, since we manage the entire configuration and leads to errors when the NetBird process isn't running privileged
+                    .env("SSL_CERT_FILE", crate::setup::constants::default_os_cert_store_ca_certificate_path());
 
                 command
             }
