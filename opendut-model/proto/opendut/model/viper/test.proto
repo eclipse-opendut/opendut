@@ -5,7 +5,6 @@ package opendut.model.viper;
 import "opendut/model/util/uuid.proto";
 import "opendut/model/viper/source.proto";
 import "opendut/model/viper_test_id.proto";
-import "opendut/viper/rt/test_suite.proto";
 import "opendut/model/cluster/cluster.proto";
 
 
@@ -13,7 +12,6 @@ message ViperTestRunDescriptor {
   ViperTestId id = 1;
   ViperTestName name = 2;
   opendut.model.viper.ViperSourceId source = 3;
-  opendut.viper.rt.test_suite.ViperTestSuiteIdentifier suite = 4;
   opendut.model.cluster.ClusterId cluster = 5;
   repeated ViperTestParameter parameters = 6;
 }
