@@ -150,12 +150,11 @@ pub async fn connect_and_start(config: &ConnectAndStart<'_>, settings: &LoadedCo
             }
             Err(cause) => {
                 if remaining_retries.load(Ordering::Relaxed) > 0 {
-                    let reconnect_interval = interval;
                     let retries_left = remaining_retries.fetch_sub(1, Ordering::Relaxed);
-                    error!("Error in connection to CARL. Reconnecting in {reconnect_interval:?}. {retries_left} retries left. Error was: {cause:?}");
+                    error!("Error in connection to CARL. Reconnecting in {interval:?}. {retries_left} retries left. Error was: {cause:?}");
 
                     tokio::select! {
-                        _ = tokio::time::sleep(reconnect_interval) => {}
+                        _ = tokio::time::sleep(interval) => {}
                         _ = cancel_token.cancelled() => return Ok(()),
                     }
                 } else {

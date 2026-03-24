@@ -85,7 +85,12 @@ impl PeerMessagingClient {
 
         let (mut rx_inbound, tx_outbound) = carl::open_stream(self.self_id, remote_address, carl).await?;
 
-        self.spawn_peer_configuration_state_sender(rx_peer_configuration_state, tx_outbound.clone()).await;
+        let peer_configuration_state_sender_cancel = CancellationToken::new();
+        self.spawn_peer_configuration_state_sender(
+            rx_peer_configuration_state,
+            tx_outbound.clone(),
+            peer_configuration_state_sender_cancel.clone()
+        ).await;
 
         on_connect_success();
 
@@ -151,6 +156,7 @@ impl PeerMessagingClient {
             }
         }
 
+        peer_configuration_state_sender_cancel.cancel();
         Ok(())
     }
 
@@ -170,22 +176,30 @@ impl PeerMessagingClient {
         &self,
         rx_peer_configuration_state: Arc<Mutex<Receiver<EdgePeerConfigurationState>>>,
         tx_outbound: Upstream,
+        peer_configuration_state_sender_cancel: CancellationToken,
     ) {
         tokio::spawn(async move {
             loop {
-                let message = rx_peer_configuration_state.lock().await
-                    .recv().await;
+                let mut rx_peer_configuration_state = rx_peer_configuration_state.lock().await;
 
-                match message {
-                    None => {
-                        info!("Peer configuration state channel closed.");
-                        break  // exit the loop and end the EdgePeerConfigurationState sender task
+                tokio::select! {
+                    message = rx_peer_configuration_state.recv() => {
+                        match message {
+                            None => {
+                                info!("Peer configuration state channel closed.");
+                                break  // exit the loop and end the EdgePeerConfigurationState sender task
+                            }
+                            Some(message) => {
+                                let _send_result = tx_outbound.send(message.clone()).await
+                                    .inspect_err(|error| {
+                                        error!("Failed to send PeerConfigurationState '{message:?}' to CARL. Encountered error was: {error}");
+                                    });
+                            }
+                        }
                     }
-                    Some(message) => {
-                        let _send_result = tx_outbound.send(message.clone()).await
-                            .inspect_err(|error| {
-                                error!("Failed to send PeerConfigurationState {message:?} to CARL. Encountered error was: {error}");
-                            });
+                    _ = peer_configuration_state_sender_cancel.cancelled() => {
+                        debug!("Peer configuration state sending cancelled.");
+                        break;
                     }
                 }
             }
