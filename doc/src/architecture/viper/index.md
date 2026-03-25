@@ -2,6 +2,116 @@
 
 VIPER provides a test execution platform.
 
+## Overview
+
+![](img/opendut_with_viper.svg)
+
+- Source code is stored outside of openDuT.
+- CARL uses the VIPER-Runtime to download, analyze and provide insights of VIPER test suites.
+- EDGAR uses the VIPER-Runtime to compile and run test suites.
+
+### Examples
+
+#### Common Structure
+
+```python
+# VIPER_VERSION = 1.0
+from viper import unittest
+
+class MyTestCases(unittest.TestCase):
+
+    def setUp(self):
+        pass
+
+    def test_my_awesome_shit(self):
+        pass
+
+    def tearDown(self):
+        pass
+```
+
+#### Assertion Functions
+
+```python
+# VIPER_VERSION = 1.0
+from viper import unittest
+
+class MyTestCase(unittest.TestCase):
+
+    def test_addition(self):
+        self.assertEquals(5 + 7, 12)
+```
+
+
+#### Parameters
+
+```python
+# VIPER_VERSION = 1.0
+from viper import *
+
+MESSAGE = parameters.TextParameter("message")
+
+class TestCases:
+
+    def test_my_parameter():
+        message = self.parameters.get(MESSAGE)
+        self.assertEquals(message, "Hello World")
+```
+
+
+#### Container API
+
+```python
+# VIPER_VERSION = 1.0
+from viper import unittest
+
+class MyTestCases(unittest.TestCase):
+
+    def test_with_container(self):
+
+        my_container = self.container.create(
+            "docker.io/library/alpine:latest",
+            ["Hello World"],
+            entrypoint=["echo"],
+            env = ["DEBUG=true"],
+            user="1000",
+            name="MyContainer"
+        )
+
+        self.container.start(my_container)
+
+        self.container.stop(my_container)
+
+        self.container.remove(my_container)
+```
+
+## Architecture of VIPER
+
+![](img/layered_architecture.svg)
+
+### viper-rt
+
+The VIPER-Runtime is the heart of VIPER implemented as library to be included in openDuT. It provides:
+- The main API for openDuT.
+- Functions to download, compile and run tests written in Python.
+- Is entirely written in Rust so it can be integrated into openDuT easily.
+- Provides an abstraction over RustPython.
+
+### viper-py
+Main API a test author works against. It provides data structures and functions to:
+- Exchange information with openDuT.
+- Interact with the environment.
+- Provides capabilities to define test- and assert logic.
+- Written in Rust and a little bit in Python.
+
+### viper-cli
+
+The viper-cli is a command line interface (CLI) to:
+- Setup and maintain test suites.
+- Compile and check test locally before deployment.
+- Mock "real" interfaces (can, files, etc.) to enable a 'dry-run' of a test suite.
+
+## Integration
 
 This is how we plan to integrate VIPER into the openDuT communication:
 
