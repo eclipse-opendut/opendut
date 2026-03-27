@@ -43,7 +43,6 @@ pub fn ViperTestsOverview() -> impl IntoView {
     let table_headings = vec![
         TableHeading::new(String::from("Name")),
         TableHeading::new(String::from("Viper Source")),
-        TableHeading::new(String::from("Viper Test Suite")),
         TableHeading::new(String::from("Action")).set_narrow(),
     ];
 

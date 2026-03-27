@@ -8,7 +8,7 @@ use crate::app::use_app_globals;
 use crate::components::use_active_tab;
 use crate::routing::{navigate_to, WellKnownRoutes};
 use crate::viper_tests::configurator::components::Controls;
-use crate::viper_tests::configurator::tabs::{ClusterTab, GeneralTab, SourceTab, SuiteTab, TabIdentifier};
+use crate::viper_tests::configurator::tabs::{ClusterTab, GeneralTab, SourceTab, ParametersTab, TabIdentifier};
 use crate::viper_tests::configurator::types::{ClusterSelection, SourceSelection, UserViperTestConfiguration};
 
 mod tabs;
@@ -47,7 +47,6 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                 id: viper_test_id,
                 name: UserInputValue::Left(UserInputError::from("Enter a valid viper test name.")),
                 viper_source: SourceSelection::Left(String::from("Select a viper test source.")),
-                viper_test_suite: UserInputValue::Left(String::from("Enter a viper test suite.")),
                 cluster: ClusterSelection::Left(String::from("Enter a cluster.")),
                 parameters: HashMap::new(),
                 is_new: true,
@@ -59,11 +58,10 @@ pub fn ViperTestConfigurator() -> impl IntoView {
             async move {
                 if let Ok(configuration) = carl.viper.get_viper_test_run_descriptor(viper_test_id).await {
                     viper_test_configuration.update(|user_configuration| {
-                        let ViperTestRunDescriptor { id: _, name, source: viper_source, suite: viper_test_suite, cluster, parameters } = configuration;
+                        let ViperTestRunDescriptor { id: _, name, source: viper_source, cluster, parameters } = configuration;
 
                         user_configuration.name = UserInputValue::Right(name.value().to_owned());
                         user_configuration.viper_source = SourceSelection::Right(viper_source);
-                        user_configuration.viper_test_suite = UserInputValue::Right(viper_test_suite.to_string());
                         user_configuration.cluster = ClusterSelection::Right(cluster);
 
                         let mut configured_parameters: HashMap<String, UserInputValue> = HashMap::new();
@@ -124,9 +122,9 @@ pub fn ViperTestConfigurator() -> impl IntoView {
             ).with_is_error(Signal::derive(move || !viper_test_configuration.read().valid_viper_source_tab())),
 
             Tab::from_title_and_href(
-                String::from("Viper Test Suite"),
-                TabIdentifier::ViperTestSuite.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || !viper_test_configuration.read().valid_viper_test_suite_tab())),
+                String::from("Parameters"),
+                TabIdentifier::Parameters.as_str().to_owned()
+            ).with_is_error(Signal::derive(move || !viper_test_configuration.read().valid_parameters_tab())),
 
             Tab::from_title_and_href(
                 String::from("Cluster"),
@@ -156,7 +154,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                                 { move || match active_tab.get() {
                                     TabIdentifier::General => view! { <GeneralTab viper_test_configuration /> }.into_any(),
                                     TabIdentifier::ViperSource => view! { <SourceTab viper_test_configuration /> }.into_any(),
-                                    TabIdentifier::ViperTestSuite => view! { <SuiteTab viper_test_configuration /> }.into_any(),
+                                    TabIdentifier::Parameters => view! { <ParametersTab viper_test_configuration /> }.into_any(),
                                     TabIdentifier::Cluster => view! { <ClusterTab viper_test_configuration /> }.into_any(),
                                 }}
                             </Tabs>
