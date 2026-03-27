@@ -3,7 +3,7 @@ pub mod validation;
 use std::collections::HashMap;
 use opendut_lea_components::{Ior, UserInputValue};
 use opendut_model::cluster::ClusterId;
-use opendut_model::viper::{ViperTestRunDescriptor, ViperTestId, ViperTestName, ViperTestParameterKey, ViperTestParameterValue, ViperSourceId, ViperTestSuiteIdentifier};
+use opendut_model::viper::{ViperTestRunDescriptor, ViperTestId, ViperTestName, ViperTestParameterKey, ViperTestParameterValue, ViperSourceId};
 
 pub type SourceSelectionError = String;
 pub type SourceSelection = Ior<SourceSelectionError, ViperSourceId>;
@@ -33,7 +33,6 @@ pub struct UserViperTestConfiguration {
     pub id: ViperTestId,
     pub name: UserInputValue,
     pub viper_source: SourceSelection,
-    pub viper_test_suite: UserInputValue,
     pub cluster: ClusterSelection,
     pub parameters: HashMap<String, UserInputValue>,
     pub is_new: bool,
@@ -54,14 +53,6 @@ impl TryFrom<UserViperTestConfiguration> for ViperTestRunDescriptor {
         let source = configuration
             .viper_source
             .right_ok_or(ViperTestMisconfiguration::InvalidSourceId)?;
-
-        let suite = configuration
-            .viper_test_suite
-            .right_ok_or(ViperTestMisconfiguration::InvalidSuite)
-            .and_then(|suite_id| {
-                ViperTestSuiteIdentifier::try_from(suite_id)
-                    .map_err(|_| ViperTestMisconfiguration::InvalidSuite)
-            })?;
 
         let cluster = configuration
             .cluster
@@ -86,7 +77,6 @@ impl TryFrom<UserViperTestConfiguration> for ViperTestRunDescriptor {
             id: configuration.id,
             name,
             source,
-            suite,
             cluster,
             parameters,
         })

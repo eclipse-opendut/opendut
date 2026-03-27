@@ -42,12 +42,6 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
         }
     });
 
-    let viper_test_suite = create_read_slice(viper_test_run_descriptor,
-        |viper_test_run_descriptor| {
-            viper_test_run_descriptor.suite.to_string()
-        }
-    );
-
     let configurator_href = Signal::derive(move || { format!("/viper_tests/{}/configure/general", viper_test_id.get()) });
     let viper_source_configurator_href = move || { format!("/viper_sources/{}/configure/general", viper_source_id.get()) };
 
@@ -68,10 +62,6 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
                     </OverviewTableCell>
                 }
             })}
-        
-            <OverviewTableCell>
-                <p> { viper_test_suite } </p>
-            </OverviewTableCell>
         
             <OverviewTableCell>
                 <div class="is-pulled-right">
