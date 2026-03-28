@@ -7,8 +7,10 @@ use crate::core::commands::TRUNK;
 use crate::fs;
 
 use crate::core::types::parsing::package::PackageSelection;
-use crate::util::RunRequiringSuccess;
 use crate::Package;
+
+use cicero::command_exit_ok::CommandExitOk;
+
 
 const PACKAGE: Package = Package::Lea;
 
@@ -95,7 +97,7 @@ pub mod run {
             .arg("watch")
             .args(passthrough)
             .current_dir(self_dir())
-            .run_requiring_success()?;
+            .status_exit_ok()?;
         Ok(())
     }
 }
@@ -121,7 +123,7 @@ fn build_impl(release: bool, passthrough: Vec<String>, out_dir: PathBuf) -> anyh
     command
         .args(passthrough)
         .current_dir(working_dir)
-        .run_requiring_success()?;
+        .status_exit_ok()?;
 
     info!("Placed distribution into: {}", out_dir.display());
 

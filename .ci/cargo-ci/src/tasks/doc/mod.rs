@@ -3,8 +3,6 @@ use std::path::PathBuf;
 
 use tracing::info;
 
-use crate::util::RunRequiringSuccess;
-
 mod book;
 mod homepage;
 mod latex;

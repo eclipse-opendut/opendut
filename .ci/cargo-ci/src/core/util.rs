@@ -1,29 +1,6 @@
 use crate::fs;
-use std::process::Command;
-use anyhow::anyhow;
 
 use assert_fs::assert::PathAssert;
-
-
-pub trait RunRequiringSuccess {
-    fn run_requiring_success(&mut self) -> anyhow::Result<()>;
-}
-impl RunRequiringSuccess for Command {
-    fn run_requiring_success(&mut self) -> anyhow::Result<()> {
-        let status = self.status()
-            .unwrap_or_else(|cause| panic!("Error while running command: {self:?}\n  {cause}"));
-
-        if status.success() {
-            Ok(())
-        } else {
-            let mut error = format!("Error while running command: {self:?}\n");
-            if let Some(status) = &status.code() {
-                error += format!("  Exited with status code {status}.\n").as_ref();
-            }
-            Err(anyhow!(error))
-        }
-    }
-}
 
 
 pub mod file {

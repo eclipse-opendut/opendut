@@ -1,10 +1,10 @@
 use crate::fs;
 use std::path::PathBuf;
 
+use cicero::command_exit_ok::CommandExitOk;
 use tracing::{debug, info, warn};
 use crate::core::commands::CARGO_TARPAULIN;
 use crate::core::constants;
-use crate::core::util::RunRequiringSuccess;
 
 /// Generate a unit test coverage report
 #[derive(Debug, clap::Parser)]
@@ -33,7 +33,7 @@ pub fn coverage() -> anyhow::Result<()> {
             "--output-dir", out_dir.to_str().unwrap(),
             "--fail-immediately",
         ])
-        .run_requiring_success()?;
+        .status_exit_ok()?;
 
     let files = fs::read_dir(&out_dir)?
         .filter_map(|entry| {

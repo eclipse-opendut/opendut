@@ -5,7 +5,6 @@ use tracing_subscriber::EnvFilter;
 pub(crate) use core::constants;
 pub(crate) use core::metadata;
 pub(crate) use core::types::Package;
-pub(crate) use core::util;
 use crate::core::types::parsing::package::PackageSelection;
 
 mod core;

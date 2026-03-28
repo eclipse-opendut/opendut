@@ -1,11 +1,11 @@
 use std::path::PathBuf;
 use cicero::path::repo_path;
+use cicero::command_exit_ok::CommandExitOk;
 use crate::fs;
 use crate::core::commands;
 use crate::constants;
 use crate::core::types::parsing::package::PackageSelection;
 use crate::Package;
-use crate::util::RunRequiringSuccess;
 
 mod sbom;
 
@@ -62,7 +62,8 @@ pub mod check {
             .arg("--config").arg(cargo_deny_toml())
             .arg("--allow=no-license-field") //As of cargo-deny v0.18.9, there was no way to ignore this lint in the deny.toml, so we set it here. The lint gave warnings for some transitive dependencies, where we cannot immediately do anything about it. Cargo-deny should also fall back to reading the license from the license file in the source code of those crates, according to this: https://embarkstudios.github.io/cargo-deny/checks/licenses/diags.html#no-license-field
             .current_dir(repo_path!())
-            .run_requiring_success()
+            .status_exit_ok()?;
+        Ok(())
     }
 }
 
@@ -85,7 +86,7 @@ pub mod json {
             .arg("--format=json")
             .current_dir(repo_path!().join(package.ident()))
             .stdout(Stdio::from(std::fs::File::create(&out_file)?))
-            .run_requiring_success()?;
+            .status_exit_ok()?;
 
         info!("Wrote licenses for package '{package}' to path: {}", out_file.display());
 
@@ -108,7 +109,6 @@ mod texts {
     use std::path::PathBuf;
     use tracing::info;
     use crate::core::constants;
-    use crate::core::util::RunRequiringSuccess;
 
     #[derive(Debug, clap::Parser)]
     pub struct TextsCli;
@@ -122,7 +122,7 @@ mod texts {
 
         commands::CARGO_BUNDLE_LICENSES.command()
             .args(["--format=yaml", "--output", out_path.to_str().unwrap()])
-            .run_requiring_success()?;
+            .status_exit_ok()?;
 
         info!("Generated bundle of license texts here: {}", out_path.display());
 

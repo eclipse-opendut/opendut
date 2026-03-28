@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use anyhow::anyhow;
+use cicero::command_exit_ok::CommandExitOk;
 use clap::ArgAction;
 
 use crate::core::{OPENDUT_REPO_ROOT, OPENDUT_VM_NAME};
@@ -76,12 +77,12 @@ impl VagrantCli {
             TaskCli::Destroy => {
                 Command::vagrant().arg("destroy").run();
                 // always update the vagrant box once it is destroyed
-                Command::vagrant().arg("box").arg("update").run_requiring_success()?;
+                Command::vagrant().arg("box").arg("update").status_exit_ok()?;
 
                 println!("\nVagrant box cleanup notes");
-                Command::vagrant().arg("box").arg("outdated").run_requiring_success()?;
+                Command::vagrant().arg("box").arg("outdated").status_exit_ok()?;
                 println!("\nListing all vagrant boxes:");
-                Command::vagrant().arg("box").arg("list").run_requiring_success()?;
+                Command::vagrant().arg("box").arg("list").status_exit_ok()?;
                 println!("\nNOTE: You may want to delete old boxes with the following command: ");
                 println!("  vagrant box remove ubuntu/jammy64 --box-version <X.Y.Z>");
             }

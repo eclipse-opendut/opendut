@@ -1,3 +1,4 @@
+use cicero::command_exit_ok::CommandExitOk;
 use clap::ArgAction;
 use std::fs;
 use std::path::PathBuf;
@@ -6,7 +7,6 @@ use anyhow::Context;
 use home::home_dir;
 use crate::core::carl_config::CarlConfiguration;
 use crate::core::docker::command::DockerCommand;
-use crate::core::command_ext::TheoCommandExtensions;
 use crate::core::project::{load_theo_environment_variables, ProjectRootDir};
 use crate::core::{localenv, TestenvMode};
 
@@ -62,7 +62,7 @@ impl DevCli {
                     .env("OPENDUT_CARL_CUSTOM_CONFIG_PATH", carl_config_path)
                     .env("SSL_CERT_FILE", &localenv_root_ca)
                     .arg("carl")
-                    .run_requiring_success()?;
+                    .status_exit_ok()?;
             }
             TaskCli::EdgarShell => {
                 DockerCommand::new()

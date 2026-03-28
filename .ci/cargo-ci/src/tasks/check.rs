@@ -1,8 +1,9 @@
 use std::process::Command;
 
+use cicero::command_exit_ok::CommandExitOk;
+
 use crate::tasks::licenses::check::check_licenses;
 use crate::tasks::test;
-use crate::util::RunRequiringSuccess;
 
 /// Performs verification tasks.
 #[derive(Debug, clap::Parser)]
@@ -47,5 +48,6 @@ fn clippy() -> anyhow::Result<()> {
             "--workspace",
             "--all-features",
         ])
-        .run_requiring_success()
+        .status_exit_ok()?;
+    Ok(())
 }

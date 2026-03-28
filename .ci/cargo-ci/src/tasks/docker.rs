@@ -2,9 +2,9 @@ use std::process::Command;
 use std::str::FromStr;
 
 use crate::core::types::Package;
-use crate::core::util::RunRequiringSuccess;
 use anyhow::anyhow;
 use cicero::path::repo_path;
+use cicero::command_exit_ok::CommandExitOk;
 use clap::ArgAction;
 
 /// A Docker tag
@@ -90,7 +90,7 @@ pub fn build_docker_image(package: &Package, tag: Option<DockerTag>) -> anyhow::
             &container_uri,
             ".",
         ])
-        .run_requiring_success()?;
+        .status_exit_ok()?;
     Ok(())
 }
 
@@ -99,6 +99,6 @@ pub fn publish_docker_image(package: &Package, tag: Option<DockerTag>) -> anyhow
     Command::new("docker")
         .current_dir(repo_path!())
         .args(["push", &docker_container_uri(package, &tag)])
-        .run_requiring_success()?;
+        .status_exit_ok()?;
     Ok(())
 }

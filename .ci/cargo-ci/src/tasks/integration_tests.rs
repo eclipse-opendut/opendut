@@ -1,5 +1,5 @@
-use crate::core::util::RunRequiringSuccess;
 use anyhow::Context;
+use cicero::command_exit_ok::CommandExitOk;
 use cicero::distribution::build::Target;
 use cicero::path::repo_path;
 use serde::Deserialize;
@@ -83,7 +83,7 @@ fn run_edgar_integration_test_binary_in_docker(edgar_test_binary: String) -> any
         .arg("-c")
         .arg(format!("/tmp/debug/{edgar_test_binary} --include-ignored --nocapture"));
 
-    docker.run_requiring_success()?;
+    docker.status_exit_ok()?;
 
     Ok(())
 }

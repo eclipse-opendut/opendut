@@ -14,6 +14,7 @@ opendut-edgar-kernel-modules = { workspace = true, optional = true }
 
 anyhow = { workspace = true }
 cargo_toml = { workspace = true }
+cicero = { workspace = true }
 clap = { workspace = true, features = ["derive", "wrap_help", "env"] }
 ctrlc = { workspace = true }
 dotenvy = { workspace = true }

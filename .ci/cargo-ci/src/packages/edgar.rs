@@ -3,6 +3,7 @@ use std::path::PathBuf;
 
 use anyhow::{anyhow, bail, Context};
 use cicero::distribution::build::Target;
+use cicero::command_exit_ok::CommandExitOk;
 use tracing::debug;
 
 use crate::Package;
@@ -216,7 +217,6 @@ pub mod distribution {
         use flate2::read::GzDecoder;
         use tar::Archive;
         use crate::core::commands::CROSS;
-        use crate::core::util::RunRequiringSuccess;
         use super::*;
 
         #[tracing::instrument(skip_all)]
@@ -284,7 +284,7 @@ pub mod distribution {
                 .arg("--target").arg(target.to_string())
                 .env("RUSTFLAGS", "-Awarnings") //ignore warnings from rperf source code
                 .current_dir(current_directory)
-                .run_requiring_success()?;
+                .status_exit_ok()?;
 
             let out_dir = target_directory.join(target.to_string()).join("release").join("rperf");
             debug!("The rperf distribution was built to {out_dir:?}");

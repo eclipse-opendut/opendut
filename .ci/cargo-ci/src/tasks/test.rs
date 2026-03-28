@@ -1,5 +1,6 @@
 use std::process::Command;
-use crate::core::util::RunRequiringSuccess;
+
+use cicero::command_exit_ok::CommandExitOk;
 
 /// Run tests with better defaults (all features, logging and nocapture enabled)
 #[derive(Debug, clap::Parser)]
@@ -59,5 +60,7 @@ pub fn test(params: TestCli) -> anyhow::Result<()> {
 
     command.args(["--", "--nocapture"]);
 
-    command.run_requiring_success()
+    command.status_exit_ok()?;
+
+    Ok(())
 }

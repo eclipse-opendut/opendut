@@ -1,4 +1,4 @@
-use cicero::path::repo_path;
+use cicero::{command_exit_ok::CommandExitOk, path::repo_path};
 use crate::core::commands::MDBOOK;
 use super::*;
 
@@ -10,7 +10,7 @@ pub fn open() -> anyhow::Result<()> {
         .arg("--port=4000")
         .arg("--dest-dir").arg(out_dir())
         .current_dir(doc_dir())
-        .run_requiring_success()?;
+        .status_exit_ok()?;
     Ok(())
 }
 
@@ -22,7 +22,7 @@ pub fn build() -> anyhow::Result<()> {
         .arg("build")
         .arg("--dest-dir").arg(&out_dir)
         .current_dir(doc_dir())
-        .run_requiring_success()?;
+        .status_exit_ok()?;
 
     Ok(())
 }
