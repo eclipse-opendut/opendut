@@ -6,10 +6,10 @@ use assert_fs::assert::PathAssert;
 
 
 pub trait RunRequiringSuccess {
-    fn run_requiring_success(&mut self) -> crate::Result;
+    fn run_requiring_success(&mut self) -> anyhow::Result<()>;
 }
 impl RunRequiringSuccess for Command {
-    fn run_requiring_success(&mut self) -> crate::Result {
+    fn run_requiring_success(&mut self) -> anyhow::Result<()> {
         let status = self.status()
             .unwrap_or_else(|cause| panic!("Error while running command: {self:?}\n  {cause}"));
 

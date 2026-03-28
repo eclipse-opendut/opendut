@@ -12,7 +12,7 @@ use crate::core::project::ProjectRootDir;
 
 pub(crate) trait TheoCommandExtensions {
     fn vagrant() -> Self;
-    fn run_requiring_success(&mut self) -> crate::Result;
+    fn run_requiring_success(&mut self) -> anyhow::Result<()>;
     fn run(&mut self);
 }
 
@@ -31,7 +31,7 @@ impl TheoCommandExtensions for Command {
         command
     }
 
-    fn run_requiring_success(&mut self) -> crate::Result {
+    fn run_requiring_success(&mut self) -> anyhow::Result<()> {
         let status = self.status()
             .unwrap_or_else(|cause| panic!("Error while running command: '{self:?}'\n  {cause}"));
 

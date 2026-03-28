@@ -3,7 +3,7 @@ use crate::core::commands::MDBOOK;
 use super::*;
 
 #[tracing::instrument]
-pub fn open() -> crate::Result {
+pub fn open() -> anyhow::Result<()> {
     MDBOOK.command()
         .arg("serve")
         .arg("--open")
@@ -15,7 +15,7 @@ pub fn open() -> crate::Result {
 }
 
 #[tracing::instrument]
-pub fn build() -> crate::Result {
+pub fn build() -> anyhow::Result<()> {
     let out_dir = out_dir();
 
     MDBOOK.command()

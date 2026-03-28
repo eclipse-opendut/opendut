@@ -21,7 +21,7 @@ pub struct DistributionBuildCli {
 }
 
 #[tracing::instrument(skip_all)]
-pub fn distribution_build(package: Package, target: Target, release_build: bool) -> crate::Result {
+pub fn distribution_build(package: Package, target: Target, release_build: bool) -> anyhow::Result<()> {
     let mut command = CROSS.command();
 
     command

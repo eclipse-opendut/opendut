@@ -53,7 +53,7 @@ pub enum TaskCli {
 
 impl EdgarCli {
     #[tracing::instrument(name="edgar", skip_all)]
-    pub fn run(self) -> crate::Result {
+    pub fn run(self) -> anyhow::Result<()> {
         match self.task {
             TaskCli::DistributionBuild(crate::tasks::build::DistributionBuildCli { target, release_build }) => {
                 build::build_release(target, release_build)?;
@@ -90,7 +90,7 @@ impl EdgarCli {
 pub mod build {
     use super::*;
 
-    pub fn build_release(target: Target, release_build: bool) -> crate::Result {
+    pub fn build_release(target: Target, release_build: bool) -> anyhow::Result<()> {
         crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)
     }
     pub fn out_dir(target: Target) -> PathBuf {
@@ -104,7 +104,7 @@ pub mod distribution {
     use super::*;
 
     #[tracing::instrument]
-    pub fn edgar_distribution(target: Target, release_build: bool) -> crate::Result {
+    pub fn edgar_distribution(target: Target, release_build: bool) -> anyhow::Result<()> {
         use crate::tasks::distribution;
 
         let _ = netbird::map_target(target)?; //check target supported
@@ -144,7 +144,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument(skip_all)]
-        pub fn netbird_client_distribution(target: Target) -> crate::Result {
+        pub fn netbird_client_distribution(target: Target) -> anyhow::Result<()> {
             //Modelled after documentation here: https://docs.netbird.io/how-to/getting-started#binary-install
 
             let metadata = crate::metadata::cargo();
@@ -220,7 +220,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument(skip_all)]
-        pub fn rperf_distribution(target: Target) -> crate::Result {
+        pub fn rperf_distribution(target: Target) -> anyhow::Result<()> {
             let metadata = crate::metadata::cargo();
             let version = metadata.workspace_metadata["ci"]["rperf"]["version"].as_str()
                 .ok_or(anyhow!("Rperf version not defined."))?;
@@ -237,7 +237,7 @@ pub mod distribution {
             let temp_dir_path = std::env::temp_dir()
                 .join("opendut-ci-edgar-rperf-distribution-b31c2679-4669-4a9c-88bd-53ebd3e06373"); //build outside the target-dir, because otherwise rperf is thought to be part of this Cargo workspace
             let temp_dir_subpath = unpack_rperf_repository(&rperf_archive, &temp_dir_path, version)?;
-            
+
             let rperf_binary = build_rperf(&temp_dir_path, &temp_dir_subpath, target)?;
 
             let out_file = out_file(SELF_PACKAGE, target);
@@ -251,7 +251,7 @@ pub mod distribution {
 
             Ok(())
         }
-        fn download_rperf_repository(version: &str, rperf_artifact: &Path) -> crate::Result {
+        fn download_rperf_repository(version: &str, rperf_artifact: &Path) -> anyhow::Result<()> {
             let url = format!("https://github.com/opensource-3d-p/rperf/archive/refs/tags/v{version}.tar.gz");
 
             debug!("Downloading rperf_v{version}.tar.gz...");
@@ -272,7 +272,7 @@ pub mod distribution {
             archive.unpack(temp_dir_path)?;
             let temp_dir_subpath = temp_dir_path.join(format!("rperf-{version}"));
             debug!("The rperf repository was unpacked to {:?}", temp_dir_subpath);
-            
+
             Ok(temp_dir_subpath)
         }
         fn build_rperf(target_directory: &Path, current_directory: &Path, target: Target) -> Result<PathBuf, anyhow::Error>  {
@@ -288,7 +288,7 @@ pub mod distribution {
 
             let out_dir = target_directory.join(target.to_string()).join("release").join("rperf");
             debug!("The rperf distribution was built to {out_dir:?}");
-            
+
             Ok(out_dir)
         }
         fn download_dir() -> PathBuf {
@@ -305,7 +305,7 @@ pub mod distribution {
         use crate::tasks::distribution::out_package_dir;
         use super::*;
 
-        pub fn empty_plugins_dir(target: Target) -> crate::Result {
+        pub fn empty_plugins_dir(target: Target) -> anyhow::Result<()> {
             let plugins_dir = out_package_dir(SELF_PACKAGE, target).join("plugins");
             fs::create_dir_all(&plugins_dir)?;
 
@@ -329,7 +329,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument(skip_all)]
-        pub fn validate_contents(target: Target) -> crate::Result {
+        pub fn validate_contents(target: Target) -> anyhow::Result<()> {
 
             let unpack_dir = {
                 let unpack_dir = assert_fs::TempDir::new()?;

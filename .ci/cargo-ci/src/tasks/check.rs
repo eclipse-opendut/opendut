@@ -16,13 +16,13 @@ pub struct CheckCli {
 }
 
 impl CheckCli {
-    pub fn run(self) -> crate::Result {
+    pub fn run(self) -> anyhow::Result<()> {
         check(self.all_features, self.features)
     }
 }
 
 #[tracing::instrument(skip_all)]
-pub fn check(all_features: bool, features: Vec<String>) -> crate::Result {
+pub fn check(all_features: bool, features: Vec<String>) -> anyhow::Result<()> {
 
     test::test(test::TestCli {
         all_features,
@@ -40,7 +40,7 @@ pub fn check(all_features: bool, features: Vec<String>) -> crate::Result {
 }
 
 #[tracing::instrument]
-fn clippy() -> crate::Result {
+fn clippy() -> anyhow::Result<()> {
     Command::new("cargo")
         .args([
             "clippy",

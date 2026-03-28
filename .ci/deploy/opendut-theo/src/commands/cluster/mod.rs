@@ -31,7 +31,7 @@ pub enum TaskCli {
 }
 
 impl TestClusterCli {
-    pub(crate) fn run(&self) -> crate::Result {
+    pub(crate) fn run(&self) -> anyhow::Result<()> {
         match self.task {
             TaskCli::Start => {
                 println!("Stopping if EDGAR cluster is already running...");
@@ -147,7 +147,7 @@ fn check_edgar_ping_can() -> Result<i32, Error> {
         .expect_show_status("Failed to start CAN ping sender on edgar-peer-2.")
 }
 
-fn stop_if_running() -> crate::Result {
+fn stop_if_running() -> anyhow::Result<()> {
     docker_compose_down(DockerCoreServices::Edgar.as_str(), false)?;
     delete_deployment_and_peers()?;
     Ok(())

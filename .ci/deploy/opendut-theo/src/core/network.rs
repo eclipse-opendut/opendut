@@ -57,7 +57,7 @@ static CONTAINER_NAME_MAP: phf::Map<&'static str, DockerHostnames> = phf_map! {
     "opendut-netbird-management" => DockerHostnames::NetbirdManagement,
 };
 
-pub(crate) fn docker_inspect_network() -> crate::Result {
+pub(crate) fn docker_inspect_network() -> anyhow::Result<()> {
     let output = DockerCommand::new()
         .arg("network")
         .arg("inspect")

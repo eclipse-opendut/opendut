@@ -41,7 +41,7 @@ pub struct BuildCli {
 
 impl LeaCli {
     #[tracing::instrument(name="lea", skip(self))]
-    pub fn run(self) -> crate::Result {
+    pub fn run(self) -> anyhow::Result<()> {
         match self.task {
             TaskCli::Build(BuildCli { passthrough }) => {
                 let release_build = false;
@@ -61,7 +61,7 @@ pub mod build {
     use super::*;
 
     #[tracing::instrument]
-    pub fn build(release_build: bool, passthrough: Vec<String>) -> crate::Result {
+    pub fn build(release_build: bool, passthrough: Vec<String>) -> anyhow::Result<()> {
         build_impl(release_build, passthrough, out_dir())
     }
 
@@ -74,7 +74,7 @@ pub mod distribution_build {
     use super::*;
 
     #[tracing::instrument]
-    pub fn distribution_build(passthrough: Vec<String>) -> crate::Result {
+    pub fn distribution_build(passthrough: Vec<String>) -> anyhow::Result<()> {
         let release = true;
         build_impl(release, passthrough, out_dir())
     }
@@ -88,7 +88,7 @@ pub mod run {
     use super::*;
 
     #[tracing::instrument(skip_all)]
-    pub fn run(passthrough: Vec<String>) -> crate::Result {
+    pub fn run(passthrough: Vec<String>) -> anyhow::Result<()> {
         info!("Starting LEA. You can view the web-UI at: https://localhost:8080");
 
         TRUNK.command()
@@ -104,7 +104,7 @@ pub fn self_dir() -> PathBuf {
     repo_path!("opendut-lea/")
 }
 
-fn build_impl(release: bool, passthrough: Vec<String>, out_dir: PathBuf) -> crate::Result {
+fn build_impl(release: bool, passthrough: Vec<String>, out_dir: PathBuf) -> anyhow::Result<()> {
     let working_dir = self_dir();
 
     fs::create_dir_all(&out_dir)?;

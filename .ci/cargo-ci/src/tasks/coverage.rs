@@ -11,14 +11,14 @@ use crate::core::util::RunRequiringSuccess;
 pub struct CoverageCli;
 
 impl CoverageCli {
-    pub fn run(self) -> crate::Result {
+    pub fn run(self) -> anyhow::Result<()> {
         coverage()
     }
 }
 
 
 #[tracing::instrument]
-pub fn coverage() -> crate::Result {
+pub fn coverage() -> anyhow::Result<()> {
     clean()?;
 
     let out_dir = out_dir();
@@ -54,7 +54,7 @@ pub fn coverage() -> crate::Result {
 }
 
 #[tracing::instrument]
-pub fn clean() -> crate::Result {
+pub fn clean() -> anyhow::Result<()> {
     let out_dir = out_dir();
     if out_dir.exists() {
         fs::remove_dir_all(&out_dir)?;

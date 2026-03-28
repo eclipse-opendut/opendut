@@ -31,7 +31,7 @@ pub enum TaskCli {
 
 impl LicensesCli {
     #[tracing::instrument(skip_all)]
-    pub fn run(self, packages: PackageSelection) -> crate::Result {
+    pub fn run(self, packages: PackageSelection) -> anyhow::Result<()> {
         match self.task {
             TaskCli::Check => {
                 check::check_licenses()?;
@@ -56,7 +56,7 @@ pub mod check {
     use super::*;
 
     #[tracing::instrument(skip_all)]
-    pub fn check_licenses() -> crate::Result {
+    pub fn check_licenses() -> anyhow::Result<()> {
         commands::CARGO_DENY.command()
             .arg("check")
             .arg("--config").arg(cargo_deny_toml())
@@ -73,7 +73,7 @@ pub mod json {
     use super::*;
 
     #[tracing::instrument(skip_all)]
-    pub fn export_json(package: Package) -> crate::Result {
+    pub fn export_json(package: Package) -> anyhow::Result<()> {
         let out_file = out_file(package);
         fs::create_dir_all(out_file.parent().unwrap())?;
 
@@ -114,7 +114,7 @@ mod texts {
     pub struct TextsCli;
 
     #[tracing::instrument(skip_all)]
-    pub fn collect_license_texts() -> crate::Result {
+    pub fn collect_license_texts() -> anyhow::Result<()> {
         let out_dir = out_dir();
         fs::create_dir_all(&out_dir)?;
 

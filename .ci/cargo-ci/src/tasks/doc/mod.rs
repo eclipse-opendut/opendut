@@ -46,7 +46,7 @@ enum HomepageCli {
 }
 
 impl DocCli {
-    pub fn run(&self) -> crate::Result {
+    pub fn run(&self) -> anyhow::Result<()> {
         match &self.kind {
             DocKindCli::Book { task } => match task {
                 BookCli::Build => {

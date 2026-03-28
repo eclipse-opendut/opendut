@@ -2,7 +2,7 @@ use crate::commands::dev::DevCli;
 use crate::commands::testenv::TestenvCli;
 use crate::commands::vagrant::VagrantCli;
 use crate::core::project::ProjectRootDir;
-use crate::core::{project, Result};
+use crate::core::project;
 use clap::Parser;
 use std::path::PathBuf;
 
@@ -20,7 +20,7 @@ enum Cli {
 }
 
 
-fn main() -> Result {
+fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
         .with_writer(std::io::stderr)

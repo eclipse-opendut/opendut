@@ -22,7 +22,7 @@ fn enumerate_tex_files() -> Vec<PathBuf> {
         .collect()
 }
 
-fn create_pdf_file(latex_file: &PathBuf, working_dir: &Path) -> crate::Result {
+fn create_pdf_file(latex_file: &PathBuf, working_dir: &Path) -> anyhow::Result<()> {
     let pdf_status = Command::new("pdflatex")
         .arg("-interaction=nonstopmode")
         .arg("-halt-on-error")
@@ -38,7 +38,7 @@ fn create_pdf_file(latex_file: &PathBuf, working_dir: &Path) -> crate::Result {
     Ok(())
 }
 
-fn convert_pdf_to_png_image(pdf_file: &PathBuf, png_file: &PathBuf) -> crate::Result {
+fn convert_pdf_to_png_image(pdf_file: &PathBuf, png_file: &PathBuf) -> anyhow::Result<()> {
     // https://imagemagick.org/script/command-line-options.php#quality
     let convert_status = Command::new("convert")
         .arg("-density").arg("300")  // 300 dpi
@@ -55,7 +55,7 @@ fn convert_pdf_to_png_image(pdf_file: &PathBuf, png_file: &PathBuf) -> crate::Re
     Ok(())
 }
 
-fn cleanup_auxiliary_files(latex_file: &Path) -> crate::Result {
+fn cleanup_auxiliary_files(latex_file: &Path) -> anyhow::Result<()> {
     let aux_extensions = ["aux", "log", "out", "pdf"];
     for ext in &aux_extensions {
         let aux_file = latex_file.with_extension(ext);
@@ -67,7 +67,7 @@ fn cleanup_auxiliary_files(latex_file: &Path) -> crate::Result {
 }
 
 #[tracing::instrument]
-pub fn create_images() -> crate::Result {
+pub fn create_images() -> anyhow::Result<()> {
     let latex_files = enumerate_tex_files();
 
     for file in latex_files {

@@ -60,7 +60,7 @@ impl DockerCommand {
         cmd
     }
 
-    pub(crate) fn docker_checks(&self) -> crate::Result {
+    pub(crate) fn docker_checks(&self) -> anyhow::Result<()> {
         checks::check_docker_is_installed()?;
         checks::check_docker_compose_is_installed()?;
         checks::check_docker_daemon_communication()?;
@@ -173,7 +173,7 @@ impl DockerCommand {
         self.command.output()
     }
 
-    pub(crate) fn run(&mut self) -> crate::Result {
+    pub(crate) fn run(&mut self) -> anyhow::Result<()> {
         self.command
             .run();
         Ok(())

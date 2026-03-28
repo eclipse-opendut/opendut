@@ -14,7 +14,7 @@ pub struct IntegrationTestCli {
 }
 
 impl IntegrationTestCli {
-    pub fn run(self) -> crate::Result { test(self) }
+    pub fn run(self) -> anyhow::Result<()> { test(self) }
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -46,7 +46,7 @@ impl CargoCompilerOutput {
 
 
 #[tracing::instrument(skip_all)]
-pub fn test(_params: IntegrationTestCli) -> crate::Result {
+pub fn test(_params: IntegrationTestCli) -> anyhow::Result<()> {
     let edgar_test_binary = create_edgar_integration_test_binary()?;
     debug!("EDGAR test binary: {}", edgar_test_binary);
 

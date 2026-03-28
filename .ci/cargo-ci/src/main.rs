@@ -4,7 +4,7 @@ pub use fs_err as fs;
 use tracing_subscriber::EnvFilter;
 pub(crate) use core::constants;
 pub(crate) use core::metadata;
-pub(crate) use core::types::{Package, Result};
+pub(crate) use core::types::Package;
 pub(crate) use core::util;
 use crate::core::types::parsing::package::PackageSelection;
 
@@ -33,7 +33,7 @@ enum Cli {
     Theo(packages::theo::TheoCli),
 }
 
-fn main() -> crate::Result {
+fn main() -> anyhow::Result<()> {
     cicero::init::tracing()
         .with_env_filter(
             EnvFilter::builder()

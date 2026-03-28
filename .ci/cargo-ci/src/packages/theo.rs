@@ -28,7 +28,7 @@ pub enum TaskCli {
 
 impl TheoCli {
     #[tracing::instrument(name="theo", skip(self))]
-    pub fn run(self) -> crate::Result {
+    pub fn run(self) -> anyhow::Result<()> {
         match self.task {
             TaskCli::DistributionBuild(crate::tasks::build::DistributionBuildCli { target, release_build }) => {
                 build::build_release(target, release_build)?;
@@ -52,7 +52,7 @@ impl TheoCli {
 pub mod build {
     use super::*;
 
-    pub fn build_release(target: Target, release_build: bool) -> crate::Result {
+    pub fn build_release(target: Target, release_build: bool) -> anyhow::Result<()> {
         crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)
     }
 }
@@ -63,7 +63,7 @@ pub mod distribution {
     use super::*;
 
     #[tracing::instrument(skip_all)]
-    pub fn theo_distribution(target: Target, release_build: bool) -> crate::Result {
+    pub fn theo_distribution(target: Target, release_build: bool) -> anyhow::Result<()> {
         use crate::tasks::distribution;
 
         distribution::clean(SELF_PACKAGE, target)?;
@@ -94,7 +94,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument]
-        pub fn validate_contents(target: Target) -> crate::Result {
+        pub fn validate_contents(target: Target) -> anyhow::Result<()> {
 
             let unpack_dir = {
                 let unpack_dir = assert_fs::TempDir::new()?;

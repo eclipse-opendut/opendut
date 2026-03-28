@@ -19,7 +19,7 @@ impl std::fmt::Display for EdgarDeploymentStatus {
     }
 }
 
-pub fn wait_until_all_edgar_peers_are(target_status: EdgarDeploymentStatus) -> crate::Result {
+pub fn wait_until_all_edgar_peers_are(target_status: EdgarDeploymentStatus) -> anyhow::Result<()> {
     println!("STAGE: EDGAR {target_status}");
 
     let timeout = Duration::from_secs(TIMEOUT_SECONDS);

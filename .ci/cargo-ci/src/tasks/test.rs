@@ -21,13 +21,13 @@ pub struct TestCli {
     pub pass_through: Vec<String>,
 }
 impl TestCli {
-    pub fn run(self) -> crate::Result {
+    pub fn run(self) -> anyhow::Result<()> {
         test(self)
     }
 }
 
 #[tracing::instrument(skip_all)]
-pub fn test(params: TestCli) -> crate::Result {
+pub fn test(params: TestCli) -> anyhow::Result<()> {
     let TestCli { all_features, features, disable_logging, test_name, pass_through } = params;
 
     let mut command = Command::new("cargo");

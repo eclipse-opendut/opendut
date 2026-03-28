@@ -30,7 +30,7 @@ pub struct DockerCli {
 }
 
 impl DockerCli {
-    pub fn run(&self, package: Package) -> crate::Result {
+    pub fn run(&self, package: Package) -> anyhow::Result<()> {
         build_docker_image(&package, self.tag.clone())?;
         if self.publish {
             publish_docker_image(&package, self.tag.clone())?;
@@ -55,7 +55,7 @@ fn docker_container_uri(package: &Package, tag: &Option<DockerTag>) -> String {
     image_uri
 }
 
-pub fn build_docker_image(package: &Package, tag: Option<DockerTag>) -> crate::Result {
+pub fn build_docker_image(package: &Package, tag: Option<DockerTag>) -> anyhow::Result<()> {
     let image_version_build_arg = format!("VERSION={}", crate::build::PKG_VERSION);
     let now = chrono::Utc::now().naive_utc();
     let container_uri = docker_container_uri(package, &tag);
@@ -95,7 +95,7 @@ pub fn build_docker_image(package: &Package, tag: Option<DockerTag>) -> crate::R
 }
 
 
-pub fn publish_docker_image(package: &Package, tag: Option<DockerTag>) -> crate::Result {
+pub fn publish_docker_image(package: &Package, tag: Option<DockerTag>) -> anyhow::Result<()> {
     Command::new("docker")
         .current_dir(repo_path!())
         .args(["push", &docker_container_uri(package, &tag)])

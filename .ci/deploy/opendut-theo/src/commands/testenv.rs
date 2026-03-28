@@ -46,7 +46,7 @@ pub enum TaskCli {
 
 
 impl TestenvCli {
-    pub(crate) fn run(self) -> crate::Result {
+    pub(crate) fn run(self) -> anyhow::Result<()> {
         load_theo_environment_variables();
         DockerCommand::new().docker_checks()?;
 
