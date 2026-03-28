@@ -21,7 +21,7 @@ pub struct TestCli {
     pub pass_through: Vec<String>,
 }
 impl TestCli {
-    pub fn default_handling(self) -> crate::Result {
+    pub fn run(self) -> crate::Result {
         test(self)
     }
 }

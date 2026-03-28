@@ -11,7 +11,7 @@ use crate::core::util::RunRequiringSuccess;
 pub struct CoverageCli;
 
 impl CoverageCli {
-    pub fn default_handling(self) -> crate::Result {
+    pub fn run(self) -> crate::Result {
         coverage()
     }
 }

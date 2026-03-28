@@ -31,7 +31,7 @@ pub enum TaskCli {
 
 impl LicensesCli {
     #[tracing::instrument(skip_all)]
-    pub fn default_handling(self, packages: PackageSelection) -> crate::Result {
+    pub fn run(self, packages: PackageSelection) -> crate::Result {
         match self.task {
             TaskCli::Check => {
                 check::check_licenses()?;

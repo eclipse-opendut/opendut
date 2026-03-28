@@ -35,7 +35,7 @@ pub enum TaskCli {
 
 impl CarlCli {
     #[tracing::instrument(name="carl", skip(self))]
-    pub fn default_handling(self) -> crate::Result {
+    pub fn run(self) -> crate::Result {
         match self.task {
             TaskCli::DistributionBuild(crate::tasks::build::DistributionBuildCli { target, release_build }) => {
                 build::build_release(target, release_build)?;
@@ -43,7 +43,7 @@ impl CarlCli {
             TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target, release_build }) => {
                 distribution::carl_distribution(target, release_build)?;
             }
-            TaskCli::Licenses(cli) => cli.default_handling(PackageSelection::Single(SELF_PACKAGE))?,
+            TaskCli::Licenses(cli) => cli.run(PackageSelection::Single(SELF_PACKAGE))?,
             TaskCli::Run(cli) => {
                 tracing::info_span!("lea").in_scope(|| {
                     let passthrough =
@@ -60,20 +60,20 @@ impl CarlCli {
                 })?;
 
                 info!("Starting CARL. You can view the web-UI at: https://localhost:8080");
-                cli.default_handling(SELF_PACKAGE)?
+                cli.run(SELF_PACKAGE)?
             }
 
-            TaskCli::DistributionCopyLicenseJson(implementation) => {
-                copy_license_json(implementation.target, implementation.skip_generate.into())?;
+            TaskCli::DistributionCopyLicenseJson(cli) => {
+                copy_license_json(cli.target, cli.skip_generate.into())?;
             }
-            TaskCli::DistributionBundleFiles(implementation) => {
-                implementation.default_handling(SELF_PACKAGE)?;
+            TaskCli::DistributionBundleFiles(cli) => {
+                cli.run(SELF_PACKAGE)?;
             }
             TaskCli::DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli { target }) => {
                 distribution::validate::validate_contents(target)?;
             }
-            TaskCli::Docker(implementation) => {
-                implementation.default_handling(SELF_PACKAGE)?; 
+            TaskCli::Docker(cli) => {
+                cli.run(SELF_PACKAGE)?;
             }
 
             TaskCli::PushSamples => push_samples()?,
@@ -374,7 +374,7 @@ fn push_samples() -> anyhow::Result<()> {
         features: vec![],
         passthrough: vec!["apply".to_string(), file.display().to_string()],
     }
-    .default_handling(Package::Cleo)?;
+    .run(Package::Cleo)?;
 
     Ok(())
 }

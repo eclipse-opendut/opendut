@@ -32,7 +32,7 @@ pub enum TaskCli {
 
 impl CleoCli {
     #[tracing::instrument(name="cleo", skip(self))]
-    pub fn default_handling(self) -> crate::Result {
+    pub fn run(self) -> crate::Result {
         match self.task {
             TaskCli::DistributionBuild(crate::tasks::build::DistributionBuildCli { target, release_build }) => {
                 build::build_release(target, release_build)?;
@@ -40,11 +40,11 @@ impl CleoCli {
             TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target, release_build }) => {
                 distribution::cleo_distribution(target, release_build)?;
             }
-            TaskCli::Licenses(cli) => cli.default_handling(PackageSelection::Single(SELF_PACKAGE))?,
-            TaskCli::Run(cli) => cli.default_handling(SELF_PACKAGE)?,
+            TaskCli::Licenses(cli) => cli.run(PackageSelection::Single(SELF_PACKAGE))?,
+            TaskCli::Run(cli) => cli.run(SELF_PACKAGE)?,
 
-            TaskCli::DistributionCopyLicenseJson(cli) => cli.default_handling(SELF_PACKAGE)?,
-            TaskCli::DistributionBundleFiles(cli) => cli.default_handling(SELF_PACKAGE)?,
+            TaskCli::DistributionCopyLicenseJson(cli) => cli.run(SELF_PACKAGE)?,
+            TaskCli::DistributionBundleFiles(cli) => cli.run(SELF_PACKAGE)?,
             TaskCli::DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli { target }) => {
                 distribution::validate::validate_contents(target)?;
             }

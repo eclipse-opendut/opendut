@@ -14,7 +14,7 @@ pub struct IntegrationTestCli {
 }
 
 impl IntegrationTestCli {
-    pub fn default_handling(self) -> crate::Result { test(self) }
+    pub fn run(self) -> crate::Result { test(self) }
 }
 
 #[derive(Debug, Deserialize, Clone)]

@@ -31,7 +31,7 @@ pub enum TaskCli {
 }
 
 impl TestClusterCli {
-    pub(crate) fn default_handling(&self) -> crate::Result {
+    pub(crate) fn run(&self) -> crate::Result {
         match self.task {
             TaskCli::Start => {
                 println!("Stopping if EDGAR cluster is already running...");

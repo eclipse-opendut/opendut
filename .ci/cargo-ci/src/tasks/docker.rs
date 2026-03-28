@@ -30,7 +30,7 @@ pub struct DockerCli {
 }
 
 impl DockerCli {
-    pub fn default_handling(&self, package: Package) -> crate::Result {
+    pub fn run(&self, package: Package) -> crate::Result {
         build_docker_image(&package, self.tag.clone())?;
         if self.publish {
             publish_docker_image(&package, self.tag.clone())?;

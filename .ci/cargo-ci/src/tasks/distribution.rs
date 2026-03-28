@@ -60,7 +60,7 @@ pub mod copy_license_json {
         pub skip_generate: bool,
     }
     impl DistributionCopyLicenseJsonCli {
-        pub fn default_handling(&self, package: Package) -> crate::Result {
+        pub fn run(&self, package: Package) -> crate::Result {
             copy_license_json(package, self.target, self.skip_generate.into())
         }
     }
@@ -108,7 +108,7 @@ pub mod bundle {
         target: Target,
     }
     impl DistributionBundleFilesCli {
-        pub fn default_handling(&self, package: Package) -> crate::Result {
+        pub fn run(&self, package: Package) -> crate::Result {
             let release_build = true; //this CLI is only used in CI
             bundle_files(package, self.target, release_build)
         }

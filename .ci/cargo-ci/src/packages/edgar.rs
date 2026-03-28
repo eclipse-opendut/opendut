@@ -53,7 +53,7 @@ pub enum TaskCli {
 
 impl EdgarCli {
     #[tracing::instrument(name="edgar", skip_all)]
-    pub fn default_handling(self) -> crate::Result {
+    pub fn run(self) -> crate::Result {
         match self.task {
             TaskCli::DistributionBuild(crate::tasks::build::DistributionBuildCli { target, release_build }) => {
                 build::build_release(target, release_build)?;
@@ -61,8 +61,8 @@ impl EdgarCli {
             TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target, release_build }) => {
                 distribution::edgar_distribution(target, release_build)?;
             }
-            TaskCli::Licenses(cli) => cli.default_handling(PackageSelection::Single(SELF_PACKAGE))?,
-            TaskCli::Run(cli) => cli.default_handling(SELF_PACKAGE)?,
+            TaskCli::Licenses(cli) => cli.run(PackageSelection::Single(SELF_PACKAGE))?,
+            TaskCli::Run(cli) => cli.run(SELF_PACKAGE)?,
 
             TaskCli::DistributionNetbirdClient { target } => {
                 distribution::netbird::netbird_client_distribution(target)?;
@@ -73,13 +73,13 @@ impl EdgarCli {
             TaskCli::DistributionPluginsDir { target } => {
                 distribution::plugins::empty_plugins_dir(target)?
             }
-            TaskCli::DistributionCopyLicenseJson(cli) => cli.default_handling(SELF_PACKAGE)?,
-            TaskCli::DistributionBundleFiles(cli) => cli.default_handling(SELF_PACKAGE)?,
+            TaskCli::DistributionCopyLicenseJson(cli) => cli.run(SELF_PACKAGE)?,
+            TaskCli::DistributionBundleFiles(cli) => cli.run(SELF_PACKAGE)?,
             TaskCli::DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli { target }) => {
                 distribution::validate::validate_contents(target)?;
             }
             TaskCli::Docker(implementation) => {
-                implementation.default_handling(SELF_PACKAGE)?; 
+                implementation.run(SELF_PACKAGE)?;
             }
         };
         Ok(())

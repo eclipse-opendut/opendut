@@ -49,7 +49,7 @@ pub enum TaskCli {
 
 
 impl VagrantCli {
-    pub(crate) fn default_handling(&self) -> crate::Result {
+    pub(crate) fn run(&self) -> crate::Result {
         if running_in_opendut_vm() {
             return Err(anyhow!("Command should not be run within the virtual machine."));
         }

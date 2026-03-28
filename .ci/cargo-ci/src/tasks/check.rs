@@ -16,7 +16,7 @@ pub struct CheckCli {
 }
 
 impl CheckCli {
-    pub fn default_handling(self) -> crate::Result {
+    pub fn run(self) -> crate::Result {
         check(self.all_features, self.features)
     }
 }

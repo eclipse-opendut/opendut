@@ -41,14 +41,14 @@ pub struct BuildCli {
 
 impl LeaCli {
     #[tracing::instrument(name="lea", skip(self))]
-    pub fn default_handling(self) -> crate::Result {
+    pub fn run(self) -> crate::Result {
         match self.task {
             TaskCli::Build(BuildCli { passthrough }) => {
                 let release_build = false;
                 build::build(release_build, passthrough)?
             },
             TaskCli::Run(BuildCli { passthrough }) => run::run(passthrough)?,
-            TaskCli::Licenses(cli) => cli.default_handling(PackageSelection::Single(PACKAGE))?,
+            TaskCli::Licenses(cli) => cli.run(PackageSelection::Single(PACKAGE))?,
             TaskCli::DistributionBuild(BuildCli { passthrough }) => {
                 distribution_build::distribution_build(passthrough)?
             },
