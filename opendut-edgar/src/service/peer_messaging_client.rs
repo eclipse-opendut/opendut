@@ -80,7 +80,7 @@ impl PeerMessagingClient {
         rx_peer_configuration_state: Arc<Mutex<Receiver<EdgePeerConfigurationState>>>,
         remote_address: &IpAddr,
         on_connect_success: &impl AsyncFn(),
-        cancel_token: &CancellationToken,
+        connect_cancel: &CancellationToken,
     ) -> anyhow::Result<()> {
 
         let (mut rx_inbound, tx_outbound) = carl::open_stream(self.self_id, remote_address, carl).await?;
@@ -104,7 +104,7 @@ impl PeerMessagingClient {
                                     message,
                                     &tx_outbound,
                                     &self.tx_peer_configuration,
-                                    cancel_token,
+                                    connect_cancel,
                                 ).await?
                             }
                             Err(status) => {
@@ -149,7 +149,7 @@ impl PeerMessagingClient {
                         }
                     }
                 }
-                _ = cancel_token.cancelled() => {
+                _ = connect_cancel.cancelled() => {
                     debug!("PeerMessagingClient message processing is being cancelled.");
                     break;
                 }
@@ -212,7 +212,7 @@ impl PeerMessagingClient {
         message: broker::DownstreamMessage,
         tx_outbound: &GrpcUpstream,
         peer_configuration_sender: &mpsc::Sender<ApplyPeerConfigurationParams>,
-        cancel_token: &CancellationToken,
+        connect_cancel: &CancellationToken,
     ) -> anyhow::Result<()> {
         let broker::DownstreamMessage { payload: message, context } = message;
 
@@ -232,13 +232,14 @@ impl PeerMessagingClient {
                             tx_outbound.send(message).await
                                 .inspect_err(|cause| debug!("Failed to send ping to CARL: {cause:?}"));
                     }
-                    _ = cancel_token.cancelled() => {
+                    _ = connect_cancel.cancelled() => {
                         debug!("Responding with Pong message cancelled.");
                     }
                 }
             }
             broker::DownstreamMessagePayload::ApplyPeerConfiguration(message) => self.apply_peer_configuration_raw(message, context, peer_configuration_sender).await?,
             broker::DownstreamMessagePayload::DisconnectNotice => {
+                connect_cancel.cancel(); //Do not reconnect after explicit disconnect
                 return Err(anyhow!("CARL sent a disconnect notice. Shutting down now."))
             }
         }

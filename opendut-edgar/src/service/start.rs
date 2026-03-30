@@ -60,11 +60,11 @@ pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow:
     let (tx_peer_configuration, rx_peer_configuration) = mpsc::channel(100);
     let (tx_peer_configuration_state, rx_peer_configuration_state) = mpsc::channel::<EdgePeerConfigurationState>(100);
 
-    let cancel_token = CancellationToken::new();
+    let connect_cancel = CancellationToken::new();
     crate::service::peer_configuration::spawn_peer_configurations_handler(
         rx_peer_configuration,
         tx_peer_configuration_state,
-        cancel_token.clone(),
+        connect_cancel.clone(),
     ).await?;
 
 
@@ -79,7 +79,7 @@ pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow:
             remote_address,
         },
         &settings,
-        cancel_token.clone(),
+        connect_cancel.clone(),
     ).await?;
 
     {
@@ -87,7 +87,7 @@ pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow:
 
         peer_messaging_client.destroy().await;
 
-        cancel_token.cancel();
+        connect_cancel.cancel();
 
         vpn.terminate().await?;
 
@@ -96,7 +96,7 @@ pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow:
     Ok(())
 }
 
-pub async fn connect_and_start(config: &ConnectAndStart<'_>, settings: &LoadedConfig, cancel_token: CancellationToken) -> anyhow::Result<()> {
+pub async fn connect_and_start(config: &ConnectAndStart<'_>, settings: &LoadedConfig, connect_cancel: CancellationToken) -> anyhow::Result<()> {
 
     let ConnectOptions { host, port, ca_certs, client_auth, domain_name_override, retries, interval } =
         ConnectOptions::load_from_config(settings)?;
@@ -132,7 +132,7 @@ pub async fn connect_and_start(config: &ConnectAndStart<'_>, settings: &LoadedCo
                         rx_peer_configuration_state.clone(),
                         remote_address,
                         &on_connect_success,
-                        &cancel_token,
+                        &connect_cancel,
                     ).await?;
                 }
                 ConnectAndStart::CarlClient { out } => {
@@ -155,18 +155,24 @@ pub async fn connect_and_start(config: &ConnectAndStart<'_>, settings: &LoadedCo
                 }
             }
             Err(cause) => {
-                let mut backoff = backoff.lock().await;
-
-                if let Some(delay) = backoff.next() {
-                    error!("Error in connection to CARL. Reconnecting in {delay:?}. Error was: {cause:?}");
-
-                    tokio::select! {
-                        _ = tokio::time::sleep(delay) => {}
-                        _ = cancel_token.cancelled() => return Ok(()),
-                    }
-                } else {
-                    error!("Error in connection to CARL. No retries left. Terminating EDGAR. Error was: {cause:?}");
+                if connect_cancel.is_cancelled() {
+                    info!("Connection to CARL was explicitly cancelled. Terminating EDGAR.");
                     break;
+                }
+                else {
+                    let mut backoff = backoff.lock().await;
+
+                    if let Some(delay) = backoff.next() {
+                        error!("Error in connection to CARL. Reconnecting in {delay:?}. Error was: {cause:?}");
+
+                        tokio::select! {
+                            _ = tokio::time::sleep(delay) => {}
+                            _ = connect_cancel.cancelled() => return Ok(()),
+                        }
+                    } else {
+                        error!("Error in connection to CARL. No retries left. Terminating EDGAR. Error was: {cause:?}");
+                        break;
+                    }
                 }
             }
         };

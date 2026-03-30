@@ -45,14 +45,14 @@ struct EdgePeerConfigurationParameterDifference {
 pub async fn spawn_peer_configurations_handler(
     rx_peer_configuration: mpsc::Receiver<ApplyPeerConfigurationParams>,
     tx_peer_configuration_state: mpsc::Sender<EdgePeerConfigurationState>,
-    cancel_token: CancellationToken,
+    connect_cancel: CancellationToken,
 ) -> anyhow::Result<JoinHandle<()>> {
     let handle = tokio::spawn(async move {
         tokio::select! {
             _ = spawn_peer_configuration_handler_loop(rx_peer_configuration, tx_peer_configuration_state) => {
                 debug!("Peer configuration handling received end of stream.");
             }
-            _ = cancel_token.cancelled() => {
+            _ = connect_cancel.cancelled() => {
                 debug!("Peer configuration handling was explicitly cancelled.");
             }
         }
