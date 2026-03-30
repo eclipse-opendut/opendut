@@ -27,8 +27,10 @@ RUN cp cannelloni /usr/local/bin/
 
 
 # Bundle EDGAR
-WORKDIR /opt
-ADD target/ci/distribution/${TARGET_TRIPLE}/opendut-edgar-${TARGET_TRIPLE}-${VERSION}.tar.gz /opt
+WORKDIR /opt/
+ADD target/ci/distribution/${TARGET_TRIPLE}/opendut-edgar-${TARGET_TRIPLE}-${VERSION}.tar.gz /opt/
 
-CMD /opt/opendut-edgar/opendut-edgar setup managed --no-confirm --skip-service-run --log-file=- && \
-  /opt/opendut-edgar/opendut-edgar service
+
+COPY .ci/docker/edgar/entrypoint.sh /
+
+ENTRYPOINT ["/entrypoint.sh"]
