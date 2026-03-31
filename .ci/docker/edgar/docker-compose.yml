@@ -60,6 +60,9 @@ services:
       - setup_persistence_certificates:/usr/local/share/ca-certificates/
       - setup_persistence_os_path:/usr/bin/
 
+    logging:
+      driver: local  # performs automatic log rotation, generally recommended: https://docs.docker.com/engine/logging/configure/
+
 
 volumes:
   setup_persistence_edgar_application:
