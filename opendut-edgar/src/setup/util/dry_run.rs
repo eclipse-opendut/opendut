@@ -26,10 +26,6 @@ impl std::str::FromStr for DryRun {
         let mut dry_run = if dry_run { DryRun::Yes } else { DryRun::No };
         dry_run.force_dry_run_in_development();
 
-        if dry_run.not() {
-            sudo::with_env(&["OPENDUT_EDGAR_"]) //Request before doing anything else, as it restarts the process when sudo is not present.
-                .expect("Failed to request sudo privileges.");
-        }
         Ok(dry_run)
     }
 }
