@@ -43,6 +43,7 @@ impl NetbirdProcess {
                     .arg("run")
                     .arg("--config").arg(common::settings::netbird_config_file_path())
                     .arg("--daemon-addr").arg(opendut_netbird_client_api::client::NETBIRD_SOCKET)
+                    .arg("--disable-profiles") //not needed, since we manage the entire configuration and leads to errors when the NetBird process isn't running privileged
                     .arg("--log-level").arg(config.log_level.to_string())
                     .arg("--log-file=console")
                     .arg("--disable-profiles"); //not needed, since we manage the entire configuration and leads to errors when the NetBird process isn't running privileged
