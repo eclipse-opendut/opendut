@@ -24,12 +24,8 @@ Always create a database backup before upgrading CARL.
 * It is now possible to load multiple certificate authorities.
 * Added volume for prometheus (metrics database).
 * Recent NetBird management enforces [encryption key with certain length](https://github.com/netbirdio/netbird/issues/5063). 
-  This could break the Localenv deployment. Provisioning scripts were updated to generate a compliant key, but if you have an existing deployment, you need to update the key manually. 
-  1. You can do so by running the following command:
-      ```sh
-      openssl rand -base64 32
-      ```
-  2. Update `NETBIRD_DATASTORE_ENC_KEY` environment variable in NetBird management container.
+  This breaks the Localenv deployment during an update. Provisioning scripts were updated to generate a compliant key,
+  but if you have an existing deployment, you need to update the key manually. See the Breaking Changes section for instructions. 
 
 ### Changed
 * EDGAR: The NetBird client is now spawned as a subprocess rather than a SystemD service, in preparation for running EDGAR in a container.
@@ -61,6 +57,7 @@ Always create a database backup before upgrading CARL.
   docker kill opendut-update-secret
   docker rm opendut-update-secret
   ```
+
 
 ## [0.9.0] - 2025-12-19
 
