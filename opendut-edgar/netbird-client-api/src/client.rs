@@ -1,4 +1,3 @@
-use std::path::PathBuf;
 use std::time::Duration;
 use backon::{ExponentialBuilder, Retryable};
 use tonic::transport::Channel;
@@ -9,9 +8,7 @@ use crate::proto::daemon::daemon_service_client::DaemonServiceClient;
 use crate::proto::daemon::{DownRequest, FullStatus, StatusRequest};
 
 
-pub fn socket_path() -> PathBuf {
-    PathBuf::from("/var/run/netbird.sock")
-}
+pub const NETBIRD_SOCKET: &str = "unix:///opt/opendut/edgar/netbird/netbird.sock";
 
 pub struct Client {
     inner: DaemonServiceClient<Channel>,
@@ -19,12 +16,12 @@ pub struct Client {
 
 impl Client {
     pub async fn connect() -> Result<Self> {
-        let path = format!("unix://{}", socket_path().display());
+        let socket = NETBIRD_SOCKET;
 
-        debug!("Connecting to NetBird Client process via Unix domain socket at '{path}'...");
+        debug!("Connecting to NetBird Client process via Unix domain socket at '{socket}'...");
 
         let connect = || {
-            DaemonServiceClient::connect(path.clone())
+            DaemonServiceClient::connect(socket)
         };
 
         let connect_result = connect
@@ -40,12 +37,12 @@ impl Client {
 
         match connect_result {
             Ok(client) => {
-                info!("Connected to NetBird Client process via Unix domain socket at '{path}'.");
+                info!("Connected to NetBird Client process via Unix domain socket at '{socket}'.");
                 Ok(Self { inner: client })
             }
             Err(cause) => {
-                error!("Error while connecting to NetBird Client process via Unix domain socket at '{path}': {cause}");
-                Err(Error::transport(cause, format!("Failed to connect to NetBird Unix domain socket at '{path}'")))
+                error!("Error while connecting to NetBird Client process via Unix domain socket at '{socket}': {cause}");
+                Err(Error::transport(cause, format!("Failed to connect to NetBird Unix domain socket at '{socket}'")))
             }
         }
     }

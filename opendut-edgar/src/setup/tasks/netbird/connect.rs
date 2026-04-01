@@ -45,6 +45,7 @@ impl Task for Connect {
             let process::Output { status, stdout, stderr } =
                 Command::new(constants::netbird::unpacked_executable()?.as_os_str())
                     .arg("up")
+                    .arg("--daemon-addr").arg(opendut_netbird_client_api::client::NETBIRD_SOCKET)
                     .arg("--management-url").arg(self.management_url.as_str())
                     .arg("--setup-key").arg(&self.setup_key.value)
                     .arg("--mtu").arg(self.mtu.to_string())
