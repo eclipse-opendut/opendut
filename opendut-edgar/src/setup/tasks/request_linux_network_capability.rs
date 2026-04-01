@@ -20,7 +20,7 @@ impl Task for RequestLinuxNetworkCapability {
             .context(String::from("No command `getcap` found. Ensure your system provides this command."))?;
 
         let output = Command::new(getcap)
-            .arg(constants::executable_install_path()?)
+            .arg(constants::executable_install_path()?) //TODO also check netbird
             .evaluate_requiring_success()
             .context(format!("Error while determining Linux Capabilities of executable at: {}", constants::executable_install_path()?.display()))?;
 
@@ -34,10 +34,30 @@ impl Task for RequestLinuxNetworkCapability {
         let setcap = which::which("setcap")
             .context(String::from("No command `setcap` found. Ensure your system provides this command."))?;
 
-        let _ = Command::new(setcap)
-            .arg("CAP_NET_ADMIN+pe") //"permitted" and "effective", see `man capabilities 7` -> "File capabilities"
-            .arg(constants::executable_install_path()?)
+        let netbird = constants::netbird::unpacked_executable()?;
+
+        let executables = [
+            &constants::executable_install_path()?,
+            &netbird,
+        ];
+
+        for executable in executables {
+            let _ = Command::new(&setcap)
+                .arg("CAP_NET_ADMIN+pe") //"permitted" and "effective", see `man capabilities 7` -> "File capabilities"
+                .arg(executable)
+                .evaluate_requiring_success()?;
+        }
+
+        let _ = Command::new(&setcap)
+            .arg("CAP_NET_RAW+pe") //"permitted" and "effective", see `man capabilities 7` -> "File capabilities"
+            .arg(&netbird)
             .evaluate_requiring_success()?;
+
+        let _ = Command::new(&setcap)
+            .arg("CAP_SYS_RESOURCE+pe") //"permitted" and "effective", see `man capabilities 7` -> "File capabilities"
+            .arg(&netbird)
+            .evaluate_requiring_success()?;
+
 
         Ok(Success::default())
     }
