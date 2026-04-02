@@ -170,7 +170,7 @@ tonic = { version = "0.14", default-features = false }
 tonic-prost = "0.14"
 tonic-prost-build = { version = "0.14", default-features = false }
 tonic-web = "0.14"
-tonic-web-wasm-client = "0.8"
+tonic-web-wasm-client = "0.9"
 tonic-async-interceptor = "0.14"
 tower = "0.5"
 tower-http = { version = "0.6", features = ["cors", "fs"] }
