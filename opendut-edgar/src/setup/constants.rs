@@ -51,6 +51,7 @@ pub fn default_config_merge_suggestion_file_path() -> PathBuf {
 
 pub mod netbird {
     use super::*;
+    use tokio::process::Command;
 
     pub fn path_in_edgar_distribution() -> anyhow::Result<PathBuf> {
         let path = PathBuf::from("install/netbird.tar.gz");
@@ -77,8 +78,11 @@ pub mod netbird {
         edgar_install_directory().join("install")
     }
 
-    pub fn unpacked_executable() -> anyhow::Result<PathBuf> {
-        unpack_dir().map(|dir| dir.join("netbird"))
+    pub fn command() -> anyhow::Result<Command> {
+        let executable = unpack_dir()?.join("netbird");
+        let mut command = Command::new(executable);
+        command.env("SSL_CERT_FILE", default_os_cert_store_ca_certificate_path());
+        Ok(command)
     }
 }
 

@@ -1,6 +1,5 @@
 use std::ops::Not;
 use std::process;
-use std::process::Command;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -43,13 +42,12 @@ impl Task for Connect {
 
         {
             let process::Output { status, stdout, stderr } =
-                Command::new(constants::netbird::unpacked_executable()?.as_os_str())
-                    .env("SSL_CERT_FILE", constants::default_os_cert_store_ca_certificate_path())
+                constants::netbird::command()?
                     .arg("up")
                     .arg("--management-url").arg(self.management_url.as_str())
                     .arg("--setup-key").arg(&self.setup_key.value)
                     .arg("--mtu").arg(self.mtu.to_string())
-                    .output()?;
+                    .output().await?;
 
             let message = format_command_output(stdout, stderr)?;
 
