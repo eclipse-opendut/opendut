@@ -143,7 +143,7 @@ version = "1.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "40c48f72fd53cd289104fc64099abca73db4166ad86ea0b4341abe65af83dadc"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -154,7 +154,7 @@ checksum = "291e6a250ff86cd4a820112fb8898808a366d8f9f58ce16d1f538353ad55747d"
 dependencies = [
  "anstyle",
  "once_cell_polyfill",
- "windows-sys 0.61.2",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -943,9 +943,9 @@ dependencies = [
 
 [[package]]
 name = "cicero"
-version = "0.11.0"
+version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cc5daaa1f3ece45f223ec0da44d4969af7e23adfed4e7951754ad2df7f480e32"
+checksum = "5536ce9369ccda94b13cb1673136fa113e3175c16597ba4ec32f803ce74ad5ae"
 dependencies = [
  "cicero_cache",
  "cicero_commands",
@@ -961,9 +961,9 @@ dependencies = [
 
 [[package]]
 name = "cicero_cache"
-version = "0.11.0"
+version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8dfc136e547ce2272810070d08f1cb806bd54cc21beee1f5b04dee317d71bf2"
+checksum = "75f0352a3fa96a21932bfb3c0b477a318e80939e57fe7b174a603ed29555fa4f"
 dependencies = [
  "cicero_core",
  "fs-err",
@@ -976,9 +976,9 @@ dependencies = [
 
 [[package]]
 name = "cicero_commands"
-version = "0.11.0"
+version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c4077f0fde985527dede07791b3af686ab545b0ed8ad09d0ad336a8f260292cf"
+checksum = "87580a7707bb3d259b0e864ba9ffa539324f735bb7141270df7f061c7bc4d3d1"
 dependencies = [
  "cicero_core",
  "cicero_macro",
@@ -1005,9 +1005,9 @@ dependencies = [
 
 [[package]]
 name = "cicero_distribution"
-version = "0.11.0"
+version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d118e769c647815e35e86ab9dd95be40655bdf73af09102383402c9a184d9bcf"
+checksum = "0dddddb89ed32764cc29eed1ee7578de71d753bc9dac9c4d745bf66f89ba74cf"
 dependencies = [
  "cargo_metadata",
  "cicero_cache",
@@ -1023,9 +1023,9 @@ dependencies = [
 
 [[package]]
 name = "cicero_macro"
-version = "0.11.0"
+version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a75f9fea6f6113b6ffe578405dd8cc045addae5339b0e4868f77444e003987c2"
+checksum = "f645c7608e9b9f66393b00b4266532ce1631fefe2cdece7e083ad645007e0abb"
 dependencies = [
  "cicero_core",
  "proc-macro2",
@@ -1035,9 +1035,9 @@ dependencies = [
 
 [[package]]
 name = "cicero_path"
-version = "0.11.0"
+version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3eed350753bac98f2a02f67cff75e3b0a332b2ed7a1c6f2cfecc05cc80e04d90"
+checksum = "1120abda5573f05ea0eb9099f57c159da042fd19c7ca5e5364b736487c054f41"
 dependencies = [
  "cicero_core",
  "repo_path",
@@ -2113,7 +2113,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -3461,7 +3461,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8cfc352a66ba903c23239ef51e809508b6fc2b0f90e3476ac7a9ff47e863ae95"
 dependencies = [
  "scopeguard",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -4239,7 +4239,7 @@ version = "0.50.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7957b9740744892f114936ab4a57b3f487491bbeafaf8083688b16841a4240e5"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -5444,7 +5444,7 @@ checksum = "044b1fa4f259f4df9ad5078e587b208f5d288a25407575fcddb9face30c7c692"
 dependencies = [
  "rand 0.9.2",
  "socket2 0.6.3",
- "thiserror 2.0.18",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -5687,7 +5687,7 @@ version = "0.14.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "343d3bd7056eda839b03204e68deff7d1b13aba7af2b2fd16890697274262ee7"
 dependencies = [
- "heck 0.5.0",
+ "heck 0.4.1",
  "itertools 0.14.0",
  "log",
  "multimap",
@@ -6530,7 +6530,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys 0.12.1",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -6608,7 +6608,7 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "webpki-root-certs",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -7523,7 +7523,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3a766e1110788c36f4fa1c2b71b387a7815aa65f88ce0229841826633d93723e"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -7816,7 +7816,7 @@ dependencies = [
  "getrandom 0.4.2",
  "once_cell",
  "rustix 1.1.4",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -7835,7 +7835,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "230a1b821ccbd75b185820a1f1ff7b14d21da1e442e22c0863ea5f08771a8874"
 dependencies = [
  "rustix 1.1.4",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -9557,7 +9557,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
