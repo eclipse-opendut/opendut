@@ -118,7 +118,7 @@ pub(super) async fn managed(
 }
 
 fn determine_service_user_name() -> User {
-    const DEFAULT_SERVICE_USER_NAME: &str = "opendut_service";
+    const DEFAULT_SERVICE_USER_NAME: &str = "root"; //Currently using root instead of opendut_service. See: https://github.com/eclipse-opendut/opendut/issues/487
 
     let name = env::var("OPENDUT_EDGAR_SERVICE_USER")
         .unwrap_or(DEFAULT_SERVICE_USER_NAME.to_string());

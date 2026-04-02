@@ -29,6 +29,7 @@ Always create a database backup before upgrading CARL.
 
 ### Changed
 * EDGAR: The NetBird client is now spawned as a subprocess rather than a SystemD service, in preparation for running EDGAR in a container.
+* EDGAR now runs under the root user by default, to make the NetBird subprocess work. See [issue #487](https://github.com/eclipse-opendut/opendut/issues/487).
 * EDGAR: Attempt reconnects to CARL upon interrupted connection instead of terminating/restarting the entire process.
 * Localenv peer network was separated from the backend network. Separate Docker networks ensure peers connect to the backend as they would when deployed next to a test bench.
 * Added logging to stdout during Telemetry startup. Previously, no messages were shown during startup until configuration phase passed the OpenTelemetry stack.
