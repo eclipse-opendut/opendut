@@ -8,7 +8,7 @@ When upgrading between versions of CARL, do not skip versions,
 since migrations are only provided from one version to the next.
 Always create a database backup before upgrading CARL.
 
-## Unreleased
+## [0.10.0] - 2026-04-02
 
 ### Added
 * Added option to start the localenv with [mTLS client authentication](https://opendut.eclipse.dev/book/development/testenv/advanced.html#enable-client-authentication):
