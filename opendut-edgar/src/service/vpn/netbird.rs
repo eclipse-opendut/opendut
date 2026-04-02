@@ -4,7 +4,6 @@ use std::path::Path;
 use std::time::Duration;
 use anyhow::{anyhow, Context};
 use serde_json::json;
-use tokio::process::Command;
 use tracing::debug;
 use opendut_netbird_client_api::extension::LocalPeerStateExtension;
 use opendut_util::pem;
@@ -35,18 +34,16 @@ impl NetbirdProcess {
         let config = ProcessConfig::new(
             name,
             move || {
-                let netbird_executable = crate::setup::constants::netbird::unpacked_executable()
-                    .expect("Unpacked NetBird executable path should be determinable.");
+                let mut command = crate::setup::constants::netbird::command()
+                    .expect("Unpacked NetBird executable path should be available.");
 
-                let mut command = Command::new(netbird_executable);
                 command.arg("service")
                     .arg("run")
                     .arg("--config").arg(common::settings::netbird_config_file_path())
                     .arg("--daemon-addr=unix:///var/run/netbird.sock")
                     .arg("--log-level").arg(config.log_level.to_string())
                     .arg("--log-file=console")
-                    .arg("--disable-profiles") //not needed, since we manage the entire configuration and leads to errors when the NetBird process isn't running privileged
-                    .env("SSL_CERT_FILE", crate::setup::constants::default_os_cert_store_ca_certificate_path());
+                    .arg("--disable-profiles"); //not needed, since we manage the entire configuration and leads to errors when the NetBird process isn't running privileged
 
                 command
             }
