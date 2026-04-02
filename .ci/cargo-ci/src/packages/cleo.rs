@@ -1,11 +1,11 @@
 use std::path::PathBuf;
 
-use cicero::distribution::build::Target;
+use cicero::distribution::build::{target, Target};
 
 use crate::Package;
 use crate::core::types::parsing::package::PackageSelection;
 
-pub const SUPPORTED_TARGETS: [Target; 3] = [Target::x86_64_unknown_linux_gnu, Target::armv7_unknown_linux_gnueabihf, Target::aarch64_unknown_linux_gnu];
+pub const SUPPORTED_TARGETS: [Target; 3] = [target::x86_64_unknown_linux_gnu, target::armv7_unknown_linux_gnueabihf, target::aarch64_unknown_linux_gnu];
 
 const SELF_PACKAGE: Package = Package::Cleo;
 

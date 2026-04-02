@@ -1,6 +1,6 @@
 use anyhow::Context;
 use cicero::command_exit_ok::CommandExitOk;
-use cicero::distribution::build::Target;
+use cicero::distribution::build::target;
 use cicero::path::repo_path;
 use serde::Deserialize;
 use std::path::PathBuf;
@@ -90,7 +90,7 @@ fn run_edgar_integration_test_binary_in_docker(edgar_test_binary: String) -> any
 
 fn determine_test_binary_directory() -> anyhow::Result<String> {
     let target_directory = cicero::path::target_dir();
-    let test_binary_directory = target_directory.join(Target::x86_64_unknown_linux_gnu.to_string()).join("debug").join("deps");
+    let test_binary_directory = target_directory.join(target::x86_64_unknown_linux_gnu.to_string()).join("debug").join("deps");
     let test_binary_directory = test_binary_directory.to_str()
         .context("Test target directory could not be determined!")?
         .to_owned();
