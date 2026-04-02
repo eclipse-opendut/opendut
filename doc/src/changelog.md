@@ -10,7 +10,7 @@ Always create a database backup before upgrading CARL.
 
 ## Unreleased
 
-TBD.
+TBD
 
 
 ## [0.10.0] - 2026-04-02
