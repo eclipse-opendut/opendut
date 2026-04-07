@@ -37,12 +37,6 @@ pub fn default_carl_ca_certificate_path() -> PathBuf {
 pub fn default_checksum_carl_ca_certificate_file() -> PathBuf {
     PathBuf::from("/etc/opendut/tls/.ca.pem.checksum")
 }
-pub fn default_os_cert_store_ca_certificate_path() -> PathBuf {
-    PathBuf::from("/usr/local/share/ca-certificates/opendut-ca.crt")
-}
-pub fn default_checksum_os_cert_store_ca_certificate_file() -> PathBuf {
-    PathBuf::from("/usr/local/share/ca-certificates/.opendut-ca.crt.checksum")
-}
 
 pub fn default_config_merge_suggestion_file_path() -> PathBuf {
     PathBuf::from("/etc/opendut/edgar-merge-suggestion.toml")
@@ -81,7 +75,7 @@ pub mod netbird {
     pub fn command() -> anyhow::Result<Command> {
         let executable = unpack_dir()?.join("netbird");
         let mut command = Command::new(executable);
-        command.env("SSL_CERT_FILE", default_os_cert_store_ca_certificate_path());
+        command.env("SSL_CERT_FILE", default_carl_ca_certificate_path());
         Ok(command)
     }
 }
