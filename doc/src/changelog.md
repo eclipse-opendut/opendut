@@ -58,6 +58,12 @@ TBD
 
 ### Breaking changes
 
+#### When upgrading EDGAR
+
+* EDGAR now runs NetBird as a subprocess, so before upgrading, run `sudo systemctl disable --now netbird` to remove the SystemD service for it.
+
+#### When upgrading the backend
+
 * Deleting the old volumes of the telemetry stack is required to avoid any conflicts. Stop the docker containers and delete the volumes:
   ```shell
   docker volume rm opendut_grafana-storage opendut_loki-data opendut_tempo-data
