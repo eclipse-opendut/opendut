@@ -16,5 +16,5 @@
   changed_when: false
 
 - name: Set current date
-  command: "date --set='{{ _date_output.stdout }}'"
+  command: "date --set='@{{ _date_output.stdout }}'"
   when: _system_date_within_threshold.stdout == "True"
