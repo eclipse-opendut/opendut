@@ -83,7 +83,7 @@ pub(crate) fn docker_inspect_network() -> anyhow::Result<()> {
     };
     let mut sorted_addresses: Vec<(&String, &ContainerAddress)> = opendut_container_address_map.iter().collect();
     sorted_addresses
-        .sort_by(|a, b| a.1.ipv4address.cmp(&b.1.ipv4address));
+        .sort_by_key(|(_, address)| address.ipv4address);
 
     let message = "OpenDuT docker network 'docker network inspect opendut_local'";
     println!("# BEGIN {message}");
