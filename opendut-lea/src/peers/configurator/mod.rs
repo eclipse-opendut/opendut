@@ -211,9 +211,7 @@ pub fn PeerConfigurator() -> impl IntoView {
                 .map(|(cluster_id,cluster_config)| (cluster_id, cluster_config.name, cluster_config.devices))
                 .collect::<Vec<(_,_,_)>>();
 
-            devices_in_cluster.sort_by(|(_, name_a, _), (_, name_b, _)|
-                name_a.to_string().cmp(&name_b.to_string())
-            );
+            devices_in_cluster.sort_by_key(|(_, name, _)| name.to_string());
             devices_in_cluster
         };
 

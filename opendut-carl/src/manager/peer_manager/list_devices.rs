@@ -15,8 +15,8 @@ impl Resources<'_> {
         let peers = self.list::<PeerDescriptor>()
             .map_err(|source| ListDevicesError::Persistence { source })?;
 
-        let devices = peers.into_iter()
-            .flat_map(|(_, peer_descriptor) | peer_descriptor.topology.devices)
+        let devices = peers.into_values()
+            .flat_map(|peer_descriptor| peer_descriptor.topology.devices)
             .map(|device| (device.id, device))
             .collect::<HashMap<_, _>>();
 

@@ -75,7 +75,7 @@ impl TaskResolver for ServiceTaskResolver {
 
         let mut remote_peer_connection_checks = self.peer_configuration.remote_peer_connection_checks.clone()
             .into_iter().collect::<Vec<_>>();
-        remote_peer_connection_checks.sort_by(|a, b| a.target.cmp(&b.target));
+        remote_peer_connection_checks.sort_by_key(|check| check.target);
 
         let remote_peers = remote_peer_connection_checks.into_iter()
             .map(|connection_check| (connection_check.value.remote_peer_id, connection_check.value.remote_ip))
