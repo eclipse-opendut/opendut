@@ -3,7 +3,7 @@ pub mod validation;
 use std::collections::HashMap;
 use opendut_lea_components::{Ior, UserInputValue};
 use opendut_model::cluster::ClusterId;
-use opendut_model::viper::{ViperTestRunDescriptor, ViperTestId, ViperTestName, ViperTestParameterKey, ViperTestParameterValue, ViperSourceId};
+use opendut_model::viper::{ViperBindingValue, ViperParameterName, ViperSourceId, ViperTestId, ViperTestName, ViperTestRunDescriptor};
 
 pub type SourceSelectionError = String;
 pub type SourceSelection = Ior<SourceSelectionError, ViperSourceId>;
@@ -62,13 +62,12 @@ impl TryFrom<UserViperTestConfiguration> for ViperTestRunDescriptor {
 
         for (key_input, value_input) in configuration.parameters {
 
-            let key = ViperTestParameterKey {
-                inner: key_input,
-            };
+            let key = ViperParameterName::try_from(key_input)
+                .map_err(|_| ViperTestMisconfiguration::InvalidParameterKey)?;
 
             let value_string = value_input
                 .right_ok_or(ViperTestMisconfiguration::InvalidParameterValue)?;
-            let value = parse_parameter_value(&value_string);
+            let value = parse_binding_value(&value_string);
 
             parameters.insert(key, value);
         }
@@ -83,17 +82,17 @@ impl TryFrom<UserViperTestConfiguration> for ViperTestRunDescriptor {
     }
 }
 
-fn parse_parameter_value(raw: &str) -> ViperTestParameterValue {
+fn parse_binding_value(raw: &str) -> ViperBindingValue {
     if raw.eq_ignore_ascii_case("true") {
-        ViperTestParameterValue::Boolean(true)
+        ViperBindingValue::BooleanValue(true)
     }
     else if raw.eq_ignore_ascii_case("false") {
-        ViperTestParameterValue::Boolean(false)
+        ViperBindingValue::BooleanValue(false)
     }
     else if let Ok(num) = raw.parse::<i64>() {
-        ViperTestParameterValue::Number(num)
+        ViperBindingValue::NumberValue(num)
     }
     else {
-        ViperTestParameterValue::Text(raw.to_owned())
+        ViperBindingValue::TextValue(raw.to_owned())
     }
 }

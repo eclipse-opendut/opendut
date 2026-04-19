@@ -2,7 +2,7 @@ mod error;
 
 use crate::compile::{ParameterDescriptor, ParameterDescriptors};
 use crate::runtime::types::compile::parameters::ParameterName;
-use std::fmt::{Debug, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 use std::vec::IntoIter;
 
 pub use error::{
@@ -185,6 +185,15 @@ impl From<ParameterDescriptors> for ParameterBindings<Incomplete> {
     }
 }
 
+impl <State> Debug for ParameterBindings<State> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ParameterBindings")
+            .field("bindings", &self.bindings)
+            .finish()
+    }
+}
+
+
 /// A single binding of a parameter to its value.
 #[derive(Clone, Debug)]
 pub struct ParameterBinding {
@@ -252,13 +261,16 @@ impl BindingValue {
     }
 }
 
-impl <State> Debug for ParameterBindings<State> {
+impl Display for BindingValue {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("ParameterBindings")
-            .field("bindings", &self.bindings)
-            .finish()
+        match self {
+            BindingValue::BooleanValue(value) => Display::fmt(value, f),
+            BindingValue::NumberValue(value) => Display::fmt(value, f),
+            BindingValue::TextValue(value) => Display::fmt(value, f),
+        }
     }
 }
+
 
 #[cfg(test)]
 mod tests {

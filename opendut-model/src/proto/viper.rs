@@ -3,8 +3,6 @@ opendut_util::include_proto!("opendut.model.viper");
 
 #[cfg(feature="viper")] //only exclude the conversions, because we want to include the `ViperTestId` unconditionally
 mod conversions {
-    use crate::viper::ViperTestParameterKey;
-
     use super::*;
     use std::collections::HashMap;
     use opendut_util::conversion;
@@ -126,7 +124,7 @@ mod conversions {
             let parameters = value.parameters.into_iter()
                 .map(|(key, value)| {
                     ViperTestParameter {
-                        key: key.inner,
+                        key: key.to_string(),
                         value: Some(value.into())
                     }
                 })
@@ -156,7 +154,8 @@ mod conversions {
 
             let parameters = value.parameters.into_iter()
                 .map(|parameter| {
-                    let key = ViperTestParameterKey { inner: parameter.key };
+                    let key = opendut_viper_rt::compile::ParameterName::try_from(parameter.key)
+                        .map_err(|cause| ErrorBuilder::message(cause.to_string()))?;
                     let value = extract!(parameter.value)?.try_into()?;
 
                     Ok((key, value))
@@ -200,23 +199,23 @@ mod conversions {
     }
 
     conversion! {
-        type Model = crate::viper::ViperTestParameterValue;
-        type Proto = ViperTestParameterValue;
+        type Model = opendut_viper_rt::run::BindingValue;
+        type Proto = ViperBindingValue;
 
         fn from(value: Model) -> Proto {
             let value = match value {
-                Model::Boolean(value) => viper_test_parameter_value::Kind::Boolean(value),
-                Model::Number(value) => viper_test_parameter_value::Kind::Number(value),
-                Model::Text(value) => viper_test_parameter_value::Kind::Text(value),
+                Model::BooleanValue(value) => viper_binding_value::Kind::Boolean(value),
+                Model::NumberValue(value) => viper_binding_value::Kind::Number(value),
+                Model::TextValue(value) => viper_binding_value::Kind::Text(value),
             };
             Proto { kind: Some(value) }
         }
 
         fn try_from(value: Proto) -> ConversionResult<Model> {
             let value = match extract!(value.kind)? {
-                viper_test_parameter_value::Kind::Boolean(value) => Model::Boolean(value),
-                viper_test_parameter_value::Kind::Number(value) => Model::Number(value),
-                viper_test_parameter_value::Kind::Text(value) => Model::Text(value),
+                viper_binding_value::Kind::Boolean(value) => Model::BooleanValue(value),
+                viper_binding_value::Kind::Number(value) => Model::NumberValue(value),
+                viper_binding_value::Kind::Text(value) => Model::TextValue(value),
             };
             Ok(value)
         }
