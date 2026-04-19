@@ -10,3 +10,5 @@ pub use suite::*;
 pub use opendut_viper_rt::common::TestSuiteIdentifier as ViperTestSuiteIdentifier;
 pub use opendut_viper_rt::compile::ParameterDescriptor as ViperParameterDescriptor;
 pub use opendut_viper_rt::compile::ParameterDescriptors as ViperParameterDescriptors;
+pub use opendut_viper_rt::compile::ParameterName as ViperParameterName;
+pub use opendut_viper_rt::run::BindingValue as ViperBindingValue;

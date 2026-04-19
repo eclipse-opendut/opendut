@@ -2,6 +2,8 @@ use std::collections::HashMap;
 use std::fmt;
 use std::ops::Not;
 use std::str::FromStr;
+use opendut_viper_rt::compile::ParameterName;
+use opendut_viper_rt::run::{BindingValue};
 use serde::{Deserialize, Serialize};
 use crate::cluster::ClusterId;
 use crate::create_id_type;
@@ -14,7 +16,7 @@ pub struct ViperTestRunDescriptor {
     pub name: ViperTestName,
     pub source: ViperSourceId,
     pub cluster: ClusterId,
-    pub parameters: HashMap<ViperTestParameterKey, ViperTestParameterValue>,
+    pub parameters: HashMap<ParameterName, BindingValue>, //maps to `ParameterBindings` in VIPER (not including ParameterDescriptors here, because they could become out-of-date when we persist them)
 }
 
 
@@ -118,15 +120,4 @@ impl FromStr for ViperTestName {
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         Self::try_from(value)
     }
-}
-
-
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct ViperTestParameterKey { pub inner: String }
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum ViperTestParameterValue {
-    Boolean(bool),
-    Number(i64),
-    Text(String),
 }

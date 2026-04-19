@@ -3,7 +3,7 @@ use leptos::prelude::*;
 use leptos_router::hooks::{use_navigate, use_params_map};
 use opendut_lea_components::{BasePageContainer, Breadcrumb, LoadingSpinner, UserInputError, UserInputValue};
 use opendut_lea_components::tabs::{Tab, Tabs};
-use opendut_model::viper::{ViperTestRunDescriptor, ViperTestId, ViperTestParameterValue};
+use opendut_model::viper::{ViperTestId, ViperTestRunDescriptor};
 use crate::app::use_app_globals;
 use crate::components::use_active_tab;
 use crate::routing::{navigate_to, WellKnownRoutes};
@@ -67,15 +67,9 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                         let mut configured_parameters: HashMap<String, UserInputValue> = HashMap::new();
 
                         for (key, value) in parameters { //TODO this loop doesn't do anything?
-
-                            let value = match value {
-                                ViperTestParameterValue::Boolean(boolean) => boolean.to_string(),
-                                ViperTestParameterValue::Number(number) => number.to_string(),
-                                ViperTestParameterValue::Text(text) => text,
-                            };
                             configured_parameters.insert(
-                                key.inner,
-                                UserInputValue::Right(value)
+                                key.to_string(),
+                                UserInputValue::Right(value.to_string())
                             );
                         }
                     })
