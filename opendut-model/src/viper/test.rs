@@ -10,12 +10,14 @@ use crate::create_id_type;
 use crate::viper::ViperSourceId;
 
 
+/// Information how a test run should be configured when executed via VIPER.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ViperTestRunDescriptor {
     pub id: ViperTestId,
     pub name: ViperTestName,
     pub source: ViperSourceId,
     pub cluster: ClusterId,
+    /// Concrete values bindings to run the test with.
     pub parameters: HashMap<ParameterName, BindingValue>, //maps to `ParameterBindings` in VIPER (not including ParameterDescriptors here, because they could become out-of-date when we persist them)
 }
 
