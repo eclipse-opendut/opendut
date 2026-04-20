@@ -4,8 +4,7 @@ use leptos::ev;
 use leptos::prelude::*;
 use leptos_oidc::{Auth, AuthParameters, AuthSignal};
 use leptos_use::{use_document, use_event_listener};
-use serde::{Deserialize, Deserializer};
-use tracing::info;
+use tracing::{info, warn};
 use url::Url;
 use opendut_auth::public::Authentication;
 use opendut_carl_api::carl::wasm::CarlClient;
@@ -34,38 +33,9 @@ pub fn use_app_globals() -> AppGlobals {
 pub struct AppConfig {
     pub carl_url: Url,
     pub auth_parameters: Option<AuthParameters>,
+    pub footer: Option<String>,
 }
 
-impl<'de> Deserialize<'de> for AppConfig {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
-        let lea_config: LeaConfig = Deserialize::deserialize(deserializer)?;
-
-        match lea_config.idp_config {
-            Some(idp_config) => {
-                let redirect_uri = lea_config.carl_url.to_string();
-                let post_logout_redirect_uri = lea_config.carl_url.to_string();
-
-                Ok(AppConfig {
-                    carl_url: lea_config.carl_url,
-                    auth_parameters: Some(AuthParameters {
-                        // Issuer URL is expected to have no trailing slash
-                        issuer: idp_config.issuer_url.to_string().trim_end_matches('/').to_string(),
-                        client_id: idp_config.client_id,
-                        redirect_uri,
-                        post_logout_redirect_uri,
-                        challenge: Default::default(),
-                        scope: Some(idp_config.scopes),
-                        audience: None,
-                    }),
-                })
-            },
-            None => Ok(AppConfig {
-                carl_url: lea_config.carl_url,
-                auth_parameters: None,
-            })
-        }
-    }
-}
 
 #[derive(thiserror::Error, Clone, Debug)]
 #[error("{message}")]
@@ -85,11 +55,55 @@ pub fn LoadingApp() -> impl IntoView {
 
     let app_globals: AppGlobalsResource = LocalResource::new(move || {
         async {
-            let config = http::Request::get("/api/lea/config")
-                .send().await
-                .map_err(|cause| AppGlobalsError { message: format!("Could not fetch configuration:\n  {cause}")})?
-                .json::<AppConfig>().await
-                .map_err(|cause| AppGlobalsError { message: format!("Could not parse configuration:\n  {cause}")})?;
+            let config = {
+                let LeaConfig { carl_url, idp_config, footer_available } = http::Request::get("/api/lea/config")
+                    .send().await
+                    .map_err(|cause| AppGlobalsError { message: format!("Could not fetch configuration:\n  {cause}")})?
+                    .json::<LeaConfig>().await
+                    .map_err(|cause| AppGlobalsError { message: format!("Could not parse configuration:\n  {cause}")})?;
+
+
+                let footer = if footer_available {
+                    let footer = http::Request::get("/api/footer.html")
+                        .send().await;
+
+                    match footer {
+                        Ok(footer) => {
+                            footer.text().await
+                                .inspect_err(|cause| warn!("Failed to parse footer as text: {cause}"))
+                                .ok()
+                        }
+                        Err(cause) => {
+                            warn!("Failed to fetch footer: {cause}");
+                            None
+                        }
+                    }
+                } else {
+                    None
+                };
+
+                let auth_parameters = idp_config.map(|idp_config| {
+                    let redirect_uri = carl_url.to_string();
+                    let post_logout_redirect_uri = carl_url.to_string();
+
+                    AuthParameters {
+                        // Issuer URL is expected to have no trailing slash
+                        issuer: idp_config.issuer_url.to_string().trim_end_matches('/').to_string(),
+                        client_id: idp_config.client_id,
+                        redirect_uri,
+                        post_logout_redirect_uri,
+                        challenge: Default::default(),
+                        scope: Some(idp_config.scopes),
+                        audience: None,
+                    }
+                });
+
+                AppConfig {
+                    carl_url,
+                    auth_parameters,
+                    footer,
+                }
+            };
 
             info!("Configuration: {config:?}");
 
@@ -142,14 +156,38 @@ pub fn LoadingApp() -> impl IntoView {
             context.has_selection.set(new_value);
         }
     });
-    
+
     view! {
-        <Navbar menu_visible hide_buttons />
-        <div class="columns is-mobile m-0">
-            <Sidebar menu_visible hide_buttons />
-            <main class="container column pt-4">
-                <AppRoutes app_globals />
-            </main>
+        <div style="display: flex; flex-direction: column; height: 100vh;"> //allows putting footer at bottom
+            <Navbar menu_visible hide_buttons />
+            <div class="columns is-mobile m-0">
+                <Sidebar menu_visible hide_buttons />
+                <main class="container column pt-4">
+                    <AppRoutes app_globals />
+                </main>
+            </div>
+            <Footer app_globals />
         </div>
+    }
+}
+
+
+#[component]
+fn Footer(app_globals: AppGlobalsResource) -> impl IntoView {
+    view! {
+        <Transition>
+            {move || Suspend::new(async move {
+                app_globals.await
+                    .map(|app_globals| app_globals.config.footer)
+                    .ok()
+                    .flatten()
+                    .map(|footer| view! {
+                        <footer
+                            class="dut-footer mt-auto p-2 has-text-centered"
+                            inner_html=footer
+                        />
+                    })
+            })}
+        </Transition>
     }
 }
