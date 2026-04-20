@@ -21,7 +21,7 @@ jobs:
       - name: Rust setup
         uses: ./.github/actions/rust-setup
 
-      - name: Run license check
+      - name: Run license and vulnerability check
         run: cargo ci licenses check
       - name: Generate License JSON Report
         run: cargo ci licenses json
