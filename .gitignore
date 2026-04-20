@@ -6,6 +6,7 @@
 /edgar.toml
 .env*
 .ci/deploy/localenv/data/secrets/
+.ci/deploy/localenv/data/carl/assets
 ## keep the local development environment file
 !.ci/deploy/localenv/.env.development
 # Explicitly ignore the override file for docker-compose in localenv and testenv

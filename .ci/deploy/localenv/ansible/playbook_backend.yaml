@@ -29,6 +29,22 @@
     - name: Set carl image version
       include_tasks: tasks/carl_image_version.yaml
 
+
+    - name: Upload footer
+      when: footer is defined
+      block:
+      - name: Create footer directory
+        file:
+          path: "{{ repo_dir }}/.ci/deploy/localenv/data/carl/assets/"
+          state: directory
+          mode: "0755"
+
+      - name: Create footer file
+        copy:
+          dest: "{{ repo_dir }}/.ci/deploy/localenv/data/carl/assets/footer.html"
+          content: "{{ footer }}"
+
+
     - name: Start containers
       block:
         - name: Find all docker compose override files
