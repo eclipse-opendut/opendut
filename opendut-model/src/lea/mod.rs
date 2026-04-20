@@ -13,4 +13,5 @@ pub struct LeaIdentityProviderConfig {
 pub struct LeaConfig {
     pub carl_url: Url,
     pub idp_config: Option<LeaIdentityProviderConfig>,
+    pub footer_available: bool,
 }
