@@ -11,6 +11,9 @@ pub type SourceSelection = Ior<SourceSelectionError, ViperSourceId>;
 pub type ClusterSelectionError = String;
 pub type ClusterSelection = Ior<ClusterSelectionError, ClusterId>;
 
+pub type ViperBindingValueError = String;
+pub type ViperBindingValueInput = Ior<ViperBindingValueError, ViperBindingValue>;
+
 #[derive(thiserror::Error, Clone, Debug, Eq, PartialEq, Hash)]
 #[allow(clippy::enum_variant_names)] // "all variants have the same prefix: `Invalid`"
 pub enum ViperTestMisconfiguration {
@@ -34,7 +37,7 @@ pub struct UserViperTestRunDescriptor {
     pub name: UserInputValue,
     pub viper_source: SourceSelection,
     pub cluster: ClusterSelection,
-    pub parameters: HashMap<String, UserInputValue>,
+    pub parameters: HashMap<ViperParameterName, ViperBindingValueInput>,
     pub is_new: bool,
 }
 
@@ -60,14 +63,10 @@ impl TryFrom<UserViperTestRunDescriptor> for ViperTestRunDescriptor {
 
         let mut parameters = HashMap::new();
 
-        for (key_input, value_input) in configuration.parameters {
+        for (key, value_input) in configuration.parameters {
 
-            let key = ViperParameterName::try_from(key_input)
-                .map_err(|_| ViperTestMisconfiguration::InvalidParameterKey)?;
-
-            let value_string = value_input
+            let value = value_input
                 .right_ok_or(ViperTestMisconfiguration::InvalidParameterValue)?;
-            let value = parse_binding_value(&value_string);
 
             parameters.insert(key, value);
         }
@@ -79,20 +78,5 @@ impl TryFrom<UserViperTestRunDescriptor> for ViperTestRunDescriptor {
             cluster,
             parameters,
         })
-    }
-}
-
-fn parse_binding_value(raw: &str) -> ViperBindingValue {
-    if raw.eq_ignore_ascii_case("true") {
-        ViperBindingValue::BooleanValue(true)
-    }
-    else if raw.eq_ignore_ascii_case("false") {
-        ViperBindingValue::BooleanValue(false)
-    }
-    else if let Ok(num) = raw.parse::<i64>() {
-        ViperBindingValue::NumberValue(num)
-    }
-    else {
-        ViperBindingValue::TextValue(raw.to_owned())
     }
 }
