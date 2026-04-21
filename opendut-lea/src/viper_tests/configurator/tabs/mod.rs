@@ -1,12 +1,12 @@
 mod general;
 mod cluster;
 mod viper_source;
-mod viper_test_suite;
+mod parameters;
 
 pub use cluster::ClusterTab;
 pub use general::GeneralTab;
 pub use viper_source::SourceTab;
-pub use viper_test_suite::ParametersTab;
+pub use parameters::ParametersTab;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum TabIdentifier {

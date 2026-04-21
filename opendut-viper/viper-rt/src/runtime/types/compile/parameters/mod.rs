@@ -166,7 +166,7 @@ impl Display for ParameterName {
 }
 
 /// A `ParameterDescriptor` describes a single parameter of a test suite.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum ParameterDescriptor {
     BooleanParameter {
         /// Primary identifier for the parameter
@@ -224,7 +224,7 @@ impl ParameterDescriptor {
 }
 
 /// The `ParameterInfo` provides additional parameter information for displaying to a user.
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
 pub struct ParameterInfo {
     pub display_name: Option<String>,
     pub description: Option<String>,
