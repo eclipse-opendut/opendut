@@ -1,4 +1,4 @@
-use crate::viper::{ViperSourceId, ViperTestSuiteIdentifier};
+use crate::viper::ViperTestSuiteIdentifier;
 
 
 /// Meta-information about a VIPER test suite,
@@ -6,7 +6,6 @@ use crate::viper::{ViperSourceId, ViperTestSuiteIdentifier};
 #[derive(Clone, Debug)]
 pub struct ViperTestSuiteDescriptor {
     pub id: ViperTestSuiteIdentifier,
-    pub source: ViperSourceId,
     /// Constraints for how the parameter values may look like.
     pub parameters: super::ViperParameterDescriptors,
 }
