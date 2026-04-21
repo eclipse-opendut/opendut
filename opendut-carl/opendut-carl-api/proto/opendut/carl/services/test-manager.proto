@@ -15,7 +15,7 @@ service TestManager {
   rpc GetViperSourceDescriptor(GetViperSourceDescriptorRequest) returns (GetViperSourceDescriptorResponse) {}
   rpc ListViperSourceDescriptors(ListViperSourceDescriptorsRequest) returns (ListViperSourceDescriptorsResponse) {}
 
-  rpc GetViperTestSuiteDescriptor(GetViperTestSuiteDescriptorRequest) returns (GetViperTestSuiteDescriptorResponse) {}
+  rpc GetViperTestSuiteParameters(GetViperTestSuiteParametersRequest) returns (GetViperTestSuiteParametersResponse) {}
 
   rpc StoreViperTestRunDescriptor(StoreViperTestRunDescriptorRequest) returns (StoreViperTestRunDescriptorResponse) {}
   rpc DeleteViperTestRunDescriptor(DeleteViperTestRunDescriptorRequest) returns (DeleteViperTestRunDescriptorResponse) {}
@@ -170,49 +170,49 @@ message ListViperSourceDescriptorsFailureInternal {
 
 
 //////////////////////////////
-// ViperTestSuiteDescriptor //
+// ViperTestSuiteParameters //
 //////////////////////////////
 
 //
-// GetViperTestSuiteDescriptor
+// GetViperTestSuiteParameters
 //
-message GetViperTestSuiteDescriptorRequest {
+message GetViperTestSuiteParametersRequest {
   opendut.model.viper.ViperSourceId source_id = 1;
 }
 
-message GetViperTestSuiteDescriptorResponse {
+message GetViperTestSuiteParametersResponse {
   oneof reply {
-    GetViperTestSuiteDescriptorSuccess success = 1;
-    GetViperTestSuiteDescriptorFailure failure = 2;
+    GetViperTestSuiteParametersSuccess success = 1;
+    GetViperTestSuiteParametersFailure failure = 2;
   }
 }
 
-message GetViperTestSuiteDescriptorSuccess {
-  opendut.model.viper.ViperTestSuiteDescriptor descriptor = 1;
+message GetViperTestSuiteParametersSuccess {
+  opendut.model.viper.ViperTestSuiteParameters descriptor = 1;
 }
 
-message GetViperTestSuiteDescriptorFailure {
+message GetViperTestSuiteParametersFailure {
   oneof error {
-    GetViperTestSuiteDescriptorFailureSourceNotFound source_not_found = 1;
-    GetViperTestSuiteDescriptorFailureInternal internal = 2;
-    GetViperTestSuiteDescriptorFailureCompilation compilation = 3;
-    GetViperTestSuiteDescriptorFailureViperRuntime viper_runtime = 5;
+    GetViperTestSuiteParametersFailureSourceNotFound source_not_found = 1;
+    GetViperTestSuiteParametersFailureInternal internal = 2;
+    GetViperTestSuiteParametersFailureCompilation compilation = 3;
+    GetViperTestSuiteParametersFailureViperRuntime viper_runtime = 5;
   }
 }
 
-message GetViperTestSuiteDescriptorFailureSourceNotFound {
+message GetViperTestSuiteParametersFailureSourceNotFound {
   opendut.model.viper.ViperSourceId source_id = 1;
 }
 
-message GetViperTestSuiteDescriptorFailureCompilation {
+message GetViperTestSuiteParametersFailureCompilation {
   opendut.model.viper.ViperSourceId source_id = 1;
 }
 
-message GetViperTestSuiteDescriptorFailureViperRuntime {
+message GetViperTestSuiteParametersFailureViperRuntime {
   opendut.model.viper.ViperSourceId source_id = 1;
 }
 
-message GetViperTestSuiteDescriptorFailureInternal {
+message GetViperTestSuiteParametersFailureInternal {
   opendut.model.viper.ViperSourceId source_id = 1;
   string cause = 2;
 }

@@ -185,32 +185,32 @@ conversion! {
 
 
 //
-// ViperTestSuiteDescriptor
+// ViperTestSuiteParameters
 //
 
 conversion! {
-    type Model = crate::carl::viper::GetViperTestSuiteDescriptorError;
-    type Proto = GetViperTestSuiteDescriptorFailure;
+    type Model = crate::carl::viper::GetViperTestSuiteParametersError;
+    type Proto = GetViperTestSuiteParametersFailure;
 
     fn from(value: Model) -> Proto {
         let proto_error = match value {
             Model::SourceNotFound { source_id } => {
-                get_viper_test_suite_descriptor_failure::Error::SourceNotFound(GetViperTestSuiteDescriptorFailureSourceNotFound {
+                get_viper_test_suite_parameters_failure::Error::SourceNotFound(GetViperTestSuiteParametersFailureSourceNotFound {
                     source_id: Some(source_id.into()),
                 })
             }
             Model::Compilation { source_id } => {
-                get_viper_test_suite_descriptor_failure::Error::Compilation(GetViperTestSuiteDescriptorFailureCompilation {
+                get_viper_test_suite_parameters_failure::Error::Compilation(GetViperTestSuiteParametersFailureCompilation {
                     source_id: Some(source_id.into()),
                 })
             }
             Model::ViperRuntime { source_id } => {
-                get_viper_test_suite_descriptor_failure::Error::ViperRuntime(GetViperTestSuiteDescriptorFailureViperRuntime {
+                get_viper_test_suite_parameters_failure::Error::ViperRuntime(GetViperTestSuiteParametersFailureViperRuntime {
                     source_id: Some(source_id.into()),
                 })
             }
             Model::Internal { source_id, cause } => {
-                get_viper_test_suite_descriptor_failure::Error::Internal(GetViperTestSuiteDescriptorFailureInternal {
+                get_viper_test_suite_parameters_failure::Error::Internal(GetViperTestSuiteParametersFailureInternal {
                     source_id: Some(source_id.into()),
                     cause
                 })
@@ -225,22 +225,22 @@ conversion! {
         let error = extract!(value.error)?;
 
         match error {
-            get_viper_test_suite_descriptor_failure::Error::SourceNotFound(error) => {
+            get_viper_test_suite_parameters_failure::Error::SourceNotFound(error) => {
                 let source_id = extract!(error.source_id)?.try_into()?;
 
                 Ok(Model::SourceNotFound { source_id })
             }
-            get_viper_test_suite_descriptor_failure::Error::Compilation(error) => {
+            get_viper_test_suite_parameters_failure::Error::Compilation(error) => {
                 let source_id = extract!(error.source_id)?.try_into()?;
                 
                 Ok(Model::Compilation { source_id })
             },
-            get_viper_test_suite_descriptor_failure::Error::ViperRuntime(error) => {
+            get_viper_test_suite_parameters_failure::Error::ViperRuntime(error) => {
                 let source_id = extract!(error.source_id)?.try_into()?;
                 
                 Ok(Model::ViperRuntime{ source_id })
             }
-            get_viper_test_suite_descriptor_failure::Error::Internal(error) => {
+            get_viper_test_suite_parameters_failure::Error::Internal(error) => {
                 let source_id = extract!(error.source_id)?.try_into()?;
                 let cause = error.cause;
 

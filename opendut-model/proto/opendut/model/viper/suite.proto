@@ -5,7 +5,7 @@ package opendut.model.viper;
 import "opendut/viper/rt/test_suite.proto";
 
 
-message ViperTestSuiteDescriptor {
+message ViperTestSuiteParameters {
   opendut.viper.rt.test_suite.ViperTestSuiteIdentifier id = 1;
   repeated opendut.viper.rt.test_suite.ViperParameterDescriptor parameters = 3;
 }

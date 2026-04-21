@@ -1,6 +1,6 @@
 use tonic::{Request, Response, Status};
 use tracing::{error, trace};
-use opendut_carl_api::proto::services::test_manager::{delete_viper_source_descriptor_response, get_viper_source_descriptor_response, get_viper_test_suite_descriptor_response, list_viper_source_descriptors_response, store_viper_source_descriptor_response, DeleteViperSourceDescriptorRequest, DeleteViperSourceDescriptorResponse, DeleteViperSourceDescriptorSuccess, GetViperSourceDescriptorRequest, GetViperSourceDescriptorResponse, GetViperSourceDescriptorSuccess, GetViperTestSuiteDescriptorRequest, GetViperTestSuiteDescriptorResponse, GetViperTestSuiteDescriptorSuccess, ListViperSourceDescriptorsRequest, ListViperSourceDescriptorsResponse, ListViperSourceDescriptorsSuccess, StoreViperSourceDescriptorRequest, StoreViperSourceDescriptorResponse, StoreViperSourceDescriptorSuccess};
+use opendut_carl_api::proto::services::test_manager::{delete_viper_source_descriptor_response, get_viper_source_descriptor_response, get_viper_test_suite_parameters_response, list_viper_source_descriptors_response, store_viper_source_descriptor_response, DeleteViperSourceDescriptorRequest, DeleteViperSourceDescriptorResponse, DeleteViperSourceDescriptorSuccess, GetViperSourceDescriptorRequest, GetViperSourceDescriptorResponse, GetViperSourceDescriptorSuccess, GetViperTestSuiteParametersRequest, GetViperTestSuiteParametersResponse, GetViperTestSuiteParametersSuccess, ListViperSourceDescriptorsRequest, ListViperSourceDescriptorsResponse, ListViperSourceDescriptorsSuccess, StoreViperSourceDescriptorRequest, StoreViperSourceDescriptorResponse, StoreViperSourceDescriptorSuccess};
 use opendut_carl_api::proto::services::test_manager::{delete_viper_test_run_descriptor_response, get_viper_test_run_descriptor_response, list_viper_test_run_descriptors_response, store_viper_test_run_descriptor_response, DeleteViperTestRunDescriptorRequest, DeleteViperTestRunDescriptorResponse, DeleteViperTestRunDescriptorSuccess, GetViperTestRunDescriptorRequest, GetViperTestRunDescriptorResponse, GetViperTestRunDescriptorSuccess, ListViperTestRunDescriptorsRequest, ListViperTestRunDescriptorsResponse, ListViperTestRunDescriptorsSuccess, StoreViperTestRunDescriptorRequest, StoreViperTestRunDescriptorResponse, StoreViperTestRunDescriptorSuccess};
 use opendut_carl_api::proto::services::test_manager::{delete_viper_run_deployment_response, get_viper_run_deployment_response, list_viper_run_deployments_response, store_viper_run_deployment_response, DeleteViperRunDeploymentRequest, DeleteViperRunDeploymentResponse, DeleteViperRunDeploymentSuccess, GetViperRunDeploymentRequest, GetViperRunDeploymentResponse, GetViperRunDeploymentSuccess, ListViperRunDeploymentsRequest, ListViperRunDeploymentsResponse, ListViperRunDeploymentsSuccess, StoreViperRunDeploymentRequest, StoreViperRunDeploymentResponse, StoreViperRunDeploymentSuccess};
 use opendut_carl_api::proto::services::test_manager::test_manager_server::{TestManager as TestManagerService, TestManagerServer};
@@ -8,7 +8,7 @@ use opendut_model::viper::{ViperRunDeployment, ViperRunId, ViperSourceDescriptor
 use crate::manager::grpc::error::LogApiErr;
 use crate::manager::grpc::extract;
 use crate::manager::test_manager::delete_viper_source_descriptor::DeleteViperSourceDescriptorError;
-use crate::manager::test_manager::get_viper_test_suite_descriptor::GetViperTestSuiteDescriptorError;
+use crate::manager::test_manager::get_viper_test_suite_parameters::GetViperTestSuiteParametersError;
 use crate::resource::manager::ResourceManagerRef;
 use crate::resource::persistence::error::{MapErrToInner, PersistenceError};
 
@@ -162,11 +162,11 @@ impl TestManagerService for TestManagerFacade {
 
 
     //
-    // ViperTestSuiteDescriptor
+    // ViperTestSuiteParameters
     //
 
     #[tracing::instrument(skip_all, level="trace")]
-    async fn get_viper_test_suite_descriptor(&self, request: Request<GetViperTestSuiteDescriptorRequest>) -> Result<Response<GetViperTestSuiteDescriptorResponse>, Status> {
+    async fn get_viper_test_suite_parameters(&self, request: Request<GetViperTestSuiteParametersRequest>) -> Result<Response<GetViperTestSuiteParametersResponse>, Status> {
 
         let request = request.into_inner();
         let source_id: ViperSourceId = extract!(request.source_id)?;
@@ -175,30 +175,30 @@ impl TestManagerService for TestManagerFacade {
 
         let result =
             self.resource_manager.resources_mut(async |resources|
-                resources.get_viper_test_suite_descriptor(source_id).await
+                resources.get_viper_test_suite_parameters(source_id).await
             ).await
-            .map_err_to_inner(|cause| GetViperTestSuiteDescriptorError::Persistence {
+            .map_err_to_inner(|cause| GetViperTestSuiteParametersError::Persistence {
                 source_id,
                 cause: cause.context("Persistence error in transaction while getting VIPER test suite descriptors"),
             })
             .log_api_err()
-            .map_err(opendut_carl_api::carl::viper::GetViperTestSuiteDescriptorError::from);
+            .map_err(opendut_carl_api::carl::viper::GetViperTestSuiteParametersError::from);
 
         let response = match result {
             Ok(descriptor) => match descriptor {
-                Some(descriptor) => get_viper_test_suite_descriptor_response::Reply::Success(
-                    GetViperTestSuiteDescriptorSuccess {
+                Some(descriptor) => get_viper_test_suite_parameters_response::Reply::Success(
+                    GetViperTestSuiteParametersSuccess {
                         descriptor: Some(descriptor.into())
                     }
                 ),
-                None => get_viper_test_suite_descriptor_response::Reply::Failure(
-                    opendut_carl_api::carl::viper::GetViperTestSuiteDescriptorError::SourceNotFound { source_id }.into()
+                None => get_viper_test_suite_parameters_response::Reply::Failure(
+                    opendut_carl_api::carl::viper::GetViperTestSuiteParametersError::SourceNotFound { source_id }.into()
                 ),
             }
-            Err(error) => get_viper_test_suite_descriptor_response::Reply::Failure(error.into()),
+            Err(error) => get_viper_test_suite_parameters_response::Reply::Failure(error.into()),
         };
 
-        Ok(Response::new(GetViperTestSuiteDescriptorResponse {
+        Ok(Response::new(GetViperTestSuiteParametersResponse {
             reply: Some(response)
         }))
     }
