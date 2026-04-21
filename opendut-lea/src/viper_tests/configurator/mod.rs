@@ -3,13 +3,13 @@ use leptos::prelude::*;
 use leptos_router::hooks::{use_navigate, use_params_map};
 use opendut_lea_components::{BasePageContainer, Breadcrumb, LoadingSpinner, UserInputError, UserInputValue};
 use opendut_lea_components::tabs::{Tab, Tabs};
-use opendut_model::viper::{ViperTestId, ViperTestRunDescriptor};
+use opendut_model::viper::{ViperParameterName, ViperTestId, ViperTestRunDescriptor};
 use crate::app::use_app_globals;
 use crate::components::use_active_tab;
 use crate::routing::{navigate_to, WellKnownRoutes};
 use crate::viper_tests::configurator::components::Controls;
 use crate::viper_tests::configurator::tabs::{ClusterTab, GeneralTab, SourceTab, ParametersTab, TabIdentifier};
-use crate::viper_tests::configurator::types::{ClusterSelection, SourceSelection, UserViperTestRunDescriptor};
+use crate::viper_tests::configurator::types::{ClusterSelection, SourceSelection, UserViperTestRunDescriptor, ViperBindingValueInput};
 
 mod tabs;
 mod types;
@@ -21,7 +21,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
     let globals = use_app_globals();
     let params = use_params_map();
 
-    let (viper_test_configuration, viper_test_configuration_resource, is_valid_configuration) = {
+    let (viper_test_run_descriptor, viper_test_configuration_resource, is_valid_configuration) = {
         let viper_test_id = {
             let viper_test_id = params.with_untracked(|params| {
                 params.get("id").and_then(|id| ViperTestId::try_from(id.as_str()).ok())
@@ -56,22 +56,24 @@ pub fn ViperTestConfigurator() -> impl IntoView {
         let viper_test_configuration_resource = LocalResource::new(move || {
             let mut carl = globals.client.clone();
             async move {
-                if let Ok(configuration) = carl.viper.get_viper_test_run_descriptor(viper_test_id).await {
+                if let Ok(descriptor) = carl.viper.get_viper_test_run_descriptor(viper_test_id).await {
                     viper_test_configuration.update(|user_configuration| {
-                        let ViperTestRunDescriptor { id: _, name, source: viper_source, cluster, parameters } = configuration;
+                        let ViperTestRunDescriptor { id: _, name, source: viper_source, cluster, parameters } = descriptor;
 
                         user_configuration.name = UserInputValue::Right(name.value().to_owned());
                         user_configuration.viper_source = SourceSelection::Right(viper_source);
                         user_configuration.cluster = ClusterSelection::Right(cluster);
 
-                        let mut configured_parameters: HashMap<String, UserInputValue> = HashMap::new();
+                        let mut configured_parameters: HashMap<ViperParameterName, ViperBindingValueInput> = HashMap::new();
 
-                        for (key, value) in parameters { //TODO this loop doesn't do anything?
+                        for (key, value) in parameters {
                             configured_parameters.insert(
-                                key.to_string(),
-                                UserInputValue::Right(value.to_string())
+                                key,
+                                ViperBindingValueInput::Right(value)
                             );
                         }
+
+                        user_configuration.parameters = configured_parameters;
                     })
                 }
             }
@@ -84,7 +86,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
         (viper_test_configuration, viper_test_configuration_resource, is_valid_configuration)
     };
 
-    let viper_test_id_string = create_read_slice(viper_test_configuration, |config| config.id.to_string());
+    let viper_test_id_string = create_read_slice(viper_test_run_descriptor, |config| config.id.to_string());
 
     let breadcrumbs = Signal::derive(move || {
         let viper_test_id = viper_test_id_string.get();
@@ -96,7 +98,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
     });
 
     let subtitle = Signal::derive(move || {
-        if let UserInputValue::Right(name) = viper_test_configuration.get().name {
+        if let UserInputValue::Right(name) = viper_test_run_descriptor.get().name {
             name
         } else {
             String::new()
@@ -108,22 +110,22 @@ pub fn ViperTestConfigurator() -> impl IntoView {
             Tab::from_title_and_href(
                 String::from("General"),
                 TabIdentifier::General.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || !viper_test_configuration.read().valid_general_tab())),
+            ).with_is_error(Signal::derive(move || !viper_test_run_descriptor.read().valid_general_tab())),
 
             Tab::from_title_and_href(
                 String::from("Viper Source"),
                 TabIdentifier::ViperSource.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || !viper_test_configuration.read().valid_viper_source_tab())),
+            ).with_is_error(Signal::derive(move || !viper_test_run_descriptor.read().valid_viper_source_tab())),
 
             Tab::from_title_and_href(
                 String::from("Parameters"),
                 TabIdentifier::Parameters.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || !viper_test_configuration.read().valid_parameters_tab())),
+            ).with_is_error(Signal::derive(move || !viper_test_run_descriptor.read().valid_parameters_tab())),
 
             Tab::from_title_and_href(
                 String::from("Cluster"),
                 TabIdentifier::Cluster.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || !viper_test_configuration.read().valid_cluster_tab())),
+            ).with_is_error(Signal::derive(move || !viper_test_run_descriptor.read().valid_cluster_tab())),
         ]
     });
 
@@ -134,7 +136,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
             title="Configure Viper Test"
             subtitle
             breadcrumbs
-            controls=view! { <Controls configuration=viper_test_configuration is_valid_configuration /> }
+            controls=view! { <Controls configuration=viper_test_run_descriptor is_valid_configuration /> }
         >
             <Suspense
                 fallback=move || view! { <LoadingSpinner /> }
@@ -146,10 +148,10 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                         view! {
                             <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
                                 { move || match active_tab.get() {
-                                    TabIdentifier::General => view! { <GeneralTab viper_test_configuration /> }.into_any(),
-                                    TabIdentifier::ViperSource => view! { <SourceTab viper_test_configuration /> }.into_any(),
-                                    TabIdentifier::Parameters => view! { <ParametersTab viper_test_configuration /> }.into_any(),
-                                    TabIdentifier::Cluster => view! { <ClusterTab viper_test_configuration /> }.into_any(),
+                                    TabIdentifier::General => view! { <GeneralTab viper_test_run_descriptor /> }.into_any(),
+                                    TabIdentifier::ViperSource => view! { <SourceTab viper_test_run_descriptor /> }.into_any(),
+                                    TabIdentifier::Parameters => view! { <ParametersTab viper_test_run_descriptor /> }.into_any(),
+                                    TabIdentifier::Cluster => view! { <ClusterTab viper_test_run_descriptor /> }.into_any(),
                                 }}
                             </Tabs>
                         }
