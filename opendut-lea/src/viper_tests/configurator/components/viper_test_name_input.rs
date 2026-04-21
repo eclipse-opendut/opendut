@@ -2,10 +2,10 @@ use leptos::prelude::*;
 
 use opendut_model::viper::{IllegalViperTestName, ViperTestName};
 use crate::components::{UserInput, UserInputValue};
-use crate::viper_tests::configurator::types::UserViperTestConfiguration;
+use crate::viper_tests::configurator::types::UserViperTestRunDescriptor;
 
 #[component]
-pub fn ViperTestNameInput(viper_test_configuration: RwSignal<UserViperTestConfiguration>) -> impl IntoView {
+pub fn ViperTestNameInput(viper_test_configuration: RwSignal<UserViperTestRunDescriptor>) -> impl IntoView {
 
     let (getter, setter) = create_slice(viper_test_configuration,
         |config| {

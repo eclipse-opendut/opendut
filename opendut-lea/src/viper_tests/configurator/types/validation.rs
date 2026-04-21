@@ -1,6 +1,6 @@
-use crate::viper_tests::configurator::types::UserViperTestConfiguration;
+use crate::viper_tests::configurator::types::UserViperTestRunDescriptor;
 
-impl UserViperTestConfiguration {
+impl UserViperTestRunDescriptor {
     pub fn is_valid(&self) -> bool {
         self.valid_general_tab()
             && self.valid_viper_source_tab()

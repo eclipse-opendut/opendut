@@ -29,7 +29,7 @@ pub enum ViperTestMisconfiguration {
 }
 
 #[derive(Clone, Debug)]
-pub struct UserViperTestConfiguration {
+pub struct UserViperTestRunDescriptor {
     pub id: ViperTestId,
     pub name: UserInputValue,
     pub viper_source: SourceSelection,
@@ -38,10 +38,10 @@ pub struct UserViperTestConfiguration {
     pub is_new: bool,
 }
 
-impl TryFrom<UserViperTestConfiguration> for ViperTestRunDescriptor {
+impl TryFrom<UserViperTestRunDescriptor> for ViperTestRunDescriptor {
     type Error = ViperTestMisconfiguration;
 
-    fn try_from(configuration: UserViperTestConfiguration) -> Result<Self, Self::Error> {
+    fn try_from(configuration: UserViperTestRunDescriptor) -> Result<Self, Self::Error> {
         let name = configuration
             .name
             .right_ok_or(ViperTestMisconfiguration::InvalidName)

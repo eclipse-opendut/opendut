@@ -2,10 +2,10 @@ use leptos::prelude::*;
 use opendut_lea_components::{SelectionTable, SelectionTableRow};
 use opendut_model::cluster::ClusterDescriptor;
 use crate::app::use_app_globals;
-use crate::viper_tests::configurator::types::{ClusterSelection, UserViperTestConfiguration};
+use crate::viper_tests::configurator::types::{ClusterSelection, UserViperTestRunDescriptor};
 
 #[component]
-pub fn ClusterSelector(viper_test_configuration: RwSignal<UserViperTestConfiguration>) -> impl IntoView {
+pub fn ClusterSelector(viper_test_configuration: RwSignal<UserViperTestRunDescriptor>) -> impl IntoView {
 
     let globals = use_app_globals();
 

@@ -7,11 +7,11 @@ use opendut_model::viper::ViperTestRunDescriptor;
 use crate::app::use_app_globals;
 use crate::routing::{navigate_to, WellKnownRoutes};
 use crate::viper_tests::components::DeleteViperTestButton;
-use crate::viper_tests::configurator::types::UserViperTestConfiguration;
+use crate::viper_tests::configurator::types::UserViperTestRunDescriptor;
 
 #[component]
 pub fn Controls(
-    configuration: RwSignal<UserViperTestConfiguration>,
+    configuration: RwSignal<UserViperTestRunDescriptor>,
     #[prop(into)] is_valid_configuration: Signal<bool>,
 ) -> impl IntoView {
 
@@ -42,7 +42,7 @@ pub fn Controls(
 
 #[component]
 fn SaveViperTestButton(
-    configuration: RwSignal<UserViperTestConfiguration>,
+    configuration: RwSignal<UserViperTestRunDescriptor>,
     is_valid_configuration: Signal<bool>,
 ) -> impl IntoView {
 
