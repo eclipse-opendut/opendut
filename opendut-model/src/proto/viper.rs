@@ -80,7 +80,7 @@ mod conversions {
         type Proto = ViperTestSuiteDescriptor;
 
         fn from(value: Model) -> Proto {
-            let Model { id, source, parameters } = value;
+            let Model { id, parameters } = value;
 
             let parameters = parameters.into_iter()
                 .map(opendut_viper_rt::proto::test_suite::ViperParameterDescriptor::from)
@@ -88,7 +88,6 @@ mod conversions {
 
             Proto {
                 id: Some(id.into()),
-                source: Some(source.into()),
                 parameters,
             }
         }
@@ -97,16 +96,13 @@ mod conversions {
             let id = extract!(value.id)?
                 .try_into()?;
 
-            let source = extract!(value.source)?
-                .try_into()?;
-
             let parameters = value.parameters.into_iter()
                 .map(crate::viper::ViperParameterDescriptor::try_from)
                 .collect::<ConversionResult<Vec<_>>>()?;
 
             let parameters = crate::viper::ViperParameterDescriptors::from(parameters);
 
-            Ok(Model { id, source, parameters })
+            Ok(Model { id, parameters })
         }
     }
 

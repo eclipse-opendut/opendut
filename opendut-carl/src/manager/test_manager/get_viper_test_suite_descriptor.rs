@@ -55,7 +55,6 @@ async fn discover_suite(source: ViperSourceDescriptor) -> Result<Option<ViperTes
 
     Ok(Some(ViperTestSuiteDescriptor {
         id: identifier,
-        source: source_id,
         parameters,
     }))
 }
