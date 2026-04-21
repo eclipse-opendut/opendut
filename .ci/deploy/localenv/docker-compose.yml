@@ -503,6 +503,8 @@ services:
     volumes:
       - provision-secrets-data:/provision:ro
       - ${SHARED_CERTS_HOST_DIR}:${SHARED_CERTS_MOUNT_DIR}:ro
+    labels:
+      - "traefik.enable=false"
     networks:
       - opendut_local
 
@@ -577,6 +579,8 @@ services:
       interval: 5s
       retries: 10
       test: [ 'CMD', 'wget', '--spider', 'http://localhost:3200/ready' ]
+    labels:
+      - "traefik.enable=false"
     networks:
       - opendut_local
 
@@ -613,6 +617,8 @@ services:
     # [Feature Request] Alloy container health check https://github.com/grafana/alloy/issues/1891
     depends_on:
       - loki
+    labels:
+      - "traefik.enable=false"
     networks:
       - opendut_local
 
@@ -716,6 +722,8 @@ services:
       -H \"Content-Type: application/json\" \
       -d '{\"name\": \"openDuT\", \"login\": \"opendut\", \"password\": \"$OPENDUT_USER_OPENDUT_PASSWORD\", \"OrgId\": 1}' \
       http://grafana:80/api/admin/users"
+    labels:
+      - "traefik.enable=false"
     networks:
       - opendut_local
 
