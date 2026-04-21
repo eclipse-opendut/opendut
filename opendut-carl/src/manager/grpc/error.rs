@@ -188,7 +188,7 @@ mod peer_manager {
 
 #[cfg(feature = "viper")]
 mod test_manager {
-    use opendut_carl_api::carl::viper::{DeleteViperSourceDescriptorError, DeleteViperTestRunDescriptorError, GetViperTestSuiteDescriptorError};
+    use opendut_carl_api::carl::viper::{DeleteViperSourceDescriptorError, DeleteViperTestRunDescriptorError, GetViperTestSuiteParametersError};
     use crate::manager::test_manager;
 
     impl From<test_manager::delete_viper_source_descriptor::DeleteViperSourceDescriptorError> for DeleteViperSourceDescriptorError {
@@ -225,19 +225,19 @@ mod test_manager {
     }
 
 
-    impl From<test_manager::get_viper_test_suite_descriptor::GetViperTestSuiteDescriptorError> for GetViperTestSuiteDescriptorError {
-        fn from(value: test_manager::get_viper_test_suite_descriptor::GetViperTestSuiteDescriptorError) -> Self {
+    impl From<test_manager::get_viper_test_suite_parameters::GetViperTestSuiteParametersError> for GetViperTestSuiteParametersError {
+        fn from(value: test_manager::get_viper_test_suite_parameters::GetViperTestSuiteParametersError) -> Self {
             match value {
-                test_manager::get_viper_test_suite_descriptor::GetViperTestSuiteDescriptorError::Compilation { source_id } => 
+                test_manager::get_viper_test_suite_parameters::GetViperTestSuiteParametersError::Compilation { source_id } => 
                     Self::Compilation { source_id },
-                test_manager::get_viper_test_suite_descriptor::GetViperTestSuiteDescriptorError::TaskJoin { source_id, when, cause: _ } =>
+                test_manager::get_viper_test_suite_parameters::GetViperTestSuiteParametersError::TaskJoin { source_id, when, cause: _ } =>
                     Self::Internal {
                         source_id,
                         cause: format!("Internal error when {when} to completion while retrieving VIPER test suite descriptor"),
                     },
-                test_manager::get_viper_test_suite_descriptor::GetViperTestSuiteDescriptorError::ViperRuntime { source_id } => 
+                test_manager::get_viper_test_suite_parameters::GetViperTestSuiteParametersError::ViperRuntime { source_id } => 
                     Self::ViperRuntime { source_id },
-                test_manager::get_viper_test_suite_descriptor::GetViperTestSuiteDescriptorError::Persistence { source_id, cause: _ } =>
+                test_manager::get_viper_test_suite_parameters::GetViperTestSuiteParametersError::Persistence { source_id, cause: _ } =>
                     Self::Internal {
                         source_id,
                         cause: String::from("Error when accessing persistence while getting VIPER test suite descriptor"),

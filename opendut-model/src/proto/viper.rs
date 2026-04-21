@@ -76,8 +76,8 @@ mod conversions {
     //
 
     conversion! {
-        type Model = crate::viper::ViperTestSuiteDescriptor;
-        type Proto = ViperTestSuiteDescriptor;
+        type Model = crate::viper::ViperTestSuiteParameters;
+        type Proto = ViperTestSuiteParameters;
 
         fn from(value: Model) -> Proto {
             let Model { id, parameters } = value;

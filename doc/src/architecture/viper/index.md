@@ -130,7 +130,7 @@ UI <-- CARL: Success
 
 == Parametrizing a test suite run ==
 
-UI --> CARL: GetViperTestSuiteDescriptor(source_id)
+UI --> CARL: GetViperTestSuiteParameters(source_id)
 CARL -> VIPER: SourceDescriptor
 
 activate VIPER
@@ -140,7 +140,7 @@ VIPER -> VIPER: Compile
 CARL <- VIPER: ParameterDescriptors
 deactivate VIPER
 
-UI <-- CARL: ViperTestSuiteDescriptor
+UI <-- CARL: ViperTestSuiteParameters
 
 note over UI: User enters parameter values
 

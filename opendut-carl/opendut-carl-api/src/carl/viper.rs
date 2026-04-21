@@ -61,11 +61,11 @@ pub enum ListViperSourceDescriptorsError {
 
 
 //
-// ViperTestSuiteDescriptor
+// ViperTestSuiteParameters
 //
 
 #[derive(thiserror::Error, Debug)]
-pub enum GetViperTestSuiteDescriptorError {
+pub enum GetViperTestSuiteParametersError {
     #[error("A VIPER source with ID <{source_id}> could not be found, while fetching VIPER test suite descriptor.")]
     SourceNotFound {
         source_id: ViperSourceId,
@@ -191,7 +191,7 @@ pub enum ListViperRunDeploymentsError {
 mod client {
     use super::*;
     use tonic::codegen::{Body, Bytes, http, InterceptedService, StdError};
-    use opendut_model::viper::{ViperSourceDescriptor, ViperSourceId, ViperTestRunDescriptor, ViperTestId, ViperTestSuiteDescriptor};
+    use opendut_model::viper::{ViperSourceDescriptor, ViperSourceId, ViperTestRunDescriptor, ViperTestId, ViperTestSuiteParameters};
     use crate::carl::{extract, ClientError};
     use crate::proto::services::test_manager;
     use crate::proto::services::test_manager::test_manager_client::TestManagerClient;
@@ -323,21 +323,21 @@ mod client {
         }
 
 
-        pub async fn get_viper_test_suite_descriptor(&mut self, source_id: ViperSourceId) -> Result<ViperTestSuiteDescriptor, ClientError<GetViperTestSuiteDescriptorError>> {
+        pub async fn get_viper_test_suite_parameters(&mut self, source_id: ViperSourceId) -> Result<ViperTestSuiteParameters, ClientError<GetViperTestSuiteParametersError>> {
 
-            let request = tonic::Request::new(test_manager::GetViperTestSuiteDescriptorRequest {
+            let request = tonic::Request::new(test_manager::GetViperTestSuiteParametersRequest {
                 source_id: Some(source_id.into()),
             });
 
-            let response = self.inner.get_viper_test_suite_descriptor(request).await?
+            let response = self.inner.get_viper_test_suite_parameters(request).await?
                 .into_inner();
 
             match extract!(response.reply)? {
-                test_manager::get_viper_test_suite_descriptor_response::Reply::Failure(failure) => {
-                    let error = GetViperTestSuiteDescriptorError::try_from(failure)?;
+                test_manager::get_viper_test_suite_parameters_response::Reply::Failure(failure) => {
+                    let error = GetViperTestSuiteParametersError::try_from(failure)?;
                     Err(ClientError::UsageError(error))
                 }
-                test_manager::get_viper_test_suite_descriptor_response::Reply::Success(success) => {
+                test_manager::get_viper_test_suite_parameters_response::Reply::Success(success) => {
                     let peer_descriptor = extract!(success.descriptor)?;
                     Ok(peer_descriptor)
                 }

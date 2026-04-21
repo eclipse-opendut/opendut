@@ -1,5 +1,5 @@
 use tracing::debug;
-use opendut_model::viper::{ViperSourceDescriptor, ViperSourceId, ViperTestSuiteDescriptor};
+use opendut_model::viper::{ViperSourceDescriptor, ViperSourceId, ViperTestSuiteParameters};
 use opendut_viper_rt::common::TestSuiteIdentifier;
 use opendut_viper_rt::compile::{IdentifierFilter};
 use opendut_viper_rt::events::emitter;
@@ -11,10 +11,10 @@ use crate::resource::{api::resources::Resources, persistence::error::Persistence
 
 impl Resources<'_> {
     #[tracing::instrument(skip_all, level="trace")]
-    pub async fn get_viper_test_suite_descriptor(&self, source_id: ViperSourceId) -> Result<Option<ViperTestSuiteDescriptor>, GetViperTestSuiteDescriptorError> {
+    pub async fn get_viper_test_suite_parameters(&self, source_id: ViperSourceId) -> Result<Option<ViperTestSuiteParameters>, GetViperTestSuiteParametersError> {
 
         let source = self.get::<ViperSourceDescriptor>(source_id)
-            .map_err(|cause| GetViperTestSuiteDescriptorError::Persistence { source_id, cause })?;
+            .map_err(|cause| GetViperTestSuiteParametersError::Persistence { source_id, cause })?;
 
         match source {
             Some(source) => discover_suite(source).await,
@@ -24,7 +24,7 @@ impl Resources<'_> {
 }
 
 
-async fn discover_suite(source: ViperSourceDescriptor) -> Result<Option<ViperTestSuiteDescriptor>, GetViperTestSuiteDescriptorError>  {
+async fn discover_suite(source: ViperSourceDescriptor) -> Result<Option<ViperTestSuiteParameters>, GetViperTestSuiteParametersError>  {
     let ViperSourceDescriptor { id: source_id, name, url } = source;
 
     let name = TestSuiteIdentifier::try_from(name.value())
@@ -39,10 +39,10 @@ async fn discover_suite(source: ViperSourceDescriptor) -> Result<Option<ViperTes
             let viper_runtime = ViperRuntime::new(ViperOptions {
                 source_loaders: vec![Box::new(HttpSourceLoader)],
                 ..Default::default()
-            }).map_err(|_| GetViperTestSuiteDescriptorError::ViperRuntime { source_id })?;
+            }).map_err(|_| GetViperTestSuiteParametersError::ViperRuntime { source_id })?;
 
             let compilation = viper_runtime.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await
-                .map_err(|_| GetViperTestSuiteDescriptorError::Compilation { source_id })?;
+                .map_err(|_| GetViperTestSuiteParametersError::Compilation { source_id })?;
 
             Ok((compilation.identifier().to_owned(), compilation.parameters().to_owned()))
         })
@@ -51,9 +51,9 @@ async fn discover_suite(source: ViperSourceDescriptor) -> Result<Option<ViperTes
     debug!("VIPER compilation completed.");
 
     let (identifier, parameters) = handle.await
-        .map_err(|cause| GetViperTestSuiteDescriptorError::TaskJoin { source_id, when: "compiling VIPER source", cause })??;
+        .map_err(|cause| GetViperTestSuiteParametersError::TaskJoin { source_id, when: "compiling VIPER source", cause })??;
 
-    Ok(Some(ViperTestSuiteDescriptor {
+    Ok(Some(ViperTestSuiteParameters {
         id: identifier,
         parameters,
     }))
@@ -61,7 +61,7 @@ async fn discover_suite(source: ViperSourceDescriptor) -> Result<Option<ViperTes
 
 
 #[derive(thiserror::Error, Debug)]
-pub enum GetViperTestSuiteDescriptorError {
+pub enum GetViperTestSuiteParametersError {
     #[error("Compilation failed while getting VIPER test suite descriptor for source <{source_id}>.")]
     Compilation {
         source_id: ViperSourceId,
