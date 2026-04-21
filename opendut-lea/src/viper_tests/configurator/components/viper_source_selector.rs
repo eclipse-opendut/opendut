@@ -2,10 +2,10 @@ use leptos::prelude::*;
 use opendut_lea_components::{SelectionTable, SelectionTableRow};
 use opendut_model::viper::ViperSourceDescriptor;
 use crate::app::use_app_globals;
-use crate::viper_tests::configurator::types::{SourceSelection, UserViperTestConfiguration};
+use crate::viper_tests::configurator::types::{SourceSelection, UserViperTestRunDescriptor};
 
 #[component]
-pub fn ViperTestSourceSelector(viper_test_configuration: RwSignal<UserViperTestConfiguration>) -> impl IntoView {
+pub fn ViperTestSourceSelector(viper_test_configuration: RwSignal<UserViperTestRunDescriptor>) -> impl IntoView {
 
     let globals = use_app_globals();
 

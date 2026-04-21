@@ -9,7 +9,7 @@ use crate::components::use_active_tab;
 use crate::routing::{navigate_to, WellKnownRoutes};
 use crate::viper_tests::configurator::components::Controls;
 use crate::viper_tests::configurator::tabs::{ClusterTab, GeneralTab, SourceTab, ParametersTab, TabIdentifier};
-use crate::viper_tests::configurator::types::{ClusterSelection, SourceSelection, UserViperTestConfiguration};
+use crate::viper_tests::configurator::types::{ClusterSelection, SourceSelection, UserViperTestRunDescriptor};
 
 mod tabs;
 mod types;
@@ -43,7 +43,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
         };
 
         let viper_test_configuration = RwSignal::new(
-            UserViperTestConfiguration {
+            UserViperTestRunDescriptor {
                 id: viper_test_id,
                 name: UserInputValue::Left(UserInputError::from("Enter a valid viper test name.")),
                 viper_source: SourceSelection::Left(String::from("Select a viper test source.")),
