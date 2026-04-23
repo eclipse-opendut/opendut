@@ -53,7 +53,7 @@ where F: Fn() + 'static {
             {
                 text.map(|text| {
                     view! {
-                        <span class="pl-2">{ text }</span>
+                        <label class="label pl-2">{ text }</label>
                     }
                 })
             }

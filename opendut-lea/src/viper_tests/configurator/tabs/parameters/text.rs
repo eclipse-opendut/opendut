@@ -62,7 +62,6 @@ pub fn TextParameterInput(
         }
     };
 
-
     view! {
         <UserInput
             getter

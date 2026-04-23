@@ -11,6 +11,11 @@ pub fn NumberParameterInput(
 ) -> impl IntoView {
 
     view! {
-        
+        { name }
+        { display_name }
+        { description }
+        { default }
+        { min }
+        { max }
     }
 }
