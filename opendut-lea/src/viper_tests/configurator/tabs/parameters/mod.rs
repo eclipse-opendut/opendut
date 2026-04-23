@@ -78,6 +78,8 @@ pub fn ParametersTab(viper_test_run_descriptor: RwSignal<UserViperTestRunDescrip
                                 ViperParameterDescriptor::BooleanParameter { name, info, default } => {
                                     view! {
                                         <BooleanParameterInput
+                                            getter=test_run_getter
+                                            setter=test_run_setter
                                             name=name.to_string()
                                             display_name=info.display_name
                                             description=info.description
