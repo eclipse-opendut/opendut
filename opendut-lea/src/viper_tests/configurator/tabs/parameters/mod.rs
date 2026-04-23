@@ -15,12 +15,17 @@ pub fn ParametersTab(viper_test_run_descriptor: RwSignal<UserViperTestRunDescrip
 
     let globals = use_app_globals();
 
+    let viper_source = create_read_slice(
+        viper_test_run_descriptor,
+        |descriptor| Clone::clone(&descriptor.viper_source),
+    );
+
     let parameters = {
         let carl = globals.client.clone();
 
         LocalResource::new(move || {
             let mut carl = carl.clone();
-            let viper_source = viper_test_run_descriptor.get().viper_source;
+            let viper_source = viper_source.get();
 
             let source_id = match viper_source {
                 SourceSelection::Left(_) => None,
