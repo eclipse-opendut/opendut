@@ -13,22 +13,27 @@ use crate::clusters::IsDeployed;
 use crate::components::{Toast, use_toaster};
 
 #[component]
-pub fn DeployToggle(
+pub fn DeployToggle<OnDeploymentChanged>(
     #[prop(into)] cluster_id: Signal<ClusterId>,
     #[prop(into)] is_deployed: Signal<IsDeployed>,
-    refetch_cluster_deployments: RwSignal<()>,
-) -> impl IntoView {
+    on_deployment_changed: OnDeploymentChanged,
+) -> impl IntoView
+where
+    OnDeploymentChanged: Fn() + Clone + Send + 'static,
+{
     let globals = use_app_globals();
     let toaster = use_toaster();
 
     let on_deploy = {
         let carl = globals.client.clone();
         let toaster = Arc::clone(&toaster);
+        let on_deployment_changed = on_deployment_changed.clone();
 
         move || {
             let mut carl = carl.clone();
             let toaster = Arc::clone(&toaster);
             let cluster_id = cluster_id.get_untracked();
+            let on_deployment_changed = on_deployment_changed.clone();
 
             leptos::task::spawn_local(async move {
                 match carl.cluster.store_cluster_deployment(ClusterDeployment { id: cluster_id }).await {
@@ -60,7 +65,7 @@ pub fn DeployToggle(
                         };
                     }
                 }
-                refetch_cluster_deployments.notify();
+                on_deployment_changed();
             })
         }
     };
@@ -68,11 +73,13 @@ pub fn DeployToggle(
     let on_undeploy = {
         let carl = globals.client.clone();
         let toaster = Arc::clone(&toaster);
+        let on_deployment_changed = on_deployment_changed.clone();
 
         move || {
             let mut carl = carl.clone();
             let toaster = Arc::clone(&toaster);
             let cluster_id = cluster_id.get_untracked();
+            let on_deployment_changed = on_deployment_changed.clone();
 
             leptos::task::spawn_local(async move {
                 match carl.cluster.delete_cluster_deployment(cluster_id).await {
@@ -89,7 +96,7 @@ pub fn DeployToggle(
                         );
                     }
                 }
-                refetch_cluster_deployments.notify();
+                on_deployment_changed();
             })
         }
     };
