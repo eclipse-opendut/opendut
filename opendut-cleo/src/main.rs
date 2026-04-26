@@ -241,6 +241,7 @@ async fn execute() -> Result<()> {
         let mut config = opendut_telemetry::logging::LoggingConfig::load(&settings)
             .map_err(|error| format!("Error while loading logging configuration: {error}"))?;
 
+        config.log_level_default_directive = "error";
         config.log_level_override =
             if args.verbosity.is_present() {
                 Some(LevelFilter::from(args.verbosity))

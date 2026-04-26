@@ -7,7 +7,11 @@ license.workspace = true
 repository.workspace = true
 
 [features]
-viper = ["opendut-carl-api/viper"]
+viper = [
+    "opendut-carl-api/viper",
+    "opendut-viper-rt/compile",
+    "opendut-viper-rt/http-source",
+]
 
 [dependencies]
 opendut-auth = { workspace = true, features = ["registration_client"] }
@@ -16,6 +20,7 @@ opendut-vpn-netbird = { workspace = true }
 opendut-model = { workspace = true }
 opendut-telemetry = { workspace = true }
 opendut-util = { workspace = true, features = ["crypto", "pem", "reqwest", "settings"] }
+opendut-viper-rt = { workspace = true, optional = true }
 opendut-vpn = { workspace = true }
 
 anyhow = { workspace = true }
@@ -67,7 +72,6 @@ uuid = { workspace = true }
 assert_fs = { workspace = true }
 opendut-auth-tests = { workspace = true }
 predicates = { workspace = true }
-rstest = { workspace = true }
 test-log = { workspace = true }
 test-with = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }

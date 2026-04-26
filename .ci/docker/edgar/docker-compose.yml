@@ -10,11 +10,24 @@
 # ```
 # export OPENDUT_BACKEND_IP=203.0.113.0  # replace with IP address of your backend
 # ```
+#
+# To build it from the Dockerfile, run like so:
+# ```sh
+# export OPENDUT_EDGAR_SETUP_STRING=F7UJUZSn...
+# export VERSION=0.10.0  # the version found in the root Cargo.toml as `workspace.package.version`
+# docker compose up --build
+# ```
 
 services:
   edgar:
     container_name: opendut-edgar
     image: "${OPENDUT_DOCKER_IMAGE_HOST:-ghcr.io}/${OPENDUT_DOCKER_IMAGE_NAMESPACE:-eclipse-opendut}/opendut-edgar:${OPENDUT_EDGAR_IMAGE_VERSION:-0.10.0-alpha}"
+
+    build:
+      context: ../../../
+      dockerfile: .ci/docker/edgar/Dockerfile
+      args:
+        VERSION: "${VERSION}"
 
     environment:
       - OPENDUT_EDGAR_SETUP_STRING
@@ -40,3 +53,17 @@ services:
       - "netbird-relay.opendut.local:${OPENDUT_BACKEND_IP:-0.0.0.0}"
       - "signal.opendut.local:${OPENDUT_BACKEND_IP:-0.0.0.0}"
       - "opentelemetry.opendut.local:${OPENDUT_BACKEND_IP:-0.0.0.0}"
+
+    volumes:
+      - setup_persistence_edgar_application:/opt/opendut/edgar/
+      - setup_persistence_configuration:/etc/
+      - setup_persistence_os_path:/usr/bin/
+
+    logging:
+      driver: local  # performs automatic log rotation, generally recommended: https://docs.docker.com/engine/logging/configure/
+
+
+volumes:
+  setup_persistence_edgar_application:
+  setup_persistence_configuration:
+  setup_persistence_os_path:

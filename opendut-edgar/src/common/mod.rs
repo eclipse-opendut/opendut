@@ -2,7 +2,7 @@ pub mod banner;
 pub mod carl;
 pub mod settings;
 pub mod task;
-
+pub mod util;
 
 pub mod constants {
     use std::path::PathBuf;

@@ -6,7 +6,6 @@ use std::result::Result;
 use async_trait::async_trait;
 use googletest::prelude::*;
 use reqwest::Response;
-use rstest::{fixture, rstest};
 use serde_json::json;
 use uuid::uuid;
 
@@ -18,9 +17,9 @@ const TIMEOUT: Duration = Duration::from_secs(10000);
 const SETUP_KEY_EXPIRATION: Duration = Duration::from_millis(86400000);
 
 ///Verify compatibility with examples from here: https://docs.netbird.io/api
-#[rstest]
 #[tokio::test]
-async fn delete_peer(fixture: Fixture) -> anyhow::Result<()> {
+async fn delete_peer() -> anyhow::Result<()> {
+    let fixture = Fixture::new();
 
     let requester = fixture.requester(|_, request| {
         assert_that!(request.method(), eq(&Method::DELETE));
@@ -40,9 +39,10 @@ async fn delete_peer(fixture: Fixture) -> anyhow::Result<()> {
     Ok(())
 }
 
-#[rstest]
 #[tokio::test]
-async fn create_group(fixture: Fixture) -> anyhow::Result<()> {
+async fn create_group() -> anyhow::Result<()> {
+    let fixture = Fixture::new();
+
     let requester = fixture.requester(|fixture, request| {
         let request = request.body().unwrap().as_bytes().unwrap();
         let request: serde_json::Value = serde_json::from_slice(request).unwrap();
@@ -103,9 +103,9 @@ async fn create_group(fixture: Fixture) -> anyhow::Result<()> {
     Ok(())
 }
 
-#[rstest]
 #[tokio::test]
-async fn find_group(fixture: Fixture) -> anyhow::Result<()> {
+async fn find_group() -> anyhow::Result<()> {
+    let fixture = Fixture::new();
 
     let requester = fixture.requester(|fixture, request| {
 
@@ -147,9 +147,9 @@ async fn find_group(fixture: Fixture) -> anyhow::Result<()> {
     Ok(())
 }
 
-#[rstest]
 #[tokio::test]
-async fn delete_group(fixture: Fixture) -> anyhow::Result<()> {
+async fn delete_group() -> anyhow::Result<()> {
+    let fixture = Fixture::new();
 
     let requester = fixture.requester(|_, request| {
         assert_that!(request.method(), eq(&Method::DELETE));
@@ -170,9 +170,9 @@ async fn delete_group(fixture: Fixture) -> anyhow::Result<()> {
     Ok(())
 }
 
-#[rstest]
 #[tokio::test]
-async fn create_a_setup_key(fixture: Fixture) -> anyhow::Result<()> {
+async fn create_a_setup_key() -> anyhow::Result<()> {
+    let fixture = Fixture::new();
 
     let requester = fixture.requester(|fixture, request| {
         match request.url().path() {
@@ -266,9 +266,9 @@ async fn create_a_setup_key(fixture: Fixture) -> anyhow::Result<()> {
     Ok(())
 }
 
-#[rstest]
 #[tokio::test]
-async fn create_access_policy(fixture: Fixture) -> anyhow::Result<()> {
+async fn create_access_policy() -> anyhow::Result<()> {
+    let fixture = Fixture::new();
 
     let requester = fixture.requester(|fixture, request| {
         let request = request.body().unwrap().as_bytes().unwrap();
@@ -332,30 +332,6 @@ async fn create_access_policy(fixture: Fixture) -> anyhow::Result<()> {
     Ok(())
 }
 
-#[fixture]
-fn fixture() -> Fixture {
-    let base_url = Url::parse("https://localhost/api/").unwrap();
-    let peer_id = PeerId::from(uuid!("b7dd1960-9ab5-4f3a-851d-6b68a90099eb"));
-    let cluster_id = ClusterId::from(uuid!("999f8513-d7ab-43fe-9bf0-091abaff2a97"));
-    let netbird_group_id = netbird::GroupId::from("ch8i4ug6lnn4g9hqv7m0");
-    let cluster_netbird_group_name = netbird::GroupName::Cluster(cluster_id);
-    let peer_netbird_group_name = netbird::GroupName::Peer(peer_id);
-    let netbird_peer_id = netbird::PeerId(String::from("chacbco6lnnbn6cg5s90"));
-    let netbird_peer_setup_key_name = netbird::setup_key_name_format(peer_id);
-    let netbird_cluster_policy_name = netbird::PolicyName::Cluster(cluster_id);
-    Fixture {
-        base_url,
-        authentication: NetbirdAuthenticationMethod::UseExistingApiToken(NetbirdToken::new_personal_access("test-token")),
-        peer_id,
-        cluster_id,
-        netbird_group_id,
-        cluster_netbird_group_name,
-        peer_netbird_group_name,
-        netbird_peer_id,
-        netbird_peer_setup_key_name,
-        netbird_cluster_policy_name,
-    }
-}
 
 #[derive(Clone)]
 struct Fixture {
@@ -372,6 +348,30 @@ struct Fixture {
 }
 
 impl Fixture {
+    fn new() -> Self {
+        let base_url = Url::parse("https://localhost/api/").unwrap();
+        let peer_id = PeerId::from(uuid!("b7dd1960-9ab5-4f3a-851d-6b68a90099eb"));
+        let cluster_id = ClusterId::from(uuid!("999f8513-d7ab-43fe-9bf0-091abaff2a97"));
+        let netbird_group_id = netbird::GroupId::from("ch8i4ug6lnn4g9hqv7m0");
+        let cluster_netbird_group_name = netbird::GroupName::Cluster(cluster_id);
+        let peer_netbird_group_name = netbird::GroupName::Peer(peer_id);
+        let netbird_peer_id = netbird::PeerId(String::from("chacbco6lnnbn6cg5s90"));
+        let netbird_peer_setup_key_name = netbird::setup_key_name_format(peer_id);
+        let netbird_cluster_policy_name = netbird::PolicyName::Cluster(cluster_id);
+        Fixture {
+            base_url,
+            authentication: NetbirdAuthenticationMethod::UseExistingApiToken(NetbirdToken::new_personal_access("test-token")),
+            peer_id,
+            cluster_id,
+            netbird_group_id,
+            cluster_netbird_group_name,
+            peer_netbird_group_name,
+            netbird_peer_id,
+            netbird_peer_setup_key_name,
+            netbird_cluster_policy_name,
+        }
+    }
+
     pub fn base_url(&self) -> Url {
         Clone::clone(&self.base_url)
     }

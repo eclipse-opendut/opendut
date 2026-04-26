@@ -2,8 +2,8 @@ use crate::commands::dev::DevCli;
 use crate::commands::testenv::TestenvCli;
 use crate::commands::vagrant::VagrantCli;
 use crate::core::project::ProjectRootDir;
-use crate::core::{project, Result};
-use clap::{Parser, Subcommand};
+use crate::core::project;
+use clap::Parser;
 use std::path::PathBuf;
 
 mod core;
@@ -13,34 +13,26 @@ mod commands;
 #[command(name = "opendut-theo")]
 #[command(about = "opendut-theo - Test harness environment operator.")]
 #[command(long_version = None)]
-struct Cli {
-    #[command(subcommand)]
-    command: TaskCli,
-}
-
-#[derive(Subcommand)]
-enum TaskCli {
+enum Cli {
     Testenv(TestenvCli),
     Vagrant(VagrantCli),
     Dev(DevCli),
 }
 
 
-fn main() -> Result {
+fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
         .with_writer(std::io::stderr)
         .init();
 
-    let args = Cli::parse();
-
     PathBuf::project_dir_verify();
     project::load_environment_variables_from_dot_env_file();
 
-    match args.command {
-        TaskCli::Testenv(implementation) => { implementation.default_handling()? }
-        TaskCli::Vagrant(implementation) => { implementation.default_handling()? }
-        TaskCli::Dev(implementation) => { implementation.default_handling()? }
+    match Cli::parse() {
+        Cli::Testenv(cli) => cli.run()?,
+        Cli::Vagrant(cli) => cli.run()?,
+        Cli::Dev(cli) => cli.run()?,
     };
     Ok(())
 }

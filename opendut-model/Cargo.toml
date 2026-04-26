@@ -37,7 +37,6 @@ anyhow = { workspace = true }
 googletest = { workspace = true }
 indoc = { workspace = true }
 serde_yaml = { workspace = true }
-rstest = { workspace = true }
 test-log = { workspace = true }
 
 [build-dependencies]

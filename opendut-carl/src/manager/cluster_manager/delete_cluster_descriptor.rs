@@ -1,7 +1,6 @@
 use opendut_model::cluster::ClusterDisplay;
 use opendut_model::ShortName;
 use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId, ClusterName};
-use tracing::{debug, info};
 use opendut_model::cluster::state::ClusterState;
 use crate::resource::api::resources::Resources;
 use crate::resource::persistence::error::PersistenceError;
@@ -20,24 +19,29 @@ impl Resources<'_> {
         let cluster_deployment = self.get::<ClusterDeployment>(cluster_id)
             .map_err(|source| DeleteClusterDescriptorError::Persistence { cluster_id, cluster_name: None, source })?;
 
-        match cluster_deployment {
-            None => {
-                debug!("Deleting cluster descriptor <{cluster_id}>.");
+        if let Some(cluster_deployment) = cluster_deployment {
+            return Err(DeleteClusterDescriptorError::ClusterDeploymentFound { cluster_id: cluster_deployment.id })
+        };
 
-                let cluster_descriptor = self.remove::<ClusterDescriptor>(cluster_id)
-                    .map_err(|source| DeleteClusterDescriptorError::Persistence { cluster_id, cluster_name: None, source })?
-                    .ok_or_else(|| DeleteClusterDescriptorError::ClusterDescriptorNotFound { cluster_id })?;
+        #[cfg(feature = "viper")] {
+            use opendut_model::viper::ViperTestRunDescriptor;
 
-                let cluster_name = Clone::clone(&cluster_descriptor.name);
+            let viper_tests = self.list::<ViperTestRunDescriptor>()
+                .map_err(|source| DeleteClusterDescriptorError::Persistence { cluster_id, cluster_name: None, source })?;
 
-                info!("Successfully deleted cluster descriptor '{cluster_name}' <{cluster_id}>.");
-
-                Ok(cluster_descriptor)
-            }
-            Some(cluster_deployment) => {
-                Err(DeleteClusterDescriptorError::ClusterDeploymentFound { cluster_id: cluster_deployment.id })
+            if let Some(test_descriptor) = viper_tests.values().find(|test| test.cluster == cluster_id) {
+                return Err(DeleteClusterDescriptorError::ViperTestFound {
+                    cluster_id,
+                    test_id: test_descriptor.id,
+                })
             }
         }
+
+        self.remove::<ClusterDescriptor>(cluster_id)
+            .map_err(|source| {
+                DeleteClusterDescriptorError::Persistence { cluster_id, cluster_name: None, source }
+                })?
+            .ok_or_else(|| DeleteClusterDescriptorError::ClusterDescriptorNotFound { cluster_id })
     }
 }
 
@@ -46,6 +50,12 @@ pub enum DeleteClusterDescriptorError {
     #[error("ClusterDescriptor <{cluster_id}> could not be deleted, because a ClusterDeployment with that ID still exists!")]
     ClusterDeploymentFound {
         cluster_id: ClusterId
+    },
+    #[cfg(feature="viper")]
+    #[error("ClusterDescriptor <{cluster_id}> could not be deleted, because the VIPER test <{test_id}> uses it!")]
+    ViperTestFound {
+        cluster_id: ClusterId,
+        test_id: opendut_model::viper::ViperTestId,
     },
     #[error("ClusterDescriptor <{cluster_id}> could not be deleted, because a ClusterDescriptor with that ID does not exist!")]
     ClusterDescriptorNotFound {
@@ -90,6 +100,28 @@ mod tests {
         else { panic!("Expected ClusterDeploymentFound error!") };
 
         assert_eq!(cluster_id, cluster.id);
+        Ok(())
+    }
+
+    #[cfg(feature = "viper")]
+    #[tokio::test]
+    async fn block_deletion_of_cluster_descriptor_if_viper_test_uses_it() -> anyhow::Result<()> {
+        use crate::manager::testing::ViperTestFixture;
+
+        let resource_manager = ResourceManager::new_in_memory();
+
+        let viper_test = ViperTestFixture::create(resource_manager.clone()).await?;
+        let cluster_id = viper_test.descriptor.cluster;
+
+        let result = resource_manager.resources_mut(async |resources| {
+            resources.delete_cluster_descriptor(DeleteClusterDescriptorParams { cluster_id })
+        }).await?;
+
+        let Err(DeleteClusterDescriptorError::ViperTestFound { cluster_id: cluster_id_in_error , .. }) = result
+        else { panic!("Expected ViperTestFound error!") };
+
+        assert_eq!(cluster_id_in_error, cluster_id);
+
         Ok(())
     }
 

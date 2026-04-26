@@ -1,4 +1,5 @@
-use anyhow::anyhow;
+use std::path::PathBuf;
+use anyhow::Context;
 use axum::routing::get;
 use config::Config;
 use tower_http::services::{ServeDir, ServeFile};
@@ -8,6 +9,8 @@ use opendut_model::lea::LeaConfig;
 use opendut_util::project;
 use crate::http::router;
 use crate::http::state::{CarlInstallDirectory, HttpState, LoadableLeaIdentityProviderConfig};
+
+const FOOTER_FILE_PATH: &str = "/etc/opendut/carl/assets/footer.html";
 
 
 pub fn create_http_service(settings: &Config) -> anyhow::Result<axum::Router<HttpState>> {
@@ -43,6 +46,7 @@ pub fn create_http_service(settings: &Config) -> anyhow::Result<axum::Router<Htt
         .route("/api/cleo/{architecture}/download", get(router::cleo::download_cleo))
         .route("/api/edgar/{architecture}/download", get(router::edgar::download_edgar))
         .route("/api/lea/config", get(router::lea_config))
+        .route_service("/api/footer.html", ServeFile::new(FOOTER_FILE_PATH))
         .fallback_service(
             ServeDir::new(&lea_dir)
                 .fallback(ServeFile::new(lea_index_html))
@@ -60,7 +64,7 @@ pub fn create_http_state(
     let oidc_enabled = settings.get_bool("network.oidc.enabled").unwrap_or(false);
     let lea_idp_config = if oidc_enabled {
         let lea_idp_config = LoadableLeaIdentityProviderConfig::try_from(settings)
-            .map_err(|_| anyhow!("Failed to create LeaIdentityProviderConfig from settings."))?;
+            .context("Failed to create LeaIdentityProviderConfig from settings.")?;
         info!("OIDC is enabled.");
         Some(lea_idp_config)
     } else {
@@ -68,10 +72,13 @@ pub fn create_http_state(
         None
     };
 
+    let footer_available = PathBuf::from(FOOTER_FILE_PATH).is_file();
+
     let http_state = HttpState {
         lea_config: LeaConfig {
             carl_url: carl_url.value(),
             idp_config: lea_idp_config.map(|LoadableLeaIdentityProviderConfig(config)| config),
+            footer_available,
         },
         carl_installation_directory
     };

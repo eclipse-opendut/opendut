@@ -6,6 +6,9 @@ x-edgar-mtls-params: &edgar-mtls-params
     - OPENDUT_EDGAR_NETWORK_TLS_CLIENT_AUTH_ENABLED=true  # enable mTLS
     - OPENDUT_EDGAR_NETWORK_TLS_CLIENT_AUTH_CERTIFICATE=/provision/pki/deploy-intermediate/client-intermediate-test.pem
     - OPENDUT_EDGAR_NETWORK_TLS_CLIENT_AUTH_KEY=/provision/pki/deploy-intermediate/client-intermediate-test.key
+    # Modify the location (JSON pointer) of the client certificate path in the NetBird client config (config.json)
+    - OPENDUT_EDGAR_VPN_NETBIRD_CLIENT_CONFIG_KEYS_MTLS_CERTIFICATE=MgmtClientCert/CertPath
+    - OPENDUT_EDGAR_VPN_NETBIRD_CLIENT_CONFIG_KEYS_MTLS_KEY=MgmtClientCert/KeyPath
     # CLEO
     - OPENDUT_CLEO_NETWORK_TLS_CLIENT_AUTH_ENABLED=true  # enable mTLS
     - OPENDUT_CLEO_NETWORK_TLS_CLIENT_AUTH_CERTIFICATE=/provision/pki/deploy-intermediate/client-intermediate-test.pem

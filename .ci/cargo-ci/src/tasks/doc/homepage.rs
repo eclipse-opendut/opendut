@@ -2,7 +2,7 @@ use cicero::path::repo_path;
 use super::*;
 
 #[tracing::instrument]
-pub fn build() -> crate::Result {
+pub fn build() -> anyhow::Result<()> {
     fs::create_dir_all(out_dir())?;
 
     book::build()?;

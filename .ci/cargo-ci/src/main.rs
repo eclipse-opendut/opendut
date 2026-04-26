@@ -4,8 +4,7 @@ pub use fs_err as fs;
 use tracing_subscriber::EnvFilter;
 pub(crate) use core::constants;
 pub(crate) use core::metadata;
-pub(crate) use core::types::{Package, Result};
-pub(crate) use core::util;
+pub(crate) use core::types::Package;
 use crate::core::types::parsing::package::PackageSelection;
 
 mod core;
@@ -16,12 +15,7 @@ shadow_rs::shadow!(build);
 
 
 #[derive(clap::Parser)]
-struct RootCli {
-    #[command(subcommand)]
-    task: TaskCli,
-}
-#[derive(clap::Subcommand)]
-enum TaskCli {
+enum Cli {
     Check(tasks::check::CheckCli),
     Coverage(tasks::coverage::CoverageCli),
     Distribution(tasks::distribution::DistributionCli),
@@ -38,7 +32,7 @@ enum TaskCli {
     Theo(packages::theo::TheoCli),
 }
 
-fn main() -> crate::Result {
+fn main() -> anyhow::Result<()> {
     cicero::init::tracing()
         .with_env_filter(
             EnvFilter::builder()
@@ -46,24 +40,22 @@ fn main() -> crate::Result {
         )
         .init();
 
-    let cli = RootCli::parse();
-    match cli.task {
-        TaskCli::Check(implementation) => implementation.default_handling()?,
-        TaskCli::Coverage(implementation) => implementation.default_handling()?,
-        TaskCli::Distribution(tasks::distribution::DistributionCli { target, release_build }) => {
-            packages::carl::distribution::carl_distribution(target, release_build)?;
+    match Cli::parse() {
+        Cli::Check(cli) => cli.run(),
+        Cli::Coverage(cli) => cli.run(),
+        Cli::Distribution(tasks::distribution::DistributionCli { target, release_build }) => {
+            packages::carl::distribution::carl_distribution(target, release_build)
         }
-        TaskCli::Doc(implementation) => implementation.default_handling()?,
-        TaskCli::Licenses(implementation) => implementation.default_handling(PackageSelection::Applications)?,
-        TaskCli::Test(implementation) => implementation.default_handling()?,
-        TaskCli::IntegrationTest(implementation) => implementation.default_handling()?,
-        TaskCli::Venv(implementation) => implementation.run()?,
+        Cli::Doc(cli) => cli.run(),
+        Cli::Licenses(cli) => cli.run(PackageSelection::Applications),
+        Cli::Test(cli) => cli.run(),
+        Cli::IntegrationTest(cli) => cli.run(),
+        Cli::Venv(cli) => cli.run(),
 
-        TaskCli::Carl(implementation) => implementation.default_handling()?,
-        TaskCli::Cleo(implementation) => implementation.default_handling()?,
-        TaskCli::Edgar(implementation) => implementation.default_handling()?,
-        TaskCli::Lea(implementation) => implementation.default_handling()?,
-        TaskCli::Theo(implementation) => implementation.default_handling()?,
-    };
-    Ok(())
+        Cli::Carl(cli) => cli.run(),
+        Cli::Cleo(cli) => cli.run(),
+        Cli::Edgar(cli) => cli.run(),
+        Cli::Lea(cli) => cli.run(),
+        Cli::Theo(cli) => cli.run(),
+    }
 }

@@ -5,11 +5,10 @@ ARG cannelloni_version=1.1.0
 ENV TARGET_TRIPLE=x86_64-unknown-linux-gnu
 
 # Install OS package dependencies. We need:
-#   - `ca-certificates` for `update-ca-certificates` command used during EDGAR Setup
 #   - `can-utils` for `cangw` command used by EDGAR Service
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends \
-    ca-certificates can-utils && \
+    can-utils && \
     rm -rf /var/lib/apt/lists/*
 
 
@@ -27,8 +26,10 @@ RUN cp cannelloni /usr/local/bin/
 
 
 # Bundle EDGAR
-WORKDIR /opt
-ADD target/ci/distribution/${TARGET_TRIPLE}/opendut-edgar-${TARGET_TRIPLE}-${VERSION}.tar.gz /opt
+WORKDIR /opt/
+ADD target/ci/distribution/${TARGET_TRIPLE}/opendut-edgar-${TARGET_TRIPLE}-${VERSION}.tar.gz /opt/
 
-CMD /opt/opendut-edgar/opendut-edgar setup managed --no-confirm --skip-service-run --log-file=- && \
-  /opt/opendut-edgar/opendut-edgar service
+
+COPY .ci/docker/edgar/entrypoint.sh /
+
+ENTRYPOINT ["/entrypoint.sh"]

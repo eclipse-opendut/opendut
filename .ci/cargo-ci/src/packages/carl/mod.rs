@@ -35,7 +35,7 @@ pub enum TaskCli {
 
 impl CarlCli {
     #[tracing::instrument(name="carl", skip(self))]
-    pub fn default_handling(self) -> crate::Result {
+    pub fn run(self) -> anyhow::Result<()> {
         match self.task {
             TaskCli::DistributionBuild(crate::tasks::build::DistributionBuildCli { target, release_build }) => {
                 build::build_release(target, release_build)?;
@@ -43,7 +43,7 @@ impl CarlCli {
             TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target, release_build }) => {
                 distribution::carl_distribution(target, release_build)?;
             }
-            TaskCli::Licenses(cli) => cli.default_handling(PackageSelection::Single(SELF_PACKAGE))?,
+            TaskCli::Licenses(cli) => cli.run(PackageSelection::Single(SELF_PACKAGE))?,
             TaskCli::Run(cli) => {
                 tracing::info_span!("lea").in_scope(|| {
                     let passthrough =
@@ -60,20 +60,20 @@ impl CarlCli {
                 })?;
 
                 info!("Starting CARL. You can view the web-UI at: https://localhost:8080");
-                cli.default_handling(SELF_PACKAGE)?
+                cli.run(SELF_PACKAGE)?
             }
 
-            TaskCli::DistributionCopyLicenseJson(implementation) => {
-                copy_license_json(implementation.target, implementation.skip_generate.into())?;
+            TaskCli::DistributionCopyLicenseJson(cli) => {
+                copy_license_json(cli.target, cli.skip_generate.into())?;
             }
-            TaskCli::DistributionBundleFiles(implementation) => {
-                implementation.default_handling(SELF_PACKAGE)?;
+            TaskCli::DistributionBundleFiles(cli) => {
+                cli.run(SELF_PACKAGE)?;
             }
             TaskCli::DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli { target }) => {
                 distribution::validate::validate_contents(target)?;
             }
-            TaskCli::Docker(implementation) => {
-                implementation.default_handling(SELF_PACKAGE)?; 
+            TaskCli::Docker(cli) => {
+                cli.run(SELF_PACKAGE)?;
             }
 
             TaskCli::PushSamples => push_samples()?,
@@ -85,7 +85,7 @@ impl CarlCli {
 pub mod build {
     use super::*;
 
-    pub fn build_release(target: Target, release_build: bool) -> crate::Result {
+    pub fn build_release(target: Target, release_build: bool) -> anyhow::Result<()> {
         crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)
     }
     pub fn out_dir(target: Target) -> PathBuf {
@@ -99,7 +99,7 @@ pub mod distribution {
     use super::*;
 
     #[tracing::instrument]
-    pub fn carl_distribution(target: Target, release_build: bool) -> crate::Result {
+    pub fn carl_distribution(target: Target, release_build: bool) -> anyhow::Result<()> {
         use crate::tasks::distribution;
 
         let distribution_out_dir = distribution::out_package_dir(SELF_PACKAGE, target);
@@ -130,7 +130,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument(skip_all)]
-        pub fn get_cleo(out_dir: &Path, release_build: bool) -> crate::Result {
+        pub fn get_cleo(out_dir: &Path, release_build: bool) -> anyhow::Result<()> {
 
             let cleo_out_dir = out_dir.join(Package::Cleo.ident());
             fs::create_dir_all(cleo_out_dir)?;
@@ -172,7 +172,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument(skip_all)]
-        pub fn get_edgar(out_dir: &Path, release_build: bool) -> crate::Result {
+        pub fn get_edgar(out_dir: &Path, release_build: bool) -> anyhow::Result<()> {
 
             let edgar_out_dir = out_dir.join(Package::Edgar.ident());
             fs::create_dir_all(edgar_out_dir)?;
@@ -210,7 +210,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument(skip_all)]
-        pub fn get_lea(out_dir: &Path, release_build: bool) -> crate::Result {
+        pub fn get_lea(out_dir: &Path, release_build: bool) -> anyhow::Result<()> {
 
             let passthrough = vec![];
             crate::packages::lea::build::build(release_build, passthrough)?;
@@ -241,7 +241,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument(skip_all)]
-        pub fn copy_license_json(target: Target, skip_generate: SkipGenerate) -> crate::Result {
+        pub fn copy_license_json(target: Target, skip_generate: SkipGenerate) -> anyhow::Result<()> {
 
             match skip_generate {
                 SkipGenerate::Yes => info!("Skipping generation of licenses, as requested. Directly attempting to copy to target location."),
@@ -296,7 +296,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument(skip_all)]
-        pub fn validate_contents(target: Target) -> crate::Result {
+        pub fn validate_contents(target: Target) -> anyhow::Result<()> {
 
             let unpack_dir = {
                 let unpack_dir = assert_fs::TempDir::new()?;
@@ -374,7 +374,7 @@ fn push_samples() -> anyhow::Result<()> {
         features: vec![],
         passthrough: vec!["apply".to_string(), file.display().to_string()],
     }
-    .default_handling(Package::Cleo)?;
+    .run(Package::Cleo)?;
 
     Ok(())
 }

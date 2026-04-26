@@ -1,12 +1,12 @@
+use cicero::command_exit_ok::CommandExitOk;
 use clap::ArgAction;
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
-use anyhow::{anyhow, Context};
+use anyhow::Context;
 use home::home_dir;
 use crate::core::carl_config::CarlConfiguration;
 use crate::core::docker::command::DockerCommand;
-use crate::core::command_ext::TheoCommandExtensions;
 use crate::core::project::{load_theo_environment_variables, ProjectRootDir};
 use crate::core::{localenv, TestenvMode};
 
@@ -35,7 +35,7 @@ pub enum TaskCli {
 }
 
 impl DevCli {
-    pub(crate) fn default_handling(&self) -> crate::Result {
+    pub(crate) fn run(&self) -> anyhow::Result<()> {
         load_theo_environment_variables();
         DockerCommand::new().docker_checks()?;
 
@@ -52,8 +52,8 @@ impl DevCli {
                 fs::write(&config_path, carl_config.config_toml())
                     .context("Failed to write carl config to temporary location.")?;
 
-                let carl_config_path = config_path.into_os_string().into_string()
-                    .map_err(|_| anyhow!("Failed to convert config path to string."))?;
+                let carl_config_path = config_path.to_str()
+                    .context("Failed to convert config path to string.")?;
 
                 let localenv_root_ca = PathBuf::project_path_buf()
                     .join(".ci/deploy/localenv/data/secrets/pki/opendut-ca.pem");
@@ -62,7 +62,7 @@ impl DevCli {
                     .env("OPENDUT_CARL_CUSTOM_CONFIG_PATH", carl_config_path)
                     .env("SSL_CERT_FILE", &localenv_root_ca)
                     .arg("carl")
-                    .run_requiring_success()?;
+                    .status_exit_ok()?;
             }
             TaskCli::EdgarShell => {
                 DockerCommand::new()

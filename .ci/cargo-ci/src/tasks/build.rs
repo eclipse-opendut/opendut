@@ -1,11 +1,11 @@
 use std::ops::Not;
 use std::path::PathBuf;
 
+use cicero::command_exit_ok::CommandExitOk;
 use cicero::distribution::build::Target;
 
 use crate::{constants, Package};
 use crate::core::commands::CROSS;
-use crate::util::RunRequiringSuccess;
 
 
 /// Perform a release build, without bundling a distribution.
@@ -21,7 +21,7 @@ pub struct DistributionBuildCli {
 }
 
 #[tracing::instrument(skip_all)]
-pub fn distribution_build(package: Package, target: Target, release_build: bool) -> crate::Result {
+pub fn distribution_build(package: Package, target: Target, release_build: bool) -> anyhow::Result<()> {
     let mut command = CROSS.command();
 
     command
@@ -35,7 +35,8 @@ pub fn distribution_build(package: Package, target: Target, release_build: bool)
         command.env("CARGO_SUPPRESS_SHADOW_REBUILD", "true"); //environment variables need to be prefixed with "CARGO_" to be passed through: https://github.com/cross-rs/cross/wiki/Configuration#environment-variable-passthrough
     }
 
-    command.run_requiring_success()
+    command.status_exit_ok()?;
+    Ok(())
 }
 
 pub fn out_file(package: Package, target: Target) -> PathBuf {

@@ -1,28 +1,28 @@
-use cicero::path::repo_path;
+use cicero::{command_exit_ok::CommandExitOk, path::repo_path};
 use crate::core::commands::MDBOOK;
 use super::*;
 
 #[tracing::instrument]
-pub fn open() -> crate::Result {
+pub fn open() -> anyhow::Result<()> {
     MDBOOK.command()
         .arg("serve")
         .arg("--open")
         .arg("--port=4000")
         .arg("--dest-dir").arg(out_dir())
         .current_dir(doc_dir())
-        .run_requiring_success()?;
+        .status_exit_ok()?;
     Ok(())
 }
 
 #[tracing::instrument]
-pub fn build() -> crate::Result {
+pub fn build() -> anyhow::Result<()> {
     let out_dir = out_dir();
 
     MDBOOK.command()
         .arg("build")
         .arg("--dest-dir").arg(&out_dir)
         .current_dir(doc_dir())
-        .run_requiring_success()?;
+        .status_exit_ok()?;
 
     Ok(())
 }

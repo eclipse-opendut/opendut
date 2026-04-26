@@ -24,8 +24,6 @@ pub(crate) const OPENDUT_VM_NAME: &str = "opendut-vm";
 pub(crate) const TIMEOUT_SECONDS: u64 = 300;
 pub(crate) const SLEEP_TIME_SECONDS: u64 = 5;
 
-pub type Result = anyhow::Result<()>;
-
 pub(crate) mod project;
 pub(crate) mod docker;
 pub(crate) mod metadata;

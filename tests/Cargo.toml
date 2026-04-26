@@ -18,4 +18,5 @@ googletest = { workspace = true }
 serde_json = { workspace = true }
 test-log = { workspace = true, features = ["trace"] }
 tokio = { workspace = true, features = ["full", "test-util"] }
+tokio-util = { workspace = true }
 tracing = { workspace = true }

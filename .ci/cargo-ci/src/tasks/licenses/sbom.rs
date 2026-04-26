@@ -12,7 +12,7 @@ use serde_spdx::spdx::v_2_3::{Spdx, SpdxItemPackages};
 pub struct SbomCli;
 
 #[tracing::instrument(skip_all)]
-pub fn generate_sboms(packages: PackageSelection) -> crate::Result {
+pub fn generate_sboms(packages: PackageSelection) -> anyhow::Result<()> {
     for package in packages.iter() {
         generate_sbom(package)?
     }
@@ -21,7 +21,7 @@ pub fn generate_sboms(packages: PackageSelection) -> crate::Result {
     Ok(())
 }
 
-pub fn generate_sbom(package: Package) -> crate::Result {
+pub fn generate_sbom(package: Package) -> anyhow::Result<()> {
     let sbom_dir = out_dir();
     fs::create_dir_all(&sbom_dir)?;
 
@@ -121,6 +121,7 @@ fn clarify_license_information(package: SpdxItemPackages) -> SpdxItemPackages {
                 "(Apache-2.0 OR MIT) AND BSD-3-Clause" => "Apache-2.0 AND BSD-3-Clause",
                 "(MIT OR Apache-2.0) AND Unicode-3.0" => "Apache-2.0 AND Unicode-3.0",
                 "(MIT OR Apache-2.0) AND Unicode-DFS-2016" => "Apache-2.0 AND Unicode-DFS-2016",
+                "ISC AND (Apache-2.0 OR ISC) AND Apache-2.0 AND MIT AND BSD-3-Clause AND (Apache-2.0 OR ISC OR MIT) AND (Apache-2.0 OR ISC OR MIT-0)" => "ISC AND Apache-2.0 AND MIT AND BSD-3-Clause", //Used by `aws-lc-sys`
 
                 "Apache-2.0"
                 | "Apache-2.0 WITH LLVM-exception"

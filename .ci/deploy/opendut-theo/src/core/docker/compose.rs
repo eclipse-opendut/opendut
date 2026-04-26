@@ -13,7 +13,7 @@ pub(crate) fn docker_compose_build(compose_dir: &str) -> Result<i32, Error> {
         .expect_show_status(format!("Failed to execute docker compose build for directory: {compose_dir}.").as_str())
 }
 
-pub fn docker_compose_up_expose_ports(compose_dir: &str, expose: bool) -> crate::Result {
+pub fn docker_compose_up_expose_ports(compose_dir: &str, expose: bool) -> anyhow::Result<()> {
     let mut command = DockerCommand::new();
     command.arg("compose")
         .arg("--file")

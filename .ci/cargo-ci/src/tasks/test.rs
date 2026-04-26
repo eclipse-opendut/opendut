@@ -1,5 +1,6 @@
 use std::process::Command;
-use crate::core::util::RunRequiringSuccess;
+
+use cicero::command_exit_ok::CommandExitOk;
 
 /// Run tests with better defaults (all features, logging and nocapture enabled)
 #[derive(Debug, clap::Parser)]
@@ -21,13 +22,13 @@ pub struct TestCli {
     pub pass_through: Vec<String>,
 }
 impl TestCli {
-    pub fn default_handling(self) -> crate::Result {
+    pub fn run(self) -> anyhow::Result<()> {
         test(self)
     }
 }
 
 #[tracing::instrument(skip_all)]
-pub fn test(params: TestCli) -> crate::Result {
+pub fn test(params: TestCli) -> anyhow::Result<()> {
     let TestCli { all_features, features, disable_logging, test_name, pass_through } = params;
 
     let mut command = Command::new("cargo");
@@ -59,5 +60,7 @@ pub fn test(params: TestCli) -> crate::Result {
 
     command.args(["--", "--nocapture"]);
 
-    command.run_requiring_success()
+    command.status_exit_ok()?;
+
+    Ok(())
 }

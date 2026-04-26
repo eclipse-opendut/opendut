@@ -28,6 +28,8 @@ pub mod config_keys {
 
     pub const OPENTELEMETRY_TLS_CA: &str = "opentelemetry.tls.ca";
     pub const OPENTELEMETRY_TLS_CLIENT_AUTH: ClientAuthConfigKeys = client_auth_config_keys!("opentelemetry.tls.client.auth");
+
+    pub const VPN_NETBIRD_CLIENT_TLS_CLIENT_AUTH: ClientAuthConfigKeys = client_auth_config_keys!("vpn.netbird.client.tls.client.auth");
 }
 
 pub trait PemFromConfig {

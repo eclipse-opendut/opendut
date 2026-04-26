@@ -57,13 +57,13 @@ mod tests {
     use assert_fs::prelude::*;
     use assert_fs::TempDir;
     use indoc::indoc;
-    use rstest::{fixture, rstest};
     use crate::common::task::{Task, TaskStateFulfilled};
     use crate::setup::tasks::LoadCanKernelModules;
 
-    #[rstest]
     #[tokio::test]
-    async fn should_check_task_is_fulfilled_for_loaded_kernel_modules(fixture: Fixture) -> anyhow::Result<()> {
+    async fn should_check_task_is_fulfilled_for_loaded_kernel_modules() -> anyhow::Result<()> {
+        let fixture = Fixture::new();
+
         fixture.loaded_module_file.write_str(indoc!(r"
             bridge 413696 1 br_netfilter, Live 0x0000000000000000
         "))?;
@@ -85,9 +85,10 @@ mod tests {
         Ok(())
     }
 
-    #[rstest]
     #[tokio::test]
-    async fn should_check_task_is_fulfilled_for_builtin_kernel_modules(fixture: Fixture) -> anyhow::Result<()> {
+    async fn should_check_task_is_fulfilled_for_builtin_kernel_modules() -> anyhow::Result<()> {
+        let fixture = Fixture::new();
+
         let bridge_dir = fixture.builtin_module_dir.child("bridge");
         fs::create_dir_all(bridge_dir)?;
         
@@ -114,20 +115,21 @@ mod tests {
         loaded_module_file: ChildPath,
         builtin_module_dir: ChildPath,
     }
-    #[fixture]
-    fn fixture() -> Fixture {
-        let temp = TempDir::new().unwrap();
-        
-        let loaded_module_file = temp.child("testmodule");
-        loaded_module_file.touch().unwrap();
-        
-        let builtin_module_dir = temp.child("builtin");
-        fs::create_dir_all(&builtin_module_dir).unwrap();
-        
-        Fixture {
-            _temp: temp,
-            loaded_module_file,
-            builtin_module_dir
+    impl Fixture {
+        fn new() -> Self {
+            let temp = TempDir::new().unwrap();
+
+            let loaded_module_file = temp.child("testmodule");
+            loaded_module_file.touch().unwrap();
+
+            let builtin_module_dir = temp.child("builtin");
+            fs::create_dir_all(&builtin_module_dir).unwrap();
+
+            Fixture {
+                _temp: temp,
+                loaded_module_file,
+                builtin_module_dir
+            }
         }
     }
 }

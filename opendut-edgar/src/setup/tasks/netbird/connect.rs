@@ -1,6 +1,6 @@
 use std::ops::Not;
 use std::process;
-use std::process::Command;
+use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{anyhow, bail, Result};
@@ -9,7 +9,8 @@ use tracing::{debug, info};
 use url::Url;
 
 use opendut_model::vpn::netbird::SetupKey;
-use crate::common::settings::netbird::{NetbirdClientConfig, NetbirdLogLevel};
+use opendut_util::settings::LoadedConfig;
+use crate::common::settings::netbird::NetbirdClientConfig;
 use crate::common::task::{Success, Task, TaskStateFulfilled};
 use crate::service::vpn::VpnProcess;
 use crate::setup::constants;
@@ -21,6 +22,7 @@ pub struct Connect {
     pub management_url: Url,
     pub setup_key: SetupKey,
     pub mtu: u16,
+    pub config: Arc<LoadedConfig>,
 }
 
 #[async_trait]
@@ -35,19 +37,17 @@ impl Task for Connect {
 
     async fn make_present(&self) -> Result<Success> {
 
-        let netbird_config = NetbirdClientConfig {
-            log_level: NetbirdLogLevel::Warn,
-        };
+        let netbird_config = NetbirdClientConfig::load_from_config(&self.config)?;
         let netbird = VpnProcess::spawn_as_netbird(netbird_config).await?; //temporarily spawn NetBird process to be able to trigger its login routine
 
         {
             let process::Output { status, stdout, stderr } =
-                Command::new(constants::netbird::unpacked_executable()?.as_os_str())
+                constants::netbird::command()?
                     .arg("up")
                     .arg("--management-url").arg(self.management_url.as_str())
                     .arg("--setup-key").arg(&self.setup_key.value)
                     .arg("--mtu").arg(self.mtu.to_string())
-                    .output()?;
+                    .output().await?;
 
             let message = format_command_output(stdout, stderr)?;
 

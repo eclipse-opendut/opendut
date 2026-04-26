@@ -17,7 +17,8 @@ This is a checklist for the steps to take to create a release for public usage.
 
 * [ ] Increment version number in workspace `Cargo.toml` to development version, e.g. "1.2.3-alpha".
 * [ ] Run `cargo ci check` to update all `Cargo.lock` files.
-* [ ] Add a new heading "Unreleased" to the changelog with contents "tbd.".
+* [ ] Add a new heading "Unreleased" to the changelog with contents "TBD".
 * [ ] Create commit and push to `development`.
-* [ ] Announce the release on the [mailing list](https://accounts.eclipse.org/mailing-list/opendut-dev)
+* [ ] When the `release` CI/CD workflow has completed,
+      announce the release on the [mailing list](https://accounts.eclipse.org/mailing-list/opendut-dev)
       and in the [chat](https://chat.eclipse.org/#/room/#automotive.opendut:matrix.eclipse.org).

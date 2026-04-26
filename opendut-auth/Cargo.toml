@@ -7,32 +7,31 @@ license.workspace = true
 
 [features]
 confidential_client = [
-    "anyhow",
-    "chrono",
-    "config",
-    "const_format",
-    "http",
-    "tower",
-    "oauth2",
-    "pem",
-    "tokio",
+    "dep:anyhow",
+    "dep:chrono",
+    "dep:config",
+    "dep:const_format",
+    "dep:http",
+    "dep:tower",
+    "dep:oauth2",
+    "dep:pem",
+    "dep:tokio",
+    "dep:tracing",
+    "dep:opendut-model",
     "tonic/default",
     "tonic/transport",
     "tonic/tls-ring",
-    "tracing",
-    "opendut-model",
 ]
-# registration_client requires confidential_client feature
 registration_client = [
     "confidential_client",
-    "openidconnect",
+    "dep:openidconnect",
 ]
 public_client = [
-    "chrono",
-    "http",
-    "leptos",
-    "leptos_oidc",
-    "tracing",
+    "dep:chrono",
+    "dep:http",
+    "dep:leptos",
+    "dep:leptos_oidc",
+    "dep:tracing",
 ]
 
 [dependencies]
@@ -65,6 +64,5 @@ serde_json = { workspace = true }
 
 
 [dev-dependencies]
-rstest = { workspace = true }
 googletest = { workspace = true }
 test-with = { workspace = true }

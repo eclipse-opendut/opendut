@@ -75,7 +75,7 @@ pub async fn initialize_with_config(
             }
             else {
                 EnvFilter::builder()
-                    .parse("info,opendut=trace")?
+                    .parse(logging_config.log_level_default_directive)?
             }
         );
 

@@ -60,7 +60,7 @@ impl DockerCommand {
         cmd
     }
 
-    pub(crate) fn docker_checks(&self) -> crate::Result {
+    pub(crate) fn docker_checks(&self) -> anyhow::Result<()> {
         checks::check_docker_is_installed()?;
         checks::check_docker_compose_is_installed()?;
         checks::check_docker_daemon_communication()?;
@@ -125,7 +125,7 @@ impl DockerCommand {
             .arg(".ci/deploy/testenv/edgar/docker-compose-production.yml")
     }
 
-    pub(crate) fn expect_output(&mut self, error_message: &str) -> Result<Output, anyhow::Error> {
+    pub(crate) fn expect_output(&mut self, error_message: &str) -> anyhow::Result<Output> {
         self.debug_log_executed_command();
         let result = self.command.output();
         match result {
@@ -145,11 +145,11 @@ impl DockerCommand {
         self
     }
 
-    pub(crate) fn expect_show_status(&mut self, error_message: &str) -> Result<i32, Error> {
+    pub(crate) fn expect_show_status(&mut self, error_message: &str) -> anyhow::Result<i32> {
         self.expect_status(error_message, true)
     }
 
-    pub(crate) fn expect_status(&mut self, error_message: &str, show_output: bool) -> Result<i32, Error> {
+    pub(crate) fn expect_status(&mut self, error_message: &str, show_output: bool) -> anyhow::Result<i32> {
         self.debug_log_executed_command();
         if !show_output {
             self.command
@@ -160,7 +160,7 @@ impl DockerCommand {
         let command_status = self
             .command
             .status()
-            .map_err(|cause| anyhow!(TheoError::DockerCommandFailed(format!("{error_message}. Cause: {cause}"))))?;
+            .map_err(|cause| TheoError::DockerCommandFailed(format!("{error_message}. Cause: {cause}")))?;
 
         if command_status.success() {
             Ok(command_status.code().unwrap_or(1))
@@ -173,7 +173,7 @@ impl DockerCommand {
         self.command.output()
     }
 
-    pub(crate) fn run(&mut self) -> crate::Result {
+    pub(crate) fn run(&mut self) -> anyhow::Result<()> {
         self.command
             .run();
         Ok(())

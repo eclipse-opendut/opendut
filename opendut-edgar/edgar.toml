@@ -7,8 +7,8 @@ id = ""
 [network]
 carl.host = "localhost"
 carl.port = 8080
-connect.retries = 10
-connect.interval.ms = 5000
+connect.retries = 30
+connect.interval.ms = 60000  # maximum delay between connection attempts (uses exponential backoff)
 
 [network.tls]
 ca = "/etc/opendut/tls/ca.pem"
@@ -48,6 +48,14 @@ remote.host = ""
 
 [vpn.netbird.client]
 log.level = "WARN"
+
+[vpn.netbird.client.tls.client.auth] #mTLS
+enabled = "unset"  # use default defined in network.tls.client.auth, otherwise set this to 'true' or 'false'
+certificate = ""
+key = ""
+[vpn.netbird.client.config.keys.mtls]
+certificate = "MgmtClientCertPath"
+key = "MgmtClientKeyPath"
 
 [logging.pipe]
 enabled = true

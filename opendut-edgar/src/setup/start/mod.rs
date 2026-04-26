@@ -12,6 +12,9 @@ use opendut_model::vpn::VpnPeerConfiguration;
 use std::env;
 use std::ops::Not;
 use std::process::ExitCode;
+use std::sync::Arc;
+use config::Config;
+use crate::common::settings;
 use crate::interactive_message;
 use crate::setup::cli::SetupRunCommonArgs;
 use crate::setup::util::DryRun;
@@ -67,6 +70,7 @@ pub(super) async fn managed(
         }
     }
 
+    let config = Arc::new(settings::load_with_overrides(Config::default())?);
     match peer_setup.vpn {
         VpnPeerConfiguration::Disabled => {
             info!("VPN is disabled in PeerSetup. Not running VPN-related tasks.");
@@ -75,7 +79,7 @@ pub(super) async fn managed(
             info!("VPN is configured for NetBird in PeerSetup. Running NetBird-related tasks.");
             tasks.append(&mut vec![
                 Box::new(tasks::netbird::Unpack::default()),
-                Box::new(tasks::netbird::Connect { management_url, setup_key, mtu }), //TODO Pass config into here? Or just pass log level? May not want to share config between Setup and Service...
+                Box::new(tasks::netbird::Connect { management_url, setup_key, mtu, config }),
             ]);
         }
     };
@@ -114,7 +118,7 @@ pub(super) async fn managed(
 }
 
 fn determine_service_user_name() -> User {
-    const DEFAULT_SERVICE_USER_NAME: &str = "opendut_service";
+    const DEFAULT_SERVICE_USER_NAME: &str = "root"; //Currently using root instead of opendut_service. See: https://github.com/eclipse-opendut/opendut/issues/487
 
     let name = env::var("OPENDUT_EDGAR_SERVICE_USER")
         .unwrap_or(DEFAULT_SERVICE_USER_NAME.to_string());

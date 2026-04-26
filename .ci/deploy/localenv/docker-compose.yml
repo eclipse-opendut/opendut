@@ -397,7 +397,7 @@ services:
 
   carl:
     container_name: opendut-carl
-    image: "${OPENDUT_DOCKER_IMAGE_HOST:-ghcr.io}/${OPENDUT_DOCKER_IMAGE_NAMESPACE:-eclipse-opendut}/opendut-carl:${OPENDUT_CARL_IMAGE_VERSION:-0.9.0}"
+    image: "${OPENDUT_DOCKER_IMAGE_HOST:-ghcr.io}/${OPENDUT_DOCKER_IMAGE_NAMESPACE:-eclipse-opendut}/opendut-carl:${OPENDUT_CARL_IMAGE_VERSION:-0.11.0-alpha}"
     command: ["/opt/opendut-carl/opendut-carl"]
     #command: ["strace", "/opt/opendut-carl/opendut-carl"]
     restart: unless-stopped
@@ -418,6 +418,7 @@ services:
       - carl-config:/opt/opendut-carl/config/
       - carl_data:/var/lib/opendut/carl/
       - backup:/var/lib/backup/
+      - ./data/carl/assets/:/etc/opendut/carl/assets/
       - ${SHARED_CERTS_HOST_DIR}:${SHARED_CERTS_MOUNT_DIR}:ro
     environment:
       # Network
@@ -444,7 +445,7 @@ services:
       - OPENDUT_CARL_VPN_NETBIRD_AUTH_OIDC_SCOPES="api"
       # OpenTelemetry
       - OPENDUT_CARL_OPENTELEMETRY_ENABLED=true
-      - OPENDUT_CARL_OPENTELEMETRY_COLLECTOR_ENDPOINT=https://opentelemetry.opendut.local
+      - OPENDUT_CARL_OPENTELEMETRY_COLLECTOR_ENDPOINT=https://${OPENDUT_DOMAIN_OPENTELEMETRY}
       # OIDC
       - OPENDUT_CARL_NETWORK_OIDC_ENABLED=true
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ID=opendut-carl-client
@@ -502,6 +503,8 @@ services:
     volumes:
       - provision-secrets-data:/provision:ro
       - ${SHARED_CERTS_HOST_DIR}:${SHARED_CERTS_MOUNT_DIR}:ro
+    labels:
+      - "traefik.enable=false"
     networks:
       - opendut_local
 
@@ -576,6 +579,8 @@ services:
       interval: 5s
       retries: 10
       test: [ 'CMD', 'wget', '--spider', 'http://localhost:3200/ready' ]
+    labels:
+      - "traefik.enable=false"
     networks:
       - opendut_local
 
@@ -612,6 +617,8 @@ services:
     # [Feature Request] Alloy container health check https://github.com/grafana/alloy/issues/1891
     depends_on:
       - loki
+    labels:
+      - "traefik.enable=false"
     networks:
       - opendut_local
 
@@ -715,6 +722,8 @@ services:
       -H \"Content-Type: application/json\" \
       -d '{\"name\": \"openDuT\", \"login\": \"opendut\", \"password\": \"$OPENDUT_USER_OPENDUT_PASSWORD\", \"OrgId\": 1}' \
       http://grafana:80/api/admin/users"
+    labels:
+      - "traefik.enable=false"
     networks:
       - opendut_local
 

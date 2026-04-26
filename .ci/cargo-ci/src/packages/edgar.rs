@@ -1,14 +1,15 @@
 use crate::fs;
 use std::path::PathBuf;
 
-use anyhow::anyhow;
-use cicero::distribution::build::Target;
+use anyhow::{anyhow, bail, Context};
+use cicero::distribution::build::{target, Target};
+use cicero::command_exit_ok::CommandExitOk;
 use tracing::debug;
 
 use crate::Package;
 use crate::core::types::parsing::package::PackageSelection;
 
-pub const SUPPORTED_TARGETS: [Target; 3] = [Target::x86_64_unknown_linux_gnu, Target::armv7_unknown_linux_gnueabihf, Target::aarch64_unknown_linux_gnu];
+pub const SUPPORTED_TARGETS: [Target; 3] = [target::x86_64_unknown_linux_gnu, target::armv7_unknown_linux_gnueabihf, target::aarch64_unknown_linux_gnu];
 
 const SELF_PACKAGE: Package = Package::Edgar;
 
@@ -53,7 +54,7 @@ pub enum TaskCli {
 
 impl EdgarCli {
     #[tracing::instrument(name="edgar", skip_all)]
-    pub fn default_handling(self) -> crate::Result {
+    pub fn run(self) -> anyhow::Result<()> {
         match self.task {
             TaskCli::DistributionBuild(crate::tasks::build::DistributionBuildCli { target, release_build }) => {
                 build::build_release(target, release_build)?;
@@ -61,8 +62,8 @@ impl EdgarCli {
             TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target, release_build }) => {
                 distribution::edgar_distribution(target, release_build)?;
             }
-            TaskCli::Licenses(cli) => cli.default_handling(PackageSelection::Single(SELF_PACKAGE))?,
-            TaskCli::Run(cli) => cli.default_handling(SELF_PACKAGE)?,
+            TaskCli::Licenses(cli) => cli.run(PackageSelection::Single(SELF_PACKAGE))?,
+            TaskCli::Run(cli) => cli.run(SELF_PACKAGE)?,
 
             TaskCli::DistributionNetbirdClient { target } => {
                 distribution::netbird::netbird_client_distribution(target)?;
@@ -73,13 +74,13 @@ impl EdgarCli {
             TaskCli::DistributionPluginsDir { target } => {
                 distribution::plugins::empty_plugins_dir(target)?
             }
-            TaskCli::DistributionCopyLicenseJson(cli) => cli.default_handling(SELF_PACKAGE)?,
-            TaskCli::DistributionBundleFiles(cli) => cli.default_handling(SELF_PACKAGE)?,
+            TaskCli::DistributionCopyLicenseJson(cli) => cli.run(SELF_PACKAGE)?,
+            TaskCli::DistributionBundleFiles(cli) => cli.run(SELF_PACKAGE)?,
             TaskCli::DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli { target }) => {
                 distribution::validate::validate_contents(target)?;
             }
             TaskCli::Docker(implementation) => {
-                implementation.default_handling(SELF_PACKAGE)?; 
+                implementation.run(SELF_PACKAGE)?;
             }
         };
         Ok(())
@@ -90,7 +91,7 @@ impl EdgarCli {
 pub mod build {
     use super::*;
 
-    pub fn build_release(target: Target, release_build: bool) -> crate::Result {
+    pub fn build_release(target: Target, release_build: bool) -> anyhow::Result<()> {
         crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)
     }
     pub fn out_dir(target: Target) -> PathBuf {
@@ -104,7 +105,7 @@ pub mod distribution {
     use super::*;
 
     #[tracing::instrument]
-    pub fn edgar_distribution(target: Target, release_build: bool) -> crate::Result {
+    pub fn edgar_distribution(target: Target, release_build: bool) -> anyhow::Result<()> {
         use crate::tasks::distribution;
 
         let _ = netbird::map_target(target)?; //check target supported
@@ -141,11 +142,10 @@ pub mod distribution {
 
 
     pub mod netbird {
-        use anyhow::bail;
         use super::*;
 
         #[tracing::instrument(skip_all)]
-        pub fn netbird_client_distribution(target: Target) -> crate::Result {
+        pub fn netbird_client_distribution(target: Target) -> anyhow::Result<()> {
             //Modelled after documentation here: https://docs.netbird.io/how-to/getting-started#binary-install
 
             let metadata = crate::metadata::cargo();
@@ -174,7 +174,7 @@ pub mod distribution {
                 debug!("Retrieved {} bytes.", bytes.len());
 
                 fs::write(&netbird_artifact, bytes)
-                    .map_err(|cause| anyhow!("Error while writing to '{}': {cause}", netbird_artifact.display()))?;
+                    .context(format!("Error while writing to {netbird_artifact:?}"))?;
             }
             assert!(netbird_artifact.exists());
 
@@ -182,8 +182,8 @@ pub mod distribution {
             fs::create_dir_all(out_file.parent().unwrap())?;
 
             fs::copy(&netbird_artifact, &out_file)
-                .map_err(|cause| anyhow!("Error while copying from '{}' to '{}': {cause}", netbird_artifact.display(), out_file.display()))?;
-            debug!("Placed NetBird distribution into: {}", out_file.display());
+                .context(format!("Error while copying from {netbird_artifact:?} to {out_file:?}"))?;
+            debug!("Placed NetBird distribution into: {out_file:?}");
 
             Ok(())
         }
@@ -192,9 +192,9 @@ pub mod distribution {
             assert!(SUPPORTED_TARGETS.contains(&target));
 
             match target {
-                Target::x86_64_unknown_linux_gnu => Ok("amd64"),
-                Target::aarch64_unknown_linux_gnu => Ok("arm64"),
-                Target::armv7_unknown_linux_gnueabihf => Ok("armv6"),
+                target::x86_64_unknown_linux_gnu => Ok("amd64"),
+                target::aarch64_unknown_linux_gnu => Ok("arm64"),
+                target::armv7_unknown_linux_gnueabihf => Ok("armv6"),
                 other => bail!(
                     "Building a distribution for EDGAR isn't currently supported for '{other}'.\n\
                     Supported targets are: {}",
@@ -217,11 +217,10 @@ pub mod distribution {
         use flate2::read::GzDecoder;
         use tar::Archive;
         use crate::core::commands::CROSS;
-        use crate::core::util::RunRequiringSuccess;
         use super::*;
 
         #[tracing::instrument(skip_all)]
-        pub fn rperf_distribution(target: Target) -> crate::Result {
+        pub fn rperf_distribution(target: Target) -> anyhow::Result<()> {
             let metadata = crate::metadata::cargo();
             let version = metadata.workspace_metadata["ci"]["rperf"]["version"].as_str()
                 .ok_or(anyhow!("Rperf version not defined."))?;
@@ -238,21 +237,21 @@ pub mod distribution {
             let temp_dir_path = std::env::temp_dir()
                 .join("opendut-ci-edgar-rperf-distribution-b31c2679-4669-4a9c-88bd-53ebd3e06373"); //build outside the target-dir, because otherwise rperf is thought to be part of this Cargo workspace
             let temp_dir_subpath = unpack_rperf_repository(&rperf_archive, &temp_dir_path, version)?;
-            
+
             let rperf_binary = build_rperf(&temp_dir_path, &temp_dir_subpath, target)?;
 
             let out_file = out_file(SELF_PACKAGE, target);
 
-            dbg!(&rperf_binary.exists());
+            assert!(&rperf_binary.exists());
 
             fs::create_dir_all(out_file.parent().unwrap())?;
             fs::copy(&rperf_binary, &out_file)
-                .map_err(|cause| anyhow!("Error while copying from '{}' to '{}': {cause}", rperf_binary.display(), out_file.display()))?;
-            debug!("Placed rperf distribution into: {}", out_file.display());
+                .context(format!("Error while copying from {rperf_binary:?} to {out_file:?}"))?;
+            debug!("Placed rperf distribution into: {out_file:?}");
 
             Ok(())
         }
-        fn download_rperf_repository(version: &str, rperf_artifact: &Path) -> crate::Result {
+        fn download_rperf_repository(version: &str, rperf_artifact: &Path) -> anyhow::Result<()> {
             let url = format!("https://github.com/opensource-3d-p/rperf/archive/refs/tags/v{version}.tar.gz");
 
             debug!("Downloading rperf_v{version}.tar.gz...");
@@ -262,7 +261,7 @@ pub mod distribution {
             debug!("Retrieved {} bytes.", bytes.len());
 
             fs::write(rperf_artifact, bytes)
-                .map_err(|cause| anyhow!("Error while writing to '{}': {cause}", rperf_artifact.display()))?;
+                .context(format!("Error while writing to {rperf_artifact:?}"))?;
             Ok(())
         }
         fn unpack_rperf_repository(rperf_artifact: &Path, temp_dir_path: &Path, version: &str) -> Result<PathBuf, anyhow::Error> {
@@ -273,7 +272,7 @@ pub mod distribution {
             archive.unpack(temp_dir_path)?;
             let temp_dir_subpath = temp_dir_path.join(format!("rperf-{version}"));
             debug!("The rperf repository was unpacked to {:?}", temp_dir_subpath);
-            
+
             Ok(temp_dir_subpath)
         }
         fn build_rperf(target_directory: &Path, current_directory: &Path, target: Target) -> Result<PathBuf, anyhow::Error>  {
@@ -285,11 +284,11 @@ pub mod distribution {
                 .arg("--target").arg(target.to_string())
                 .env("RUSTFLAGS", "-Awarnings") //ignore warnings from rperf source code
                 .current_dir(current_directory)
-                .run_requiring_success()?;
+                .status_exit_ok()?;
 
             let out_dir = target_directory.join(target.to_string()).join("release").join("rperf");
             debug!("The rperf distribution was built to {out_dir:?}");
-            
+
             Ok(out_dir)
         }
         fn download_dir() -> PathBuf {
@@ -306,7 +305,7 @@ pub mod distribution {
         use crate::tasks::distribution::out_package_dir;
         use super::*;
 
-        pub fn empty_plugins_dir(target: Target) -> crate::Result {
+        pub fn empty_plugins_dir(target: Target) -> anyhow::Result<()> {
             let plugins_dir = out_package_dir(SELF_PACKAGE, target).join("plugins");
             fs::create_dir_all(&plugins_dir)?;
 
@@ -330,7 +329,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument(skip_all)]
-        pub fn validate_contents(target: Target) -> crate::Result {
+        pub fn validate_contents(target: Target) -> anyhow::Result<()> {
 
             let unpack_dir = {
                 let unpack_dir = assert_fs::TempDir::new()?;

@@ -1,12 +1,16 @@
-use std::net::IpAddr;
-use std::str::FromStr;
 use crate::testing::peer_configuration_listener::PeerConfigurationReceiver;
+use opendut_model::peer::configuration::EdgePeerConfigurationState;
 use opendut_model::peer::PeerId;
 use opendut_model::util::Port;
 use opendut_util::settings::LoadedConfig;
-use tokio::sync::mpsc;
+use std::net::IpAddr;
+use std::str::FromStr;
+use std::sync::Arc;
+use tokio::sync::{mpsc, Mutex};
+use tokio::task::JoinHandle;
+use tokio_util::sync::CancellationToken;
 use tracing::info;
-use opendut_model::peer::configuration::EdgePeerConfigurationState;
+use opendut_edgar::testing::service::start::ConnectAndStart;
 
 #[tracing::instrument(name="test_spawn_carl")]
 pub fn spawn_carl() -> anyhow::Result<Port> {
@@ -44,31 +48,46 @@ pub fn spawn_carl() -> anyhow::Result<Port> {
     Ok(carl_port)
 }
 
-pub async fn spawn_edgar_with_default_behavior(peer_id: PeerId, carl_port: Port) -> anyhow::Result<()> {
-    let receiver = spawn_edgar_with_peer_configuration_receiver(peer_id, carl_port).await?;
+pub async fn spawn_edgar_with_default_behavior(peer_id: PeerId, carl_port: Port, cancel_token: CancellationToken) -> anyhow::Result<JoinHandle<()>> {
+    let receiver = spawn_edgar_with_peer_configuration_receiver(
+        peer_id,
+        carl_port,
+        cancel_token.clone(),
+    ).await?;
 
-    opendut_edgar::testing::service::peer_configuration::spawn_peer_configurations_handler(receiver.inner, receiver.tx_peer_configuration_state).await.unwrap();
-    Ok(())
+    let handle = opendut_edgar::testing::service::peer_configuration::spawn_peer_configurations_handler(
+        receiver.inner,
+        receiver.tx_peer_configuration_state,
+        cancel_token,
+    ).await.unwrap();
+    Ok(handle)
 }
 
-pub async fn spawn_edgar_with_peer_configuration_receiver(peer_id: PeerId, carl_port: Port) -> anyhow::Result<PeerConfigurationReceiver> {
+pub async fn spawn_edgar_with_peer_configuration_receiver(peer_id: PeerId, carl_port: Port, cancel_token: CancellationToken) -> anyhow::Result<PeerConfigurationReceiver> {
     let (tx_peer_configuration_state, rx_peer_configuration_state) = mpsc::channel::<EdgePeerConfigurationState>(100);
+    let rx_peer_configuration_state = Arc::new(Mutex::new(rx_peer_configuration_state));
 
     let edgar_config = load_edgar_config(carl_port, peer_id)?;
 
     let (tx_peer_configuration, rx_peer_configuration) = mpsc::channel(100);
-    tokio::spawn(async move {
-        let carl = opendut_edgar::testing::carl::connect(&edgar_config).await
-            .expect("Could not connect to CARL for spawning EDGAR");
 
-        let mut peer_messaging_client = opendut_edgar::testing::service::peer_messaging_client::PeerMessagingClient::create(peer_id, carl, edgar_config, tx_peer_configuration)
-            .await
-            .expect("Could not create EDGAR peer messaging client");
-        peer_messaging_client.process_messages_loop(
-            rx_peer_configuration_state,
-            IpAddr::from_str("127.0.0.1").unwrap()
-        ).await
-            .expect("Could not communicate with CARL. EDGAR test instance.");
+    tokio::task::spawn_blocking(move || {
+        tokio::runtime::Handle::current().block_on(async {
+            let peer_messaging_client =
+                opendut_edgar::testing::service::peer_messaging_client::PeerMessagingClient::create(peer_id, &edgar_config, tx_peer_configuration).await
+                    .expect("Could not create EDGAR peer messaging client");
+
+            opendut_edgar::testing::service::start::connect_and_start(
+                &ConnectAndStart::Service {
+                    peer_messaging_client: &peer_messaging_client,
+                    rx_peer_configuration_state,
+                    remote_address: IpAddr::from_str("127.0.0.1").unwrap(),
+                },
+                &edgar_config,
+                cancel_token,
+            ).await
+                .expect("Could not connect to CARL for spawning EDGAR");
+        })
     });
     Ok(PeerConfigurationReceiver { inner: rx_peer_configuration, tx_peer_configuration_state })
 }

@@ -1,6 +1,8 @@
 use std::path::PathBuf;
 
 use anyhow::Context;
+use opendut_util::project;
+
 use crate::common::constants::edgar_install_directory;
 
 
@@ -35,12 +37,6 @@ pub fn default_carl_ca_certificate_path() -> PathBuf {
 pub fn default_checksum_carl_ca_certificate_file() -> PathBuf {
     PathBuf::from("/etc/opendut/tls/.ca.pem.checksum")
 }
-pub fn default_os_cert_store_ca_certificate_path() -> PathBuf {
-    PathBuf::from("/usr/local/share/ca-certificates/opendut-ca.crt")
-}
-pub fn default_checksum_os_cert_store_ca_certificate_file() -> PathBuf {
-    PathBuf::from("/usr/local/share/ca-certificates/.opendut-ca.crt.checksum")
-}
 
 pub fn default_config_merge_suggestion_file_path() -> PathBuf {
     PathBuf::from("/etc/opendut/edgar-merge-suggestion.toml")
@@ -48,24 +44,19 @@ pub fn default_config_merge_suggestion_file_path() -> PathBuf {
 
 
 pub mod netbird {
-    use std::path::PathBuf;
-
-    use anyhow::anyhow;
-
-    use opendut_util::project;
-
-    use crate::common::constants::edgar_install_directory;
+    use super::*;
+    use tokio::process::Command;
 
     pub fn path_in_edgar_distribution() -> anyhow::Result<PathBuf> {
         let path = PathBuf::from("install/netbird.tar.gz");
         project::make_path_absolute(&path)
-            .map_err(|cause| anyhow!("Failed to determine absolute path of NetBird in the unpacked EDGAR distribution, which is supposed to be at '{path:?}': {cause}"))
+            .context(format!("Failed to determine absolute path of NetBird in the unpacked EDGAR distribution, which is supposed to be at '{path:?}'"))
     }
 
     pub fn unpack_dir() -> anyhow::Result<PathBuf> {
         let path = edgar_install_directory().join("netbird");
         project::make_path_absolute(&path)
-            .map_err(|cause| anyhow!("Failed to determine absolute path where NetBird should be unpacked to, which is supposed to be at {path:?}: {cause}"))
+            .context(format!("Failed to determine absolute path where NetBird should be unpacked to, which is supposed to be at {path:?}"))
     }
 
     pub fn netbird_binary_file() -> PathBuf {
@@ -81,20 +72,21 @@ pub mod netbird {
         edgar_install_directory().join("install")
     }
 
-    pub fn unpacked_executable() -> anyhow::Result<PathBuf> {
-        unpack_dir().map(|dir| dir.join("netbird"))
+    pub fn command() -> anyhow::Result<Command> {
+        let executable = unpack_dir()?.join("netbird");
+        let mut command = Command::new(executable);
+        command.env("SSL_CERT_FILE", default_carl_ca_certificate_path());
+        Ok(command)
     }
 }
 
 pub mod rperf {
-    use std::path::PathBuf;
-    use anyhow::anyhow;
-    use opendut_util::project;
+    use super::*;
 
     pub fn path_in_edgar_distribution() -> anyhow::Result<PathBuf> {
         let path = PathBuf::from("install/rperf");
         project::make_path_absolute(&path)
-            .map_err(|cause| anyhow!("Failed to determine absolute path of rperf in the unpacked EDGAR distribution, which is supposed to be at '{path:?}': {cause}"))
+            .context(format!("Failed to determine absolute path of rperf in the unpacked EDGAR distribution, which is supposed to be at '{path:?}'"))
     }
 }
 

@@ -10,29 +10,45 @@ Always create a database backup before upgrading CARL.
 
 ## Unreleased
 
+### Fixed
+* EDGAR: Don't use the operating system's certificate management anymore, making EDGAR more portable across distributions.
+
+New contributors: [@mohammadp1001](https://github.com/mohammadp1001)
+
+
+## [0.10.0] - 2026-04-02
+
 ### Added
 * Added option to start the localenv with [mTLS client authentication](https://opendut.eclipse.dev/book/development/testenv/advanced.html#enable-client-authentication):
   * Added client certificates that are generated during provisioning
   * THEO: Added file locations to look for docker compose override files.
   * Added _optional_ docker compose configuration files to enable mTLS.
 * CARL is now able to check client certificates for mutual authentication.
+* EDGAR now has experimental support for being run in Docker container. See: <https://opendut.eclipse.dev/book/user-manual/edgar/docker.html>
 * EDGAR Setup now has a flag `--log-file=/path/to/file.log` which can be used to set where logs should be written to.
-  It can also be set to `-` to write logs to stderr. 
+  It can also be set to `-` to write logs to stderr.
+* LEA: Configuration errors are now highlighted in the tab selector when configuring peers or clusters.
+* LEA: A health indicator has been added into peer and cluster configuration views (not just the overview lists).
+* LEA: Show current deployment state in tooltip on toggle for deploying cluster.
+* LEA: Display the Peer name when selecting devices for a Cluster.
 
 ### Fixed
-* CARL was intended to be run behind reverse proxy (traefik) that is doing mutual authentication. Due to connection drops seen at the peer side we changed from an HTTP traefik router to a TCP router. Unfortunately, this bypassed the client certificate checks in traefik and exposed CARL directly. Support for mTLS in CARL was therefore added directly. Release `0.9.0` did not check client certificates in CARL.
+* CARL was intended to be run behind reverse proxy (traefik) that is doing mutual authentication.
+  Due to connection drops seen at the peer side we changed from an HTTP traefik router to a TCP router.
+  Unfortunately, this bypassed the client certificate checks in traefik and exposed CARL directly.
+  Support for mTLS in CARL was therefore added directly. Release `0.9.0` did not check client certificates in CARL.
 * It is now possible to load multiple certificate authorities.
+* The monitoring dashboard is now working again.
 * Added volume for prometheus (metrics database).
 * Recent NetBird management enforces [encryption key with certain length](https://github.com/netbirdio/netbird/issues/5063). 
-  This could break the Localenv deployment. Provisioning scripts were updated to generate a compliant key, but if you have an existing deployment, you need to update the key manually. 
-  1. You can do so by running the following command:
-      ```sh
-      openssl rand -base64 32
-      ```
-  2. Update `NETBIRD_DATASTORE_ENC_KEY` environment variable in NetBird management container.
+  This breaks the Localenv deployment during an update. Provisioning scripts were updated to generate a compliant key,
+  but if you have an existing deployment, you need to update the key manually. See the Breaking Changes section below for instructions.
+* LEA: Table rows are now clickable across the whole surface.
 
 ### Changed
 * EDGAR: The NetBird client is now spawned as a subprocess rather than a SystemD service, in preparation for running EDGAR in a container.
+* EDGAR now runs under the root user by default, to make the NetBird subprocess work. See [issue #487](https://github.com/eclipse-opendut/opendut/issues/487).
+* EDGAR: Attempt reconnects to CARL upon interrupted connection instead of terminating/restarting the entire process.
 * Localenv peer network was separated from the backend network. Separate Docker networks ensure peers connect to the backend as they would when deployed next to a test bench.
 * Added logging to stdout during Telemetry startup. Previously, no messages were shown during startup until configuration phase passed the OpenTelemetry stack.
 * Updated the telemetry stack to the latest versions.
@@ -44,6 +60,12 @@ Always create a database backup before upgrading CARL.
 * Removed NetBird dashboard from localenv deployment.
 
 ### Breaking changes
+
+#### When upgrading EDGAR
+
+* EDGAR now runs NetBird as a subprocess, so before upgrading, run `sudo systemctl disable --now netbird` to remove the SystemD service for it.
+
+#### When upgrading the backend
 
 * Deleting the old volumes of the telemetry stack is required to avoid any conflicts. Stop the docker containers and delete the volumes:
   ```shell
@@ -60,6 +82,9 @@ Always create a database backup before upgrading CARL.
   docker kill opendut-update-secret
   docker rm opendut-update-secret
   ```
+
+New contributors: [@Morris-Zin](https://github.com/Morris-Zin)
+
 
 ## [0.9.0] - 2025-12-19
 
@@ -229,6 +254,9 @@ docker rm opendut-promtail
 * The web-UI now shows peers, clusters and devices sorted by name.
 * Deleting clusters in the web-UI works again.
 * Resolved issue where the telemetry logs were not transmitted because a lock on the Confidential Client could not be acquired. [#347](https://github.com/eclipse-opendut/opendut/issues/347)
+
+New contributors: [@brtmax](https://github.com/brtmax)
+
 
 ## [0.6.0] - 2025-04-22
 

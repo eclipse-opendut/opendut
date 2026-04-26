@@ -178,15 +178,11 @@ impl ConfidentialClient {
     pub async fn get_token(&self) -> Result<Token, AuthError> {
         let token_storage = self.state.read().await.clone();
         let access_token = match token_storage {
-            None => {
-                self.client_config.fetch_token(&self.inner, self.scopes.clone(), &self.reqwest_client, self.state.clone()).await?
+            Some(token) if Utc::now().naive_utc().lt(&token.expires_in.sub(TOKEN_GRACE_PERIOD)) => {
+                Token { value: token.access_token.secret().to_string() }
             }
-            Some(token) => {
-                if Utc::now().naive_utc().lt(&token.expires_in.sub(TOKEN_GRACE_PERIOD)) {
-                    Token { value: token.access_token.secret().to_string() }
-                } else {
-                    self.client_config.fetch_token(&self.inner, self.scopes.clone(), &self.reqwest_client, self.state.clone()).await?
-                }
+            _ => {
+                self.client_config.fetch_token(&self.inner, self.scopes.clone(), &self.reqwest_client, self.state.clone()).await?
             }
         };
         Ok(access_token)

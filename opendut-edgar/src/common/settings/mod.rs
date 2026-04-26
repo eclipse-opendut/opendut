@@ -25,6 +25,14 @@ pub mod key {
             pub mod log {
                 pub const level: &str = "vpn.netbird.client.log.level";
             }
+            pub mod config {
+                pub mod keys {
+                    pub mod mtls {
+                        pub const certificate: &str = "vpn.netbird.client.config.keys.mtls.certificate";
+                        pub const key: &str = "vpn.netbird.client.config.keys.mtls.key";
+                    }
+                }
+            }
         }
     }
 }

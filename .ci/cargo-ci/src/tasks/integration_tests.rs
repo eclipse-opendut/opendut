@@ -1,6 +1,6 @@
-use crate::core::util::RunRequiringSuccess;
-use anyhow::anyhow;
-use cicero::distribution::build::Target;
+use anyhow::Context;
+use cicero::command_exit_ok::CommandExitOk;
+use cicero::distribution::build::target;
 use cicero::path::repo_path;
 use serde::Deserialize;
 use std::path::PathBuf;
@@ -14,7 +14,7 @@ pub struct IntegrationTestCli {
 }
 
 impl IntegrationTestCli {
-    pub fn default_handling(self) -> crate::Result { test(self) }
+    pub fn run(self) -> anyhow::Result<()> { test(self) }
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -46,10 +46,10 @@ impl CargoCompilerOutput {
 
 
 #[tracing::instrument(skip_all)]
-pub fn test(_params: IntegrationTestCli) -> crate::Result {
+pub fn test(_params: IntegrationTestCli) -> anyhow::Result<()> {
     let edgar_test_binary = create_edgar_integration_test_binary()?;
     debug!("EDGAR test binary: {}", edgar_test_binary);
-    
+
     run_edgar_integration_test_binary_in_docker(edgar_test_binary)?;
 
     Ok(())
@@ -57,7 +57,7 @@ pub fn test(_params: IntegrationTestCli) -> crate::Result {
 
 fn run_edgar_integration_test_binary_in_docker(edgar_test_binary: String) -> anyhow::Result<()> {
     let test_binary_directory = determine_test_binary_directory()?;
-    debug!("Using test binary directory: {}", test_binary_directory);
+    debug!("Using test binary directory: {test_binary_directory}");
 
     /*
      EDGAR integration tests require:
@@ -66,7 +66,7 @@ fn run_edgar_integration_test_binary_in_docker(edgar_test_binary: String) -> any
      - iproute2 package for `ip` command
      - ca-certificates package for `update-ca-certificates` command
      */
-    
+
     let mut docker = Command::new("docker");
     docker
         .current_dir(repo_path!())
@@ -83,17 +83,17 @@ fn run_edgar_integration_test_binary_in_docker(edgar_test_binary: String) -> any
         .arg("-c")
         .arg(format!("/tmp/debug/{edgar_test_binary} --include-ignored --nocapture"));
 
-    docker.run_requiring_success()?;
+    docker.status_exit_ok()?;
 
     Ok(())
 }
 
 fn determine_test_binary_directory() -> anyhow::Result<String> {
     let target_directory = cicero::path::target_dir();
-    let test_binary_directory = target_directory.join(Target::x86_64_unknown_linux_gnu.to_string()).join("debug").join("deps");
-    let test_binary_directory = test_binary_directory
-        .into_os_string().into_string()
-        .map_err(|_| anyhow!("Test target directory could not be determined!"))?;
+    let test_binary_directory = target_directory.join(target::x86_64_unknown_linux_gnu.to_string()).join("debug").join("deps");
+    let test_binary_directory = test_binary_directory.to_str()
+        .context("Test target directory could not be determined!")?
+        .to_owned();
     Ok(test_binary_directory)
 }
 
@@ -121,12 +121,12 @@ fn create_edgar_integration_test_binary() -> anyhow::Result<String> {
                 None
             }
         }
-    }).ok_or(anyhow!("Could not find EDGAR test binary!"))?;
+    }).context("Could not find EDGAR test binary!")?;
 
     let test_binary = test_binary
         .file_name()
         .map(|file| file.to_string_lossy().to_string())
-        .ok_or(anyhow!("EDGAR test binary does not have a file name!"))?;
+        .context("EDGAR test binary does not have a file name!")?;
 
     Ok(test_binary)
 }

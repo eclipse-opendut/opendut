@@ -7,8 +7,10 @@ use crate::core::commands::TRUNK;
 use crate::fs;
 
 use crate::core::types::parsing::package::PackageSelection;
-use crate::util::RunRequiringSuccess;
 use crate::Package;
+
+use cicero::command_exit_ok::CommandExitOk;
+
 
 const PACKAGE: Package = Package::Lea;
 
@@ -41,14 +43,14 @@ pub struct BuildCli {
 
 impl LeaCli {
     #[tracing::instrument(name="lea", skip(self))]
-    pub fn default_handling(self) -> crate::Result {
+    pub fn run(self) -> anyhow::Result<()> {
         match self.task {
             TaskCli::Build(BuildCli { passthrough }) => {
                 let release_build = false;
                 build::build(release_build, passthrough)?
             },
             TaskCli::Run(BuildCli { passthrough }) => run::run(passthrough)?,
-            TaskCli::Licenses(cli) => cli.default_handling(PackageSelection::Single(PACKAGE))?,
+            TaskCli::Licenses(cli) => cli.run(PackageSelection::Single(PACKAGE))?,
             TaskCli::DistributionBuild(BuildCli { passthrough }) => {
                 distribution_build::distribution_build(passthrough)?
             },
@@ -61,7 +63,7 @@ pub mod build {
     use super::*;
 
     #[tracing::instrument]
-    pub fn build(release_build: bool, passthrough: Vec<String>) -> crate::Result {
+    pub fn build(release_build: bool, passthrough: Vec<String>) -> anyhow::Result<()> {
         build_impl(release_build, passthrough, out_dir())
     }
 
@@ -74,7 +76,7 @@ pub mod distribution_build {
     use super::*;
 
     #[tracing::instrument]
-    pub fn distribution_build(passthrough: Vec<String>) -> crate::Result {
+    pub fn distribution_build(passthrough: Vec<String>) -> anyhow::Result<()> {
         let release = true;
         build_impl(release, passthrough, out_dir())
     }
@@ -88,14 +90,14 @@ pub mod run {
     use super::*;
 
     #[tracing::instrument(skip_all)]
-    pub fn run(passthrough: Vec<String>) -> crate::Result {
+    pub fn run(passthrough: Vec<String>) -> anyhow::Result<()> {
         info!("Starting LEA. You can view the web-UI at: https://localhost:8080");
 
         TRUNK.command()
             .arg("watch")
             .args(passthrough)
             .current_dir(self_dir())
-            .run_requiring_success()?;
+            .status_exit_ok()?;
         Ok(())
     }
 }
@@ -104,7 +106,7 @@ pub fn self_dir() -> PathBuf {
     repo_path!("opendut-lea/")
 }
 
-fn build_impl(release: bool, passthrough: Vec<String>, out_dir: PathBuf) -> crate::Result {
+fn build_impl(release: bool, passthrough: Vec<String>, out_dir: PathBuf) -> anyhow::Result<()> {
     let working_dir = self_dir();
 
     fs::create_dir_all(&out_dir)?;
@@ -121,7 +123,7 @@ fn build_impl(release: bool, passthrough: Vec<String>, out_dir: PathBuf) -> crat
     command
         .args(passthrough)
         .current_dir(working_dir)
-        .run_requiring_success()?;
+        .status_exit_ok()?;
 
     info!("Placed distribution into: {}", out_dir.display());
 

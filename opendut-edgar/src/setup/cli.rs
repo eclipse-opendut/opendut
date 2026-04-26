@@ -69,6 +69,11 @@ impl SetupCli {
                 SetupCommand::Managed { setup_string, common } => {
                     logging::init(&common.log_file).await?;
 
+                    if common.dry_run.not() {
+                        sudo::with_env(&["OPENDUT_EDGAR_"]) //Request before doing anything else, as it restarts the process when sudo is not present.
+                            .expect("Failed to request sudo privileges.");
+                    }
+
                     let user_command = env::args_os()
                         .collect::<Vec<_>>();
                     info!("EDGAR Setup started!");

@@ -1,16 +1,9 @@
-use std::collections::HashMap;
-
-use crate::viper::{ViperSourceId, ViperTestParameterKey, ViperTestSuiteIdentifier};
+use crate::viper::{ViperSourceId, ViperTestSuiteIdentifier};
 
 
+#[derive(Clone, Debug)]
 pub struct ViperTestSuiteDescriptor {
     pub id: ViperTestSuiteIdentifier,
     pub source: ViperSourceId,
-    pub parameters: HashMap<ViperTestParameterKey, ViperTestParameterValueKind>,
-}
-
-pub enum ViperTestParameterValueKind {
-    Boolean,
-    Number,
-    Text,
+    pub parameters: super::ViperParameterDescriptors,
 }

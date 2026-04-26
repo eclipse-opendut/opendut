@@ -2,9 +2,9 @@ use std::process::Command;
 use std::str::FromStr;
 
 use crate::core::types::Package;
-use crate::core::util::RunRequiringSuccess;
 use anyhow::anyhow;
 use cicero::path::repo_path;
+use cicero::command_exit_ok::CommandExitOk;
 use clap::ArgAction;
 
 /// A Docker tag
@@ -30,7 +30,7 @@ pub struct DockerCli {
 }
 
 impl DockerCli {
-    pub fn default_handling(&self, package: Package) -> crate::Result {
+    pub fn run(&self, package: Package) -> anyhow::Result<()> {
         build_docker_image(&package, self.tag.clone())?;
         if self.publish {
             publish_docker_image(&package, self.tag.clone())?;
@@ -55,7 +55,7 @@ fn docker_container_uri(package: &Package, tag: &Option<DockerTag>) -> String {
     image_uri
 }
 
-pub fn build_docker_image(package: &Package, tag: Option<DockerTag>) -> crate::Result {
+pub fn build_docker_image(package: &Package, tag: Option<DockerTag>) -> anyhow::Result<()> {
     let image_version_build_arg = format!("VERSION={}", crate::build::PKG_VERSION);
     let now = chrono::Utc::now().naive_utc();
     let container_uri = docker_container_uri(package, &tag);
@@ -90,15 +90,15 @@ pub fn build_docker_image(package: &Package, tag: Option<DockerTag>) -> crate::R
             &container_uri,
             ".",
         ])
-        .run_requiring_success()?;
+        .status_exit_ok()?;
     Ok(())
 }
 
 
-pub fn publish_docker_image(package: &Package, tag: Option<DockerTag>) -> crate::Result {
+pub fn publish_docker_image(package: &Package, tag: Option<DockerTag>) -> anyhow::Result<()> {
     Command::new("docker")
         .current_dir(repo_path!())
         .args(["push", &docker_container_uri(package, &tag)])
-        .run_requiring_success()?;
+        .status_exit_ok()?;
     Ok(())
 }

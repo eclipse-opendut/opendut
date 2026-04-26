@@ -49,6 +49,9 @@ mod cluster_manager {
                         cause: String::from("Error when accessing persistence"),
                     }
                 }
+                #[cfg(feature="viper")]
+                cluster_manager::DeleteClusterDescriptorError::ViperTestFound { cluster_id, test_id } =>
+                    Self::ViperTestFound { cluster_id, test_id },
             }
         }
     }
@@ -185,7 +188,7 @@ mod peer_manager {
 
 #[cfg(feature = "viper")]
 mod test_manager {
-    use opendut_carl_api::carl::viper::{DeleteViperSourceDescriptorError, ListViperTestSuiteDescriptorsError};
+    use opendut_carl_api::carl::viper::{DeleteViperSourceDescriptorError, DeleteViperTestRunDescriptorError, GetViperTestSuiteDescriptorError};
     use crate::manager::test_manager;
 
     impl From<test_manager::delete_viper_source_descriptor::DeleteViperSourceDescriptorError> for DeleteViperSourceDescriptorError {
@@ -205,13 +208,39 @@ mod test_manager {
         }
     }
 
-
-    impl From<test_manager::list_viper_test_suite_descriptors::ListViperTestSuiteDescriptorsError> for ListViperTestSuiteDescriptorsError {
-        fn from(value: test_manager::list_viper_test_suite_descriptors::ListViperTestSuiteDescriptorsError) -> Self {
+    impl From<test_manager::delete_viper_test_descriptor::DeleteViperTestDescriptorError> for DeleteViperTestRunDescriptorError {
+        fn from(value: test_manager::delete_viper_test_descriptor::DeleteViperTestDescriptorError) -> Self {
             match value {
-                test_manager::list_viper_test_suite_descriptors::ListViperTestSuiteDescriptorsError::Persistence { cause: _ } =>
+                test_manager::delete_viper_test_descriptor::DeleteViperTestDescriptorError::TestNotFound { test_id } =>
+                    Self::TestNotFound { test_id },
+                test_manager::delete_viper_test_descriptor::DeleteViperTestDescriptorError::ViperRunDeploymentExists { test_id, run_id } =>
+                    Self::ViperRunDeploymentExists { test_id, run_id },
+                test_manager::delete_viper_test_descriptor::DeleteViperTestDescriptorError::Persistence { test_id, cause: _ } =>
                     Self::Internal {
-                        cause: String::from("Error when accessing persistence while listing VIPER test suite descriptors"),
+                        test_id,
+                        cause: String::from("Error when accessing persistence while deleting VIPER test descriptor"),
+                    }
+            }
+        }
+    }
+
+
+    impl From<test_manager::get_viper_test_suite_descriptor::GetViperTestSuiteDescriptorError> for GetViperTestSuiteDescriptorError {
+        fn from(value: test_manager::get_viper_test_suite_descriptor::GetViperTestSuiteDescriptorError) -> Self {
+            match value {
+                test_manager::get_viper_test_suite_descriptor::GetViperTestSuiteDescriptorError::Compilation { source_id } => 
+                    Self::Compilation { source_id },
+                test_manager::get_viper_test_suite_descriptor::GetViperTestSuiteDescriptorError::TaskJoin { source_id, when, cause: _ } =>
+                    Self::Internal {
+                        source_id,
+                        cause: format!("Internal error when {when} to completion while retrieving VIPER test suite descriptor"),
+                    },
+                test_manager::get_viper_test_suite_descriptor::GetViperTestSuiteDescriptorError::ViperRuntime { source_id } => 
+                    Self::ViperRuntime { source_id },
+                test_manager::get_viper_test_suite_descriptor::GetViperTestSuiteDescriptorError::Persistence { source_id, cause: _ } =>
+                    Self::Internal {
+                        source_id,
+                        cause: String::from("Error when accessing persistence while getting VIPER test suite descriptor"),
                     },
             }
         }

@@ -3,8 +3,6 @@ use std::path::PathBuf;
 
 use tracing::info;
 
-use crate::util::RunRequiringSuccess;
-
 mod book;
 mod homepage;
 mod latex;
@@ -46,7 +44,7 @@ enum HomepageCli {
 }
 
 impl DocCli {
-    pub fn default_handling(&self) -> crate::Result {
+    pub fn run(&self) -> anyhow::Result<()> {
         match &self.kind {
             DocKindCli::Book { task } => match task {
                 BookCli::Build => {

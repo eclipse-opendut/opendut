@@ -20,7 +20,7 @@ pub struct DistributionCli {
 }
 
 #[tracing::instrument(skip_all)]
-pub fn clean(package: Package, target: Target) -> crate::Result {
+pub fn clean(package: Package, target: Target) -> anyhow::Result<()> {
     let package_dir = out_package_dir(package, target);
     if package_dir.exists() {
         fs::remove_dir_all(&package_dir)?;
@@ -30,7 +30,7 @@ pub fn clean(package: Package, target: Target) -> crate::Result {
 }
 
 #[tracing::instrument(skip_all)]
-pub fn collect_executables(package: Package, target: Target) -> crate::Result {
+pub fn collect_executables(package: Package, target: Target) -> anyhow::Result<()> {
 
     let out_dir = out_package_dir(package, target);
     fs::create_dir_all(&out_dir)?;
@@ -60,7 +60,7 @@ pub mod copy_license_json {
         pub skip_generate: bool,
     }
     impl DistributionCopyLicenseJsonCli {
-        pub fn default_handling(&self, package: Package) -> crate::Result {
+        pub fn run(&self, package: Package) -> anyhow::Result<()> {
             copy_license_json(package, self.target, self.skip_generate.into())
         }
     }
@@ -74,7 +74,7 @@ pub mod copy_license_json {
     }
 
     #[tracing::instrument(skip_all)]
-    pub fn copy_license_json(package: Package, target: Target, skip_generate: SkipGenerate) -> crate::Result {
+    pub fn copy_license_json(package: Package, target: Target, skip_generate: SkipGenerate) -> anyhow::Result<()> {
 
         match skip_generate {
             SkipGenerate::Yes => info!("Skipping generation of licenses, as requested. Directly attempting to copy to target location."),
@@ -108,14 +108,14 @@ pub mod bundle {
         target: Target,
     }
     impl DistributionBundleFilesCli {
-        pub fn default_handling(&self, package: Package) -> crate::Result {
+        pub fn run(&self, package: Package) -> anyhow::Result<()> {
             let release_build = true; //this CLI is only used in CI
             bundle_files(package, self.target, release_build)
         }
     }
 
     #[tracing::instrument(skip_all)]
-    pub fn bundle_files(package: Package, target: Target, release_build: bool) -> crate::Result {
+    pub fn bundle_files(package: Package, target: Target, release_build: bool) -> anyhow::Result<()> {
         use flate2::write::GzEncoder;
 
         let in_dir = out_package_dir(package, target);

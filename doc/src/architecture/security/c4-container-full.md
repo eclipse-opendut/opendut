@@ -1,4 +1,4 @@
-## Container View
+# Container View
 
 ```plantuml
 @startuml
@@ -13,7 +13,7 @@ System_Boundary(opendut, "OpenDuT") {
   Container(NetBirdDashboard, "NetBird Dashboard", "Web UI", "VPN management UI") <<third-party>>
   Container(NetBirdManagement, "NetBird Management", "VPN Service", "Peer management, file-based storage") <<third-party>>
   Container(NetBirdSignal, "NetBird Signal", "Signal Server", "Peer discovery, NAT traversal") <<third-party>>
-  Container(NetBirdRelay, "NetBird Relay", "Relay Server", "Relay Server"") <<third-party>>
+  Container(NetBirdRelay, "NetBird Relay", "Relay Server", "Relay Server") <<third-party>>
   Container(NetBird, "NetBird Client", "VPN Client", "Peer-to-peer tunnels (WireGuard)") <<third-party>>
   Container(Keycloak, "Keycloak", "Identity Provider", "OAuth2/OIDC authentication and authorization") <<third-party>>
   Container(KeycloakDB, "Keycloak Postgres", "Database", "Keycloak persistence (PostgreSQL)") <<third-party>>

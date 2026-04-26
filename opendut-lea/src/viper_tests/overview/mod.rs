@@ -2,7 +2,7 @@ mod row;
 
 use leptos::prelude::*;
 use opendut_lea_components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, OverviewTable, TableHeading};
-use opendut_model::viper::ViperTestDescriptor;
+use opendut_model::viper::ViperTestRunDescriptor;
 use crate::app::use_app_globals;
 use crate::viper_tests::components::CreateViperTestButton;
 use crate::viper_tests::overview::row::Row;
@@ -13,7 +13,7 @@ pub fn ViperTestsOverview() -> impl IntoView {
     let globals = use_app_globals();
     let refetch_viper_tests = RwSignal::new(());
 
-    let viper_tests: LocalResource<Vec<ViperTestDescriptor>> = {
+    let viper_tests: LocalResource<Vec<ViperTestRunDescriptor>> = {
         let carl = globals.client.clone();
 
         LocalResource::new(move || {
@@ -22,7 +22,7 @@ pub fn ViperTestsOverview() -> impl IntoView {
             let mut carl = carl.clone();
 
             async move {
-                let mut viper_tests = carl.viper.list_viper_test_descriptors().await
+                let mut viper_tests = carl.viper.list_viper_test_run_descriptors().await
                     .expect("Failed to request the list of viper test descriptors.");
 
                 viper_tests.sort_by(|viper_test_a, viper_test_b| {
@@ -74,7 +74,7 @@ pub fn ViperTestsOverview() -> impl IntoView {
                         <For
                             each = move || viper_tests.clone()
                             key = |viper_tests| viper_tests.id
-                            children = { move |viper_test_descriptor| {
+                            children = { move |viper_test_run_descriptor| {
 
                                 let on_delete = move || {
                                     refetch_viper_tests.notify();
@@ -82,7 +82,7 @@ pub fn ViperTestsOverview() -> impl IntoView {
 
                                 view! {
                                     <Row
-                                        viper_test_descriptor=RwSignal::new(viper_test_descriptor)
+                                        viper_test_run_descriptor=RwSignal::new(viper_test_run_descriptor)
                                         on_delete
                                     />
                                 }

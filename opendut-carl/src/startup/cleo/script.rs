@@ -1,4 +1,5 @@
 use crate::http::router::arch::CLEO_IDENTIFIER;
+use anyhow::Context;
 use config::Config;
 use indoc::formatdoc;
 
@@ -12,7 +13,7 @@ pub struct CleoScript {
 impl CleoScript {
     pub fn from_setting(settings: &Config) -> anyhow::Result<Self> {
         let carl_port = u16::try_from(settings.get_int("network.remote.port")?)
-            .map_err(|_| anyhow::anyhow!("Invalid port number."))?;
+            .context("Invalid port number.")?;
         Ok(Self {
             carl_host: settings.get_string("network.remote.host")?,
             carl_port,

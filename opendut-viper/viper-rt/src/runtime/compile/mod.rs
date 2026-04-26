@@ -53,7 +53,7 @@ pub async fn compile(
 
     match &compilation {
         Ok(compilation) => {
-            info!("Successfully compiling test suite '{}'.", source.identifier);
+            info!("Successfully compiled test suite '{}'.", source.identifier);
             emit::compilation_passed(emitter, source, compilation).await?;
         }
         Err(_) => {

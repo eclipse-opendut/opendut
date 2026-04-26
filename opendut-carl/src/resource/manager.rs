@@ -113,7 +113,7 @@ impl ResourceManager {
             mut peer_connection_state,
             mut peer_configuration_state,
             #[cfg(feature = "viper")] mut viper_source_descriptor,
-            #[cfg(feature = "viper")] mut viper_test_descriptor,
+            #[cfg(feature = "viper")] mut viper_test_run_descriptor,
             #[cfg(feature = "viper")] mut viper_run_deployment,
         } = relayed_subscription_events;
 
@@ -162,7 +162,7 @@ impl ResourceManager {
         }
 
         #[cfg(feature = "viper")]
-        while let Ok(event) = viper_test_descriptor.1.try_recv() {
+        while let Ok(event) = viper_test_run_descriptor.1.try_recv() {
             state.subscribers
                 .notify(event)
                 .expect("should successfully send notification about event during resource transaction");

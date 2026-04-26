@@ -156,7 +156,6 @@ mod tests {
     use chrono::{Duration, Utc};
     use googletest::{assert_that};
     use googletest::matchers::{contains_substring};
-    use rstest::{fixture, rstest};
     use url::Url;
     use crate::auth::json_web_key::{JsonWebKey, JwkCacheValue, OidcJsonWebKeySet};
     use crate::auth::in_memory_cache::CustomInMemoryCache;
@@ -167,23 +166,25 @@ mod tests {
     const ISSUER_URL: &str  = "https://keycloak/realms/opendut/";
     const JWK_RAW_DATA: &str = r#"{"keys":[{"kid":"9RcB1okOXQ6QibEeXzAxFVym9PmBynkFe8mbh6X-DB0","kty":"RSA","alg":"RS256","use":"sig","n":"jJTeGo90wWqXEk4JHRlPVF5hOXViKk5qnIlwiUAyx3CfBBuwSVEKVCq73TtuG57EQFca-o01SYKGGg-yU2VyleEDKbSGBzdl2LelrUwHCdSphupnIGPJ12wU8EDBgfOh0llWpNYTrEtNjbHLaYbMZL9_a7sXOTJxC6-S9EcpyhvI0LZHjOJe_YAnkj1Wx5OKWRZhiV5_y00SQI8xHinnOKLWH86giOBBJuN5Z-Ii3xNPF8jtHLdEXNw6cbeueaeU56Rlmy9AkuGdnQzBnP4hMRVul7Poam7iDD30Rl_qfH4yO-jhDnw1Mz4JALBPToaZ3WC6oXkfoGQo0Q4wmN3oNQ","e":"AQAB","x5c":["MIICnTCCAYUCBgGQgfqpwDANBgkqhkiG9w0BAQsFADASMRAwDgYDVQQDDAdvcGVuZHV0MB4XDTI0MDcwNTA4MTgyNloXDTM0MDcwNTA4MjAwNlowEjEQMA4GA1UEAwwHb3BlbmR1dDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAIyU3hqPdMFqlxJOCR0ZT1ReYTl1YipOapyJcIlAMsdwnwQbsElRClQqu907bhuexEBXGvqNNUmChhoPslNlcpXhAym0hgc3Zdi3pa1MBwnUqYbqZyBjyddsFPBAwYHzodJZVqTWE6xLTY2xy2mGzGS/f2u7FzkycQuvkvRHKcobyNC2R4ziXv2AJ5I9VseTilkWYYlef8tNEkCPMR4p5zii1h/OoIjgQSbjeWfiIt8TTxfI7Ry3RFzcOnG3rnmnlOekZZsvQJLhnZ0MwZz+ITEVbpez6Gpu4gw99EZf6nx+Mjvo4Q58NTM+CQCwT06Gmd1guqF5H6BkKNEOMJjd6DUCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAczQGabVZrMKsJNV+eoLcCUxzLv9tYRaFbLrT5+keotgl6YYfZ3W63wY9IaZp0wT5zKdG2meifJ48173VP/8/437A+t0zCkH2kfQY9sP3EXDKVbw8LuViaoVO2w3GoanRJP8BKSAMo3voRCnd6QAPCbaTIUM2M0bRl1RADRuAZXbWM8817Sk2w0qMkSyxDJY9JNRviUQBU0V4ziro9mB+pVIMJ/Z4anNGsTNL6D9HdI3/7iBuC7SLTVh8x/Yg0mYnud8WwRePOZuxDbA65V2lL3ixB4uhjq9yuo5F76c/TuyrFFUrXXmUMn5+0/OjRhHEKBZSUJHGvvQlgkjzkOcovg=="],"x5t":"pa3zfyZhNzSUhKHXzIn5QbOuFyA","x5t#S256":"v8an46MZ8wHfjnUW2fUGl5Xh602pXEC8Lb_p7EUSATg"},{"kid":"rSPOu3JnH_GrUFiekXboNx7s4xO816XM7Hb_F8bz8Y0","kty":"RSA","alg":"RSA-OAEP","use":"enc","n":"kKo_9nNiiLcImSd5xdNFEUEaQ6BFe9j__XOdEaFNMfa0zc-lu4J6wjyDEILR5HdgzQfaRlne66z4TwiJwyoyDRz7EqB75voagmsZn9UK8CGp4h27Tz7y1doPletRV3458PWPzy4epYAgsu-yEYVXTc8OT_XnXlnNAN4z1DpI-1Kk4uFS1zvRUiUvr8kzauJbPdA7LTKMU5vw5yfjATMZL3ZlhwNLnU82xqr4zqnMdrAeQewuGEXud8-IUHotTKCuM-KwkRjLRrIxYNMyM9h8UStOXpxlc8ARwyrjWGfFVbUPNlxossSzLP223OiCEBY_SEDF8d9gsl7NkSAJdOUE6w","e":"AQAB","x5c":["MIICnTCCAYUCBgGQgfqq2jANBgkqhkiG9w0BAQsFADASMRAwDgYDVQQDDAdvcGVuZHV0MB4XDTI0MDcwNTA4MTgyN1oXDTM0MDcwNTA4MjAwN1owEjEQMA4GA1UEAwwHb3BlbmR1dDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAJCqP/ZzYoi3CJknecXTRRFBGkOgRXvY//1znRGhTTH2tM3PpbuCesI8gxCC0eR3YM0H2kZZ3uus+E8IicMqMg0c+xKge+b6GoJrGZ/VCvAhqeIdu08+8tXaD5XrUVd+OfD1j88uHqWAILLvshGFV03PDk/1515ZzQDeM9Q6SPtSpOLhUtc70VIlL6/JM2riWz3QOy0yjFOb8Ocn4wEzGS92ZYcDS51PNsaq+M6pzHawHkHsLhhF7nfPiFB6LUygrjPisJEYy0ayMWDTMjPYfFErTl6cZXPAEcMq41hnxVW1DzZcaLLEsyz9ttzoghAWP0hAxfHfYLJezZEgCXTlBOsCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAQsLO8nRuRGl5YqV0IJaX4GDunc7EGfD4Gofl5NNtG3SojISC0lmO4EyZdFsXJmmWgzFkg1aO91jdcZyIaf6qBbj+GPtoBltA0+nSAcCTDvOsmV1J1Gymxm/CJLTBGqIrLwEXDBFyFpF2W7OE7XdXby+d/mYVkpCc0fHC854w+tOLdvEr4AYD/3JNK5VWd1RLI1CeZ7nJeLbDUR5UkGGb2Na3SXaEsWWwor2L9OAY4bWq9+gIom7ihaDvXMMpMHbQ7gis8Ku5ltK80PISW/9b+G1IxKNYy+euCr9ZWiIeEcKBt0/dKSvCcfhG0mShmliETgGAfAdZu0eqqhuxATAi9A=="],"x5t":"gfshQCGXfVblp5YrHiYSlYUto90","x5t#S256":"h53Q-c8zYde1UjhjhLZB1I5Q7tjX-t9bz7lE_fV6Bbg"}]}"#;
 
-    #[rstest]
-    fn test_validate_token(fixture: Fixture) {
+    #[test]
+    fn test_validate_token() {
+        let fixture = Fixture::new();
         let result = validate_token(fixture.issuer_url, TEST_TOKEN, fixture.jwk, false)
             .map_err(|err| println!("Failed to get current user: {err:?}"));
         assert!(result.is_ok());
     }
 
-    #[rstest]
-    fn test_validate_expired_token(fixture: Fixture) {
+    #[test]
+    fn test_validate_expired_token() {
+        let fixture = Fixture::new();
         let result = validate_token(fixture.issuer_url, TEST_TOKEN, fixture.jwk, true);
         assert!(result.is_err());
         assert_that!(result.err().unwrap().to_string(), contains_substring("ExpiredSignature"));
     }
 
-    #[rstest]
     #[tokio::test]
-    async fn test_authorize_user(fixture: Fixture) {
+    async fn test_authorize_user() {
+        let fixture = Fixture::new();
         let cache: CustomInMemoryCache<String, JwkCacheValue> = CustomInMemoryCache::new();
         let jwk_requester = MockJwk { jwk: String::from(JWK_RAW_DATA) };
 
@@ -199,9 +200,9 @@ mod tests {
         assert!(cache.get(&fixture.key_id).is_ok());
     }
 
-    #[rstest]
     #[tokio::test]
-    async fn test_authorize_user_jwk_already_cached(fixture: Fixture) {
+    async fn test_authorize_user_jwk_already_cached() {
+        let fixture = Fixture::new();
         let jwk_requester = MockJwkError { };
 
         let result = authorize_user(
@@ -217,9 +218,9 @@ mod tests {
         assert!(fixture.up_to_date_cache.get(&fixture.key_id).is_ok());
     }
 
-    #[rstest]
     #[tokio::test]
-    async fn test_authorize_user_with_jwk_cached_two_days_ago(fixture: Fixture) {
+    async fn test_authorize_user_with_jwk_cached_two_days_ago() {
+        let fixture = Fixture::new();
         let jwk_requester = MockJwk { jwk: String::from(JWK_RAW_DATA) };
 
         let result = authorize_user(
@@ -261,40 +262,40 @@ mod tests {
         up_to_date_cache: CustomInMemoryCache<String, JwkCacheValue>,
         two_day_old_cache: CustomInMemoryCache<String, JwkCacheValue>,
     }
+    impl Fixture {
+        pub fn new() -> Self {
+            let key_id = String::from(KEY_ID);
+            let issuer_url: Url = Url::parse(ISSUER_URL).unwrap();
+            let issuer_remote_url: Url = Url::parse(ISSUER_URL).unwrap();
 
-    #[fixture]
-    fn fixture() -> Fixture {
-        let key_id = String::from(KEY_ID);
-        let issuer_url: Url = Url::parse(ISSUER_URL).unwrap();
-        let issuer_remote_url: Url = Url::parse(ISSUER_URL).unwrap();
-        
-        let jwk_map = OidcJsonWebKeySet::parse(JWK_RAW_DATA).unwrap();
-            serde_json::from_str::<OidcJsonWebKeySet>(JWK_RAW_DATA).unwrap();
+            let jwk_map = OidcJsonWebKeySet::parse(JWK_RAW_DATA).unwrap();
+                serde_json::from_str::<OidcJsonWebKeySet>(JWK_RAW_DATA).unwrap();
 
-        let jwk = jwk_map.get(KEY_ID).expect("test could not get key_id from jwk map");
+            let jwk = jwk_map.get(KEY_ID).expect("test could not get key_id from jwk map");
 
-        let mut up_to_date_cache: CustomInMemoryCache<String, JwkCacheValue> = CustomInMemoryCache::new();
-        let jwk_cache_value = JwkCacheValue {
-            jwk: Clone::clone(jwk),
-            last_cached: Utc::now().timestamp()
-        };
-        up_to_date_cache.insert(key_id.clone(), jwk_cache_value).expect("Could not cache jwk");
-        
-        let mut two_day_old_cache: CustomInMemoryCache<String, JwkCacheValue> = CustomInMemoryCache::new();
-        let utc_two_days_ago = Utc::now().sub(Duration::days(2));
-        let jwk_two_day_old_cache_value = JwkCacheValue {
-            jwk: Clone::clone(jwk),
-            last_cached: utc_two_days_ago.timestamp()
-        };
-        two_day_old_cache.insert(key_id.clone(), jwk_two_day_old_cache_value).expect("Could not cache jwk");
-        
-        Fixture {
-            key_id,
-            issuer_url,
-            issuer_remote_url,
-            jwk: jwk.clone(),
-            up_to_date_cache,
-            two_day_old_cache
+            let mut up_to_date_cache: CustomInMemoryCache<String, JwkCacheValue> = CustomInMemoryCache::new();
+            let jwk_cache_value = JwkCacheValue {
+                jwk: Clone::clone(jwk),
+                last_cached: Utc::now().timestamp()
+            };
+            up_to_date_cache.insert(key_id.clone(), jwk_cache_value).expect("Could not cache jwk");
+
+            let mut two_day_old_cache: CustomInMemoryCache<String, JwkCacheValue> = CustomInMemoryCache::new();
+            let utc_two_days_ago = Utc::now().sub(Duration::days(2));
+            let jwk_two_day_old_cache_value = JwkCacheValue {
+                jwk: Clone::clone(jwk),
+                last_cached: utc_two_days_ago.timestamp()
+            };
+            two_day_old_cache.insert(key_id.clone(), jwk_two_day_old_cache_value).expect("Could not cache jwk");
+
+            Fixture {
+                key_id,
+                issuer_url,
+                issuer_remote_url,
+                jwk: jwk.clone(),
+                up_to_date_cache,
+                two_day_old_cache
+            }
         }
     }
 }

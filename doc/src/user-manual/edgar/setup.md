@@ -153,17 +153,26 @@ export OPENDUT_EDGAR_NETWORK_TLS_CLIENT_AUTH_CERTIFICATE="" #Path or certificate
 export OPENDUT_EDGAR_NETWORK_TLS_CLIENT_AUTH_KEY="" #Path or key content
 ```
 
-These values will be persisted into the EDGAR configuration file.
+These values will be persisted into the EDGAR configuration file during the EDGAR Setup.
 
 Make sure the certificate and key files are accessible by the `opendut_service` user
 that will be created during the EDGAR Setup.
 
-EDGAR makes client connections to multiple services: OpenDuT CARL, Identity Provider (OIDC) and OpenTelemetry Collector.
-If you need separate or no certificates and keys for OIDC or OpenTelemetry,
-you can additionally set the respective variables for OIDC and OpenTelemetry:
-```
-export OPENDUT_EDGAR_NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH_ENABLED=true
+EDGAR makes client connections to multiple services: openDuT CARL, Identity Provider (OIDC), OpenTelemetry Collector and NetBird Management.
+If you need separate or no certificates and keys for OIDC, OpenTelemetry or NetBird,
+you can additionally set the respective variables for them:
+```shell
+export OPENDUT_EDGAR_NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH_ENABLED=false  # set this to `false` to disable
+export OPENDUT_EDGAR_NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH_CERTIFICATE="" # or you can set certificate and
+export OPENDUT_EDGAR_NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH_KEY=""         # key to an alternative value
+
 export OPENDUT_EDGAR_OPENTELEMETRY_TLS_CLIENT_AUTH_ENABLED=true
+export OPENDUT_EDGAR_OPENTELEMETRY_TLS_CLIENT_AUTH_CERTIFICATE=""
+export OPENDUT_EDGAR_OPENTELEMETRY_TLS_CLIENT_AUTH_KEY=""
+
+export OPENDUT_EDGAR_VPN_NETBIRD_CLIENT_TLS_CLIENT_AUTH_ENABLED=true
+export OPENDUT_EDGAR_VPN_NETBIRD_CLIENT_TLS_CLIENT_AUTH_CERTIFICATE=true
+export OPENDUT_EDGAR_VPN_NETBIRD_CLIENT_TLS_CLIENT_AUTH_KEY=true
 ```
 The variables ending on `_CERTIFICATE` and `_KEY` define different certificates and keys.  
 Without setting these, the value from `OPENDUT_EDGAR_NETWORK_TLS_CLIENT_AUTH_{CERTIFICATE,KEY}` will be used.

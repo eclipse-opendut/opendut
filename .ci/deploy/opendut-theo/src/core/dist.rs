@@ -8,7 +8,7 @@ use anyhow::anyhow;
 use crate::core::project::ProjectRootDir;
 use crate::core::TARGET_TRIPLE;
 
-fn make_distribution_with_cargo() -> crate::Result {
+fn make_distribution_with_cargo() -> anyhow::Result<()> {
     println!("Creating distribution with cargo: 'cargo ci distribution'");
     let cargo_command = Command::new("cargo")
         .arg("ci")
@@ -43,7 +43,7 @@ fn enumerate_distribution_tar_files(dist_path: PathBuf) -> Vec<String> {
         .collect::<Vec<_>>()
 }
 
-fn assert_exactly_one_distribution_of_each_component(expected_dist_files: &[&str], files: &[String]) -> crate::Result {
+fn assert_exactly_one_distribution_of_each_component(expected_dist_files: &[&str], files: &[String]) -> anyhow::Result<()> {
     for expected in expected_dist_files.iter().copied() {
         let filtered_existing_files = files.iter().filter(|&file| file.contains(expected)).cloned()
             .collect::<Vec<_>>();
@@ -69,7 +69,7 @@ fn check_if_distribution_tar_exists_of_each_component(expected_dist_files: &[&st
 }
 
 
-pub(crate) fn make_distribution_if_not_present() -> crate::Result {
+pub(crate) fn make_distribution_if_not_present() -> anyhow::Result<()> {
     let dist_directory_path = PathBuf::project_path_buf()
         .join(format!("target/ci/distribution/{TARGET_TRIPLE}"));
     let expected_dist_files = vec!(

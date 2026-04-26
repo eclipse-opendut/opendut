@@ -29,11 +29,7 @@ pub fn ClustersOverview() -> impl IntoView {
                 let mut clusters = carl.cluster.list_cluster_descriptors().await
                     .expect("Failed to request the list of clusters");
 
-                clusters.sort_by(|cluster_a, cluster_b|
-                    cluster_a.name.value().to_lowercase()
-                        .cmp(&cluster_b.name.value().to_lowercase())
-                );
-
+                clusters.sort_by_key(|cluster| cluster.name.value().to_lowercase());
                 clusters
             }
         })

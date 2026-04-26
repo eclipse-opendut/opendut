@@ -34,7 +34,7 @@ where F: Fn() + Clone + Send + 'static {
         leptos::task::spawn_local(async move {
             pending.set(true);
 
-            let result = carl.viper.delete_viper_test_descriptor(id).await;
+            let result = carl.viper.delete_viper_test_run_descriptor(id).await;
 
             match result {
                 Ok(_) => {

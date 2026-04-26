@@ -9,17 +9,5 @@ import "opendut/viper/rt/test_suite.proto";
 message ViperTestSuiteDescriptor {
   opendut.viper.rt.test_suite.ViperTestSuiteIdentifier id = 1;
   ViperSourceId source = 2;
-  repeated ViperTestParameterDescriptor parameters = 3;
-}
-
-
-message ViperTestParameterDescriptor {
-  string key = 1;
-  ViperTestParameterValueKind value_kind = 2;
-}
-
-enum ViperTestParameterValueKind {
-  BOOLEAN = 0;
-  NUMBER = 1;
-  TEXT = 2;
+  repeated opendut.viper.rt.test_suite.ViperParameterDescriptor parameters = 3;
 }

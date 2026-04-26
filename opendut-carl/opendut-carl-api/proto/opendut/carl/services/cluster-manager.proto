@@ -5,6 +5,7 @@ package opendut.carl.services.cluster_manager;
 import "opendut/model/cluster/cluster.proto";
 import "opendut/model/peer/peer.proto";
 import "opendut/model/peer/state.proto";
+import "opendut/model/viper_test_id.proto";
 
 service ClusterManager {
   rpc CreateClusterDescriptor(CreateClusterDescriptorRequest) returns (CreateClusterDescriptorResponse) {}
@@ -74,6 +75,7 @@ message DeleteClusterDescriptorFailure {
     DeleteClusterDescriptorFailureIllegalClusterState illegal_cluster_state = 2;
     DeleteClusterDescriptorFailureInternal internal = 3;
     DeleteClusterDescriptorFailureClusterDeploymentExists cluster_deployment_exists = 4;
+    DeleteClusterDescriptorFailureViperTestExists viper_test_exists = 5;
   }
 }
 
@@ -96,6 +98,11 @@ message DeleteClusterDescriptorFailureInternal {
 
 message DeleteClusterDescriptorFailureClusterDeploymentExists {
   opendut.model.cluster.ClusterId cluster_id = 1;
+}
+
+message DeleteClusterDescriptorFailureViperTestExists {
+  opendut.model.cluster.ClusterId cluster_id = 1;
+  opendut.model.viper.ViperTestId test_id = 2;
 }
 
 //
