@@ -1,6 +1,6 @@
 use std::ops::Not;
 use leptos::prelude::*;
-use crate::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton};
+use crate::FontAwesomeIcon;
 
 #[component]
 pub fn CollapseButton(
@@ -16,13 +16,13 @@ pub fn CollapseButton(
     );
 
     view! {
-        <IconButton
-            icon=collapse_button_icon
-            color=ButtonColor::White
-            size=ButtonSize::Small
-            state=ButtonState::Enabled
-            label
-            on_action=move || collapsed.update(|collapsed| *collapsed = collapsed.not())
-        />
+        <div
+            class="dut-collapse-button"
+            role="button"
+            aria-label=label
+            on:click=move |_| collapsed.update(|collapsed| *collapsed = collapsed.not())
+        >
+            <i class=move || collapse_button_icon.get().as_class()/>
+        </div>
     }
 }

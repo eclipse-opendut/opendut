@@ -182,3 +182,38 @@ mod peer_manager {
         }
     }
 }
+
+#[cfg(feature = "viper")]
+mod test_manager {
+    use opendut_carl_api::carl::viper::{DeleteViperSourceDescriptorError, ListViperTestSuiteDescriptorsError};
+    use crate::manager::test_manager;
+
+    impl From<test_manager::delete_viper_source_descriptor::DeleteViperSourceDescriptorError> for DeleteViperSourceDescriptorError {
+        fn from(value: test_manager::delete_viper_source_descriptor::DeleteViperSourceDescriptorError) -> Self {
+            match value {
+                test_manager::delete_viper_source_descriptor::DeleteViperSourceDescriptorError::SourceNotFound { source_id } =>
+                    Self::SourceNotFound { source_id },
+                test_manager::delete_viper_source_descriptor::DeleteViperSourceDescriptorError::TestExists { source_id, test_id } =>
+                    Self::TestExists { source_id, test_id },
+                test_manager::delete_viper_source_descriptor::DeleteViperSourceDescriptorError::Persistence { source_id, source_name, cause: _ } =>
+                    Self::Internal {
+                        source_id,
+                        source_name,
+                        cause: String::from("Error when accessing persistence while deleting VIPER source descriptor"),
+                    },
+            }
+        }
+    }
+
+
+    impl From<test_manager::list_viper_test_suite_descriptors::ListViperTestSuiteDescriptorsError> for ListViperTestSuiteDescriptorsError {
+        fn from(value: test_manager::list_viper_test_suite_descriptors::ListViperTestSuiteDescriptorsError) -> Self {
+            match value {
+                test_manager::list_viper_test_suite_descriptors::ListViperTestSuiteDescriptorsError::Persistence { cause: _ } =>
+                    Self::Internal {
+                        cause: String::from("Error when accessing persistence while listing VIPER test suite descriptors"),
+                    },
+            }
+        }
+    }
+}

@@ -12,7 +12,6 @@ ignore = [
 
 
     { id = "RUSTSEC-2024-0375", reason = "`atty` library is unmaintained. A known vulnerability only affects Windows. Tracked by issue #410." },
-    { id = "RUSTSEC-2021-0145", reason = "`atty` library is vulnerable on Windows. Tracked by issue #410." },
 
     { id = "RUSTSEC-2025-0081", reason = "`unic-*` crates are unmaintained. Tracked by issue #411." },
     { id = "RUSTSEC-2025-0075", reason = "`unic-*` crates are unmaintained. Tracked by issue #411." },
@@ -37,6 +36,7 @@ allow = [
     "BSL-1.0",
     "bzip2-1.0.6",
     "CC0-1.0",
+    "CDLA-Permissive-2.0",
     "ISC",
     "MIT",
     "MIT-0",

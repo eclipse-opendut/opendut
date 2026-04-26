@@ -1,12 +1,15 @@
 use std::sync::Arc;
 use gloo_net::http;
+use leptos::ev;
 use leptos::prelude::*;
 use leptos_oidc::{Auth, AuthParameters, AuthSignal};
+use leptos_use::{use_document, use_event_listener};
 use serde::{Deserialize, Deserializer};
 use tracing::info;
 use url::Url;
 use opendut_auth::public::Authentication;
 use opendut_carl_api::carl::wasm::CarlClient;
+use opendut_lea_components::has_text_selection;
 use opendut_model::lea::LeaConfig;
 use crate::components::Toaster;
 use crate::components::AppGlobalsResource;
@@ -70,6 +73,12 @@ pub struct AppGlobalsError {
     pub message: String
 }
 
+#[derive(Clone)]
+pub struct SelectionContext {
+    pub has_selection: RwSignal<bool>,
+}
+
+
 #[component]
 pub fn LoadingApp() -> impl IntoView {
     let _ = provide_authentication_signals_in_context();
@@ -122,6 +131,18 @@ pub fn LoadingApp() -> impl IntoView {
     let user = use_context::<UserAuthenticationSignal>().expect("UserAuthenticationSignal should be provided in the context.");
     let hide_buttons = Signal::derive(move || !user.read().is_authenticated().unwrap_or(false));
 
+    let has_selection = RwSignal::new(false);
+    provide_context(SelectionContext { has_selection });
+    
+    let context = use_context::<SelectionContext>()
+        .expect("SelectionContext should be provided in the context.");
+    let _ = use_event_listener(use_document(), ev::selectionchange, move |_| {
+        let new_value = has_text_selection();
+        if context.has_selection.get_untracked() != new_value {
+            context.has_selection.set(new_value);
+        }
+    });
+    
     view! {
         <Navbar menu_visible hide_buttons />
         <div class="columns is-mobile m-0">

@@ -14,8 +14,7 @@ pub fn NavbarButton(
     view! {
         <a
             class="navbar-item px-0 mx-2"
-            class:is-active=is_active
-            class:is-tab=is_active
+            class=(["is-active", "is-tab"], is_active)
             href=path.get()
         >
             <IconButton

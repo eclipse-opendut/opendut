@@ -6,12 +6,15 @@ import "opendut/model/cluster/cluster.proto";
 import "opendut/model/viper/run.proto";
 import "opendut/model/viper/test.proto";
 import "opendut/model/viper/source.proto";
+import "opendut/model/viper/suite.proto";
 
 service TestManager {
   rpc StoreViperSourceDescriptor(StoreViperSourceDescriptorRequest) returns (StoreViperSourceDescriptorResponse) {}
   rpc DeleteViperSourceDescriptor(DeleteViperSourceDescriptorRequest) returns (DeleteViperSourceDescriptorResponse) {}
   rpc GetViperSourceDescriptor(GetViperSourceDescriptorRequest) returns (GetViperSourceDescriptorResponse) {}
   rpc ListViperSourceDescriptors(ListViperSourceDescriptorsRequest) returns (ListViperSourceDescriptorsResponse) {}
+
+  rpc ListViperTestSuiteDescriptors(ListViperTestSuiteDescriptorsRequest) returns (ListViperTestSuiteDescriptorsResponse) {}
 
   rpc StoreViperTestDescriptor(StoreViperTestDescriptorRequest) returns (StoreViperTestDescriptorResponse) {}
   rpc DeleteViperTestDescriptor(DeleteViperTestDescriptorRequest) returns (DeleteViperTestDescriptorResponse) {}
@@ -82,7 +85,7 @@ message DeleteViperSourceDescriptorFailure {
   oneof error {
     DeleteViperSourceDescriptorFailureSourceNotFound source_not_found = 1;
     DeleteViperSourceDescriptorFailureInternal internal = 4;
-    DeleteViperSourceDescriptorFailureDeploymentExists deployment_exists = 5;
+    DeleteViperSourceDescriptorFailureTestExists test_exists = 5;
   }
 }
 
@@ -96,9 +99,9 @@ message DeleteViperSourceDescriptorFailureInternal {
   string cause = 3;
 }
 
-message DeleteViperSourceDescriptorFailureDeploymentExists {
+message DeleteViperSourceDescriptorFailureTestExists {
   opendut.model.viper.ViperSourceId source_id = 1;
-  opendut.model.cluster.ClusterId cluster_id = 2;
+  opendut.model.viper.ViperTestId test_id = 2;
 }
 
 
@@ -160,6 +163,38 @@ message ListViperSourceDescriptorsFailure {
 }
 
 message ListViperSourceDescriptorsFailureInternal {
+  string cause = 1;
+}
+
+
+
+//////////////////////////////
+// ViperTestSuiteDescriptor //
+//////////////////////////////
+
+//
+// ListViperTestSuiteDescriptors
+//
+message ListViperTestSuiteDescriptorsRequest {}
+
+message ListViperTestSuiteDescriptorsResponse {
+  oneof reply {
+    ListViperTestSuiteDescriptorsSuccess success = 1;
+    ListViperTestSuiteDescriptorsFailure failure = 2;
+  }
+}
+
+message ListViperTestSuiteDescriptorsSuccess {
+  repeated opendut.model.viper.ViperTestSuiteDescriptor suites = 1;
+}
+
+message ListViperTestSuiteDescriptorsFailure {
+  oneof error {
+      ListViperTestSuiteDescriptorsFailureInternal internal = 1;
+  }
+}
+
+message ListViperTestSuiteDescriptorsFailureInternal {
   string cause = 1;
 }
 

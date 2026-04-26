@@ -20,7 +20,7 @@ impl Task for CheckCarlReachable {
     async fn make_present(&self) -> Result<Success> {
         let settings = settings::load_with_overrides(Config::default())?;
 
-        let _ = common::carl::connect(&settings.config).await
+        let _ = common::carl::connect(&settings).await
             .context("Failed to connect to CARL")?;
 
         Ok(Success::default())

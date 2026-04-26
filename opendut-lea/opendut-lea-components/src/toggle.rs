@@ -9,9 +9,12 @@ pub fn Toggle<F>(
 where F: Fn() + 'static {
 
     view! {
-        <div class="is-flex is-align-items-center is-justify-content-center">
+        <div
+            class="is-flex is-align-items-center is-justify-content-center"
+            on:click=move |event| event.stop_propagation()
+        >
             <label class="dut-toggle"
-                class:active = move || is_active.get()
+                class=("active", move || is_active.get())
                 on:click=move |_| on_action()
             />
             {

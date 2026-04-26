@@ -54,7 +54,7 @@ pub fn Tabs(
                             <li class=("is-active", is_active) class=move || ("is-hidden", is_hidden().unwrap_or_default())>
                                 <a href=tab.href>
                                     <div class="icon-text">
-                                        <span class="icon has-text-danger" class:is-hidden=move || !is_error().unwrap_or_default()>
+                                        <span class="icon has-text-danger" class=("is-hidden", move || !is_error().unwrap_or_default())>
                                             <i class=FontAwesomeIcon::CircleExclamation.as_class()></i>
                                         </span>
                                         <span>{ tab.title }</span>

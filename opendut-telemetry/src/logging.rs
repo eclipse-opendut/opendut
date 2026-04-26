@@ -1,5 +1,6 @@
 use crate::opentelemetry_types::Endpoint;
 use opendut_auth::confidential::client::{ConfClientArcMutex, ConfidentialClientRef};
+use opendut_util::settings::LoadedConfig;
 use opentelemetry_otlp::{ExporterBuildError, LogExporter, WithExportConfig, WithTonicConfig};
 use opentelemetry_sdk::logs::{SdkLoggerProvider};
 use opentelemetry_sdk::Resource;
@@ -28,7 +29,7 @@ pub enum PipeLogging {
 pub enum PipeLoggingStream { Stdout, Stderr }
 
 impl LoggingConfig {
-    pub fn load(config: &config::Config) -> Result<Self, LoggingConfigError> {
+    pub fn load(config: &LoadedConfig) -> Result<Self, LoggingConfigError> {
 
         let pipe_logging_enabled = {
             let field = String::from("logging.pipe.enabled");

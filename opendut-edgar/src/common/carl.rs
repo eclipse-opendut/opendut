@@ -9,8 +9,7 @@ use tracing::{debug, info, warn};
 use opendut_carl_api::carl::broker::stream_header;
 use opendut_carl_api::carl::{broker, CarlClient};
 use opendut_model::peer::PeerId;
-use opendut_util::client_auth::ClientAuth;
-use opendut_util::pem::{self, Pem, PemFromConfig};
+use opendut_util::pem::{self, ClientAuth, Pem, PemFromConfig};
 
 
 /// Separate function which just opens a connection without extracting the version,
@@ -27,7 +26,7 @@ pub async fn connect(settings: &Config) -> anyhow::Result<CarlClient> {
     let ca_certs = Pem::read_from_configured_path_or_content(pem::config_keys::DEFAULT_NETWORK_TLS_CA, None, settings)
         .context("No CA certificates found in configured locations")?;
 
-    let client_auth = ClientAuth::load_from_config(settings)
+    let client_auth = ClientAuth::load_from_config_for_carl_connection(settings)
         .context("Error while loading configuration for client authentication")?;
 
     let domain_name_override = {

@@ -53,7 +53,7 @@ impl PeerMessagingClient {
             let executor_manager: ExecutorManagerRef = ExecutorManager::create();
 
             let network_interface_management = {
-                let network_interface_management_enabled = settings.config.get::<bool>("network.interface.management.enabled")?;
+                let network_interface_management_enabled = settings.get::<bool>("network.interface.management.enabled")?;
                 if network_interface_management_enabled {
                     let network_interface_manager: NetworkInterfaceManagerRef = NetworkInterfaceManager::create()?;
                     let can_manager = CanManager::create();
@@ -106,7 +106,7 @@ impl PeerMessagingClient {
 
     pub async fn process_messages_loop(&mut self, rx_peer_configuration_state: Receiver<EdgePeerConfigurationState>, remote_address: IpAddr) -> anyhow::Result<()> {
 
-        let timeout_duration = Duration::from_millis(self.settings.config.get::<u64>("carl.disconnect.timeout.ms")?);
+        let timeout_duration = Duration::from_millis(self.settings.get::<u64>("carl.disconnect.timeout.ms")?);
 
         let (mut rx_inbound, tx_outbound) = carl::open_stream(self.handle_stream_info.self_id, &remote_address, &mut self.carl).await?;
 

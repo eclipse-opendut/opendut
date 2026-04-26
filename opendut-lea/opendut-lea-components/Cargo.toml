@@ -13,6 +13,7 @@ leptos = { workspace = true, features = ["csr"] }
 leptos-use = { workspace = true }
 slotmap = { workspace = true }
 tracing = { workspace = true }
+web-sys = { workspace = true, features = ["Selection"] }
 
 [lints]
 workspace = true

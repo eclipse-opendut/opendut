@@ -9,7 +9,7 @@ license.workspace = true
 opendut-carl-api = { workspace = true, features = ["client"] }
 opendut-model = { workspace = true, features = ["yaml-specs", "json-specs"] }
 opendut-telemetry = { workspace = true }
-opendut-util = { workspace = true, features = ["client-auth", "settings"] }
+opendut-util = { workspace = true, features = ["pem", "settings"] }
 
 
 clap = { workspace = true, features = ["derive"] }

@@ -1,4 +1,5 @@
 use std::fs;
+use std::ops::Not;
 use std::path::PathBuf;
 
 use cargo_metadata::MetadataCommand;
@@ -18,29 +19,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let version = metadata.workspace_metadata["ci"]["netbird"]["version"].as_str()
         .ok_or("NetBird version not defined.")?;
     let netbird_proto_url = metadata.workspace_metadata["ci"]["netbird"]["protobuf"].as_str()
-        .ok_or("NetBird protobuf url not defined.")?;
+        .ok_or("NetBird protobuf URL not defined.")?;
 
     let proto_dir = PathBuf::from("proto/").join(format!("netbird-v{version}"));
-    let file_names = ["daemon.proto"];
+    fs::create_dir_all(&proto_dir)?;
 
-    if !proto_dir.exists() {
-        println!("Downloading proto files...");
-        fs::create_dir_all(&proto_dir)?;
+    let proto_file = proto_dir.join("daemon.proto");
 
-        for file_name in file_names {
-            let bytes = reqwest::blocking::get(netbird_proto_url)?
-                .error_for_status()?
-                .bytes()?;
+    if proto_file.exists().not() {
+        println!("Downloading NetBird proto file...");
 
-            let target_file = proto_dir.join(file_name);
+        let bytes = reqwest::blocking::get(netbird_proto_url)?
+            .error_for_status()?
+            .bytes()?;
 
-            fs::write(&target_file, bytes)
-                .map_err(|cause| format!("Error while writing to '{}': {cause}", target_file.display()))?;
-        }
+        fs::write(&proto_file, bytes)
+            .map_err(|cause| format!("Error while writing to {proto_file:?}: {cause}"))?;
     }
 
-    let protos = file_names.map(|file_name| proto_dir.join(file_name));
-
+    let protos = [proto_file];
     let includes = [proto_dir];
 
     tonic_prost_build::configure()

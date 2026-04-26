@@ -25,16 +25,16 @@ pub async fn launch(id_override: Option<PeerId>) -> anyhow::Result<()> {
 pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow::Result<()> {
     let settings = settings::load_with_overrides(settings_override)?;
 
-    let self_id = settings.config.get::<PeerId>(settings::key::peer::id)
+    let self_id = settings.get::<PeerId>(settings::key::peer::id)
         .context("Failed to read ID from configuration.\n\nRun `edgar setup` before launching the service.")?;
 
     let mut metrics_shutdown_handle = {
-        let logging_config = LoggingConfig::load(&settings.config)?;
+        let logging_config = LoggingConfig::load(&settings)?;
         let service_metadata = opentelemetry_types::ServiceMetadata {
             instance_id: format!("edgar-{self_id}"),
             version: app_info::PKG_VERSION.to_owned(),
         };
-        let opentelemetry = Opentelemetry::load(&settings.config, service_metadata).await?;
+        let opentelemetry = Opentelemetry::load(&settings, service_metadata).await?;
 
         opendut_telemetry::initialize_with_config(logging_config, opentelemetry).await?
     };
@@ -49,7 +49,7 @@ pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow:
     let (tx_peer_configuration_state, rx_peer_configuration_state) = mpsc::channel::<EdgePeerConfigurationState>(100);
     crate::service::peer_configuration::spawn_peer_configurations_handler(rx_peer_configuration, tx_peer_configuration_state).await?;
 
-    let mut carl = carl::connect(&settings.config).await?;
+    let mut carl = carl::connect(&settings).await?;
     carl::log_version_compatibility(&mut carl).await?;
 
     let remote_address = vpn.retrieve_remote_host(&settings).await?;

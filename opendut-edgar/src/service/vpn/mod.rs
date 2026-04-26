@@ -19,7 +19,7 @@ impl VpnProcess {
         let vpn_config = VpnConfig::load_from_config(settings)?;
 
         if vpn_config.enabled {
-            let config = NetbirdClientConfig::load_from_config(&settings.config)?;
+            let config = NetbirdClientConfig::load_from_config(settings)?;
             Self::spawn_as_netbird(config).await
         } else {
             Ok(Self::Disabled)
@@ -38,7 +38,7 @@ impl VpnProcess {
             }
             VpnProcess::Disabled => {
                 let field = settings::key::vpn::disabled::remote::host;
-                let address = settings.config.get::<IpAddr>(field)
+                let address = settings.get::<IpAddr>(field)
                     .context("Configuration value '{field}' must be a valid IP address")?;
                 Ok(address)
             }
@@ -60,7 +60,7 @@ struct VpnConfig {
 }
 impl VpnConfig {
     pub fn load_from_config(settings: &LoadedConfig) -> anyhow::Result<Self> {
-        settings.config.get::<VpnConfig>(settings::key::vpn::table)
+        settings.get::<VpnConfig>(settings::key::vpn::table)
             .context("Error while VPN configuration")
     }
 }
