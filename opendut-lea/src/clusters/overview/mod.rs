@@ -1,17 +1,14 @@
 mod row;
 
 use leptos::prelude::*;
-use tracing::{debug, error};
-use opendut_carl_api::carl::ClientError;
-use opendut_carl_api::carl::cluster::StoreClusterDeploymentError;
 use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton};
-use opendut_model::cluster::{ClusterDeployment, ClusterDescriptor, ClusterId};
+use opendut_model::cluster::ClusterDescriptor;
 
 use crate::app::use_app_globals;
 use crate::clusters::components::CreateClusterButton;
 use crate::clusters::IsDeployed;
 use crate::clusters::overview::row::Row;
-use crate::components::{use_toaster, BasePageContainer, Breadcrumb, LoadingSpinner, Toast};
+use crate::components::{BasePageContainer, Breadcrumb, LoadingSpinner};
 
 #[component]
 pub fn ClustersOverview() -> impl IntoView {
@@ -58,87 +55,6 @@ pub fn ClustersOverview() -> impl IntoView {
         })
     };
 
-    let on_deploy = {
-        let carl = carl.clone();
-        let toaster = use_toaster();
-
-        move |cluster_id: ClusterId| {
-            let carl = carl.clone();
-            let toaster = toaster.clone();
-
-            move || {
-                let mut carl = carl.clone();
-                let toaster = toaster.clone();
-
-                leptos::task::spawn_local(async move {
-                    match carl.cluster.store_cluster_deployment(ClusterDeployment { id: cluster_id }).await {
-                        Ok(cluster_id) => {
-                            debug!("Successfully stored cluster deployment: {}", cluster_id);
-                            toaster.toast(
-                                Toast::builder()
-                                    .simple("Successfully stored cluster deployment!")
-                                    .success()
-                            );
-                        }
-                        Err(cause) => {
-                            error!("Failed to store cluster deployment <{}>, due to error: {:?}", cluster_id, cause);
-                            match cause {
-                                ClientError::UsageError(StoreClusterDeploymentError::IllegalPeerState { invalid_peers, .. }) => {
-                                    toaster.toast(
-                                        Toast::builder()
-                                            .simple(format!("Failed to store cluster deployment! Peers already in use: {}", invalid_peers.iter().map(|peer| peer.to_string()).collect::<Vec<_>>().join(", ")))
-                                            .error()
-                                    );
-                                }
-                                _ => {
-                                    toaster.toast(
-                                        Toast::builder()
-                                            .simple("Failed to store cluster deployment!")
-                                            .error()
-                                    );
-                                }
-                            };
-                        }
-                    }
-                    refetch_cluster_deployments.notify();
-                })
-            }
-        }
-    };
-
-    let on_undeploy = {
-        let carl = carl.clone();
-        let toaster = use_toaster();
-
-        move |id: ClusterId| {
-            let carl = carl.clone();
-            let toaster = toaster.clone();
-
-            move || {
-                let mut carl = carl.clone();
-                let toaster = toaster.clone();
-
-                leptos::task::spawn_local(async move {
-                    match carl.cluster.delete_cluster_deployment(id).await {
-                        Ok(_) => {
-                            toaster.toast(Toast::builder()
-                                .simple("Successfully deleted cluster deployment!")
-                                .success()
-                            );
-                        }
-                        Err(_) => {
-                            toaster.toast(Toast::builder()
-                                .simple("Failed to delete cluster deployment!")
-                                .error()
-                            );
-                        }
-                    }
-                    refetch_cluster_deployments.notify();
-                })
-            }
-        }
-    };
-
     let on_delete = move || {
         refetch_cluster_descriptors.notify();
     };
@@ -182,9 +98,6 @@ pub fn ClustersOverview() -> impl IntoView {
                         fallback=LoadingSpinner
                     >
                     { move || {
-                        let on_deploy = on_deploy.clone();
-                        let on_undeploy = on_undeploy.clone();
-
                         Suspend::new(async move {
                             let clusters = clusters.await;
                             let deployed_clusters = cluster_deployments.await
@@ -201,9 +114,8 @@ pub fn ClustersOverview() -> impl IntoView {
                                         view! {
                                             <Row
                                                 cluster_descriptor=RwSignal::new(cluster_descriptor)
-                                                on_deploy=on_deploy(cluster_id)
-                                                on_undeploy=on_undeploy(cluster_id)
                                                 is_deployed = RwSignal::new(IsDeployed(deployed_clusters.contains(&cluster_id)))
+                                                on_deployment_changed=move || refetch_cluster_deployments.notify()
                                                 on_delete
                                             />
                                         }

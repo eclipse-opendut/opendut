@@ -1,26 +1,21 @@
 use crate::clusters::IsDeployed;
-use crate::clusters::components::DeleteClusterButton;
-use leptos::html::Div;
+use crate::clusters::components::{ClusterHealth, DeleteClusterButton, DeployToggle};
 use leptos::prelude::*;
 use leptos::web_sys;
 use leptos_router::hooks::use_navigate;
-use opendut_lea_components::tooltip::Tooltip;
-use opendut_lea_components::{ButtonColor, Toggle};
+use opendut_lea_components::ButtonColor;
 use opendut_model::cluster::ClusterDescriptor;
-use crate::clusters::components::ClusterHealth;
 use opendut_model::cluster::state::ClusterState;
 
 #[component]
-pub fn Row<OnDeployFn, OnUndeployFn, OnDeleteFn>(
+pub fn Row<OnDeploymentChanged, OnDeleteFn>(
     cluster_descriptor: RwSignal<ClusterDescriptor>,
-    on_deploy: OnDeployFn,
-    on_undeploy: OnUndeployFn,
     is_deployed: RwSignal<IsDeployed>,
+    on_deployment_changed: OnDeploymentChanged,
     on_delete: OnDeleteFn,
 ) -> impl IntoView
 where
-    OnDeployFn: Fn() + Send + 'static,
-    OnUndeployFn: Fn() + Send + 'static,
+    OnDeploymentChanged: Fn() + Clone + Send + 'static,
     OnDeleteFn: Fn() + Copy + Send + 'static,
 {
     let cluster_id = create_read_slice(cluster_descriptor, |cluster_descriptor| {
@@ -32,19 +27,6 @@ where
     });
 
     let configurator_href = move || format!("/clusters/{}/configure/general", cluster_id.get());
-
-    let dropdown_active = RwSignal::new(false);
-    let dropdown = NodeRef::<Div>::new();
-
-    let _ = leptos_use::on_click_outside(dropdown, move |_| dropdown_active.set(false));
-
-    let tooltip_text = Signal::derive(move || {
-        if is_deployed.get().0 {
-            "Deployment requested".to_string()
-        } else {
-            "Undeployed".to_string()
-        }
-    });
 
     let mousedown_pos = RwSignal::new((0, 0));
     let use_navigate = use_navigate();
@@ -70,20 +52,13 @@ where
             on:click=on_click
         >
             <td class="is-vcentered has-text-centered">
-                <Tooltip
-                    text=tooltip_text
-                >
-                    <div on:click=|e| e.stop_propagation() on:mousedown=|e| e.stop_propagation()>
-                        <Toggle
-                            is_active = Signal::derive(move || {
-                                is_deployed.get().0
-                            })
-                            on_action = move || {
-                                if is_deployed.get().0 { on_undeploy() } else { on_deploy() }
-                            }
-                        />
-                    </div>
-                </Tooltip>
+                <div on:click=|e| e.stop_propagation() on:mousedown=|e| e.stop_propagation()>
+                    <DeployToggle
+                        cluster_id
+                        is_deployed
+                        on_deployment_changed
+                    />
+                </div>
             </td>
             <td class="is-vcentered has-text-centered">
                 <ClusterHealth state=cluster_state />
