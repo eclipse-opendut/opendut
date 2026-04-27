@@ -151,6 +151,8 @@ pub mod compile {
             ParameterError,
             InvalidParameterNameError,
             InvalidParameterNameErrorKind,
+            InvalidParameterValueError,
+            InvalidParameterValueErrorKind,
         },
         suite::{
             Test,

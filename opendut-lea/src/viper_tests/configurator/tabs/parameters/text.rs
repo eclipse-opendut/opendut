@@ -1,18 +1,17 @@
 use leptos::prelude::*;
 use opendut_lea_components::{UserInput, UserInputValue};
-use opendut_model::viper::ViperBindingValue;
+use opendut_model::viper::{InvalidParameterValueErrorKind, ViperBindingValue, ViperParameterDescriptor, ViperParameterInfo};
 use crate::viper_tests::configurator::types::ViperBindingValueInput;
 
 #[component]
 pub fn TextParameterInput(
+    parameter_descriptor: ViperParameterDescriptor,
     getter: Signal<Option<ViperBindingValueInput>>,
     setter: SignalSetter<ViperBindingValueInput>,
-    name: String,
-    display_name: Option<String>,
-    description: Option<String>,
-    default: Option<String>,
-    max: u32,
 ) -> impl IntoView {
+    
+    let name = parameter_descriptor.name().to_string();
+    let ViperParameterInfo { display_name, description } = parameter_descriptor.info().to_owned();
 
     let getter = Signal::derive(move || {
         let getter_value = getter.get()
@@ -45,20 +44,29 @@ pub fn TextParameterInput(
 
         setter.set(value);
     });
-
+    
     let validator = move |input: String| {
-        if input.trim().is_empty() {
-            UserInputValue::Both(
-                String::from("Please enter a value."),
-                input,
-            )
-        } else if input.len() > max as usize {
-            UserInputValue::Both(
-                format!("The text parameter must be at most {max} characters long."),
-                input,
-            )
-        } else {
-            UserInputValue::Right(input)
+        match parameter_descriptor.validate_text_parameter(&input) {
+            Ok(_) => { UserInputValue::Right(input) }
+            Err(error) => {
+                match error.kind {
+                    InvalidParameterValueErrorKind::Empty => {
+                        UserInputValue::Both(String::from("Please enter a value."), input)
+                    }
+                    InvalidParameterValueErrorKind::TooLong { expected, actual: _ } => {
+                        UserInputValue::Both(
+                            format!("The text parameter must be at most {expected} characters long."),
+                            input,
+                        )
+                    }
+                    InvalidParameterValueErrorKind::InvalidType { expected, actual } => {
+                        UserInputValue::Both(
+                            format!("The parameter must be a {expected} (actual: {actual})."),
+                            input,
+                        )
+                    }
+                }
+            }
         }
     };
 

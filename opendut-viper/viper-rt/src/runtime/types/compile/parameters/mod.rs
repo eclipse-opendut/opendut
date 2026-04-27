@@ -8,8 +8,11 @@ mod error;
 pub use error::{
     InvalidParameterNameError,
     InvalidParameterNameErrorKind,
+    InvalidParameterValueError,
+    InvalidParameterValueErrorKind,
     ParameterError,
 };
+use crate::compile::ParameterError::IllegalParameterValue;
 
 /// The `ParameterDescriptors` is a container for a set [`ParameterDescriptor`]s defined in a test
 /// suite.
@@ -206,6 +209,14 @@ impl ParameterDescriptor {
         }
     }
 
+    pub fn info(&self) -> &ParameterInfo {
+        match self {
+            ParameterDescriptor::BooleanParameter { info, .. } => info,
+            ParameterDescriptor::NumberParameter { info, .. } => info,
+            ParameterDescriptor::TextParameter { info, .. } => info,
+        }
+    }
+
     pub fn has_default_value(&self) -> bool {
         match self {
             ParameterDescriptor::BooleanParameter { default, .. } => default.is_some(),
@@ -219,6 +230,27 @@ impl ParameterDescriptor {
             ParameterDescriptor::BooleanParameter { .. } => Self::BOOLEAN_PARAMETER_VALUE_TYPE_NAME,
             ParameterDescriptor::NumberParameter { .. } => Self::NUMBER_PARAMETER_VALUE_TYPE_NAME,
             ParameterDescriptor::TextParameter { .. } => Self::TEXT_PARAMETER_VALUE_TYPE_NAME,
+        }
+    }
+
+    pub fn validate_text_parameter(&self, input: &str) -> Result<(), InvalidParameterValueError> {
+        match self {
+            ParameterDescriptor::TextParameter { max, .. } => {
+                let input_length = input.len();
+                
+                if input.trim().is_empty() {
+                    Err(InvalidParameterValueError::new_empty_parameter_value_error())
+                } else if input_length > *max as usize {
+                    Err(InvalidParameterValueError::new_too_long_parameter_value_error(input, *max as usize, input_length))
+                } else {
+                    Ok(())
+                }
+            }
+            _ => {
+                let expected_type = Self::TEXT_PARAMETER_VALUE_TYPE_NAME.to_string();
+                let actual_type = self.value_type_name().to_string();
+                Err(InvalidParameterValueError::new_invalid_type_parameter_value_error(input, expected_type, actual_type))
+            }
         }
     }
 }
