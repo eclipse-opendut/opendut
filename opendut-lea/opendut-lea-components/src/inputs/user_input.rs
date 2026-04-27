@@ -13,8 +13,11 @@ pub fn UserInput<A>(
     #[prop(optional)] validator: Option<A>,
     #[prop(into)] label: Signal<String>,
     #[prop(into)] placeholder: Signal<String>,
+    #[prop(into, default=Signal::from(None))] description: Signal<Option<String>>,
 ) -> impl IntoView
 where A: UserInputValidator + Clone + 'static {
+
+    let has_description = move || description.with(|description| description.is_some());
 
     let value_text = move || {
         getter.with(|input| match input {
@@ -50,7 +53,10 @@ where A: UserInputValidator + Clone + 'static {
 
     view! {
         <div class="field">
-            <label class="label">{ label }</label>
+            <label class="label" class=("mb-0", has_description)>{ label }</label>
+            <Show when=has_description>
+                <p class="pb-2"> { description } </p>
+            </Show>
             <div class="control">
                 <input
                     class="input"
