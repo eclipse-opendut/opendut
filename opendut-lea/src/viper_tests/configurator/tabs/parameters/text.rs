@@ -69,6 +69,7 @@ pub fn TextParameterInput(
             validator
             label=display_name.unwrap_or_else(|| name)
             placeholder="Text Parameter"
+            description
         />
     }
 }
