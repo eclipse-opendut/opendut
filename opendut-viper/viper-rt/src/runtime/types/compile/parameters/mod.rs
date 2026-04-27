@@ -8,11 +8,12 @@ mod error;
 pub use error::{
     InvalidParameterNameError,
     InvalidParameterNameErrorKind,
-    InvalidParameterValueError,
-    InvalidParameterValueErrorKind,
+    InvalidTextParameterValueError,
+    InvalidTextParameterValueErrorKind,
+    InvalidNumberParameterValueError,
+    InvalidNumberParameterValueErrorKind,
     ParameterError,
 };
-use crate::compile::ParameterError::IllegalParameterValue;
 
 /// The `ParameterDescriptors` is a container for a set [`ParameterDescriptor`]s defined in a test
 /// suite.
@@ -233,15 +234,15 @@ impl ParameterDescriptor {
         }
     }
 
-    pub fn validate_text_parameter(&self, input: &str) -> Result<(), InvalidParameterValueError> {
+    pub fn validate_text_parameter(&self, input: &str) -> Result<(), InvalidTextParameterValueError> {
         match self {
             ParameterDescriptor::TextParameter { max, .. } => {
                 let input_length = input.len();
-                
+
                 if input.trim().is_empty() {
-                    Err(InvalidParameterValueError::new_empty_parameter_value_error())
+                    Err(InvalidTextParameterValueError::new_empty_parameter_value_error())
                 } else if input_length > *max as usize {
-                    Err(InvalidParameterValueError::new_too_long_parameter_value_error(input, *max as usize, input_length))
+                    Err(InvalidTextParameterValueError::new_too_long_parameter_value_error(input, *max as usize, input_length))
                 } else {
                     Ok(())
                 }
@@ -249,7 +250,27 @@ impl ParameterDescriptor {
             _ => {
                 let expected_type = Self::TEXT_PARAMETER_VALUE_TYPE_NAME.to_string();
                 let actual_type = self.value_type_name().to_string();
-                Err(InvalidParameterValueError::new_invalid_type_parameter_value_error(input, expected_type, actual_type))
+                Err(InvalidTextParameterValueError::new_invalid_type_parameter_value_error(input, expected_type, actual_type))
+            }
+        }
+    }
+
+    pub fn validate_number_parameter(&self, input: i64) -> Result<(), InvalidNumberParameterValueError> {
+        match self {
+            ParameterDescriptor::NumberParameter { min, max, .. } => {
+                if input > *max {
+                    Err(InvalidNumberParameterValueError::new_too_big_parameter_value_error(input, *max as usize, input as usize))
+                } else if input < *min {
+                    Err(InvalidNumberParameterValueError::new_too_small_parameter_value_error(input, *min as usize, input as usize))
+                }
+                else {
+                    Ok(())
+                }
+            }
+            _ => {
+                let expected_type = Self::TEXT_PARAMETER_VALUE_TYPE_NAME.to_string();
+                let actual_type = self.value_type_name().to_string();
+                Err(InvalidNumberParameterValueError::new_invalid_type_parameter_value_error(input, expected_type, actual_type))
             }
         }
     }

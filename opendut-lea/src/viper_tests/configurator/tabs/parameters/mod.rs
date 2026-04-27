@@ -87,17 +87,12 @@ pub fn ParametersTab(viper_test_run_descriptor: RwSignal<UserViperTestRunDescrip
                                         />
                                     }.into_any()
                                 }
-                                ViperParameterDescriptor::NumberParameter { name, info, default, min, max } => {
+                                ViperParameterDescriptor::NumberParameter { .. } => {
                                     view! {
                                         <NumberParameterInput
+                                            parameter_descriptor
                                             getter=test_run_getter
                                             setter=test_run_setter
-                                            name=name.to_string()
-                                            display_name=info.display_name
-                                            description=info.description
-                                            default
-                                            min
-                                            max
                                         />
                                     }.into_any()
                                 }

@@ -4,7 +4,7 @@ use crate::runtime::types::compile::error::CompilationError;
 use crate::runtime::types::compile::error::CompilationErrorKind;
 use crate::runtime::types::compile::inspect::InspectionError;
 use crate::runtime::types::compile::metadata::MetadataError;
-use crate::runtime::types::compile::parameters::{InvalidParameterNameError, InvalidParameterValueError, ParameterError};
+use crate::runtime::types::compile::parameters::{InvalidParameterNameError, InvalidNumberParameterValueError, InvalidTextParameterValueError, ParameterError};
 use crate::runtime::types::naming::error::{InvalidIdentifierError, InvalidIdentifierErrorKind};
 use crate::runtime::types::py::error::{PythonReflectionError, PythonRuntimeError};
 use crate::runtime::types::run::error::RunError;
@@ -115,7 +115,13 @@ impl Display for InvalidParameterNameError {
     }
 }
 
-impl Display for InvalidParameterValueError {
+impl Display for InvalidTextParameterValueError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Illegal value for parameter value: '{}'", self.value)
+    }
+}
+
+impl Display for InvalidNumberParameterValueError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "Illegal value for parameter value: '{}'", self.value)
     }
@@ -211,7 +217,10 @@ impl Display for ParameterError {
             ParameterError::IllegalParameterName(cause) => {
                 write!(f, "{cause}")
             }
-            ParameterError::IllegalParameterValue(cause) => {
+            ParameterError::IllegalTextParameterValue(cause) => {
+                write!(f, "{cause}")
+            }
+            ParameterError::IllegalNumberParameterValue(cause) => {
                 write!(f, "{cause}")
             }
         }
