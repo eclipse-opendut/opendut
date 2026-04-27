@@ -3,33 +3,62 @@
 #[non_exhaustive]
 pub enum ParameterError {
     IllegalParameterName(InvalidParameterNameError),
-    IllegalParameterValue(InvalidParameterValueError),
+    IllegalTextParameterValue(InvalidTextParameterValueError),
+    IllegalNumberParameterValue(InvalidNumberParameterValueError),
 }
 
 #[derive(Debug)]
-pub struct InvalidParameterValueError {
+pub struct InvalidTextParameterValueError {
     pub value: String,
-    pub kind: InvalidParameterValueErrorKind,
+    pub kind: InvalidTextParameterValueErrorKind,
 }
 
-impl InvalidParameterValueError {
+impl InvalidTextParameterValueError {
     pub fn new_empty_parameter_value_error() -> Self {
-        Self { value: String::new(), kind: InvalidParameterValueErrorKind::Empty }
+        Self { value: String::new(), kind: InvalidTextParameterValueErrorKind::Empty }
     }
     
     pub fn new_too_long_parameter_value_error(value: impl Into<String>, expected: usize, actual: usize) -> Self {
-        Self { value: value.into(), kind: InvalidParameterValueErrorKind::TooLong { expected, actual } }
+        Self { value: value.into(), kind: InvalidTextParameterValueErrorKind::TooLong { expected, actual } }
     }
 
     pub fn new_invalid_type_parameter_value_error(value: impl Into<String>, expected: String, actual: String) -> Self {
-        Self { value: value.into(), kind: InvalidParameterValueErrorKind::InvalidType { expected, actual}}
+        Self { value: value.into(), kind: InvalidTextParameterValueErrorKind::InvalidType { expected, actual}}
     }
 }
 
 #[derive(Debug)]
-pub enum InvalidParameterValueErrorKind {
+pub enum InvalidTextParameterValueErrorKind {
     Empty,
     TooLong { expected: usize, actual: usize },
+    InvalidType { expected: String, actual: String },
+}
+
+
+#[derive(Debug)]
+pub struct InvalidNumberParameterValueError {
+    pub value: i64,
+    pub kind: InvalidNumberParameterValueErrorKind,
+}
+
+impl InvalidNumberParameterValueError {
+    pub fn new_too_small_parameter_value_error(value: i64, expected: usize, actual: usize) -> Self {
+        Self { value, kind: InvalidNumberParameterValueErrorKind::TooSmall { expected, actual }}
+    }
+
+    pub fn new_too_big_parameter_value_error(value: i64, expected: usize, actual: usize) -> Self {
+        Self { value, kind: InvalidNumberParameterValueErrorKind::TooBig { expected, actual }}
+    }
+
+    pub fn new_invalid_type_parameter_value_error(value: i64, expected: String, actual: String) -> Self {
+        Self { value, kind: InvalidNumberParameterValueErrorKind::InvalidType { expected, actual }}
+    }
+}
+
+#[derive(Debug)]
+pub enum InvalidNumberParameterValueErrorKind {
+    TooSmall { expected: usize, actual: usize },
+    TooBig { expected: usize, actual: usize },
     InvalidType { expected: String, actual: String },
 }
 

@@ -1,19 +1,17 @@
 use leptos::prelude::*;
 use opendut_lea_components::{InputType, UserInput, UserInputValue};
-use opendut_model::viper::ViperBindingValue;
+use opendut_model::viper::{InvalidNumberParameterValueErrorKind, ViperBindingValue, ViperParameterDescriptor, ViperParameterInfo};
 use crate::viper_tests::configurator::types::ViperBindingValueInput;
 
 #[component]
 pub fn NumberParameterInput(
+    parameter_descriptor: ViperParameterDescriptor,
     getter: Signal<Option<ViperBindingValueInput>>,
     setter: SignalSetter<ViperBindingValueInput>,
-    name: String,
-    display_name: Option<String>,
-    description: Option<String>,
-    default: Option<i64>,
-    min: i64,
-    max: i64,
 ) -> impl IntoView {
+
+    let name = parameter_descriptor.name().to_string();
+    let ViperParameterInfo { display_name, description } = parameter_descriptor.info().to_owned();
 
     let getter = Signal::derive(move || {
         if let Some(getter_value) = getter.get() {
@@ -49,6 +47,7 @@ pub fn NumberParameterInput(
                     ViperBindingValueInput::Both(error, value)
                 } else {
                     ViperBindingValueInput::Left(String::from("Invalid parameter type, expected a number parameter"))
+                    // Fixme: why is this triggered when the input field is empty?
                 }
             }
         };
@@ -64,15 +63,34 @@ pub fn NumberParameterInput(
         }
 
         match trimmed_input.parse::<i64>() {
-            Ok(number) if number < min => UserInputValue::Both(
-                format!("The number parameter must be at least {min}."),
-                input,
-            ),
-            Ok(number) if number > max => UserInputValue::Both(
-                format!("The number parameter must be at most {max}."),
-                input,
-            ),
-            Ok(_) => UserInputValue::Right(input),
+            Ok(number) => {
+                match parameter_descriptor.validate_number_parameter(number) {
+                    Ok(_) => UserInputValue::Right(input),
+                    Err(error) => {
+                        match error.kind {
+                            InvalidNumberParameterValueErrorKind::TooSmall { expected, actual: _ } => {
+                                UserInputValue::Both(
+                                    format!("The number parameter must be at least {expected}."),
+                                    input,
+                                )
+                            }
+                            InvalidNumberParameterValueErrorKind::TooBig { expected, actual: _ } => {
+                                UserInputValue::Both(
+                                    format!("The number parameter must be at most {expected}."),
+                                    input,
+                                )
+                            }
+                            InvalidNumberParameterValueErrorKind::InvalidType { expected, actual } => {
+                                UserInputValue::Both(
+                                    format!("The parameter must be a {expected} (actual: {actual})."),
+                                    input,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
             Err(_) => UserInputValue::Both(
                 String::from("Invalid parameter type, expected a number"),
                 input,

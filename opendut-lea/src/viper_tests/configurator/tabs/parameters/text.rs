@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 use opendut_lea_components::{UserInput, UserInputValue};
-use opendut_model::viper::{InvalidParameterValueErrorKind, ViperBindingValue, ViperParameterDescriptor, ViperParameterInfo};
+use opendut_model::viper::{InvalidTextParameterValueErrorKind, ViperBindingValue, ViperParameterDescriptor, ViperParameterInfo};
 use crate::viper_tests::configurator::types::ViperBindingValueInput;
 
 #[component]
@@ -9,7 +9,7 @@ pub fn TextParameterInput(
     getter: Signal<Option<ViperBindingValueInput>>,
     setter: SignalSetter<ViperBindingValueInput>,
 ) -> impl IntoView {
-    
+
     let name = parameter_descriptor.name().to_string();
     let ViperParameterInfo { display_name, description } = parameter_descriptor.info().to_owned();
 
@@ -44,22 +44,22 @@ pub fn TextParameterInput(
 
         setter.set(value);
     });
-    
+
     let validator = move |input: String| {
         match parameter_descriptor.validate_text_parameter(&input) {
-            Ok(_) => { UserInputValue::Right(input) }
+            Ok(_) => UserInputValue::Right(input),
             Err(error) => {
                 match error.kind {
-                    InvalidParameterValueErrorKind::Empty => {
+                    InvalidTextParameterValueErrorKind::Empty => {
                         UserInputValue::Both(String::from("Please enter a value."), input)
                     }
-                    InvalidParameterValueErrorKind::TooLong { expected, actual: _ } => {
+                    InvalidTextParameterValueErrorKind::TooLong { expected, actual: _ } => {
                         UserInputValue::Both(
                             format!("The text parameter must be at most {expected} characters long."),
                             input,
                         )
                     }
-                    InvalidParameterValueErrorKind::InvalidType { expected, actual } => {
+                    InvalidTextParameterValueErrorKind::InvalidType { expected, actual } => {
                         UserInputValue::Both(
                             format!("The parameter must be a {expected} (actual: {actual})."),
                             input,
