@@ -49,7 +49,7 @@ pub fn TextParameterInput(
     let validator = move |input: String| {
         if input.trim().is_empty() {
             UserInputValue::Both(
-                "Please enter a value.".to_string(),
+                String::from("Please enter a value."),
                 input,
             )
         } else if input.len() > max as usize {

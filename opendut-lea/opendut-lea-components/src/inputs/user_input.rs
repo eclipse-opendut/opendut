@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 use leptos::reactive::wrappers::write::SignalSetter;
-use crate::inputs::{UserInputValidator, UserInputValue};
+use crate::inputs::{InputType, UserInputValidator, UserInputValue};
 
 use crate::NON_BREAKING_SPACE;
 
@@ -14,6 +14,7 @@ pub fn UserInput<A>(
     #[prop(into)] label: Signal<String>,
     #[prop(into)] placeholder: Signal<String>,
     #[prop(into, default=Signal::from(None))] description: Signal<Option<String>>,
+    #[prop(default=InputType::Text)] input_type: InputType,
 ) -> impl IntoView
 where A: UserInputValidator + Clone + 'static {
 
@@ -60,7 +61,7 @@ where A: UserInputValidator + Clone + 'static {
             <div class="control">
                 <input
                     class="input"
-                    type="text"
+                    type=input_type.as_html_type()
                     aria-label=move || aria_label.get()
                     placeholder=move || placeholder.get()
                     prop:value={ value_text }

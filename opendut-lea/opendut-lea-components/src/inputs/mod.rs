@@ -19,3 +19,17 @@ impl <A> UserInputValidator for A
         (self)(input)
     }
 }
+
+pub enum InputType {
+    Text,
+    Number,
+}
+
+impl InputType {
+    pub fn as_html_type(&self) -> &'static str {
+        match self {
+            Self::Text => "text",
+            Self::Number => "number",
+        }
+    }
+}
