@@ -17,8 +17,8 @@ impl UserViperTestRunDescriptor {
     }
 
     pub fn valid_parameters_tab(&self) -> bool {
-        self.parameters.iter().all(|parameter| {
-            parameter.1.is_right()
+        self.parameters.iter().all(|(_, parameter_value)| {
+            parameter_value.is_right()
         })
     }
 

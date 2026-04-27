@@ -21,70 +21,97 @@ pub fn ViperTestConfigurator() -> impl IntoView {
     let globals = use_app_globals();
     let params = use_params_map();
 
-    let (viper_test_run_descriptor, viper_test_configuration_resource, is_valid_configuration) = {
-        let viper_test_id = {
-            let viper_test_id = params.with_untracked(|params| {
-                params.get("id").and_then(|id| ViperTestId::try_from(id.as_str()).ok())
-            });
-            match viper_test_id {
-                None => {
-                    let use_navigate = use_navigate();
-                    navigate_to(WellKnownRoutes::ErrorPage {
-                        title: String::from("Invalid ViperTestId"),
-                        text: String::from("Could not parse the provided value as ViperTestId!"),
-                        details: None,
-                    }, use_navigate);
-                    ViperTestId::random()
-                }
-                Some(viper_test_id) => {
-                    viper_test_id
-                }
-            }
-        };
-
-        let viper_test_configuration = RwSignal::new(
-            UserViperTestRunDescriptor {
-                id: viper_test_id,
-                name: UserInputValue::Left(UserInputError::from("Enter a valid viper test name.")),
-                viper_source: SourceSelection::Left(String::from("Select a viper test source.")),
-                cluster: ClusterSelection::Left(String::from("Enter a cluster.")),
-                parameters: HashMap::new(),
-                is_new: true,
-            }
-        );
-
-        let viper_test_configuration_resource = LocalResource::new(move || {
-            let mut carl = globals.client.clone();
-            async move {
-                if let Ok(descriptor) = carl.viper.get_viper_test_run_descriptor(viper_test_id).await {
-                    viper_test_configuration.update(|user_configuration| {
-                        let ViperTestRunDescriptor { id: _, name, source: viper_source, cluster, parameters } = descriptor;
-
-                        user_configuration.name = UserInputValue::Right(name.value().to_owned());
-                        user_configuration.viper_source = SourceSelection::Right(viper_source);
-                        user_configuration.cluster = ClusterSelection::Right(cluster);
-
-                        let mut configured_parameters: HashMap<ViperParameterName, ViperBindingValueInput> = HashMap::new();
-
-                        for (key, value) in parameters {
-                            configured_parameters.insert(
-                                key,
-                                ViperBindingValueInput::Right(value)
-                            );
-                        }
-
-                        user_configuration.parameters = configured_parameters;
-                    })
-                }
-            }
+    let viper_test_id = {
+        let viper_test_id = params.with_untracked(|params| {
+            params.get("id").and_then(|id| ViperTestId::try_from(id.as_str()).ok())
         });
-
-        let is_valid_configuration = Memo::new(move |_| {
-            viper_test_configuration.with(|config| config.is_valid())
-        });
-
-        (viper_test_configuration, viper_test_configuration_resource, is_valid_configuration)
+        match viper_test_id {
+            None => {
+                let use_navigate = use_navigate();
+                navigate_to(WellKnownRoutes::ErrorPage {
+                    title: String::from("Invalid ViperTestId"),
+                    text: String::from("Could not parse the provided value as ViperTestId!"),
+                    details: None,
+                }, use_navigate);
+                ViperTestId::random()
+            }
+            Some(viper_test_id) => {
+                viper_test_id
+            }
+        }
     };
+
+    let viper_test_run_descriptor = RwSignal::new(
+        UserViperTestRunDescriptor {
+            id: viper_test_id,
+            name: UserInputValue::Left(UserInputError::from("Enter a valid viper test name.")),
+            viper_source: SourceSelection::Left(String::from("Select a viper test source.")),
+            cluster: ClusterSelection::Left(String::from("Enter a cluster.")),
+            parameters: HashMap::new(),
+            is_new: true,
+        }
+    );
+
+    let viper_test_run_descriptor_resource = LocalResource::new(move || {
+        let mut carl = globals.client.clone();
+        async move {
+            if let Ok(descriptor) = carl.viper.get_viper_test_run_descriptor(viper_test_id).await {
+                viper_test_run_descriptor.update(|user_configuration| {
+                    let ViperTestRunDescriptor { id: _, name, source: viper_source, cluster, parameters } = descriptor;
+
+                    user_configuration.name = UserInputValue::Right(name.value().to_owned());
+                    user_configuration.viper_source = SourceSelection::Right(viper_source);
+                    user_configuration.cluster = ClusterSelection::Right(cluster);
+
+                    let mut configured_parameters: HashMap<ViperParameterName, ViperBindingValueInput> = HashMap::new();
+
+                    for (key, value) in parameters {
+                        configured_parameters.insert(
+                            key,
+                            ViperBindingValueInput::Right(value)
+                        );
+                    }
+
+                    user_configuration.parameters = configured_parameters;
+                })
+            }
+        }
+    });
+
+    // let viper_source = create_read_slice(
+    //     viper_test_run_descriptor,
+    //     |descriptor| Clone::clone(&descriptor.viper_source),
+    // );
+    //
+    // // todo: Debounce
+    // let parameters = {
+    //     let carl = globals.client.clone();
+    //
+    //     LocalResource::new(move || {
+    //         let mut carl = carl.clone();
+    //         let viper_source = viper_source.get();
+    //
+    //         let source_id = match viper_source {
+    //             SourceSelection::Left(_) => None,
+    //             SourceSelection::Right(source_id) | SourceSelection::Both(_, source_id) => Some(source_id),
+    //         };
+    //
+    //         async move {
+    //             if let Some(source_id) = source_id {
+    //                 let test_suite_descriptor = carl.viper.get_viper_test_suite_parameters(source_id).await
+    //                     .expect("Failed to request the viper test suite descriptor.");
+    //
+    //                 Some(test_suite_descriptor.parameters)
+    //             } else {
+    //                 None
+    //             }
+    //         }
+    //     })
+    // };
+
+    let is_valid_configuration = Memo::new(move |_| {
+        viper_test_run_descriptor.with(|config| config.is_valid())
+    });
 
     let viper_test_id_string = create_read_slice(viper_test_run_descriptor, |config| config.id.to_string());
 
@@ -143,7 +170,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
             >
                 {
                     move || Suspend::new(async move {
-                        viper_test_configuration_resource.await;
+                        viper_test_run_descriptor_resource.await;
 
                         view! {
                             <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
