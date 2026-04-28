@@ -97,9 +97,12 @@ fn LoadedClusterConfigurator(
         ]
     });
 
+    let refetch_cluster_deployments = RwSignal::new(());
+
     let cluster_deployments = {
         let carl = globals.client.clone();
         LocalResource::new(move || {
+            refetch_cluster_deployments.track();
             let mut carl = carl.clone();
             async move {
                 carl.cluster.list_cluster_deployments().await
@@ -161,6 +164,7 @@ fn LoadedClusterConfigurator(
                         cluster_descriptor=cluster_descriptor.read_only()
                         deployed_signal
                         cluster_state=cluster_state.into()
+                        on_deployment_changed=move || refetch_cluster_deployments.notify()
                     />
                 }
             }
