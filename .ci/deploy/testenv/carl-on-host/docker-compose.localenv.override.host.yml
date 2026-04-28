@@ -4,9 +4,15 @@ services:
   carl:
     volumes:
       - opendut_provision-secrets-data:/provision:ro
-      - ../testenv/carl-on-host/traefik_config_vm/:/etc/traefik/dynamic/:ro
+      - ../testenv/carl-on-host/traefik_config_host/:/etc/traefik/dynamic/:ro
       # config directory used to store netbird api key
       - carl-config:/opt/opendut-carl/config/
+  traefik:
+    ports: !override
+      - "8081:8081"            # /ping endpoint
+      - "127.0.0.1:8082:8080"  # Traefik dashboard, only on localhost, do not expose publicly
+      - "80:80"
+      - "443:443"
 
 volumes:
   opendut_provision-secrets-data:
