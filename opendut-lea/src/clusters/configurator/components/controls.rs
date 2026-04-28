@@ -8,19 +8,22 @@ use opendut_model::cluster::ClusterDescriptor;
 use opendut_model::cluster::state::ClusterState;
 
 use crate::app::use_app_globals;
-use crate::clusters::components::DeleteClusterButton;
+use crate::clusters::components::{ClusterHealth, DeleteClusterButton, DeployToggle};
 use crate::clusters::configurator::types::UserClusterDescriptor;
 use crate::clusters::IsDeployed;
 use crate::components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, Toast, use_toaster};
 use crate::routing::{navigate_to, WellKnownRoutes};
-use crate::clusters::components::ClusterHealth;
 
 #[component]
-pub fn Controls(
+pub fn Controls<OnDeploymentChanged>(
     cluster_descriptor: ReadSignal<UserClusterDescriptor>,
     deployed_signal: Signal<IsDeployed>,
     cluster_state: Signal<ClusterState>,
-) -> impl IntoView {
+    on_deployment_changed: OnDeploymentChanged,
+) -> impl IntoView
+where
+    OnDeploymentChanged: Fn() + Clone + Send + 'static,
+{
 
     let cluster_id = Signal::derive(move || {
         cluster_descriptor.get().id
@@ -34,6 +37,12 @@ pub fn Controls(
 
     view! {
         <div class="is-flex is-align-items-center">
+            <DeployToggle
+                cluster_id
+                is_deployed=deployed_signal
+                on_deployment_changed
+            />
+            <div class="px-2" />
             <ClusterHealth state=cluster_state />
             <div class="px-2" />
             <SaveClusterButton
