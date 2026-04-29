@@ -34,6 +34,7 @@ pub fn ClusterConfigurator() -> impl IntoView {
             name: UserInputValue::Left(String::from("Enter a valid cluster name.")),
             devices: DeviceSelection::Left(String::from("Select at least two devices.")),
             leader: LeaderSelection::Left(String::from("Select a leader.")),
+            is_new: true,
         }
     );
 
@@ -52,6 +53,7 @@ pub fn ClusterConfigurator() -> impl IntoView {
                             name: UserInputValue::Right(configuration.name.value().to_owned()),
                             devices: DeviceSelection::Right(configuration.devices),
                             leader: LeaderSelection::Right(configuration.leader),
+                            is_new: false,
                         }
                     )
                 } else {
@@ -161,7 +163,7 @@ fn LoadedClusterConfigurator(
             controls=move || {
                 view! {
                     <Controls
-                        cluster_descriptor=cluster_descriptor.read_only()
+                        cluster_descriptor
                         deployed_signal
                         cluster_state=cluster_state.into()
                         on_deployment_changed=move || refetch_cluster_deployments.notify()
