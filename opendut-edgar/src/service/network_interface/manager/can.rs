@@ -103,7 +103,7 @@ impl NetworkInterfaceManager {
 
 fn ip_link_show(name: NetworkInterfaceName) -> anyhow::Result<CanInterfaceConfiguration> {
     let command = Command::new("ip")
-        .args(["link", "-json", "-details", "show", "dev", &name.name()])
+        .args(["-json", "-details", "link", "show", "dev", &name.name()])
         .output()?;
 
     if !command.status.success() {
