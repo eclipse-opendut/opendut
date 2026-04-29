@@ -110,7 +110,7 @@ impl CreateClusterDescriptorCli {
 
 pub async fn create_cluster_descriptor(cluster: ClusterDescriptor, carl: &mut CarlClient, output: &CreateOutputFormat) -> crate::Result<()> {
     carl.cluster.store_cluster_descriptor(cluster.clone()).await
-        .map_err(|err| format!("Could not store cluster descriptor. Make sure the application is running. Error: {err}"))?;
+        .map_err(|error| format!("Could not store cluster descriptor. Error: {error}"))?;
     
     let devices = carl.peers.list_devices().await
         .map_err(|error| format!("Error while trying to list devices.\n  {error}"))?;

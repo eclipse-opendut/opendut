@@ -1,5 +1,6 @@
 use opendut_model::cluster::{ClusterDescriptor, ClusterId, ClusterName};
 use tracing::{debug, info};
+use opendut_model::peer::PeerId;
 use crate::resource::api::resources::Resources;
 use crate::resource::persistence::error::PersistenceError;
 use crate::resource::storage::ResourcesStorageApi;
@@ -27,11 +28,17 @@ impl Resources<'_> {
 }
 
 #[derive(thiserror::Error, Debug)]
-#[error("ClusterConfigration '{cluster_name}' <{cluster_id}> could not be created")]
 pub enum CreateClusterDescriptorError {
+    #[error("ClusterConfigration '{cluster_name}' <{cluster_id}> could not be created, because the specified leader peer <{leader_id}> is not part of the cluster")]
+    LeaderNotInCluster {
+        cluster_id: ClusterId,
+        cluster_name: ClusterName,
+        leader_id: PeerId,
+    },
+    #[error("ClusterConfigration '{cluster_name}' <{cluster_id}> could not be created, due to an error when accessing persistence")]
     Persistence {
         cluster_id: ClusterId,
         cluster_name: ClusterName,
         #[source] source: PersistenceError
-    }
+    },
 }

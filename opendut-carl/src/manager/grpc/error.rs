@@ -22,6 +22,13 @@ mod cluster_manager {
     impl From<cluster_manager::CreateClusterDescriptorError> for CreateClusterDescriptorError {
         fn from(value: cluster_manager::CreateClusterDescriptorError) -> Self {
             match value {
+                cluster_manager::CreateClusterDescriptorError::LeaderNotInCluster { cluster_id, cluster_name, leader_id } => {
+                    Self::LeaderNotInCluster {
+                        cluster_id,
+                        cluster_name,
+                        leader_id,
+                    }
+                }
                 cluster_manager::CreateClusterDescriptorError::Persistence { cluster_id, cluster_name, source: _ } => {
                     Self::Internal {
                         cluster_id,

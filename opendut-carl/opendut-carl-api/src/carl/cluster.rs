@@ -9,6 +9,12 @@ use opendut_model::ShortName;
 
 #[derive(thiserror::Error, Debug)]
 pub enum CreateClusterDescriptorError {
+    #[error("ClusterConfigration '{cluster_name}' <{cluster_id}> could not be created, because the specified leader peer <{leader_id}> is not part of the cluster")]
+    LeaderNotInCluster {
+        cluster_id: ClusterId,
+        cluster_name: ClusterName,
+        leader_id: PeerId,
+    },
     #[error("ClusterConfigration '{cluster_name}' <{cluster_id}> could not be created, due to internal errors:\n  {cause}")]
     Internal {
         cluster_id: ClusterId,

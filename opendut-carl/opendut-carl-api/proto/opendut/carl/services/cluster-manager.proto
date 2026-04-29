@@ -41,8 +41,15 @@ message CreateClusterDescriptorSuccess {
 
 message CreateClusterDescriptorFailure {
   oneof error {
+    CreateClusterDescriptorFailureLeaderNotInCluster leader_not_in_cluster = 1;
     CreateClusterDescriptorFailureInternal internal = 2;
   }
+}
+
+message CreateClusterDescriptorFailureLeaderNotInCluster {
+  opendut.model.cluster.ClusterId cluster_id = 1;
+  opendut.model.cluster.ClusterName cluster_name = 2;
+  opendut.model.peer.PeerId leader_id = 3;
 }
 
 message CreateClusterDescriptorFailureInternal {
