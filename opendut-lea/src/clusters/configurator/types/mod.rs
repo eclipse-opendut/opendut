@@ -24,6 +24,7 @@ pub struct UserClusterDescriptor {
     pub name: UserInputValue,
     pub devices: DeviceSelection,
     pub leader: LeaderSelection,
+    pub is_new: bool,
 }
 
 impl TryFrom<UserClusterDescriptor> for ClusterDescriptor {

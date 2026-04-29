@@ -16,7 +16,7 @@ use crate::routing::{navigate_to, WellKnownRoutes};
 
 #[component]
 pub fn Controls<OnDeploymentChanged>(
-    cluster_descriptor: ReadSignal<UserClusterDescriptor>,
+    cluster_descriptor: RwSignal<UserClusterDescriptor>,
     deployed_signal: Signal<IsDeployed>,
     cluster_state: Signal<ClusterState>,
     on_deployment_changed: OnDeploymentChanged,
@@ -28,6 +28,9 @@ where
     let cluster_id = Signal::derive(move || {
         cluster_descriptor.get().id
     });
+    let is_new_cluster = Signal::derive(move || {
+        cluster_descriptor.get().is_new
+    });
 
     let use_navigate = use_navigate();
     let on_delete = { move || {
@@ -37,12 +40,16 @@ where
 
     view! {
         <div class="is-flex is-align-items-center">
-            <DeployToggle
-                cluster_id
-                is_deployed=deployed_signal
-                on_deployment_changed
-            />
-            <div class="px-2" />
+            <div class=("is-hidden", move || is_new_cluster.get())>
+                <DeployToggle
+                    cluster_id
+                    is_deployed=deployed_signal
+                    on_deployment_changed
+                />
+            </div>
+            <div class=("is-hidden", move || is_new_cluster.get())>
+                <div class="px-2" />
+            </div>
             <ClusterHealth state=cluster_state />
             <div class="px-2" />
             <SaveClusterButton
@@ -62,12 +69,19 @@ where
 
 #[component]
 fn SaveClusterButton(
-    cluster_descriptor: ReadSignal<UserClusterDescriptor>,
+    cluster_descriptor: RwSignal<UserClusterDescriptor>,
     deployed_signal: Signal<IsDeployed>
 ) -> impl IntoView {
 
     let globals = use_app_globals();
     let toaster = use_toaster();
+
+    let set_is_new = create_write_slice(
+        cluster_descriptor,
+        |config, is_new| {
+            config.is_new = is_new;
+        },
+    );
 
     let pending = RwSignal::new(false);
 
@@ -107,6 +121,7 @@ fn SaveClusterButton(
                                 .simple("Successfully stored cluster descriptor.")
                                 .success()
                             );
+                            set_is_new.set(false);
                         }
                         Err(cause) => {
                             error!("Failed to store cluster <{}>, due to error: {:?}", "id", cause);
