@@ -13,7 +13,11 @@ Always create a database backup before upgrading CARL.
 ### Fixed
 * EDGAR: Don't use the operating system's certificate management anymore, making EDGAR more portable across distributions.
 
-New contributors: [@mohammadp1001](https://github.com/mohammadp1001)
+New contributors:
+[@mohammadp1001](https://github.com/mohammadp1001),
+[@raihhann](https://github.com/raihhann),
+[@likhithst](https://github.com/likhithst),
+[@sdv-infy](https://github.com/sdv-infy]
 
 
 ## [0.10.0] - 2026-04-02
