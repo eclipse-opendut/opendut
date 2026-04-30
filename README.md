@@ -20,7 +20,6 @@ Eclipse openDuT provides an open framework to automate the testing and validatio
 <img alt="Funded by the European Union" src="resources/logos/funded_by_the_european_union.svg" width="50%">
 
 ## Developer Setup
-
 Find out how to [get started here](https://opendut.eclipse.dev/book/development/getting-started.html).
 
 ## Usage
@@ -31,7 +30,9 @@ We are delighted that you are interested in making Eclipse openDuT better!
 This project welcomes all contributions: ideas, patches, documentation, bug reports.
 But before contributing, make sure to read the [contribution guideline](CONTRIBUTING.md).
 
-You can also check out our list of [Good First Issues](https://github.com/eclipse-opendut/opendut/issues/91).
+You can also check out our list of [Good First Issues](https://github.com/eclipse-opendut/opendut/issues?q=is%3Aissue%20state%3Aopen%20label%3Agood-first-issue).  
+If you'd like to tackle one of these tasks, please do comment under the respective issue.  
+Then we can discuss how it should be implemented and perhaps give you some tips.
 
 ## License
 Eclipse openDuT is licensed using the Apache License Version 2.0.
