@@ -5,7 +5,7 @@ use tracing::{debug, error};
 use opendut_carl_api::carl::ClientError;
 use opendut_carl_api::carl::cluster::StoreClusterDeploymentError;
 use opendut_lea_components::tooltip::Tooltip;
-use opendut_lea_components::Toggle;
+use opendut_lea_components::{Toggle, ToggleState};
 use opendut_model::cluster::{ClusterDeployment, ClusterId};
 
 use crate::app::use_app_globals;
@@ -113,6 +113,7 @@ where
         <Tooltip text=tooltip_text>
             <Toggle
                 is_active=Signal::derive(move || is_deployed.get().0)
+                state=ToggleState::Enabled
                 on_action=move || {
                     if is_deployed.get().0 { on_undeploy() } else { on_deploy() }
                 }
