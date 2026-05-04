@@ -9,21 +9,27 @@
   cursor: pointer;
 }
 
-.dut-toggle::before {
-  content: "";
+.dut-toggle .bubble {
   position: absolute;
-  width: 16px;
-  height: 16px;
-  background: white;
-  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   top: 2px;
   left: 2px;
+  font-size: 16px;
+  color: white;
   transition: 0.3s;
 }
+
 .dut-toggle.active {
   background: $success;
 }
-.dut-toggle.active::before {
+
+.dut-toggle.active .bubble {
   left: 22px;
 }
 
+.dut-toggle.toggle-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

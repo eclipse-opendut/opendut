@@ -32,7 +32,7 @@ pub use util::signal::{ButtonStateSignalProvider, ToggleSignal, Toggled};
 pub use util::table_row_selection::has_text_selection;
 pub use doorhanger::{Doorhanger, DoorhangerAlignment};
 pub use icon_text::IconText;
-pub use toggle::Toggle;
+pub use toggle::{Toggle, ToggleState};
 pub use tables::multiple_selection_table::{MultipleSelectionTable, MultipleSelectionTableRow, CollapsableInfo};
 pub use tables::selection_table::{SelectionTable, SelectionTableRow};
 pub use tables::overview_table::{TableHeading, OverviewTable, OverviewTableRow, OverviewTableCell};
@@ -64,8 +64,10 @@ pub enum FontAwesomeIcon {
     Check,
     ChevronDown,
     ChevronUp,
+    Circle,
     CircleExclamation,
     CircleNotch,
+    CircleFadeAnimation,
     Cluster,
     Code,
     Copy,
@@ -74,6 +76,7 @@ pub enum FontAwesomeIcon {
     EllipsisVertical,
     Email,
     Link,
+    Loading,
     OpenPage,
     Peers,
     Plus,
@@ -95,7 +98,9 @@ impl FontAwesomeIcon {
             FontAwesomeIcon::Check => "fa-solid fa-check",
             FontAwesomeIcon::ChevronDown => "fa-solid fa-chevron-down",
             FontAwesomeIcon::ChevronUp => "fa-solid fa-chevron-up",
+            FontAwesomeIcon::Circle => "fa-solid fa-circle",
             FontAwesomeIcon::CircleExclamation => "fa-solid fa-circle-exclamation",
+            FontAwesomeIcon::CircleFadeAnimation => "fa-solid fa-circle fa-fade",
             FontAwesomeIcon::CircleNotch => "fa-solid fa-circle-notch",
             FontAwesomeIcon::Cluster => "fa-solid fa-circle-nodes",
             FontAwesomeIcon::Code => "fa-solid fa-code",
@@ -105,6 +110,7 @@ impl FontAwesomeIcon {
             FontAwesomeIcon::EllipsisVertical => "fa-solid fa-ellipsis-vertical",
             FontAwesomeIcon::Email => "fa-regular fa-envelope",
             FontAwesomeIcon::Link => "fa-solid fa-link",
+            FontAwesomeIcon::Loading => "fa-solid fa-circle-notch fa-spin",
             FontAwesomeIcon::OpenPage => "fa-solid fa-arrow-up-right-from-square",
             FontAwesomeIcon::Peers => "fa-solid fa-microchip",
             FontAwesomeIcon::Plus => "fa-solid fa-plus",
