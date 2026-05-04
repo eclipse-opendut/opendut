@@ -52,62 +52,79 @@ pub fn ViperTestConfigurator() -> impl IntoView {
         }
     );
 
-    let viper_test_run_descriptor_resource = LocalResource::new(move || {
-        let mut carl = globals.client.clone();
-        async move {
-            if let Ok(descriptor) = carl.viper.get_viper_test_run_descriptor(viper_test_id).await {
-                viper_test_run_descriptor.update(|user_configuration| {
-                    let ViperTestRunDescriptor { id: _, name, source: viper_source, cluster, parameters } = descriptor;
+    let viper_test_run_descriptor_resource = {
+        let carl = globals.client.clone();
+        LocalResource::new(move || {
+            let mut carl = carl.clone();
+            async move {
+                if let Ok(descriptor) = carl.viper.get_viper_test_run_descriptor(viper_test_id).await {
+                    viper_test_run_descriptor.update(|user_configuration| {
+                        let ViperTestRunDescriptor { id: _, name, source: viper_source, cluster, parameters } = descriptor;
 
-                    user_configuration.name = UserInputValue::Right(name.value().to_owned());
-                    user_configuration.viper_source = SourceSelection::Right(viper_source);
-                    user_configuration.cluster = ClusterSelection::Right(cluster);
+                        user_configuration.name = UserInputValue::Right(name.value().to_owned());
+                        user_configuration.viper_source = SourceSelection::Right(viper_source);
+                        user_configuration.cluster = ClusterSelection::Right(cluster);
 
-                    let mut configured_parameters: HashMap<ViperParameterName, ViperBindingValueInput> = HashMap::new();
+                        let mut configured_parameters: HashMap<ViperParameterName, ViperBindingValueInput> = HashMap::new();
 
-                    for (key, value) in parameters {
-                        configured_parameters.insert(
-                            key,
-                            ViperBindingValueInput::Right(value)
-                        );
-                    }
+                        for (key, value) in parameters {
+                            configured_parameters.insert(
+                                key,
+                                ViperBindingValueInput::Right(value)
+                            );
+                        }
 
-                    user_configuration.parameters = configured_parameters;
-                })
+                        user_configuration.parameters = configured_parameters;
+                    })
+                }
             }
-        }
-    });
+        })
+    };
 
-    // let viper_source = create_read_slice(
-    //     viper_test_run_descriptor,
-    //     |descriptor| Clone::clone(&descriptor.viper_source),
-    // );
-    //
-    // // todo: Debounce
-    // let parameters = {
-    //     let carl = globals.client.clone();
-    //
-    //     LocalResource::new(move || {
-    //         let mut carl = carl.clone();
-    //         let viper_source = viper_source.get();
-    //
-    //         let source_id = match viper_source {
-    //             SourceSelection::Left(_) => None,
-    //             SourceSelection::Right(source_id) | SourceSelection::Both(_, source_id) => Some(source_id),
-    //         };
-    //
-    //         async move {
-    //             if let Some(source_id) = source_id {
-    //                 let test_suite_descriptor = carl.viper.get_viper_test_suite_parameters(source_id).await
-    //                     .expect("Failed to request the viper test suite descriptor.");
-    //
-    //                 Some(test_suite_descriptor.parameters)
-    //             } else {
-    //                 None
-    //             }
-    //         }
-    //     })
-    // };
+    let viper_source = create_read_slice(
+        viper_test_run_descriptor,
+        |descriptor| Clone::clone(&descriptor.viper_source),
+    );
+
+    let parameters = {
+        let carl = globals.client.clone();
+
+        LocalResource::new(move || {
+            let mut carl = carl.clone();
+            let viper_source = viper_source.get();
+
+            let source_id = match viper_source {
+                SourceSelection::Left(_) => None,
+                SourceSelection::Right(source_id) | SourceSelection::Both(_, source_id) => Some(source_id),
+            };
+
+            async move {
+                if let Some(source_id) = source_id {
+                    let test_suite_descriptor = carl.viper.get_viper_test_suite_parameters(source_id).await
+                        .expect("Failed to request the viper test suite descriptor.");
+
+                    viper_test_run_descriptor.update(|user_configuration| {
+                        for parameter in test_suite_descriptor.parameters.iter() {
+                            let parameter_name = parameter.name().clone();
+
+                            user_configuration
+                                .parameters
+                                .entry(parameter_name)
+                                .or_insert_with(|| {
+                                    ViperBindingValueInput::Left(
+                                        String::from("Please enter a value.")
+                                    )
+                                });
+                        }
+                    });
+
+                    Some(test_suite_descriptor.parameters)
+                } else {
+                    None
+                }
+            }
+        })
+    };
 
     let is_valid_configuration = Memo::new(move |_| {
         viper_test_run_descriptor.with(|config| config.is_valid())
@@ -171,13 +188,14 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                 {
                     move || Suspend::new(async move {
                         viper_test_run_descriptor_resource.await;
+                        let parameters = parameters.await;
 
                         view! {
                             <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
                                 { move || match active_tab.get() {
                                     TabIdentifier::General => view! { <GeneralTab viper_test_run_descriptor /> }.into_any(),
                                     TabIdentifier::ViperSource => view! { <SourceTab viper_test_run_descriptor /> }.into_any(),
-                                    TabIdentifier::Parameters => view! { <ParametersTab viper_test_run_descriptor /> }.into_any(),
+                                    TabIdentifier::Parameters => view! { <ParametersTab viper_test_run_descriptor parameters=parameters.clone() /> }.into_any(),
                                     TabIdentifier::Cluster => view! { <ClusterTab viper_test_run_descriptor /> }.into_any(),
                                 }}
                             </Tabs>
