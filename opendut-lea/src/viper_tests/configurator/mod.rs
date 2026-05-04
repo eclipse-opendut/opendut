@@ -101,38 +101,23 @@ pub fn ViperTestConfigurator() -> impl IntoView {
             async move {
                 if let Some(source_id) = source_id {
                     let test_suite_descriptor = carl.viper.get_viper_test_suite_parameters(source_id).await
-                        .expect("Failed to request the viper test suite descriptor.");
+                        .expect("Failed to request the viper test suite descriptor."); // Todo: Error-Handling
 
                     viper_test_run_descriptor.update(|user_configuration| {
+                        let mut new_parameters: HashMap<ViperParameterName, ViperBindingValueInput> = HashMap::new();
+
                         for parameter in test_suite_descriptor.parameters.iter() {
                             let parameter_name = parameter.name().clone();
 
-                            user_configuration
+                            let value = user_configuration
                                 .parameters
-                                .entry(parameter_name)
-                                .or_insert_with(|| {
-                                    if parameter.has_default_value() {
-                                        match parameter {
-                                            ViperParameterDescriptor::BooleanParameter { default, .. } => {
-                                                let default = default.unwrap();
-                                                ViperBindingValueInput::Right(ViperBindingValue::BooleanValue(default))
-                                            }
-                                            ViperParameterDescriptor::NumberParameter { default, .. } => {
-                                                let default = default.unwrap();
-                                                ViperBindingValueInput::Right(ViperBindingValue::NumberValue(default))
-                                            }
-                                            ViperParameterDescriptor::TextParameter { default, .. } => {
-                                                let default = default.to_owned().unwrap();
-                                                ViperBindingValueInput::Right(ViperBindingValue::TextValue(default))
-                                            }
-                                        }
-                                    } else {
-                                        ViperBindingValueInput::Left(
-                                            String::from("Please enter a value.")
-                                        )
-                                    }
-                                });
+                                .get(&parameter_name)
+                                .cloned()
+                                .unwrap_or_else(|| default_value_for_parameter(&parameter));
+
+                            new_parameters.insert(parameter_name, value);
                         }
+                        user_configuration.parameters = new_parameters;
                     });
 
                     Some(test_suite_descriptor.parameters)
@@ -221,5 +206,28 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                 }
             </Suspense>
         </BasePageContainer>
+    }
+}
+
+fn default_value_for_parameter(parameter: &ViperParameterDescriptor) -> ViperBindingValueInput {
+    if parameter.has_default_value() {
+        match parameter {
+            ViperParameterDescriptor::BooleanParameter { default, .. } => {
+                let default = default.unwrap();
+                ViperBindingValueInput::Right(ViperBindingValue::BooleanValue(default))
+            }
+            ViperParameterDescriptor::NumberParameter { default, .. } => {
+                let default = default.unwrap();
+                ViperBindingValueInput::Right(ViperBindingValue::NumberValue(default))
+            }
+            ViperParameterDescriptor::TextParameter { default, .. } => {
+                let default = default.to_owned().unwrap();
+                ViperBindingValueInput::Right(ViperBindingValue::TextValue(default))
+            }
+        }
+    } else {
+        ViperBindingValueInput::Left(
+            String::from("Please enter a value.")
+        )
     }
 }
