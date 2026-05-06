@@ -34,20 +34,17 @@ pub fn NumberParameterInput(
                 ViperBindingValueInput::Left(error)
             }
             UserInputValue::Right(input) => {
-                if let Ok(parsed_value) = input.parse::<i64>() {
-                    let value = ViperBindingValue::NumberValue(parsed_value);
-                    ViperBindingValueInput::Right(value)
-                } else {
-                    ViperBindingValueInput::Left(String::from("Invalid parameter type, expected a number parameter"))
+                match parse_number_binding_value(&input) {
+                    Some(value) => ViperBindingValueInput::Right(value),
+                    None => ViperBindingValueInput::Left(
+                        String::from("Invalid parameter type, expected a number parameter")
+                    ),
                 }
             }
             UserInputValue::Both(error, input) => {
-                if let Ok(parsed_value) = input.parse::<i64>() {
-                    let value = ViperBindingValue::NumberValue(parsed_value);
-                    ViperBindingValueInput::Both(error, value)
-                } else {
-                    ViperBindingValueInput::Left(String::from("Invalid parameter type, expected a number parameter"))
-                    // Fixme: why is this triggered when the input field is empty?
+                match parse_number_binding_value(&input) {
+                    Some(value) => ViperBindingValueInput::Both(error, value),
+                    None => ViperBindingValueInput::Left(error),
                 }
             }
         };
@@ -109,4 +106,12 @@ pub fn NumberParameterInput(
             input_type=InputType::Number
         />
     }
+}
+
+fn parse_number_binding_value(input: &str) -> Option<ViperBindingValue> {
+    input
+        .trim()
+        .parse::<i64>()
+        .ok()
+        .map(ViperBindingValue::NumberValue)
 }
