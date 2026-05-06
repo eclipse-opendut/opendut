@@ -34,6 +34,7 @@ pub fn BooleanParameterInput(
             <div class="is-flex">
                 <Toggle
                     text=display_name.unwrap_or_else(|| name)
+                    has_bold_text=true
                     is_active
                     on_action=on_toggle
                 />
