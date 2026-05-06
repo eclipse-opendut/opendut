@@ -11,7 +11,8 @@ pub enum ToggleState {
 
 #[component]
 pub fn Toggle<F>(
-    #[prop(optional, into)] text: Option<Signal<String>>,
+    #[prop(optional, into)] right_text: Option<Signal<String>>,
+    #[prop(optional, into)] left_text: Option<Signal<String>>,
     #[prop(default = false)] has_bold_text: bool,
     #[prop(optional, into)] state: Signal<ToggleState>,
     is_active: Signal<bool>,
@@ -27,6 +28,15 @@ where F: Fn() + 'static {
             class="is-flex is-align-items-center is-justify-content-center"
             on:click=move |event| event.stop_propagation()
         >
+            {
+                left_text.map(|text| {
+                    view! {
+                        <label class=("label", has_bold_text) class="pr-2">
+                            { text }
+                        </label>
+                    }
+                })
+            }
             <label
                 class="dut-toggle"
                 class=("active", move || is_active.get())
@@ -52,12 +62,9 @@ where F: Fn() + 'static {
                 </span>
             </label>
             {
-                text.map(|text| {
+                right_text.map(|text| {
                     view! {
-                        <label
-                            class=("label", has_bold_text)
-                            class="pl-2"
-                        >
+                        <label class=("label", has_bold_text) class="pl-2">
                             { text }
                         </label>
                     }
