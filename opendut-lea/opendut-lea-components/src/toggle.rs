@@ -12,6 +12,7 @@ pub enum ToggleState {
 #[component]
 pub fn Toggle<F>(
     #[prop(optional, into)] text: Option<Signal<String>>,
+    #[prop(default = false)] has_bold_text: bool,
     #[prop(optional, into)] state: Signal<ToggleState>,
     is_active: Signal<bool>,
     on_action: F,
@@ -53,7 +54,12 @@ where F: Fn() + 'static {
             {
                 text.map(|text| {
                     view! {
-                        <label class="label pl-2">{ text }</label>
+                        <label
+                            class=("label", has_bold_text)
+                            class="pl-2"
+                        >
+                            { text }
+                        </label>
                     }
                 })
             }
