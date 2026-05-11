@@ -15,7 +15,7 @@ pub fn Toggle<F>(
     #[prop(optional, into)] left_text: Option<Signal<String>>,
     #[prop(default = false)] has_bold_text: bool,
     #[prop(optional, into)] state: Signal<ToggleState>,
-    is_active: Signal<bool>,
+    #[prop(into)] is_active: Signal<bool>,
     on_action: F,
 ) -> impl IntoView
 where F: Fn() + 'static {
