@@ -8,6 +8,8 @@ pub fn NumberParameterInput(
     parameter_descriptor: ViperParameterDescriptor,
     getter: Signal<Option<ViperBindingValueInput>>,
     setter: SignalSetter<ViperBindingValueInput>,
+    use_default_value: Option<RwSignal<bool>>,
+    default_value: Option<i64>,
 ) -> impl IntoView {
 
     let name = parameter_descriptor.name().to_string();
@@ -44,7 +46,7 @@ pub fn NumberParameterInput(
         }
     });
 
-    let setter = SignalSetter::map(move |value: UserInputValue| {
+    let input_setter = SignalSetter::map(move |value: UserInputValue| {
         let value = match value {
             UserInputValue::Left(error) => {
                 ViperBindingValueInput::Left(error)
@@ -111,15 +113,23 @@ pub fn NumberParameterInput(
         }
     };
 
+    let placeholder = {
+        match default_value {
+            Some(default) => format!("Number Value (Default: {default})"),
+            None => String::from("Number Value")
+        }
+    };
+
     view! {
         <UserInput
             getter
-            setter
+            setter=input_setter
             validator
             label=display_name.unwrap_or_else(|| name)
-            placeholder="Number Parameter"
+            placeholder
             description
             input_type=InputType::Number
+            use_default_value
         />
     }
 }

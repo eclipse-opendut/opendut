@@ -39,6 +39,24 @@ pub fn ParametersTab(
                     })
                 };
 
+                let use_default_value = if parameter_descriptor.has_default_value() {
+                    let has_value = match test_run_getter.get_untracked() {
+                        Some(ViperBindingValueInput::Right(None)) => true,
+                        _ => false,
+                    };
+                    Some(RwSignal::new(has_value))
+                } else {
+                    None
+                };
+
+                Effect::new(move || {
+                    if use_default_value.get().unwrap_or(false) {
+                        test_run_setter.set(ViperBindingValueInput::Right(None));
+                    }
+                });
+
+                let cloned_parameter_descriptor = Clone::clone(&parameter_descriptor);
+
                 match parameter_descriptor {
                     ViperParameterDescriptor::BooleanParameter { name, info, default } => {
                         view! {
@@ -48,27 +66,32 @@ pub fn ParametersTab(
                                 name=name.to_string()
                                 display_name=info.display_name
                                 description=info.description
+                                use_default_value
                                 default
                             />
                             <hr />
                         }.into_any()
                     }
-                    ViperParameterDescriptor::NumberParameter { .. } => {
+                    ViperParameterDescriptor::NumberParameter { default, .. } => {
                         view! {
                             <NumberParameterInput
                                 parameter_descriptor
                                 getter=test_run_getter
                                 setter=test_run_setter
+                                use_default_value
+                                default_value=default
                             />
                             <hr />
                         }.into_any()
                     }
-                    ViperParameterDescriptor::TextParameter { .. } => {
+                    ViperParameterDescriptor::TextParameter { default, .. } => {
                         view! {
                             <TextParameterInput
-                                parameter_descriptor
+                                parameter_descriptor=cloned_parameter_descriptor
                                 getter=test_run_getter
                                 setter=test_run_setter
+                                use_default_value
+                                default_value=default
                             />
                             <hr />
                         }.into_any()
