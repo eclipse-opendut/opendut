@@ -121,7 +121,7 @@ mod conversions {
                 .map(|(key, value)| {
                     ViperTestParameter {
                         key: key.to_string(),
-                        value: Some(value.into())
+                        value: value.map(Into::into),
                     }
                 })
                 .collect::<Vec<_>>();
@@ -152,7 +152,7 @@ mod conversions {
                 .map(|parameter| {
                     let key = opendut_viper_rt::compile::ParameterName::try_from(parameter.key)
                         .map_err(|cause| ErrorBuilder::message(cause.to_string()))?;
-                    let value = extract!(parameter.value)?.try_into()?;
+                    let value = parameter.value.map(TryInto::try_into).transpose()?;
 
                     Ok((key, value))
                 })

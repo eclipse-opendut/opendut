@@ -12,7 +12,7 @@ pub type ClusterSelectionError = String;
 pub type ClusterSelection = Ior<ClusterSelectionError, ClusterId>;
 
 pub type ViperBindingValueError = String;
-pub type ViperBindingValueInput = Ior<ViperBindingValueError, ViperBindingValue>;
+pub type ViperBindingValueInput = Ior<ViperBindingValueError, Option<ViperBindingValue>>;
 
 #[derive(thiserror::Error, Clone, Debug, Eq, PartialEq, Hash)]
 #[allow(clippy::enum_variant_names)] // "all variants have the same prefix: `Invalid`"

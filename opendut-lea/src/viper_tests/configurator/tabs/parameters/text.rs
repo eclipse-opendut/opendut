@@ -15,15 +15,32 @@ pub fn TextParameterInput(
 
     let getter = Signal::derive(move || {
         let getter_value = getter.get()
-            .unwrap_or(ViperBindingValueInput::Right(ViperBindingValue::TextValue(String::new())));
+            .unwrap_or(ViperBindingValueInput::Right(None));
+
+        let to_text = |value| match value {
+            Some(ViperBindingValue::TextValue(text)) => Ok(text),
+            None => Ok(String::new()),
+            _ => Err(String::from("Invalid parameter type, expected a text parameter")),
+        };
 
         match getter_value {
-            ViperBindingValueInput::Left(error) => UserInputValue::Left(error),
-            ViperBindingValueInput::Right(ViperBindingValue::TextValue(text)) => UserInputValue::Right(text),
-            ViperBindingValueInput::Both(err, ViperBindingValue::TextValue(text)) => UserInputValue::Both(err, text),
+            ViperBindingValueInput::Left(error) => {
+                UserInputValue::Left(error)
+            }
 
-            ViperBindingValueInput::Right(_) => UserInputValue::Left(String::from("Invalid parameter type, expected a text parameter")),
-            ViperBindingValueInput::Both(error, _) => UserInputValue::Left(error),
+            ViperBindingValueInput::Right(value) => {
+                match to_text(value) {
+                    Ok(text) => UserInputValue::Right(text),
+                    Err(error) => UserInputValue::Left(error),
+                }
+            }
+
+            ViperBindingValueInput::Both(error, value) => {
+                match to_text(value) {
+                    Ok(text) => UserInputValue::Both(error, text),
+                    Err(_) => UserInputValue::Left(error),
+                }
+            }
         }
     });
 
@@ -34,11 +51,11 @@ pub fn TextParameterInput(
             }
             UserInputValue::Right(value) => {
                 let value = ViperBindingValue::TextValue(value);
-                ViperBindingValueInput::Right(value)
+                ViperBindingValueInput::Right(Some(value))
             }
             UserInputValue::Both(error, value) => {
                 let value = ViperBindingValue::TextValue(value);
-                ViperBindingValueInput::Both(error, value)
+                ViperBindingValueInput::Both(error, Some(value))
             }
         };
 

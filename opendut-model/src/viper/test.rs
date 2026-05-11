@@ -18,7 +18,7 @@ pub struct ViperTestRunDescriptor {
     pub source: ViperSourceId,
     pub cluster: ClusterId,
     /// Concrete values bindings to run the test with.
-    pub parameters: HashMap<ParameterName, BindingValue>, //maps to `ParameterBindings` in VIPER (not including ParameterDescriptors here, because they could become out-of-date when we persist them)
+    pub parameters: HashMap<ParameterName, Option<BindingValue>>, //maps to `ParameterBindings` in VIPER (not including ParameterDescriptors here, because they could become out-of-date when we persist them)
 }
 
 

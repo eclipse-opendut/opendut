@@ -166,10 +166,10 @@ pub(crate) mod testing {
                 let test_id = ViperTestId::random();
 
                 let parameters = {
-                    let mut parameters: HashMap<ViperParameterName, ViperBindingValue> = HashMap::new();
+                    let mut parameters: HashMap<ViperParameterName, Option<ViperBindingValue>> = HashMap::new();
                     parameters.insert(
                         ViperParameterName::try_from("parameter-key")?,
-                        ViperBindingValue::BooleanValue(true),
+                        Some(ViperBindingValue::BooleanValue(true)),
                     );
                     parameters
                 };
