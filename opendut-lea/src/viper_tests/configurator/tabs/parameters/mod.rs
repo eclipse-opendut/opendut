@@ -50,6 +50,7 @@ pub fn ParametersTab(
                                 description=info.description
                                 default
                             />
+                            <hr />
                         }.into_any()
                     }
                     ViperParameterDescriptor::NumberParameter { .. } => {
@@ -59,6 +60,7 @@ pub fn ParametersTab(
                                 getter=test_run_getter
                                 setter=test_run_setter
                             />
+                            <hr />
                         }.into_any()
                     }
                     ViperParameterDescriptor::TextParameter { .. } => {
@@ -68,6 +70,7 @@ pub fn ParametersTab(
                                 getter=test_run_getter
                                 setter=test_run_setter
                             />
+                            <hr />
                         }.into_any()
                     }
                 }

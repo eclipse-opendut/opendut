@@ -13,6 +13,16 @@ pub fn TextParameterInput(
     let name = parameter_descriptor.name().to_string();
     let ViperParameterInfo { display_name, description } = parameter_descriptor.info().to_owned();
 
+    let use_default_value = if parameter_descriptor.has_default_value() {
+        let has_value = match getter.get_untracked() {
+            Some(ViperBindingValueInput::Right(None)) => true,
+            _ => false,
+        };
+        Some(RwSignal::new(has_value))
+    } else {
+        None
+    };
+
     let getter = Signal::derive(move || {
         let getter_value = getter.get()
             .unwrap_or(ViperBindingValueInput::Right(None));
@@ -44,7 +54,7 @@ pub fn TextParameterInput(
         }
     });
 
-    let setter = SignalSetter::map(move |value: UserInputValue| {
+    let input_setter = SignalSetter::map(move |value: UserInputValue| {
         let value = match value {
             UserInputValue::Left(error) => {
                 ViperBindingValueInput::Left(error)
@@ -87,14 +97,21 @@ pub fn TextParameterInput(
         }
     };
 
+    Effect::new(move || {
+       if let Some(use_default_value) = use_default_value && use_default_value.get() {
+           setter.set(ViperBindingValueInput::Right(None));
+       }
+    });
+
     view! {
         <UserInput
             getter
-            setter
+            setter=input_setter
             validator
             label=display_name.unwrap_or_else(|| name)
             placeholder="Text Parameter"
             description
+            use_default_value
         />
     }
 }
