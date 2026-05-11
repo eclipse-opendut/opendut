@@ -14,17 +14,33 @@ pub fn NumberParameterInput(
     let ViperParameterInfo { display_name, description } = parameter_descriptor.info().to_owned();
 
     let getter = Signal::derive(move || {
-        if let Some(getter_value) = getter.get() {
-            match getter_value {
-                ViperBindingValueInput::Left(error) => UserInputValue::Left(error),
-                ViperBindingValueInput::Right(ViperBindingValue::NumberValue(number)) => UserInputValue::Right(number.to_string()),
-                ViperBindingValueInput::Both(err, ViperBindingValue::NumberValue(number)) => UserInputValue::Both(err, number.to_string()),
+        let getter_value = getter.get()
+            .unwrap_or(ViperBindingValueInput::Right(None));
 
-                ViperBindingValueInput::Right(_) => UserInputValue::Left(String::from("Invalid parameter type, expected a number parameter")),
-                ViperBindingValueInput::Both(error, _) => UserInputValue::Left(error),
+        let to_number_text = |value| match value {
+            Some(ViperBindingValue::NumberValue(number)) => Ok(number.to_string()),
+            None => Ok(String::new()),
+            _ => Err(String::from("Invalid parameter type, expected a number parameter")),
+        };
+
+        match getter_value {
+            ViperBindingValueInput::Left(error) => {
+                UserInputValue::Left(error)
             }
-        } else {
-            UserInputValue::Right(String::new())
+
+            ViperBindingValueInput::Right(value) => {
+                match to_number_text(value) {
+                    Ok(number) => UserInputValue::Right(number),
+                    Err(error) => UserInputValue::Left(error),
+                }
+            }
+
+            ViperBindingValueInput::Both(error, value) => {
+                match to_number_text(value) {
+                    Ok(number) => UserInputValue::Both(error, number),
+                    Err(_) => UserInputValue::Left(error),
+                }
+            }
         }
     });
 
@@ -35,7 +51,7 @@ pub fn NumberParameterInput(
             }
             UserInputValue::Right(input) => {
                 match parse_number_binding_value(&input) {
-                    Some(value) => ViperBindingValueInput::Right(value),
+                    Some(value) => ViperBindingValueInput::Right(Some(value)),
                     None => ViperBindingValueInput::Left(
                         String::from("Invalid parameter type, expected a number parameter")
                     ),
@@ -43,7 +59,7 @@ pub fn NumberParameterInput(
             }
             UserInputValue::Both(error, input) => {
                 match parse_number_binding_value(&input) {
-                    Some(value) => ViperBindingValueInput::Both(error, value),
+                    Some(value) => ViperBindingValueInput::Both(error, Some(value)),
                     None => ViperBindingValueInput::Left(error),
                 }
             }

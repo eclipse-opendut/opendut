@@ -15,7 +15,7 @@ pub fn BooleanParameterInput(
 
     let is_active = Signal::derive(move || {
         match getter.get() {
-            Some(ViperBindingValueInput::Right(ViperBindingValue::BooleanValue(value))) => value,
+            Some(ViperBindingValueInput::Right(Some(ViperBindingValue::BooleanValue(value)))) => value,
             _ => default.unwrap_or(false),
         }
     });
@@ -23,7 +23,7 @@ pub fn BooleanParameterInput(
     let on_toggle = move || {
         let is_active = is_active.get();
         let value = ViperBindingValueInput::Right(
-            ViperBindingValue::BooleanValue(!is_active)
+            Some(ViperBindingValue::BooleanValue(!is_active))
         );
 
         setter.set(value);

@@ -22,7 +22,7 @@ message ViperTestName {
 
 message ViperTestParameter {
   string key = 1;
-  ViperBindingValue value = 2;
+  optional ViperBindingValue value = 2;
 }
 
 message ViperBindingValue {

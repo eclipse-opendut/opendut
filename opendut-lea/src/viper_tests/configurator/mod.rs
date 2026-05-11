@@ -3,7 +3,7 @@ use leptos::prelude::*;
 use leptos_router::hooks::{use_navigate, use_params_map};
 use opendut_lea_components::{BasePageContainer, Breadcrumb, LoadingSpinner, UserInputError, UserInputValue};
 use opendut_lea_components::tabs::{Tab, Tabs};
-use opendut_model::viper::{ViperBindingValue, ViperParameterDescriptor, ViperParameterName, ViperTestId, ViperTestRunDescriptor};
+use opendut_model::viper::{ViperParameterName, ViperTestId, ViperTestRunDescriptor};
 use crate::app::use_app_globals;
 use crate::components::use_active_tab;
 use crate::routing::{navigate_to, WellKnownRoutes};
@@ -113,7 +113,15 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                                 .parameters
                                 .get(&parameter_name)
                                 .cloned()
-                                .unwrap_or_else(|| default_value_for_parameter(&parameter));
+                                .unwrap_or_else(|| {
+                                    if parameter.has_default_value() {
+                                        ViperBindingValueInput::Right(None)
+                                    } else {
+                                        ViperBindingValueInput::Left(
+                                            String::from("Please enter a value.")
+                                        )
+                                    }
+                                });
 
                             new_parameters.insert(parameter_name, value);
                         }
@@ -206,28 +214,5 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                 }
             </Suspense>
         </BasePageContainer>
-    }
-}
-
-fn default_value_for_parameter(parameter: &ViperParameterDescriptor) -> ViperBindingValueInput {
-    if parameter.has_default_value() {
-        match parameter {
-            ViperParameterDescriptor::BooleanParameter { default, .. } => {
-                let default = default.unwrap();
-                ViperBindingValueInput::Right(ViperBindingValue::BooleanValue(default))
-            }
-            ViperParameterDescriptor::NumberParameter { default, .. } => {
-                let default = default.unwrap();
-                ViperBindingValueInput::Right(ViperBindingValue::NumberValue(default))
-            }
-            ViperParameterDescriptor::TextParameter { default, .. } => {
-                let default = default.to_owned().unwrap();
-                ViperBindingValueInput::Right(ViperBindingValue::TextValue(default))
-            }
-        }
-    } else {
-        ViperBindingValueInput::Left(
-            String::from("Please enter a value.")
-        )
     }
 }
