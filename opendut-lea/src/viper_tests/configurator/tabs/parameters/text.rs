@@ -8,20 +8,12 @@ pub fn TextParameterInput(
     parameter_descriptor: ViperParameterDescriptor,
     getter: Signal<Option<ViperBindingValueInput>>,
     setter: SignalSetter<ViperBindingValueInput>,
+    use_default_value: Option<RwSignal<bool>>,
+    default_value: Option<String>,
 ) -> impl IntoView {
 
     let name = parameter_descriptor.name().to_string();
     let ViperParameterInfo { display_name, description } = parameter_descriptor.info().to_owned();
-
-    let use_default_value = if parameter_descriptor.has_default_value() {
-        let has_value = match getter.get_untracked() {
-            Some(ViperBindingValueInput::Right(None)) => true,
-            _ => false,
-        };
-        Some(RwSignal::new(has_value))
-    } else {
-        None
-    };
 
     let getter = Signal::derive(move || {
         let getter_value = getter.get()
@@ -97,11 +89,12 @@ pub fn TextParameterInput(
         }
     };
 
-    Effect::new(move || {
-       if let Some(use_default_value) = use_default_value && use_default_value.get() {
-           setter.set(ViperBindingValueInput::Right(None));
-       }
-    });
+    let placeholder = {
+        match default_value {
+            Some(default) => format!("Text Value (Default: {default})"),
+            None => String::from("Text Value")
+        }
+    };
 
     view! {
         <UserInput
@@ -109,7 +102,7 @@ pub fn TextParameterInput(
             setter=input_setter
             validator
             label=display_name.unwrap_or_else(|| name)
-            placeholder="Text Parameter"
+            placeholder
             description
             use_default_value
         />
