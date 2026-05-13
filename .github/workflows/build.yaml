@@ -9,6 +9,8 @@ on:
         default: "false"
   pull_request:
     types: [ opened, reopened, synchronize, edited, ready_for_review ]
+  schedule:
+    - cron: '45 3 * * 0'  # weekly run on Sunday at 3:45 AM
   push:
     branches: [ "**" ]
     tags-ignore:
