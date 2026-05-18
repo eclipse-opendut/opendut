@@ -11,13 +11,13 @@ pub fn BooleanParameterInput(
     display_name: Option<String>,
     description: Option<String>,
     use_default_value: Option<RwSignal<bool>>,
-    default: Option<bool>,
+    default: bool,
 ) -> impl IntoView {
 
     let is_active = Signal::derive(move || {
         match getter.get() {
             Some(ViperBindingValueInput::Right(Some(ViperBindingValue::BooleanValue(value)))) => value,
-            _ => default.unwrap_or(false),
+            _ => default,
         }
     });
 

@@ -3,7 +3,7 @@ use leptos::prelude::*;
 use leptos_router::hooks::{use_navigate, use_params_map};
 use opendut_lea_components::{BasePageContainer, Breadcrumb, LoadingSpinner, UserInputError, UserInputValue};
 use opendut_lea_components::tabs::{Tab, Tabs};
-use opendut_model::viper::{ViperParameterName, ViperTestId, ViperTestRunDescriptor};
+use opendut_model::viper::{ViperBindingValue, ViperParameterDescriptor, ViperParameterName, ViperTestId, ViperTestRunDescriptor};
 use crate::app::use_app_globals;
 use crate::components::use_active_tab;
 use crate::routing::{navigate_to, WellKnownRoutes};
@@ -114,12 +114,17 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                                 .get(&parameter_name)
                                 .cloned()
                                 .unwrap_or_else(|| {
-                                    if parameter.has_default_value() {
-                                        ViperBindingValueInput::Right(None)
-                                    } else {
-                                        ViperBindingValueInput::Left(
-                                            String::from("Please enter a value.")
-                                        )
+                                    match parameter {
+                                        ViperParameterDescriptor::BooleanParameter { default, .. } => {
+                                            let default = default.unwrap_or(false);
+                                            ViperBindingValueInput::Right(Some(ViperBindingValue::BooleanValue(default)))
+                                        }
+                                        _ if parameter.has_default_value() => {
+                                            ViperBindingValueInput::Right(None)
+                                        }
+                                        _ => {
+                                            ViperBindingValueInput::Left(String::from("Please enter a value."))
+                                        }
                                     }
                                 });
 
