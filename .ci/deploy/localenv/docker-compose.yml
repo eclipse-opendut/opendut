@@ -578,7 +578,7 @@ services:
     healthcheck:
       interval: 5s
       retries: 10
-      test: [ 'CMD', 'wget', '--spider', 'http://localhost:3200/ready' ]
+      test: [ 'CMD', 'wget', '--proxy', 'off', '--spider', 'http://localhost:3200/ready' ]
     labels:
       - "traefik.enable=false"
     networks:
