@@ -1,7 +1,11 @@
 use leptos::prelude::*;
 use opendut_lea_components::ReadOnlyInput;
-use crate::viper_sources::configurator::components::{ViperSourceNameInput, ViperSourceUrlInput};
+use crate::viper_sources::configurator::tabs::general::name_input::ViperSourceNameInput;
+use crate::viper_sources::configurator::tabs::general::url_input::ViperSourceUrlInput;
 use crate::viper_sources::configurator::types::UserViperSourceConfiguration;
+
+pub mod name_input;
+pub mod url_input;
 
 #[component]
 pub fn GeneralTab(viper_source_configuration: RwSignal<UserViperSourceConfiguration>) -> impl IntoView {

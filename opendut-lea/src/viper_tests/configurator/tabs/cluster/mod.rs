@@ -1,5 +1,7 @@
+mod cluster_selector;
+
 use leptos::prelude::*;
-use crate::viper_tests::configurator::components::ClusterSelector;
+use crate::viper_tests::configurator::tabs::cluster::cluster_selector::ClusterSelector;
 use crate::viper_tests::configurator::types::UserViperTestRunDescriptor;
 
 #[component]
