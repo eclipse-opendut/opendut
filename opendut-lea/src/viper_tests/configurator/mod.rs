@@ -3,7 +3,7 @@ use leptos::prelude::*;
 use leptos_router::hooks::{use_navigate, use_params_map};
 use opendut_lea_components::{BasePageContainer, Breadcrumb, LoadingSpinner, UserInputError, UserInputValue};
 use opendut_lea_components::tabs::{Tab, Tabs};
-use opendut_model::viper::{ViperBindingValue, ViperParameterDescriptor, ViperParameterName, ViperTestId, ViperTestRunDescriptor};
+use opendut_model::viper::{ViperParameterDescriptor, ViperParameterName, ViperTestId, ViperTestRunDescriptor};
 use crate::app::use_app_globals;
 use crate::components::use_active_tab;
 use crate::routing::{navigate_to, WellKnownRoutes};
@@ -115,9 +115,9 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                                 .cloned()
                                 .unwrap_or_else(|| {
                                     match parameter {
-                                        ViperParameterDescriptor::BooleanParameter { default, .. } => {
-                                            let default = default.unwrap_or(false);
-                                            ViperBindingValueInput::Right(Some(ViperBindingValue::BooleanValue(default)))
+                                        ViperParameterDescriptor::BooleanParameter { .. } => {
+                                            // Todo: Remove this match arm, when backend/VIPER forces default parameters for `BooleanParameter`.
+                                            ViperBindingValueInput::Right(None)
                                         }
                                         _ if parameter.has_default_value() => {
                                             ViperBindingValueInput::Right(None)
