@@ -1,11 +1,11 @@
 mod general;
 mod cluster;
-mod viper_source;
 mod parameters;
+mod source;
 
 pub use cluster::ClusterTab;
 pub use general::GeneralTab;
-pub use viper_source::SourceTab;
+pub use source::SourceTab;
 pub use parameters::ParametersTab;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
