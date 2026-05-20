@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use opendut_lea_components::{InputType, UserInput, UserInputValue};
+use opendut_lea_components::{DefaultValue, InputType, UserInput, UserInputValue};
 use opendut_model::viper::{InvalidNumberParameterValueErrorKind, ViperBindingValue, ViperParameterDescriptor, ViperParameterInfo};
 use crate::viper_tests::configurator::types::ViperBindingValueInput;
 
@@ -113,24 +113,23 @@ pub fn NumberParameterInput(
         }
     };
 
-    let placeholder = {
-        match default_value {
-            Some(default) => format!("Number Value (Default: {default})"),
-            None => String::from("Number Value")
-        }
-    };
-
     view! {
-        <UserInput
-            getter
-            setter=input_setter
-            validator
-            label=display_name.unwrap_or_else(|| name)
-            placeholder
-            description
-            input_type=InputType::Number
-            use_default_value
-        />
+        <DefaultValue
+            default_value=default_value.map(|value| value.to_string())
+            use_default_value=use_default_value.unwrap_or(RwSignal::new(false))
+        >
+            <fieldset prop:disabled=move || use_default_value.unwrap_or(RwSignal::new(false))>
+                <UserInput
+                    getter
+                    setter=input_setter
+                    validator
+                    label=display_name.unwrap_or_else(|| name)
+                    placeholder="Number Value"
+                    description
+                    input_type=InputType::Number
+                />
+            </fieldset>
+        </DefaultValue>
     }
 }
 

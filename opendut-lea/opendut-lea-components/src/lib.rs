@@ -16,6 +16,7 @@ pub use buttons::confirmation_button::ConfirmationButton;
 pub use buttons::doorhanger_button::DoorhangerButton;
 pub use buttons::icon_button::IconButton;
 pub use buttons::collapse_button::CollapseButton;
+pub use inputs::default_value::DefaultValue;
 pub use inputs::{UserInputError, UserInputValue};
 pub use inputs::readonly_input::ReadOnlyInput;
 pub use inputs::user_input::UserInput;

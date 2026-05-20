@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use opendut_lea_components::{Toggle, ToggleSignal, ToggleState};
+use opendut_lea_components::{DefaultValue, Toggle, ToggleState};
 use opendut_model::viper::ViperBindingValue;
 use crate::viper_tests::configurator::types::ViperBindingValueInput;
 
@@ -11,13 +11,13 @@ pub fn BooleanParameterInput(
     display_name: Option<String>,
     description: Option<String>,
     use_default_value: Option<RwSignal<bool>>,
-    default: bool,
+    default_value: bool,
 ) -> impl IntoView {
 
     let is_active = Signal::derive(move || {
         match getter.get() {
             Some(ViperBindingValueInput::Right(Some(ViperBindingValue::BooleanValue(value)))) => value,
-            _ => default,
+            _ => default_value,
         }
     });
 
@@ -39,32 +39,22 @@ pub fn BooleanParameterInput(
     });
 
     view! {
-        <div class="field mb-5">
-            <div class="is-flex control">
-                <Toggle
-                    right_text=display_name.unwrap_or_else(|| name)
-                    has_bold_text=true
-                    state=toggle_state
-                    is_active
-                    on_action=on_toggle
-                />
+        <DefaultValue
+            default_value=default_value.to_string()
+            use_default_value=use_default_value.unwrap_or(RwSignal::new(false))
+        >
+            <div class="field">
+                <div class="is-flex control">
+                    <Toggle
+                        right_text=display_name.unwrap_or_else(|| name)
+                        has_bold_text=true
+                        state=toggle_state
+                        is_active
+                        on_action=on_toggle
+                    />
+                </div>
+                { description }
             </div>
-            { description }
-            {
-                if let Some(use_default_value) = use_default_value {
-                    Some(view! {
-                        <div class="is-flex is-justify-content-start">
-                            <Toggle
-                                left_text="Use default:"
-                                is_active=use_default_value
-                                on_action=move || {
-                                    use_default_value.toggle();
-                                }
-                            />
-                        </div>
-                    })
-                } else { None }
-            }
-        </div>
+        </DefaultValue>
     }
 }
