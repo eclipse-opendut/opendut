@@ -10,7 +10,7 @@ pub fn BooleanParameterInput(
     name: String,
     display_name: Option<String>,
     description: Option<String>,
-    use_default_value: Option<RwSignal<bool>>,
+    use_default_value: RwSignal<bool>,
     default_value: bool,
 ) -> impl IntoView {
 
@@ -31,7 +31,7 @@ pub fn BooleanParameterInput(
     };
     
     let toggle_state = Signal::derive(move || {
-        if use_default_value.get().unwrap_or(false) {
+        if use_default_value.get() {
             ToggleState::Disabled
         } else {
             ToggleState::Enabled
@@ -41,7 +41,7 @@ pub fn BooleanParameterInput(
     view! {
         <DefaultValue
             default_value=default_value.to_string()
-            use_default_value=use_default_value.unwrap_or(RwSignal::new(false))
+            use_default_value
         >
             <div class="field">
                 <div class="is-flex control">

@@ -40,16 +40,12 @@ pub fn ParametersTab(
                 };
 
                 let use_default_value = {
-                    if parameter_descriptor.has_default_value() {
-                        let has_value = matches!(test_run_getter.get_untracked(), Some(ViperBindingValueInput::Right(None)));
-                        Some(RwSignal::new(has_value))
-                    } else {
-                        None
-                    }
+                    let has_value = matches!(test_run_getter.get_untracked(), Some(ViperBindingValueInput::Right(None)));
+                    RwSignal::new(has_value)
                 };
 
                 Effect::new(move || {
-                    if use_default_value.get().unwrap_or(false) {
+                    if use_default_value.get() {
                         test_run_setter.set(ViperBindingValueInput::Right(None));
                     }
                 });

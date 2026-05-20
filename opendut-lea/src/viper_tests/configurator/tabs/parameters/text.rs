@@ -8,7 +8,7 @@ pub fn TextParameterInput(
     parameter_descriptor: ViperParameterDescriptor,
     getter: Signal<Option<ViperBindingValueInput>>,
     setter: SignalSetter<ViperBindingValueInput>,
-    use_default_value: Option<RwSignal<bool>>,
+    use_default_value: RwSignal<bool>,
     default_value: Option<String>,
 ) -> impl IntoView {
 
@@ -92,9 +92,9 @@ pub fn TextParameterInput(
     view! {
         <DefaultValue
             default_value
-            use_default_value=use_default_value.unwrap_or(RwSignal::new(false))
+            use_default_value
         >
-            <fieldset prop:disabled=move || use_default_value.unwrap_or(RwSignal::new(false))>
+            <fieldset prop:disabled=move || use_default_value>
                 <UserInput
                     getter
                     setter=input_setter
