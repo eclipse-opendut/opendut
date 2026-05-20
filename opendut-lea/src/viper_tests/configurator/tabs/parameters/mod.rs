@@ -39,14 +39,16 @@ pub fn ParametersTab(
                     })
                 };
 
-                let use_default_value = if parameter_descriptor.has_default_value() {
-                    let has_value = match test_run_getter.get_untracked() {
-                        Some(ViperBindingValueInput::Right(None)) => true,
-                        _ => false,
-                    };
-                    Some(RwSignal::new(has_value))
-                } else {
-                    None
+                let use_default_value = {
+                    if parameter_descriptor.has_default_value() {
+                        let has_value = match test_run_getter.get_untracked() {
+                            Some(ViperBindingValueInput::Right(None)) => true,
+                            _ => false,
+                        };
+                        Some(RwSignal::new(has_value))
+                    } else {
+                        None
+                    }
                 };
 
                 Effect::new(move || {
@@ -68,7 +70,7 @@ pub fn ParametersTab(
                                 display_name=info.display_name
                                 description=info.description
                                 use_default_value
-                                default
+                                default_value=default
                             />
                             <hr />
                         }.into_any()

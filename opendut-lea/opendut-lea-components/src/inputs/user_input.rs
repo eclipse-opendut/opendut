@@ -2,7 +2,7 @@ use leptos::prelude::*;
 use leptos::reactive::wrappers::write::SignalSetter;
 use crate::inputs::{InputType, UserInputValidator, UserInputValue};
 
-use crate::{Toggle, ToggleSignal, NON_BREAKING_SPACE};
+use crate::NON_BREAKING_SPACE;
 
 const INPUT_VALIDATION_DEBOUNCE_MS: f64 = 300.0;
 
@@ -15,7 +15,6 @@ pub fn UserInput<A>(
     #[prop(into)] placeholder: Signal<String>,
     #[prop(into, default=Signal::from(None))] description: Signal<Option<String>>,
     #[prop(default=InputType::Text)] input_type: InputType,
-    #[prop(default=None)] use_default_value: Option<RwSignal<bool>>,
 ) -> impl IntoView
 where A: UserInputValidator + Clone + 'static {
 
@@ -66,26 +65,10 @@ where A: UserInputValidator + Clone + 'static {
                     aria-label=move || aria_label.get()
                     placeholder=move || placeholder.get()
                     prop:value={ value_text }
-                    disabled=use_default_value 
                     on:input=move |ev| { debounced_input_handling(ev); }
                 />
             </div>
             <p class="help has-text-danger">{ help_text }</p>
-            {
-                if let Some(use_default_value) = use_default_value {
-                    Some(view! {
-                        <div class="is-flex is-justify-content-start">
-                            <Toggle
-                                left_text="Use default:"
-                                is_active=use_default_value
-                                on_action=move || {
-                                    use_default_value.toggle();
-                                }
-                            />
-                        </div>
-                    })
-                } else { None }
-            }
         </div>
     }
 }

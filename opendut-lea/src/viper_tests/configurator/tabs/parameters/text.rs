@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use opendut_lea_components::{UserInput, UserInputValue};
+use opendut_lea_components::{DefaultValue, UserInput, UserInputValue};
 use opendut_model::viper::{InvalidTextParameterValueErrorKind, ViperBindingValue, ViperParameterDescriptor, ViperParameterInfo};
 use crate::viper_tests::configurator::types::ViperBindingValueInput;
 
@@ -89,22 +89,21 @@ pub fn TextParameterInput(
         }
     };
 
-    let placeholder = {
-        match default_value {
-            Some(default) => format!("Text Value (Default: {default})"),
-            None => String::from("Text Value")
-        }
-    };
-
     view! {
-        <UserInput
-            getter
-            setter=input_setter
-            validator
-            label=display_name.unwrap_or_else(|| name)
-            placeholder
-            description
-            use_default_value
-        />
+        <DefaultValue
+            default_value
+            use_default_value=use_default_value.unwrap_or(RwSignal::new(false))
+        >
+            <fieldset prop:disabled=move || use_default_value.unwrap_or(RwSignal::new(false))>
+                <UserInput
+                    getter
+                    setter=input_setter
+                    validator
+                    label=display_name.unwrap_or_else(|| name)
+                    placeholder="Text Value"
+                    description
+                />
+            </fieldset>
+        </DefaultValue>
     }
 }
