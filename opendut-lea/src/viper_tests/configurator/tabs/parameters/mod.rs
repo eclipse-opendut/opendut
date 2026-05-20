@@ -41,10 +41,7 @@ pub fn ParametersTab(
 
                 let use_default_value = {
                     if parameter_descriptor.has_default_value() {
-                        let has_value = match test_run_getter.get_untracked() {
-                            Some(ViperBindingValueInput::Right(None)) => true,
-                            _ => false,
-                        };
+                        let has_value = matches!(test_run_getter.get_untracked(), Some(ViperBindingValueInput::Right(None)));
                         Some(RwSignal::new(has_value))
                     } else {
                         None
