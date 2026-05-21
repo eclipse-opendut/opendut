@@ -1,21 +1,20 @@
 
 - name: Show environment variable configuration file for opendut setup
   debug:
-    msg: "Environment file {{ item }}"
-  loop: "{{ opendut_env_files }}"
+    msg: "Environment file {{ opendut_env_secret_file }}"
 
 - name: Set environment variable for CARL docker image version
+  become: True
   ansible.builtin.lineinfile:
-    path: "{{ item }}"
+    path: "{{ opendut_env_secret_file }}"
     regexp: '^OPENDUT_CARL_IMAGE_VERSION='
     line: "OPENDUT_CARL_IMAGE_VERSION={{ opendut_carl_image_version }}"
-  loop: "{{ opendut_env_files }}"
   when: opendut_carl_image_version is defined
 
 - name: Delete environment variable for CARL docker image version
+  become: True
   ansible.builtin.lineinfile:
-    path: "{{ item }}"
+    path: "{{ opendut_env_secret_file }}"
     regexp: '^OPENDUT_CARL_IMAGE_VERSION='
     state: absent
-  loop: "{{ opendut_env_files }}"
   when: opendut_carl_image_version is not defined
