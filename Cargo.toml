@@ -173,7 +173,7 @@ tonic-web = "0.14"
 tonic-web-wasm-client = "0.9"
 tonic-async-interceptor = "0.14"
 tower = "0.5"
-tower-http = { version = "0.6", features = ["cors", "fs"] }
+tower-http = { version = "0.6", features = ["cors", "fs", "compression-full"] }
 tracing = "0.1"
 tracing-opentelemetry = "0.32.0"
 tracing-subscriber = { version = "0.3", default-features = false }
@@ -220,3 +220,9 @@ trunk = "0.21.14"
 
 [workspace.lints.clippy]
 unnecessary_lazy_evaluations = "allow"
+
+[profile.wasm-release]
+inherits = "release"
+opt-level = "z"
+lto = true
+codegen-units = 1
