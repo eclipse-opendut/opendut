@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use anyhow::Context;
 use axum::routing::get;
 use config::Config;
+use tower_http::compression::CompressionLayer;
 use tower_http::services::{ServeDir, ServeFile};
 use tracing::info;
 use opendut_auth::registration::resources::ResourceHomeUrl;
@@ -50,7 +51,8 @@ pub fn create_http_service(settings: &Config) -> anyhow::Result<axum::Router<Htt
         .fallback_service(
             ServeDir::new(&lea_dir)
                 .fallback(ServeFile::new(lea_index_html))
-        );
+        )
+        .layer(CompressionLayer::new());
 
     Ok(router)
 }
