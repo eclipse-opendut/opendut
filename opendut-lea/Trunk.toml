@@ -1,5 +1,6 @@
 [build]
 target = "index.html"
+cargo_profile = "wasm-release"
 
 [watch]
 watch = [
