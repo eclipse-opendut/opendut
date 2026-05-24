@@ -773,6 +773,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "cargo-venv"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bc46bc477826cdd9fe5a9eb9120879647b06f890e2314d18e94b9053319e58dd"
+dependencies = [
+ "repo_path_lib",
+]
+
+[[package]]
 name = "cargo_metadata"
 version = "0.23.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -868,27 +877,24 @@ dependencies = [
 
 [[package]]
 name = "cicero"
-version = "0.11.1"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5536ce9369ccda94b13cb1673136fa113e3175c16597ba4ec32f803ce74ad5ae"
+checksum = "343dcd41d532f19efa5136626c96f252bae10ec8b41f5f5a0185b1784a29dfee"
 dependencies = [
  "cicero_cache",
  "cicero_commands",
  "cicero_core",
  "cicero_distribution",
- "cicero_macro",
  "cicero_path",
- "fs-err",
- "repo_path_lib",
  "tracing",
  "tracing-subscriber",
 ]
 
 [[package]]
 name = "cicero_cache"
-version = "0.11.1"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "75f0352a3fa96a21932bfb3c0b477a318e80939e57fe7b174a603ed29555fa4f"
+checksum = "3c52ed616b9c56825580410d08787dee1b530551193b3a3d4623d19e4f14e3b3"
 dependencies = [
  "cicero_core",
  "fs-err",
@@ -901,25 +907,23 @@ dependencies = [
 
 [[package]]
 name = "cicero_commands"
-version = "0.11.1"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "87580a7707bb3d259b0e864ba9ffa539324f735bb7141270df7f061c7bc4d3d1"
+checksum = "26587162ba426a1591676c1c907f4d485ec2ddb0a4da51299cc80ed52ffac5dd"
 dependencies = [
+ "cargo-venv",
  "cicero_core",
- "cicero_macro",
  "cicero_path",
- "clap",
  "indoc",
- "repo_path_lib",
  "tracing",
  "which 8.0.2",
 ]
 
 [[package]]
 name = "cicero_core"
-version = "0.11.1"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "92cdf04745466da5362e0972a9c3b019f1acacbd2e0ca7f659cad29de91346d5"
+checksum = "395edea5859ec501c6e76057922b3f3b1afeb2a61065046d5bdd2b6dcedaa2a1"
 dependencies = [
  "anyhow",
  "cargo_metadata",
@@ -930,13 +934,15 @@ dependencies = [
 
 [[package]]
 name = "cicero_distribution"
-version = "0.11.1"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0dddddb89ed32764cc29eed1ee7578de71d753bc9dac9c4d745bf66f89ba74cf"
+checksum = "9cec4c71e28fcf301d33b10595cb5ff1c67db9386fd5dfcaee4810319736eab7"
 dependencies = [
  "cargo_metadata",
  "cicero_cache",
+ "cicero_commands",
  "cicero_core",
+ "cicero_macro",
  "cicero_path",
  "fs-err",
  "glob",
@@ -948,9 +954,9 @@ dependencies = [
 
 [[package]]
 name = "cicero_macro"
-version = "0.11.1"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f645c7608e9b9f66393b00b4266532ce1631fefe2cdece7e083ad645007e0abb"
+checksum = "fad964898fd0849f71d476e8d633f4d3fe0e92465b053d610669f1b00f1e72bc"
 dependencies = [
  "cicero_core",
  "proc-macro2",
@@ -960,9 +966,9 @@ dependencies = [
 
 [[package]]
 name = "cicero_path"
-version = "0.11.1"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1120abda5573f05ea0eb9099f57c159da042fd19c7ca5e5364b736487c054f41"
+checksum = "1b3b9c5216e5ba0bbd283709135ff17c18e4e4f0987d1f66ac21d1ef20f48b27"
 dependencies = [
  "cicero_core",
  "repo_path",
@@ -4311,7 +4317,7 @@ version = "5.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "51e219e79014df21a225b1860a479e2dcd7cbd9130f4defd4bd0e191ea31d67d"
 dependencies = [
- "base64 0.21.7",
+ "base64 0.22.1",
  "chrono",
  "getrandom 0.2.17",
  "http",
@@ -5627,8 +5633,8 @@ version = "0.14.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "343d3bd7056eda839b03204e68deff7d1b13aba7af2b2fd16890697274262ee7"
 dependencies = [
- "heck 0.4.1",
- "itertools 0.10.5",
+ "heck 0.5.0",
+ "itertools 0.14.0",
  "log",
  "multimap",
  "petgraph",
@@ -5649,7 +5655,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "27c6023962132f4b30eb4c172c91ce92d933da334c59c23cddee82358ddafb0b"
 dependencies = [
  "anyhow",
- "itertools 0.10.5",
+ "itertools 0.14.0",
  "proc-macro2",
  "quote",
  "syn 2.0.117",
@@ -6090,24 +6096,24 @@ checksum = "dc897dd8d9e8bd1ed8cdad82b5966c3e0ecae09fb1907d58efaa013543185d0a"
 
 [[package]]
 name = "repo_path"
-version = "1.2.4"
+version = "1.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4118d7551fadbad6d15ee1ba4ace34e9fbd8448b6d05836b294fc0b2bd00be4c"
+checksum = "c14c7f15f97a021b66d5c0aca9aacd12d2c244539a7c097f392511cc710823a4"
 dependencies = [
  "repo_path_macro",
 ]
 
 [[package]]
 name = "repo_path_lib"
-version = "1.2.4"
+version = "1.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9d4f67a73ddc563e6fb8bac035c9c76de29af2e4ad6031dc49bb5a2cd0742fca"
+checksum = "c3e06c6ac8b9b79f15d86f2bd5d5fcd40e2cdd228bd09e6de52cbf8645fa61fb"
 
 [[package]]
 name = "repo_path_macro"
-version = "1.2.4"
+version = "1.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77665a739b860c64cef0189b40ca39821893e66b033d802e4a0f5ed00b68a9ad"
+checksum = "88687e392b3ef722234929067b7b49bcdde6f27152b42e71656606eec78fb3d7"
 dependencies = [
  "dunce",
  "libgit2-sys",
