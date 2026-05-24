@@ -12,6 +12,12 @@ runs:
       with:
         toolchain: stable
         targets: x86_64-unknown-linux-gnu
+
+    - name: Set CICERO Venv directory
+      shell: bash
+      run: |
+        echo "CICERO_VENV_INSTALL_DIR=/home/runner/.cargo-venv/" >> "$GITHUB_ENV"
+
     - name: Prepare Rust Toolchain Cache
       uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
       with:
@@ -19,7 +25,7 @@ runs:
           ~/.rustup/toolchains
           ~/.rustup/update-hashes
           ~/.rustup/settings.toml
-          ~/work/opendut/opendut/.cargo-venv/
+          /home/runner/.cargo-venv/
         key: rust-toolchain-${{ github.job }}-${{steps.toolchain.outputs.cachekey}}
 
     - name: Prepare Rust Dependency Cache
