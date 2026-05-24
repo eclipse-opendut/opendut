@@ -23,7 +23,6 @@ enum Cli {
     Licenses(tasks::licenses::LicensesCli),
     Test(tasks::test::TestCli),
     IntegrationTest(tasks::integration_tests::IntegrationTestCli),
-    Venv(cicero::commands::venv::VenvCli),
 
     Carl(packages::carl::CarlCli),
     Cleo(packages::cleo::CleoCli),
@@ -50,7 +49,6 @@ fn main() -> anyhow::Result<()> {
         Cli::Licenses(cli) => cli.run(PackageSelection::Applications),
         Cli::Test(cli) => cli.run(),
         Cli::IntegrationTest(cli) => cli.run(),
-        Cli::Venv(cli) => cli.run(),
 
         Cli::Carl(cli) => cli.run(),
         Cli::Cleo(cli) => cli.run(),
