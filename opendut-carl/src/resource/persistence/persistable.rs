@@ -5,6 +5,7 @@ use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment};
 use opendut_model::peer::configuration::{PeerConfiguration, EdgePeerConfigurationState};
 use opendut_model::peer::state::PeerConnectionState;
 use opendut_model::peer::PeerDescriptor;
+use opendut_model::secret::SecretDescriptor;
 use opendut_util::proto::ConversionError;
 use prost::Message;
 use std::fmt::Debug;
@@ -74,6 +75,12 @@ impl Persistable for ViperTestRunDescriptor {
 impl Persistable for ViperRunDeployment {
     type Proto = opendut_model::proto::viper::ViperRunDeployment;
     const TABLE: &'static str = "viper_run_deployment";
+    const STORAGE: StorageKind = StorageKind::Persistent;
+}
+
+impl Persistable for SecretDescriptor {
+    type Proto = opendut_model::proto::secret::SecretDescriptor;
+    const TABLE: &'static str = "secret_descriptor";
     const STORAGE: StorageKind = StorageKind::Persistent;
 }
 

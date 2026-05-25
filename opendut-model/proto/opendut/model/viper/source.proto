@@ -4,12 +4,20 @@ package opendut.model.viper;
 
 import "opendut/model/util/net.proto";
 import "opendut/model/util/uuid.proto";
+import "opendut/model/secret/secret.proto";
 
+enum ViperSourceKind {
+  VIPER_SOURCE_KIND_UNSPECIFIED = 0;
+  VIPER_SOURCE_KIND_GIT = 1;
+  VIPER_SOURCE_KIND_HTTP = 2;
+}
 
 message ViperSourceDescriptor {
   ViperSourceId id = 1;
   ViperSourceName name = 2;
   opendut.model.util.Url url = 3;
+  ViperSourceKind kind = 4;
+  optional opendut.model.secret.SecretId secret_id = 5;
 }
 
 message ViperSourceId {

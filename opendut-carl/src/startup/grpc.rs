@@ -4,7 +4,7 @@ use config::Config;
 use opendut_auth::registration::client::RegistrationClientRef;
 use opendut_auth::registration::resources::ResourceHomeUrl;
 use opendut_util::pem::Pem;
-use crate::manager::grpc::{ClusterManagerFacade, MetadataProviderFacade, ObserverMessagingBrokerFacade, PeerManagerFacade, PeerMessagingBrokerFacade};
+use crate::manager::grpc::{ClusterManagerFacade, MetadataProviderFacade, ObserverMessagingBrokerFacade, PeerManagerFacade, PeerMessagingBrokerFacade, SecretManagerFacade};
 #[cfg(feature = "viper")]
 use crate::manager::grpc::TestManagerFacade;
 use crate::resource::manager::ResourceManagerRef;
@@ -22,6 +22,7 @@ pub struct GrpcFacades {
     pub observer_messaging_broker_facade: ObserverMessagingBrokerFacade,
     #[cfg(feature = "viper")]
     pub test_manager_facade: TestManagerFacade,
+    pub secret_manager_facade: SecretManagerFacade,
 }
 
 impl GrpcFacades {
@@ -71,6 +72,10 @@ impl GrpcFacades {
             resource_manager: Arc::clone(&resource_manager),
         };
 
+        let secret_manager_facade = SecretManagerFacade {
+            resource_manager: Arc::clone(&resource_manager),
+        };
+
         Ok(GrpcFacades {
             cluster_manager_facade,
             metadata_provider_facade,
@@ -79,6 +84,7 @@ impl GrpcFacades {
             observer_messaging_broker_facade,
             #[cfg(feature = "viper")]
             test_manager_facade,
+            secret_manager_facade,
         })
     }
 }

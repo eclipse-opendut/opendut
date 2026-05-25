@@ -44,6 +44,11 @@ pub fn Sidebar(menu_visible: RwSignal<bool>, hide_buttons: Signal<bool>) -> impl
                     }
                 }
                 <SidebarItem
+                    icon= FontAwesomeIcon::Key
+                    label="Secrets"
+                    path=routing::path::secrets_overview
+                />
+                <SidebarItem
                     icon= FontAwesomeIcon::Downloads
                     label="Downloads"
                     path=routing::path::downloads

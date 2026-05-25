@@ -11,6 +11,7 @@ use crate::carl::metadata::MetadataProvider;
 use crate::carl::peer::PeersRegistrar;
 use crate::carl::broker::PeerMessagingBroker;
 use crate::carl::observer::ObserverMessagingBroker;
+use crate::carl::secret::SecretManager;
 #[cfg(feature="viper")]
 use crate::carl::viper::TestManager;
 
@@ -19,6 +20,7 @@ use crate::proto::services::metadata_provider::metadata_provider_client::Metadat
 use crate::proto::services::peer_manager::peer_manager_client::PeerManagerClient;
 use crate::proto::services::peer_messaging_broker::peer_messaging_broker_client::PeerMessagingBrokerClient;
 use crate::proto::services::observer_messaging_broker::observer_messaging_broker_client::ObserverMessagingBrokerClient;
+use crate::proto::services::secret_manager::secret_manager_client::SecretManagerClient;
 #[cfg(feature="viper")]
 use crate::proto::services::test_manager::test_manager_client::TestManagerClient;
 
@@ -31,6 +33,7 @@ pub struct CarlClient {
     pub metadata: MetadataProvider<TonicAuthenticationService>,
     pub peers: PeersRegistrar<TonicAuthenticationService>,
     pub observer: ObserverMessagingBroker<TonicAuthenticationService>,
+    pub secret: SecretManager<TonicAuthenticationService>,
     #[cfg(feature="viper")]
     pub viper: TestManager<TonicAuthenticationService>,
 }
@@ -101,6 +104,7 @@ impl CarlClient {
             metadata: MetadataProvider::new(MetadataProviderClient::new(Clone::clone(&auth_service))),
             peers: PeersRegistrar::new(PeerManagerClient::new(Clone::clone(&auth_service))),
             observer: ObserverMessagingBroker::new(ObserverMessagingBrokerClient::new(Clone::clone(&auth_service))),
+            secret: SecretManager::new(SecretManagerClient::new(Clone::clone(&auth_service))),
             #[cfg(feature="viper")]
             viper: TestManager::new(TestManagerClient::new(Clone::clone(&auth_service))),
         })

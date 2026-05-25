@@ -5,6 +5,7 @@ use ::url::Url;
 
 use opendut_model::cluster::ClusterId;
 use opendut_model::peer::PeerId;
+use opendut_model::secret::SecretId;
 
 use crate::components::BasePageContainer;
 pub use routes::AppRoutes;
@@ -26,6 +27,7 @@ pub mod path {
     pub const viper_sources_overview: &str = "/viper_sources";
     #[cfg(feature = "viper")]
     pub const viper_tests_overview: &str = "/viper_tests";
+    pub const secrets_overview: &str = "/secrets";
 }
 
 #[derive(Clone)]
@@ -42,6 +44,8 @@ pub enum WellKnownRoutes {
     ViperTestsOverview,
     #[cfg(feature = "viper")]
     ViperTestConfigurator { id: opendut_model::viper::ViperTestId },
+    SecretsOverview,
+    SecretConfigurator { id: SecretId },
     ErrorPage { title: String, text: String, details: Option<String> },
 }
 
@@ -84,6 +88,14 @@ impl WellKnownRoutes {
             WellKnownRoutes::ViperTestConfigurator { id } => {
                 base.join(&format!("/viper_tests/{}/configure/general", id.url_encode()))
                     .expect("TestConfigurator route should be valid.")
+            }
+            WellKnownRoutes::SecretsOverview => {
+                base.join(path::secrets_overview)
+                    .expect("SecretsOverview route should be valid.")
+            }
+            WellKnownRoutes::SecretConfigurator { id } => {
+                base.join(&format!("/secrets/{}/configure/general", id.url_encode()))
+                    .expect("SecretConfigurator route should be valid.")
             }
             WellKnownRoutes::ErrorPage { title, text, details } => {
                 let mut url = base.join(path::error).unwrap();
@@ -205,6 +217,20 @@ mod routes {
                         #[cfg(not(feature = "viper"))]
                         NotFound
                     }
+                    condition=opendut_user
+                    fallback=LoadingSpinner
+                    redirect_path=|| "/login"
+                />
+                <ProtectedRoute
+                    path=path!("/secrets")
+                    view=move || view! { <Initialized app_globals><crate::secrets::SecretsOverview/></Initialized> }
+                    condition=opendut_user
+                    fallback=LoadingSpinner
+                    redirect_path=|| "/login"
+                />
+                <ProtectedRoute
+                    path=path!("/secrets/:id/configure/:tab")
+                    view=move || view! { <Initialized app_globals><crate::secrets::SecretConfigurator/></Initialized> }
                     condition=opendut_user
                     fallback=LoadingSpinner
                     redirect_path=|| "/login"
@@ -350,6 +376,12 @@ mod url_encode {
 
     #[cfg(feature = "viper")]
     impl UrlEncodable for opendut_model::viper::ViperTestId {
+        fn url_encode(&self) -> String {
+            self.to_string()
+        }
+    }
+
+    impl UrlEncodable for opendut_model::secret::SecretId {
         fn url_encode(&self) -> String {
             self.to_string()
         }

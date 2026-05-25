@@ -45,14 +45,37 @@ mod conversions {
     }
 
     conversion! {
+        type Model = crate::viper::ViperSourceKind;
+        type Proto = ViperSourceKind;
+
+        fn from(value: Model) -> Proto {
+            match value {
+                Model::Git => Proto::Git,
+                Model::Http => Proto::Http,
+            }
+        }
+
+        fn try_from(value: Proto) -> ConversionResult<Model> {
+            match value {
+                Proto::Unspecified => Err(ErrorBuilder::message("ViperSourceKind is UNSPECIFIED")),
+                Proto::Git => Ok(Model::Git),
+                Proto::Http => Ok(Model::Http),
+            }
+        }
+    }
+
+    conversion! {
         type Model = crate::viper::ViperSourceDescriptor;
         type Proto = ViperSourceDescriptor;
 
         fn from(value: Model) -> Proto {
+            let kind: ViperSourceKind = value.kind.into();
             Proto {
                 id: Some(value.id.into()),
                 name: Some(value.name.into()),
                 url: Some(value.url.into()),
+                kind: kind.into(),
+                secret_id: value.secret_id.map(|s| s.into()),
             }
         }
 
@@ -66,7 +89,15 @@ mod conversions {
             let url = extract!(value.url)?
                 .try_into()?;
 
-            Ok(Model { id, name, url })
+            let kind: crate::viper::ViperSourceKind = ViperSourceKind::try_from(value.kind)
+                .map_err(|_| ErrorBuilder::message("Unknown ViperSourceKind value"))?
+                .try_into()?;
+
+            let secret_id = value.secret_id
+                .map(|s| s.try_into())
+                .transpose()?;
+
+            Ok(Model { id, name, url, kind, secret_id })
         }
     }
 

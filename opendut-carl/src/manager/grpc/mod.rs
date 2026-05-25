@@ -6,6 +6,7 @@ pub use peer_messaging_broker::PeerMessagingBrokerFacade;
 pub use observer_messaging_broker::ObserverMessagingBrokerFacade;
 #[cfg(feature = "viper")]
 pub use test_manager::TestManagerFacade;
+pub use secret_manager::SecretManagerFacade;
 
 mod cluster_manager;
 mod metadata_provider;
@@ -14,6 +15,7 @@ mod peer_messaging_broker;
 mod observer_messaging_broker;
 #[cfg(feature = "viper")]
 mod test_manager;
+mod secret_manager;
 mod error;
 
 pub trait ExtractOrInvalidArgument<A, B>

@@ -5,6 +5,7 @@ pub mod peer;
 pub mod observer;
 #[cfg(feature="viper")]
 pub mod viper;
+pub mod secret;
 
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 mod client;

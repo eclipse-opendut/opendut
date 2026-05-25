@@ -3,6 +3,7 @@ use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId};
 use opendut_model::peer::configuration::{PeerConfiguration, EdgePeerConfigurationState};
 use opendut_model::peer::state::PeerConnectionState;
 use opendut_model::peer::{PeerDescriptor, PeerId};
+use opendut_model::secret::{SecretDescriptor, SecretId};
 use std::any::Any;
 use std::fmt::Debug;
 use std::hash::Hash;
@@ -47,4 +48,8 @@ impl Resource for ViperTestRunDescriptor {
 #[cfg(feature = "viper")]
 impl Resource for ViperRunDeployment {
     type Id = ViperRunId;
+}
+
+impl Resource for SecretDescriptor {
+    type Id = SecretId;
 }

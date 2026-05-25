@@ -3,6 +3,7 @@ use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment};
 use opendut_model::peer::configuration::{PeerConfiguration, EdgePeerConfigurationState};
 use opendut_model::peer::state::PeerConnectionState;
 use opendut_model::peer::PeerDescriptor;
+use opendut_model::secret::SecretDescriptor;
 use tokio::sync::broadcast;
 
 #[cfg(feature = "viper")]
@@ -61,6 +62,7 @@ impl_subscribable!(PeerConfiguration, peer_configuration);
 impl_subscribable!(PeerDescriptor, peer_descriptor);
 impl_subscribable!(PeerConnectionState, peer_connection_state);
 impl_subscribable!(EdgePeerConfigurationState, peer_configuration_state);
+impl_subscribable!(SecretDescriptor, secret_descriptor);
 #[cfg(feature = "viper")]
 impl_subscribable!(ViperSourceDescriptor, viper_source_descriptor);
 #[cfg(feature = "viper")]
@@ -77,6 +79,7 @@ pub struct ResourceSubscriptionChannels {
     pub peer_descriptor: ResourceSubscriptionChannel<PeerDescriptor>,
     pub peer_connection_state: ResourceSubscriptionChannel<PeerConnectionState>,
     pub peer_configuration_state: ResourceSubscriptionChannel<EdgePeerConfigurationState>,
+    pub secret_descriptor: ResourceSubscriptionChannel<SecretDescriptor>,
     #[cfg(feature = "viper")] pub viper_source_descriptor: ResourceSubscriptionChannel<ViperSourceDescriptor>,
     #[cfg(feature = "viper")] pub viper_test_run_descriptor: ResourceSubscriptionChannel<ViperTestRunDescriptor>,
     #[cfg(feature = "viper")] pub viper_run_deployment: ResourceSubscriptionChannel<ViperRunDeployment>,
@@ -102,6 +105,7 @@ impl ResourceSubscriptionChannels {
             peer_descriptor,
             peer_connection_state,
             peer_configuration_state,
+            secret_descriptor,
             #[cfg(feature = "viper")] viper_source_descriptor,
             #[cfg(feature = "viper")] viper_test_run_descriptor,
             #[cfg(feature = "viper")] viper_run_deployment,
@@ -113,7 +117,8 @@ impl ResourceSubscriptionChannels {
             && peer_configuration.0.is_empty()
             && peer_descriptor.0.is_empty()
             && peer_connection_state.0.is_empty()
-            && peer_configuration_state.0.is_empty();
+            && peer_configuration_state.0.is_empty()
+            && secret_descriptor.0.is_empty();
 
         #[cfg(feature = "viper")]
         let result = result
@@ -135,6 +140,7 @@ impl Default for ResourceSubscriptionChannels {
             peer_descriptor: broadcast::channel(capacity),
             peer_connection_state: broadcast::channel(capacity),
             peer_configuration_state: broadcast::channel(capacity),
+            secret_descriptor: broadcast::channel(capacity),
             #[cfg(feature = "viper")] viper_source_descriptor: broadcast::channel(capacity),
             #[cfg(feature = "viper")] viper_test_run_descriptor: broadcast::channel(capacity),
             #[cfg(feature = "viper")] viper_run_deployment: broadcast::channel(capacity),

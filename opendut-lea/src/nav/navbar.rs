@@ -68,6 +68,11 @@ pub fn Navbar(menu_visible: RwSignal<bool>, hide_buttons: Signal<bool>) -> impl 
                         }
                     }
                     <NavbarButton
+                        icon=FontAwesomeIcon::Key
+                        label="Secrets"
+                        path=routing::path::secrets_overview
+                    />
+                    <NavbarButton
                         icon=FontAwesomeIcon::Downloads
                         label="Downloads"
                         path=routing::path::downloads

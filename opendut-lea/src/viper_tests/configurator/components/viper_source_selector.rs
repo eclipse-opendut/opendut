@@ -38,7 +38,7 @@ pub fn ViperTestSourceSelector(viper_test_run_descriptor: RwSignal<UserViperTest
             });
 
             let rows = viper_sources.iter().map(|viper_source_descriptor| {
-                let ViperSourceDescriptor { id, name, url } = viper_source_descriptor;
+                let ViperSourceDescriptor { id, name, url, .. } = viper_source_descriptor;
                 let id = id.to_owned();
                 let name = name.to_string();
                 let url = url.to_string();

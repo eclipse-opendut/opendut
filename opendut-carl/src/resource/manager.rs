@@ -112,6 +112,7 @@ impl ResourceManager {
             mut peer_descriptor,
             mut peer_connection_state,
             mut peer_configuration_state,
+            mut secret_descriptor,
             #[cfg(feature = "viper")] mut viper_source_descriptor,
             #[cfg(feature = "viper")] mut viper_test_run_descriptor,
             #[cfg(feature = "viper")] mut viper_run_deployment,
@@ -149,6 +150,12 @@ impl ResourceManager {
         }
 
         while let Ok(event) = peer_configuration_state.1.try_recv() {
+            state.subscribers
+                .notify(event)
+                .expect("should successfully send notification about event during resource transaction");
+        }
+
+        while let Ok(event) = secret_descriptor.1.try_recv() {
             state.subscribers
                 .notify(event)
                 .expect("should successfully send notification about event during resource transaction");

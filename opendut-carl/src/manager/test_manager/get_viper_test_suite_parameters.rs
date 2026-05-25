@@ -25,7 +25,7 @@ impl Resources<'_> {
 
 
 async fn discover_suite(source: ViperSourceDescriptor) -> Result<Option<ViperTestSuiteParameters>, GetViperTestSuiteParametersError>  {
-    let ViperSourceDescriptor { id: source_id, name, url } = source;
+    let ViperSourceDescriptor { id: source_id, name, url, .. } = source;
 
     let name = TestSuiteIdentifier::try_from(name.value())
         .expect("Conversion of source name to TestSuiteIdentifier failed."); //FIXME ViperSourceDescriptor should use TestSuiteIdentifier directly, making this conversion obsolete

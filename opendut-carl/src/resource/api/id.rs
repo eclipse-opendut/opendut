@@ -4,6 +4,7 @@ use opendut_model::peer::configuration::{PeerConfiguration, EdgePeerConfiguratio
 use opendut_model::peer::state::PeerConnectionState;
 use opendut_model::peer::{PeerDescriptor, PeerId};
 use opendut_model::resources::Id;
+use opendut_model::secret::{SecretDescriptor, SecretId};
 
 #[cfg(feature = "viper")]
 use opendut_model::viper::{ViperRunDeployment, ViperTestRunDescriptor, ViperTestId, ViperSourceDescriptor, ViperSourceId, ViperRunId};
@@ -89,5 +90,14 @@ impl ResourceId<ViperRunDeployment> for ViperRunId {
     }
     fn from_id(id: Id) -> Self {
         ViperRunId::from(id.value())
+    }
+}
+
+impl ResourceId<SecretDescriptor> for SecretId {
+    fn into_id(self) -> Id {
+        Id::from(self.uuid)
+    }
+    fn from_id(id: Id) -> Self {
+        SecretId::from(id.value())
     }
 }

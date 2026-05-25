@@ -27,6 +27,7 @@ mod nav;
 mod viper_sources;
 #[cfg(feature = "viper")]
 mod viper_tests;
+mod secrets;
 
 fn main() {
 

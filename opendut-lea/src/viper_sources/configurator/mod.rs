@@ -6,7 +6,7 @@ use leptos::prelude::*;
 use leptos_router::hooks::{use_navigate, use_params_map};
 use opendut_lea_components::{BasePageContainer, Breadcrumb, LoadingSpinner, UserInputError, UserInputValue};
 use opendut_lea_components::tabs::{Tab, Tabs};
-use opendut_model::viper::ViperSourceId;
+use opendut_model::viper::{ViperSourceId, ViperSourceKind};
 use crate::app::use_app_globals;
 use crate::components::use_active_tab;
 use crate::routing::{navigate_to, WellKnownRoutes};
@@ -46,6 +46,8 @@ pub fn ViperSourceConfigurator() -> impl IntoView {
                 id: viper_source_id,
                 name: UserInputValue::Left(UserInputError::from("Enter a valid viper source name.")),
                 url: UserInputValue::Left(UserInputError::from("Enter a valid viper source url.")),
+                kind: ViperSourceKind::default(),
+                secret_id: None,
                 is_new: true,
             }
         );
@@ -57,6 +59,8 @@ pub fn ViperSourceConfigurator() -> impl IntoView {
                     viper_source_configuration.update(|user_configuration| {
                         user_configuration.name = UserInputValue::Right(configuration.name.value().to_owned());
                         user_configuration.url = UserInputValue::Right(configuration.url.to_string());
+                        user_configuration.kind = configuration.kind;
+                        user_configuration.secret_id = configuration.secret_id;
                     })
                 }
             }

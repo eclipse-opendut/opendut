@@ -128,7 +128,7 @@ pub(crate) mod testing {
     #[cfg(feature = "viper")]
     mod viper {
         use super::*;
-        use opendut_model::viper::{ViperRunDeployment, ViperRunId, ViperSourceDescriptor, ViperSourceId, ViperSourceName, ViperTestRunDescriptor, ViperTestId, ViperTestName, ViperParameterName, ViperBindingValue};
+        use opendut_model::viper::{ViperRunDeployment, ViperRunId, ViperSourceDescriptor, ViperSourceId, ViperSourceKind, ViperSourceName, ViperTestRunDescriptor, ViperTestId, ViperTestName, ViperParameterName, ViperBindingValue};
         use url::Url;
         use std::collections::HashMap;
 
@@ -143,6 +143,8 @@ pub(crate) mod testing {
                     id: source_id,
                     name: ViperSourceName::try_from(format!("ViperSource-{source_id}"))?,
                     url: Url::parse("http://localhost")?,
+                    kind: ViperSourceKind::default(),
+                    secret_id: None,
                 };
 
                 resource_manager.insert(source_id, source_descriptor.clone()).await?;

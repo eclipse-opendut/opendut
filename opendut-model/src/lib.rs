@@ -7,6 +7,7 @@ pub mod lea;
 pub mod peer;
 pub mod proto;
 pub mod resources;
+pub mod secret;
 #[cfg(feature = "specs")]
 pub mod specs;
 #[cfg(feature = "viper")]
