@@ -43,7 +43,7 @@ enum DockerHostnames {
 impl DockerHostnames {
     fn as_str(&self) -> &'static str {
         match self {
-            DockerHostnames::Carl => "carl.opendut.local",
+            DockerHostnames::Carl => "opendut.local",
             DockerHostnames::Keycloak => "auth.opendut.local",
             DockerHostnames::NetbirdManagement => "netbird-api.opendut.local",
             DockerHostnames::Firefox => "firefox",

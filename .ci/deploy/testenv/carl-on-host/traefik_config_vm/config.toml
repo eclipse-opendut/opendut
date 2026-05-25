@@ -13,6 +13,6 @@
     address = "192.168.56.1:8080"
 
 [[tls.certificates]]
-    certFile = "/provision/pki/deploy/carl.opendut.local.pem"
-    keyFile = "/provision/pki/deploy/carl.opendut.local.key"
+    certFile = "/provision/pki/deploy/opendut.local.pem"
+    keyFile = "/provision/pki/deploy/opendut.local.key"
     stores = ["default"]

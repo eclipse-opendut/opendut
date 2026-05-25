@@ -37,7 +37,7 @@ grpcurl \
     -import-path $OPENDUT_REPO_ROOT/opendut-model/proto/ \
     -expand-headers \
     -H 'Authorization: Bearer ${TOKEN}' \
-    carl.opendut.local:443 \
+    opendut.local:443 \
     opendut.carl.services.metadata_provider.MetadataProvider/Version
 
 ```

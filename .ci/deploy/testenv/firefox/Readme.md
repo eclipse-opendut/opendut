@@ -11,7 +11,7 @@ Following features are included:
 * Start container `docker compose up -d`
 * Open remote session to firefox in docker your browser via [link](http://localhost:3000).
 * Open url in remote session:
-  * https://carl.opendut.local
+  * https://opendut.local
   * https://auth.opendut.local
 
 

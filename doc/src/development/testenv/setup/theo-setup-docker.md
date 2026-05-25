@@ -26,7 +26,6 @@
 * Update /etc/hosts
     ```shell
     127.0.0.1 opendut.local
-    127.0.0.1 carl.opendut.local
     127.0.0.1 auth.opendut.local
     127.0.0.1 netbird-api.opendut.local
     127.0.0.1 netbird-relay.opendut.local

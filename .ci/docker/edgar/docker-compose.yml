@@ -46,7 +46,7 @@ services:
       - NET_ADMIN
 
     extra_hosts:
-      - "carl.opendut.local:${OPENDUT_BACKEND_IP:-0.0.0.0}"  # Set to a default which will not resolve, so that it is not mandatory to specify for those with proper DNS names, but can still be set when no DNS names are available.
+      - "opendut.local:${OPENDUT_BACKEND_IP:-0.0.0.0}"  # Set to a default which will not resolve, so that it is not mandatory to specify for those with proper DNS names, but can still be set when no DNS names are available.
       - "auth.opendut.local:${OPENDUT_BACKEND_IP:-0.0.0.0}"
       - "netbird.opendut.local:${OPENDUT_BACKEND_IP:-0.0.0.0}"
       - "netbird-api.opendut.local:${OPENDUT_BACKEND_IP:-0.0.0.0}"

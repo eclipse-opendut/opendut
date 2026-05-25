@@ -24,7 +24,7 @@
           OPENDUT_DOMAIN_OPENTELEMETRY="opentelemetry.opendut.local"
           OPENDUT_DOMAIN_NGINX_WEBDAV="nginx-webdav.opendut.local"
           OPENDUT_DOMAIN_MONITORING="monitoring.opendut.local"
-          OPENDUT_DOMAIN_CARL="carl.opendut.local"
+          OPENDUT_DOMAIN_CARL="opendut.local"
           SHARED_CERTS_HOST_DIR="/provision"
           SHARED_CERTS_MOUNT_DIR="/pki"
           SHARED_CERTS_UNENCRYPTED="/provision/pki/deploy"
