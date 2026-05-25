@@ -2,12 +2,12 @@
 [network]
 bind.host = "0.0.0.0"
 bind.port = 8080
-remote.host = "carl.opendut.local"
+remote.host = "opendut.local"
 remote.port = 443
 
 [network.tls]
-certificate = ".ci/deploy/localenv/data/secrets/pki/deploy/carl.opendut.local.pem"
-key = ".ci/deploy/localenv/data/secrets/pki/deploy/carl.opendut.local.key"
+certificate = ".ci/deploy/localenv/data/secrets/pki/deploy/opendut.local.pem"
+key = ".ci/deploy/localenv/data/secrets/pki/deploy/opendut.local.key"
 ca = ".ci/deploy/localenv/data/secrets/pki/opendut-ca.pem"
 
 [network.oidc]

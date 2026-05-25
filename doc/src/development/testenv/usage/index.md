@@ -14,6 +14,6 @@ You may use this **OpenDuT Browser** to access the services.
 * Passwords of users in test environment are generated.
   You can find them in the file `.ci/deploy/localenv/data/secrets/.env`.
 * Services with user interface:
-    * https://carl.opendut.local
+    * https://opendut.local
     * https://auth.opendut.local
     * https://monitoring.opendut.local
