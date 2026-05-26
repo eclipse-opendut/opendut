@@ -18,3 +18,5 @@
     regexp: '^OPENDUT_CARL_IMAGE_VERSION='
     state: absent
   when: opendut_carl_image_version is not defined
+
+- import_tasks: tasks/synchronize_facts_and_secrets.yaml
