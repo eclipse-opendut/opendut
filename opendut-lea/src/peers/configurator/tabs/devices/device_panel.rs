@@ -176,7 +176,7 @@ fn DeviceNameInput(
             getter
             setter
             label="Name"
-            placeholder="Device A"
+            placeholder="Device_A"
             validator
         />
     }
