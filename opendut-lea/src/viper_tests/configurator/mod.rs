@@ -44,8 +44,8 @@ pub fn ViperTestConfigurator() -> impl IntoView {
     let viper_test_run_descriptor = RwSignal::new(
         UserViperTestRunDescriptor {
             id: viper_test_id,
-            name: UserInputValue::Left(UserInputError::from("Enter a valid viper test name.")),
-            viper_source: SourceSelection::Left(String::from("Select a viper test source.")),
+            name: UserInputValue::Left(UserInputError::from("Enter a valid VIPER test name.")),
+            viper_source: SourceSelection::Left(String::from("Select a VIPER test source.")),
             cluster: ClusterSelection::Left(String::from("Enter a cluster.")),
             parameters: HashMap::new(),
             is_new: true,
@@ -151,7 +151,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
         let viper_test_id = viper_test_id_string.get();
         vec![
             Breadcrumb::new("Dashboard", "/"),
-            Breadcrumb::new("Viper Tests", "viper_tests"),
+            Breadcrumb::new("VIPER Tests", "viper_tests"),
             Breadcrumb::new(&viper_test_id, format!("{viper_test_id}/configure")),
         ]
     });
@@ -172,7 +172,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
             ).with_is_error(Signal::derive(move || !viper_test_run_descriptor.read().valid_general_tab())),
 
             Tab::from_title_and_href(
-                String::from("Viper Source"),
+                String::from("VIPER Source"),
                 TabIdentifier::ViperSource.as_str().to_owned()
             ).with_is_error(Signal::derive(move || !viper_test_run_descriptor.read().valid_viper_source_tab())),
 
@@ -192,7 +192,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
 
     view! {
         <BasePageContainer
-            title="Configure Viper Test"
+            title="Configure VIPER Test"
             subtitle
             breadcrumbs
             controls=view! { <Controls configuration=viper_test_run_descriptor is_valid_configuration /> }

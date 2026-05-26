@@ -37,18 +37,18 @@ pub fn ViperTestsOverview() -> impl IntoView {
 
     let breadcrumbs = vec![
         Breadcrumb::new("Dashboard", "/"),
-        Breadcrumb::new("Viper Tests", "/viper_tests")
+        Breadcrumb::new("VIPER Tests", "/viper_tests")
     ];
 
     let table_headings = vec![
         TableHeading::new(String::from("Name")),
-        TableHeading::new(String::from("Viper Source")),
+        TableHeading::new(String::from("VIPER Source")),
         TableHeading::new(String::from("Action")).set_narrow(),
     ];
 
     view! {
         <BasePageContainer
-            title="Viper Tests"
+            title="VIPER Tests"
             breadcrumbs
             controls=view! {
                 <div class="buttons">
@@ -58,7 +58,7 @@ pub fn ViperTestsOverview() -> impl IntoView {
                         color=ButtonColor::Light
                         size=ButtonSize::Normal
                         state=ButtonState::Enabled
-                        label="Refresh table of viper tests"
+                        label="Refresh table of VIPER tests"
                         on_action=move || {
                             refetch_viper_tests.notify();
                         }

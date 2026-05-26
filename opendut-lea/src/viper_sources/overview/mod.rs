@@ -24,7 +24,7 @@ pub fn ViperSourcesOverview() -> impl IntoView {
 
             async move {
                 let mut viper_sources = carl.viper.list_viper_source_descriptors().await
-                    .expect("Failed to request the list of viper_sources");
+                    .expect("Failed to request the list of VIPER sources");
 
                 viper_sources.sort_by(|viper_source_a, viper_source_b| {
                     viper_source_a.name.value().to_lowercase()
@@ -38,7 +38,7 @@ pub fn ViperSourcesOverview() -> impl IntoView {
 
     let breadcrumbs = vec![
         Breadcrumb::new("Dashboard", "/"),
-        Breadcrumb::new("Viper Sources", "/viper_sources")
+        Breadcrumb::new("VIPER Sources", "/viper_sources")
     ];
 
     let table_headings = vec![
@@ -49,7 +49,7 @@ pub fn ViperSourcesOverview() -> impl IntoView {
 
     view! {
         <BasePageContainer
-            title="Sources"
+            title="VIPER Sources"
             breadcrumbs
             controls=view! {
                 <div class="buttons">
@@ -59,7 +59,7 @@ pub fn ViperSourcesOverview() -> impl IntoView {
                         color=ButtonColor::Light
                         size=ButtonSize::Normal
                         state=ButtonState::Enabled
-                        label="Refresh table of viper_sources"
+                        label="Refresh table of VIPER sources"
                         on_action=move || {
                             refetch_viper_sources.notify();
                         }

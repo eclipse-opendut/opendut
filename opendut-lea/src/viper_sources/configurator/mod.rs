@@ -44,8 +44,8 @@ pub fn ViperSourceConfigurator() -> impl IntoView {
         let viper_source_configuration = RwSignal::new(
             UserViperSourceConfiguration {
                 id: viper_source_id,
-                name: UserInputValue::Left(UserInputError::from("Enter a valid viper source name.")),
-                url: UserInputValue::Left(UserInputError::from("Enter a valid viper source url.")),
+                name: UserInputValue::Left(UserInputError::from("Enter a valid VIPER source name.")),
+                url: UserInputValue::Left(UserInputError::from("Enter a valid VIPER source url.")),
                 is_new: true,
             }
         );
@@ -78,7 +78,7 @@ pub fn ViperSourceConfigurator() -> impl IntoView {
         let viper_source_id = viper_source_id_string.get();
         vec![
             Breadcrumb::new("Dashboard", "/"),
-            Breadcrumb::new("Viper Sources", "viper_sources"),
+            Breadcrumb::new("VIPER Sources", "viper_sources"),
             Breadcrumb::new(&viper_source_id, format!("{viper_source_id}/configure")),
         ]
     });
@@ -104,7 +104,7 @@ pub fn ViperSourceConfigurator() -> impl IntoView {
     
     view! {
         <BasePageContainer
-            title="Configure Viper Source"
+            title="Configure VIPER Source"
             subtitle=subtitle
             breadcrumbs=breadcrumbs
             controls=view! { <Controls configuration=viper_source_configuration is_valid_configuration /> }
