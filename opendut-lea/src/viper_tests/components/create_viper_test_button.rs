@@ -16,7 +16,7 @@ pub fn CreateViperTestButton() -> impl IntoView {
             color=ButtonColor::Success
             size=ButtonSize::Normal
             state=ButtonState::Enabled
-            label="Create viper test"
+            label="Create VIPER Test"
             on_action=move || {
                 navigate_to(WellKnownRoutes::ViperTestConfigurator {
                     id: ViperTestId::random()
