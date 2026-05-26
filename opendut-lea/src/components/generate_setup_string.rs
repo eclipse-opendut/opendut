@@ -96,11 +96,11 @@ fn CopyToClipboardButton(
 ) -> impl IntoView {
     let toaster = use_toaster();
 
-    let copy_action = Action::new_local(move |clipboard_text: &String| {
+    let copy_action = Callback::new(move |clipboard_text: String| {
         let text = clipboard_text.clone();
         let toaster = toaster.clone();
 
-        async move {
+        leptos::task::spawn_local(async move {
             let clipboard = window().navigator().clipboard();
             let clipboard_promise = clipboard.write_text(&text);
 
@@ -120,7 +120,7 @@ fn CopyToClipboardButton(
                     );
                 }
             };
-        }
+        });
     });
 
     let auto_copy = RwSignal::new(true);
@@ -130,7 +130,7 @@ fn CopyToClipboardButton(
         move || {
             if auto_copy.get() {
                 auto_copy.set(false);
-                copy_action.dispatch(setup_string.clone());
+                copy_action.run(setup_string.clone());
             }
         }
     });
@@ -143,7 +143,7 @@ fn CopyToClipboardButton(
             state=ButtonState::Enabled
             label="Copy to clipboard"
             on_action=move || {
-                copy_action.dispatch(setup_string.clone());
+                copy_action.run(setup_string.clone());
             }
         />
     }
