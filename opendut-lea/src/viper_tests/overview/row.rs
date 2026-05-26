@@ -3,7 +3,7 @@ use opendut_lea_components::{ButtonColor, OverviewTableCell};
 use opendut_model::viper::ViperTestRunDescriptor;
 use crate::app::use_app_globals;
 use crate::components::ClickableOverviewTableRow;
-use crate::viper_tests::components::DeleteViperTestButton;
+use crate::viper_tests::components::{DeleteViperTestButton, DeployViperTestButton};
 
 #[component]
 pub(crate) fn Row<OnDeleteFn>(
@@ -47,6 +47,11 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
 
     view! {
         <ClickableOverviewTableRow configurator_href>
+            <OverviewTableCell>
+                <div class="is-flex is-justify-content-center">
+                    <DeployViperTestButton test_id=viper_test_id />
+                </div>
+            </OverviewTableCell>
             <OverviewTableCell>
                 <a href=configurator_href> { viper_test_name } </a>
             </OverviewTableCell>
