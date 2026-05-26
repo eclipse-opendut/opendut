@@ -38,19 +38,19 @@ where F: Fn() + Clone + Send + 'static {
 
             match result {
                 Ok(_) => {
-                    info!("Successfully deleted viper test: {:?}", viper_test_id);
+                    info!("Successfully deleted VIPER test: {:?}", viper_test_id);
                     on_delete();
                     toaster.toast(
                         Toast::builder()
-                            .simple("Deleted viper test successfully.")
+                            .simple("Deleted VIPER test successfully.")
                             .success()
                     );
                 }
                 Err(cause) => {
-                    error!("Failed to delete viper test <{:?}>, due to error: {cause:?}", viper_test_id);
+                    error!("Failed to delete VIPER test <{:?}>, due to error: {cause:?}", viper_test_id);
                     toaster.toast(
                         Toast::builder()
-                            .simple("Failed to delete viper test!")
+                            .simple("Failed to delete VIPER test!")
                             .error()
                     );
                 }
@@ -66,7 +66,7 @@ where F: Fn() + Clone + Send + 'static {
             color=button_color
             size=ButtonSize::Normal
             state=button_state
-            label="Remove Test?"
+            label="Remove VIPER Test?"
             on_confirm
         />
     }
