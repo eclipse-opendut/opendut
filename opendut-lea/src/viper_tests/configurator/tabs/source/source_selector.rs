@@ -16,7 +16,7 @@ pub fn ViperTestSourceSelector(viper_test_run_descriptor: RwSignal<UserViperTest
             let mut carl = carl.clone();
             async move {
                 carl.viper.list_viper_source_descriptors().await
-                    .expect("Failed to request the list of viper_sources")
+                    .expect("Failed to request the list of VIPER sources")
             }
         })
     };
@@ -50,9 +50,9 @@ pub fn ViperTestSourceSelector(viper_test_run_descriptor: RwSignal<UserViperTest
             }).collect::<Vec<_>>();
 
             if viper_sources.is_empty() {
-                setter.set(SourceSelection::Left(String::from("No viper viper_sources available.")));
+                setter.set(SourceSelection::Left(String::from("No viper VIPER sources available.")));
             } else if matches!(getter.get(), SourceSelection::Left(_)) {
-                setter.set(SourceSelection::Left(String::from("Select a viper source.")));
+                setter.set(SourceSelection::Left(String::from("Select a VIPER source.")));
             }
 
             rows

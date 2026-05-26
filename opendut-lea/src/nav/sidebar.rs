@@ -28,7 +28,7 @@ pub fn Sidebar(menu_visible: RwSignal<bool>, hide_buttons: Signal<bool>) -> impl
                     view!{
                         <SidebarItem
                             icon= FontAwesomeIcon::Link
-                            label="Viper Sources"
+                            label="VIPER Sources"
                             path=routing::path::viper_sources_overview
                         />
                     }
@@ -38,7 +38,7 @@ pub fn Sidebar(menu_visible: RwSignal<bool>, hide_buttons: Signal<bool>) -> impl
                     view!{
                         <SidebarItem
                             icon= FontAwesomeIcon::Code
-                            label="Viper Tests"
+                            label="VIPER Tests"
                             path=routing::path::viper_tests_overview
                         />
                     }

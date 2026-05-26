@@ -18,7 +18,7 @@ pub fn ViperSourceUrlInput(viper_source_configuration: RwSignal<UserViperSourceC
     let validator = |input: String| {
         match Url::parse(&input) {
             Ok(_) => { UserInputValue::Right(input) }
-            Err(_) => { UserInputValue::Both("Enter a valid viper source URL.".to_string(), input) }
+            Err(_) => { UserInputValue::Both("Enter a valid VIPER source URL.".to_string(), input) }
         }
     };
 
@@ -26,7 +26,7 @@ pub fn ViperSourceUrlInput(viper_source_configuration: RwSignal<UserViperSourceC
         <UserInput
             getter
             setter
-            label="Viper Source URL"
+            label="Source URL"
             placeholder="https://example.com"
             validator
         />
