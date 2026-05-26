@@ -52,7 +52,7 @@ pub fn ClusterNameInput(cluster_descriptor: RwSignal<UserClusterDescriptor>) -> 
         <UserInput
             getter=getter
             setter=setter
-            label="Cluster Name"
+            label="Name"
             placeholder="AwesomeCluster"
             validator=validator
         />

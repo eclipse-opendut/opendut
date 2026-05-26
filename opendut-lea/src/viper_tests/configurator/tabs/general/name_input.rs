@@ -51,7 +51,7 @@ pub fn ViperTestNameInput(viper_test_run_descriptor: RwSignal<UserViperTestRunDe
         <UserInput
             getter
             setter
-            label="Test Name"
+            label="Name"
             placeholder="MyAwesomeViperTest"
             validator
         />

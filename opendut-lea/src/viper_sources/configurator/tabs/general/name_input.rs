@@ -50,7 +50,7 @@ pub fn ViperSourceNameInput(viper_source_configuration: RwSignal<UserViperSource
         <UserInput
             getter
             setter
-            label="Source Name"
+            label="Name"
             placeholder="MyAwesomeViperSource"
             validator
         />

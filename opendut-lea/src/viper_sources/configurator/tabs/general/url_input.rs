@@ -26,7 +26,7 @@ pub fn ViperSourceUrlInput(viper_source_configuration: RwSignal<UserViperSourceC
         <UserInput
             getter
             setter
-            label="Source URL"
+            label="URL"
             placeholder="https://example.com"
             validator
         />
