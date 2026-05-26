@@ -12,7 +12,7 @@ pub fn GeneralTab(cluster_descriptor: RwSignal<UserClusterDescriptor>) -> impl I
     view! {
         <div>
             <ReadOnlyInput
-                label="Cluster ID"
+                label="ID"
                 value=cluster_id
             />
             <ClusterNameInput

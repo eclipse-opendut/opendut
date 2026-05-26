@@ -15,7 +15,7 @@ pub fn GeneralTab(viper_source_configuration: RwSignal<UserViperSourceConfigurat
     view! {
         <div>
             <ReadOnlyInput
-                label="Source ID"
+                label="ID"
                 value=source_id
             />
             <ViperSourceNameInput

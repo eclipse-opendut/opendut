@@ -11,7 +11,7 @@ pub fn GeneralTab(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl I
     view! {
         <div>
             <ReadOnlyInput
-                label="Peer ID"
+                label="ID"
                 value=peer_id
             />
             <PeerNameInput

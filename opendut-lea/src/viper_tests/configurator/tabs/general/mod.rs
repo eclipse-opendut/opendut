@@ -13,7 +13,7 @@ pub fn GeneralTab(viper_test_run_descriptor: RwSignal<UserViperTestRunDescriptor
     view! {
         <div>
             <ReadOnlyInput
-                label="Test ID"
+                label="ID"
                 value=test_id
             />
             <ViperTestNameInput

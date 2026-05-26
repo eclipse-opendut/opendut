@@ -51,7 +51,7 @@ pub fn PeerNameInput(peer_configuration: RwSignal<UserPeerConfiguration>) -> imp
         <UserInput
             getter=getter
             setter=setter
-            label="Peer Name"
+            label="Name"
             placeholder="MyAwesomePeer"
             validator=validator
         />
