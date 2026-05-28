@@ -70,24 +70,33 @@ pub fn ViperSourcesOverview() -> impl IntoView {
             <OverviewTable headings=table_headings>
                 { move || Suspend::new(async move {
                     let viper_sources = viper_sources.await;
-                    view! {
-                        <For
-                            each = move || viper_sources.clone()
-                            key = |viper_source| viper_source.id
-                            children = { move |viper_source_descriptor| {
 
-                                let on_delete = move || {
-                                    refetch_viper_sources.notify();
-                                };
+                    if viper_sources.is_empty() {
+                        view! {
+                            <tr>
+                                <td colspan="3" class="has-text-centered">"No viper sources have been created yet"</td>
+                            </tr>
+                        }.into_any()
+                    } else {
+                        view! {
+                            <For
+                                each = move || viper_sources.clone()
+                                key = |viper_source| viper_source.id
+                                children = { move |viper_source_descriptor| {
 
-                                view! {
-                                    <Row
-                                        viper_source_descriptor=RwSignal::new(viper_source_descriptor)
-                                        on_delete
-                                    />
-                                }
-                            }}
-                        />
+                                    let on_delete = move || {
+                                        refetch_viper_sources.notify();
+                                    };
+
+                                    view! {
+                                        <Row
+                                            viper_source_descriptor=RwSignal::new(viper_source_descriptor)
+                                            on_delete
+                                        />
+                                    }
+                                }}
+                            />
+                        }.into_any()
                     }
                 })}
             </OverviewTable>
