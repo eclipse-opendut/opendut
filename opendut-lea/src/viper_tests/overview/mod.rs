@@ -70,24 +70,33 @@ pub fn ViperTestsOverview() -> impl IntoView {
         <OverviewTable headings=table_headings>
             { move || Suspend::new(async move {
                     let viper_tests = viper_tests.await;
-                    view! {
-                        <For
-                            each = move || viper_tests.clone()
-                            key = |viper_tests| viper_tests.id
-                            children = { move |viper_test_run_descriptor| {
 
-                                let on_delete = move || {
-                                    refetch_viper_tests.notify();
-                                };
+                    if viper_tests.is_empty() {
+                        view! {
+                            <tr>
+                                <td colspan="3" class="has-text-centered">"No viper tests have been created yet"</td>
+                            </tr>
+                        }.into_any()
+                    } else {
+                        view! {
+                            <For
+                                each = move || viper_tests.clone()
+                                key = |viper_tests| viper_tests.id
+                                children = { move |viper_test_run_descriptor| {
 
-                                view! {
-                                    <Row
-                                        viper_test_run_descriptor=RwSignal::new(viper_test_run_descriptor)
-                                        on_delete
-                                    />
-                                }
-                            }}
-                        />
+                                    let on_delete = move || {
+                                        refetch_viper_tests.notify();
+                                    };
+
+                                    view! {
+                                        <Row
+                                            viper_test_run_descriptor=RwSignal::new(viper_test_run_descriptor)
+                                            on_delete
+                                        />
+                                    }
+                                }}
+                            />
+                        }.into_any()
                     }
                 })
             }

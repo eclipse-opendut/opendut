@@ -102,25 +102,33 @@ pub fn PeersOverview() -> impl IntoView {
                 { move || Suspend::new(async move {
                     let peers = registered_peers.await;
                     let configured_clusters = configured_clusters.await;
-                    
-                    view! {
-                        <For
-                            each = move || peers.clone()
-                            key = |(peer, _)| peer.id
-                            children = { move |(peer_descriptor, peer_state)| {
-                                let on_delete = move || {
-                                    refetch_registered_peers.notify();
-                                };
-                                view! {
-                                    <Row
-                                        peer_descriptor=RwSignal::new(peer_descriptor)
-                                        peer_state=RwSignal::new(peer_state)
-                                        cluster_descriptor=RwSignal::new(configured_clusters.clone())
-                                        on_delete
-                                    />
-                                }
-                            }}
-                        />
+
+                    if peers.is_empty() {
+                        view! {
+                            <tr>
+                                <td colspan="4" class="has-text-centered">"No peers have been created yet"</td>
+                            </tr>
+                        }.into_any()
+                    } else {
+                        view! {
+                            <For
+                                each = move || peers.clone()
+                                key = |(peer, _)| peer.id
+                                children = { move |(peer_descriptor, peer_state)| {
+                                    let on_delete = move || {
+                                        refetch_registered_peers.notify();
+                                    };
+                                    view! {
+                                        <Row
+                                            peer_descriptor=RwSignal::new(peer_descriptor)
+                                            peer_state=RwSignal::new(peer_state)
+                                            cluster_descriptor=RwSignal::new(configured_clusters.clone())
+                                            on_delete
+                                        />
+                                    }
+                                }}
+                            />
+                        }.into_any()
                     }
                 })}
             </OverviewTable>
