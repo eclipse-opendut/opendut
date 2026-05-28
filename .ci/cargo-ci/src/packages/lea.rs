@@ -115,7 +115,9 @@ fn build_impl(release: bool, passthrough: Vec<String>, out_dir: PathBuf) -> anyh
     command.arg("build");
 
     if release {
-        command.arg("--release");
+        command
+            .arg("--release")
+            .arg("--cargo-profile=wasm-release");
     }
 
     command.arg("--dist").arg(&out_dir);
