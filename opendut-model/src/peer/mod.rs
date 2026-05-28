@@ -322,7 +322,7 @@ mod tests {
         };
 
         let encoded = setup.encode()?;
-        assert_that!(encoded, eq("F88BABwHzrk8VikIvG691CJ7W1Stsq0oZqoIe8UvyoH_PRFpnb4ultPOwBIIA6HvxeijLgtHz4sDm85owAOwqZ6JwyfEEGrdHofwjzQ5IWRa6jJkyDKfwUhpkFglkMg0K7zMsyLmNFlce-LdpjRYNmPNj50t6_hAEi0KTgY9fIGLFdBn_YygfnHeO6OJx17_kdFILjuiItv4ff07YIy74sn6KXac9jJsHBHFwjmxf3vcy2CcgwExPFB-eIFID3Ox0HRF3GHbBTc-tmfeiZlH38gZugOAMb3mnEfAcSx2J6PiTuUXwC_GPSHOjSZJK8nMd9_RFQ-R-yRTQpVIC1z5YJLEIxhTwPlQKu-EK2RGFQ=="));
+        assert_that!(encoded, eq("F8oBABwHdiz4lWbaSDYvtcjeFlWr5lS6N1PXfcBE-dIHAFqnr4vl_90EO4HDA6E1sTHpvyyMxsTAAo0o4AAs1fPzEkOodnscwj9SZ4SQSaGLKEWa-hRGSoPYKoFYJmnuZZbmIaNJw9IR7zblk0G2b2zFwMew5FFIHfi5C14oQd7LewAPifPeGU3Yt-qnQ0dyzxE3xZ7vy29HMG7zO-3G0HLFs35FxLFIOfxve3sbTdI_IPobvCcPaBjhKR4kA8IGt25x4U978PTiGf1KzscDAIzpNcc0AK6GfIsvbu7YvgB-Ne4BYaoZk6yVZRG272jzm8h8nCqhCiQFrXwwcewRGZPD-ahQ3gmXy5Qq"));
 
         let decoded = PeerSetup::decode(&encoded)?;
         assert_that!(decoded, eq(&setup));
