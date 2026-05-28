@@ -6,18 +6,19 @@ import "opendut/model/util/net.proto";
 import "opendut/model/util/uuid.proto";
 
 
-enum ViperSourceKind {
-  VIPER_SOURCE_KIND_UNSPECIFIED = 0;
-  VIPER_SOURCE_KIND_GIT = 1;
-  VIPER_SOURCE_KIND_HTTP = 2;
-}
-
 message ViperSourceDescriptor {
   ViperSourceId id = 1;
   ViperSourceName name = 2;
   opendut.model.util.Url url = 3;
-  ViperSourceKind kind = 4;
+  oneof kind {
+    GitViperSource git = 4;
+    HttpViperSource http = 5;
+  }
 }
+
+message GitViperSource {}
+
+message HttpViperSource {}
 
 message ViperSourceId {
   opendut.model.util.Uuid uuid = 1;
