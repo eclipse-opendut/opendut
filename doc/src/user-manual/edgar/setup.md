@@ -3,10 +3,10 @@
 ### 1. Preparation
 
 Make sure, you can reach CARL from your target system.  
-For example, if CARL is hosted at `carl.opendut.local`, these two commands should work:
+For example, if CARL is hosted at `opendut.local`, these two commands should work:
 ```sh
-ping carl.opendut.local
-curl https://carl.opendut.local
+ping opendut.local
+curl https://opendut.local
 ```
 
 If you're self-hosting CARL, follow the instructions in [Self-Hosted Backend Server](#self-hosted-backend-server).
@@ -22,7 +22,7 @@ Alternatively, you can download directly to your target host with:
 ```sh
 curl https://$CARL_HOST/api/edgar/$ARCH/download --output opendut-edgar.tar.gz
 ```
-Replace `$CARL_HOST` with the domain where your CARL is hosted (e.g. `carl.opendut.local`),  
+Replace `$CARL_HOST` with the domain where your CARL is hosted (e.g. `opendut.local`),  
 and replace `$ARCH` with the appropriate CPU architecture.
 
 Available CPU architectures are:
@@ -72,7 +72,6 @@ If your backend server does not have a public DNS entry, you will need to adjust
 by appending entries like this (replace `123.456.789.101` with your server's IP address):
 ```
 123.456.789.101 opendut.local
-123.456.789.101 carl.opendut.local
 123.456.789.101 auth.opendut.local
 123.456.789.101 netbird-api.opendut.local
 123.456.789.101 netbird-relay.opendut.local
@@ -84,7 +83,7 @@ by appending entries like this (replace `123.456.789.101` with your server's IP 
 
 Now the following command should complete without errors:
 ```
-ping carl.opendut.local
+ping opendut.local
 ```
 
 ## CAN Setup

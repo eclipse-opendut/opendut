@@ -307,7 +307,7 @@ mod tests {
     fn A_PeerSetup_should_be_encodable() -> Result<()> {
         let setup = PeerSetup {
             id: PeerId::try_from("01bf3f8c-cc7c-4114-9520-91bce71dcead").unwrap(),
-            carl: Url::parse("https://carl.opendut.local")?,
+            carl: Url::parse("https://opendut.local")?,
             ca: Certificate(Pem::new("Test Tag".to_string(), vec![])),
             auth_config: AuthConfig::Enabled {
                 client_id: ClientId::from("client_id"),
