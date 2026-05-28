@@ -275,7 +275,7 @@ mod tests {
         let first = certificates.first().cloned().expect("No certificate found in test PEM chain.");
 
         let certificate_subject_name = read_certificate_subject(&first)?;
-        assert_eq!(certificate_subject_name, "CN=carl.opendut.local, C=XX, ST=Some-State, O=ExampleOrg");
+        assert_eq!(certificate_subject_name, "CN=opendut.local, C=XX, ST=Some-State, O=ExampleOrg");
         Ok(())
     }
 

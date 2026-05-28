@@ -64,7 +64,7 @@ pub async fn registration_client() -> RegistrationClientRef {
         peer_credentials: None,
         device_redirect_url: RedirectUrl::new(DEVICE_REDIRECT_URL.to_string()).unwrap(),
         client_home_base_url: ResourceHomeUrl::new(
-            Url::parse("https://carl.opendut.local/resources/uuid-123").unwrap(),
+            Url::parse("https://opendut.local/resources/uuid-123").unwrap(),
         ),
         registration_url: RegistrationUrl::from_url(
             issuer_remote_url
