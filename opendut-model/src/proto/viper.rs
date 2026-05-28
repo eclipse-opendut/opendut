@@ -49,10 +49,15 @@ mod conversions {
         type Proto = ViperSourceDescriptor;
 
         fn from(value: Model) -> Proto {
+            let kind = match value.kind {
+                crate::viper::ViperSourceKind::Git => ViperSourceKind::Git,
+                crate::viper::ViperSourceKind::Http => ViperSourceKind::Http,
+            };
             Proto {
                 id: Some(value.id.into()),
                 name: Some(value.name.into()),
                 url: Some(value.url.into()),
+                kind: kind.into(),
             }
         }
 
@@ -66,7 +71,13 @@ mod conversions {
             let url = extract!(value.url)?
                 .try_into()?;
 
-            Ok(Model { id, name, url })
+            let kind = match ViperSourceKind::try_from(value.kind) {
+                Ok(ViperSourceKind::Git) => crate::viper::ViperSourceKind::Git,
+                Ok(ViperSourceKind::Http) => crate::viper::ViperSourceKind::Http,
+                _ => return Err(ErrorBuilder::message("ViperSourceKind is unspecified or invalid")),
+            };
+
+            Ok(Model { id, name, url, kind })
         }
     }
 
