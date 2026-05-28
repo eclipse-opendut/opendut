@@ -122,6 +122,7 @@ participant EDGAR
 participant "VIPER-Runtime" as VIPER
 participant Source
 
+
 == Defining a test suite source ==
 
 UI --> CARL: Store source definition\n(SourceDescriptor)
@@ -149,17 +150,31 @@ UI <-- CARL: Success
 
 
 == Running a test suite ==
+
 UI --> CARL: StoreViperTestRunDeployment (triggers test run)
 CARL --> UI: Success
 
-CARL --> EDGAR: Selected suite name & \n source & parameter values
 
-EDGAR -> VIPER: Selected suite name & \n source & parameter values
 
+group Pre-fetch source code
+
+note over CARL, VIPER: CARL fetches source code (using VIPER as library), so \nthat EDGAR does not need network access to the Source.
+CARL -> VIPER: SourceDescriptor
 activate VIPER
 VIPER --> Source: Fetch
 VIPER <-- Source: Source code
-VIPER -> VIPER: Compile & Run
+CARL <- VIPER: Source code
+deactivate VIPER
+
+end
+
+
+CARL --> EDGAR: Selected suite name & \n source code & parameter values
+
+EDGAR -> VIPER: Selected suite name & \n source code & parameter values
+
+activate VIPER
+VIPER -> VIPER: Compile & Run \n(EmbeddedSource)
 EDGAR <- VIPER: Test results
 deactivate VIPER
 
