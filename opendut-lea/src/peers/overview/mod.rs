@@ -106,7 +106,7 @@ pub fn PeersOverview() -> impl IntoView {
                     if peers.is_empty() {
                         view! {
                             <tr>
-                                <td colspan="4" class="has-text-centered">"No peers have been created yet"</td>
+                                <td colspan="999" class="has-text-centered">"No peers have been created yet"</td>
                             </tr>
                         }.into_any()
                     } else {

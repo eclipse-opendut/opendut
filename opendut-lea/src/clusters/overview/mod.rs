@@ -99,7 +99,7 @@ pub fn ClustersOverview() -> impl IntoView {
                             if clusters.is_empty() {
                                 view! {
                                     <tr>
-                                        <td colspan="4" class="has-text-centered">"No clusters have been created yet"</td>
+                                        <td colspan="999" class="has-text-centered">"No clusters have been created yet"</td>
                                     </tr>
                                 }.into_any()
                             } else {
