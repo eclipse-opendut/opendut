@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use leptos::prelude::*;
 use leptos_router::hooks::{use_navigate, use_params_map};
+use opendut_carl_api::carl::ClientError;
+use opendut_carl_api::carl::viper::GetViperTestSuiteParametersError;
 use opendut_lea_components::{BasePageContainer, Breadcrumb, LoadingSpinner, UserInputError, UserInputValue};
 use opendut_lea_components::tabs::{Tab, Tabs};
 use opendut_model::viper::{ViperParameterDescriptor, ViperParameterName, ViperTestId, ViperTestRunDescriptor};
@@ -100,42 +102,53 @@ pub fn ViperTestConfigurator() -> impl IntoView {
 
             async move {
                 if let Some(source_id) = source_id {
-                    let test_suite_descriptor = carl.viper.get_viper_test_suite_parameters(source_id).await
-                        .expect("Failed to request the viper test suite descriptor."); // Todo: Error-Handling
+                    let result = carl.viper.get_viper_test_suite_parameters(source_id).await;
 
-                    viper_test_run_descriptor.update(|user_configuration| {
-                        let mut new_parameters: HashMap<ViperParameterName, ViperBindingValueInput> = HashMap::new();
+                    match result {
+                        Ok(test_suite_descriptor) => {
+                            viper_test_run_descriptor.update(|user_configuration| {
+                                let mut new_parameters: HashMap<ViperParameterName, ViperBindingValueInput> = HashMap::new();
 
-                        for parameter in test_suite_descriptor.parameters.iter() {
-                            let parameter_name = parameter.name().clone();
+                                for parameter in test_suite_descriptor.parameters.iter() {
+                                    let parameter_name = parameter.name().clone();
 
-                            let value = user_configuration
-                                .parameters
-                                .get(&parameter_name)
-                                .cloned()
-                                .unwrap_or_else(|| {
-                                    match parameter {
-                                        ViperParameterDescriptor::BooleanParameter { .. } => {
-                                            // Todo: Remove this match arm, when backend/VIPER forces default parameters for `BooleanParameter`.
-                                            ViperBindingValueInput::Right(None)
-                                        }
-                                        _ if parameter.has_default_value() => {
-                                            ViperBindingValueInput::Right(None)
-                                        }
-                                        _ => {
-                                            ViperBindingValueInput::Left(String::from("Please enter a value."))
-                                        }
-                                    }
-                                });
+                                    let value = user_configuration
+                                        .parameters
+                                        .get(&parameter_name)
+                                        .cloned()
+                                        .unwrap_or_else(|| {
+                                            match parameter {
+                                                ViperParameterDescriptor::BooleanParameter { .. } => {
+                                                    // Todo: Remove this match arm, when backend/VIPER forces default parameters for `BooleanParameter`.
+                                                    ViperBindingValueInput::Right(None)
+                                                }
+                                                _ if parameter.has_default_value() => {
+                                                    ViperBindingValueInput::Right(None)
+                                                }
+                                                _ => {
+                                                    ViperBindingValueInput::Left(String::from("Please enter a value."))
+                                                }
+                                            }
+                                        });
 
-                            new_parameters.insert(parameter_name, value);
+                                    new_parameters.insert(parameter_name, value);
+                                }
+                                user_configuration.parameters = new_parameters;
+                            });
+
+                            Ok(test_suite_descriptor.parameters)
+                        },
+                        Err(client_error) => {
+                            match client_error {
+                                ClientError::UsageError(error) => {
+                                    Err(SourceFetchError::GetParameterError(error))
+                                }
+                                _ => panic!("Failed to request the viper test suite descriptor.")
+                            }
                         }
-                        user_configuration.parameters = new_parameters;
-                    });
-
-                    Some(test_suite_descriptor.parameters)
+                    }
                 } else {
-                    None
+                    Err(SourceFetchError::NoSourceSelected)
                 }
             }
         })
@@ -203,14 +216,13 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                 {
                     move || Suspend::new(async move {
                         viper_test_run_descriptor_resource.await;
-                        let parameters = parameters.await;
-
+                        let parameter_result = parameters.await;
                         view! {
                             <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
                                 { move || match active_tab.get() {
                                     TabIdentifier::General => view! { <GeneralTab viper_test_run_descriptor /> }.into_any(),
                                     TabIdentifier::ViperSource => view! { <SourceTab viper_test_run_descriptor /> }.into_any(),
-                                    TabIdentifier::Parameters => view! { <ParametersTab viper_test_run_descriptor parameters=parameters.clone() /> }.into_any(),
+                                    TabIdentifier::Parameters => view! { <ParametersTab viper_test_run_descriptor parameter_result=parameter_result.clone() /> }.into_any(),
                                     TabIdentifier::Cluster => view! { <ClusterTab viper_test_run_descriptor /> }.into_any(),
                                 }}
                             </Tabs>
@@ -220,4 +232,10 @@ pub fn ViperTestConfigurator() -> impl IntoView {
             </Suspense>
         </BasePageContainer>
     }
+}
+
+#[derive(Debug, Clone)]
+enum SourceFetchError {
+    NoSourceSelected,
+    GetParameterError(GetViperTestSuiteParametersError),
 }
