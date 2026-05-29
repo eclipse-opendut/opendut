@@ -228,15 +228,15 @@ mod test_manager {
     impl From<test_manager::get_viper_test_suite_parameters::GetViperTestSuiteParametersError> for GetViperTestSuiteParametersError {
         fn from(value: test_manager::get_viper_test_suite_parameters::GetViperTestSuiteParametersError) -> Self {
             match value {
-                test_manager::get_viper_test_suite_parameters::GetViperTestSuiteParametersError::Compilation { source_id } => 
-                    Self::Compilation { source_id },
+                test_manager::get_viper_test_suite_parameters::GetViperTestSuiteParametersError::Compilation { source_id, source_name } =>
+                    Self::Compilation { source_id, source_name },
                 test_manager::get_viper_test_suite_parameters::GetViperTestSuiteParametersError::TaskJoin { source_id, when, cause: _ } =>
                     Self::Internal {
                         source_id,
                         cause: format!("Internal error when {when} to completion while retrieving VIPER test suite descriptor"),
                     },
-                test_manager::get_viper_test_suite_parameters::GetViperTestSuiteParametersError::ViperRuntime { source_id } => 
-                    Self::ViperRuntime { source_id },
+                test_manager::get_viper_test_suite_parameters::GetViperTestSuiteParametersError::ViperRuntime { source_id, source_name } => 
+                    Self::ViperRuntime { source_id, source_name },
                 test_manager::get_viper_test_suite_parameters::GetViperTestSuiteParametersError::Persistence { source_id, cause: _ } =>
                     Self::Internal {
                         source_id,

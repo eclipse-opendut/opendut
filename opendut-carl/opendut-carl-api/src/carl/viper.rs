@@ -64,19 +64,21 @@ pub enum ListViperSourceDescriptorsError {
 // ViperTestSuiteParameters
 //
 
-#[derive(thiserror::Error, Debug)]
+#[derive(thiserror::Error, Debug, Clone)]
 pub enum GetViperTestSuiteParametersError {
-    #[error("A VIPER source with ID <{source_id}> could not be found, while fetching VIPER test suite descriptor.")]
+    #[error("The VIPER source <{source_id}> could not be found, while fetching VIPER test suite descriptor.")]
     SourceNotFound {
         source_id: ViperSourceId,
     },
-    #[error("Compilation failed while getting VIPER test suite descriptor for source <{source_id}>.")]
+    #[error("Compilation failed while getting VIPER test suite descriptor for source {source_name} <{source_id}>.")]
     Compilation {
         source_id: ViperSourceId,
+        source_name: ViperSourceName,
     },
-    #[error("Error while initializing VIPER runtime for VIPER test source <{source_id}>.")]
+    #[error("Error while initializing VIPER runtime for VIPER test source {source_name} with the ID <{source_id}>.")]
     ViperRuntime {
         source_id: ViperSourceId,
+        source_name: ViperSourceName,
     },
     #[error("An internal error occurred while fetching the VIPER test suite descriptor for source <{source_id}>:\n  {cause}")]
     Internal {
