@@ -194,19 +194,21 @@ conversion! {
 
     fn from(value: Model) -> Proto {
         let proto_error = match value {
-            Model::SourceNotFound { source_id } => {
+            Model::SourceNotFound { source_id} => {
                 get_viper_test_suite_parameters_failure::Error::SourceNotFound(GetViperTestSuiteParametersFailureSourceNotFound {
                     source_id: Some(source_id.into()),
                 })
             }
-            Model::Compilation { source_id } => {
+            Model::Compilation { source_id, source_name } => {
                 get_viper_test_suite_parameters_failure::Error::Compilation(GetViperTestSuiteParametersFailureCompilation {
                     source_id: Some(source_id.into()),
+                    source_name: Some(source_name.into()),
                 })
             }
-            Model::ViperRuntime { source_id } => {
+            Model::ViperRuntime { source_id, source_name } => {
                 get_viper_test_suite_parameters_failure::Error::ViperRuntime(GetViperTestSuiteParametersFailureViperRuntime {
                     source_id: Some(source_id.into()),
+                    source_name: Some(source_name.into()),
                 })
             }
             Model::Internal { source_id, cause } => {
@@ -232,13 +234,15 @@ conversion! {
             }
             get_viper_test_suite_parameters_failure::Error::Compilation(error) => {
                 let source_id = extract!(error.source_id)?.try_into()?;
+                let source_name = extract!(error.source_name)?.try_into()?;
                 
-                Ok(Model::Compilation { source_id })
+                Ok(Model::Compilation { source_id, source_name })
             },
             get_viper_test_suite_parameters_failure::Error::ViperRuntime(error) => {
                 let source_id = extract!(error.source_id)?.try_into()?;
+                let source_name = extract!(error.source_name)?.try_into()?;
                 
-                Ok(Model::ViperRuntime{ source_id })
+                Ok(Model::ViperRuntime{ source_id, source_name })
             }
             get_viper_test_suite_parameters_failure::Error::Internal(error) => {
                 let source_id = extract!(error.source_id)?.try_into()?;

@@ -206,10 +206,12 @@ message GetViperTestSuiteParametersFailureSourceNotFound {
 
 message GetViperTestSuiteParametersFailureCompilation {
   opendut.model.viper.ViperSourceId source_id = 1;
+  opendut.model.viper.ViperSourceName source_name = 2;
 }
 
 message GetViperTestSuiteParametersFailureViperRuntime {
   opendut.model.viper.ViperSourceId source_id = 1;
+  opendut.model.viper.ViperSourceName source_name = 2;
 }
 
 message GetViperTestSuiteParametersFailureInternal {
