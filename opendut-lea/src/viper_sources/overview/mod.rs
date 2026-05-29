@@ -74,7 +74,7 @@ pub fn ViperSourcesOverview() -> impl IntoView {
                     if viper_sources.is_empty() {
                         view! {
                             <tr>
-                                <td colspan="3" class="has-text-centered">"No viper sources have been created yet"</td>
+                                <td colspan="999" class="has-text-centered">"No VIPER sources have been created yet"</td>
                             </tr>
                         }.into_any()
                     } else {
