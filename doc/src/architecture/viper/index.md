@@ -158,7 +158,7 @@ CARL --> UI: Success
 
 group Pre-fetch source code
 
-note over CARL, VIPER: CARL fetches source code (using VIPER as library), so \nthat EDGAR does not need network access to the Source.
+note over CARL, VIPER: CARL fetches source code (using VIPER as library), so that \nEDGAR does not need secrets nor network access to the Source.
 CARL -> VIPER: SourceDescriptor
 activate VIPER
 VIPER --> Source: Fetch
