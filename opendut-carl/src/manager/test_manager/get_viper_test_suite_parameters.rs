@@ -1,5 +1,5 @@
 use tracing::debug;
-use opendut_model::viper::{ViperSourceDescriptor, ViperSourceId, ViperTestSuiteParameters};
+use opendut_model::viper::{ViperSourceDescriptor, ViperSourceId, ViperSourceName, ViperTestSuiteParameters};
 use opendut_viper_rt::common::TestSuiteIdentifier;
 use opendut_viper_rt::compile::{IdentifierFilter};
 use opendut_viper_rt::events::emitter;
@@ -25,12 +25,12 @@ impl Resources<'_> {
 
 
 async fn discover_suite(source: ViperSourceDescriptor) -> Result<Option<ViperTestSuiteParameters>, GetViperTestSuiteParametersError>  {
-    let ViperSourceDescriptor { id: source_id, name, url } = source;
+    let ViperSourceDescriptor { id: source_id, name: source_name, url } = source;
 
-    let name = TestSuiteIdentifier::try_from(name.value())
+    let test_suite_identifier = TestSuiteIdentifier::try_from(source_name.value())
         .expect("Conversion of source name to TestSuiteIdentifier failed."); //FIXME ViperSourceDescriptor should use TestSuiteIdentifier directly, making this conversion obsolete
 
-    let source = Source::from_url(name, url);
+    let source = Source::from_url(test_suite_identifier, url);
 
     debug!("Calling VIPER to compile source into test suite.");
 
@@ -39,10 +39,10 @@ async fn discover_suite(source: ViperSourceDescriptor) -> Result<Option<ViperTes
             let viper_runtime = ViperRuntime::new(ViperOptions {
                 source_loaders: vec![Box::new(HttpSourceLoader)],
                 ..Default::default()
-            }).map_err(|_| GetViperTestSuiteParametersError::ViperRuntime { source_id })?;
+            }).map_err(|_| GetViperTestSuiteParametersError::ViperRuntime { source_id, source_name: source_name.clone() })?;
 
             let compilation = viper_runtime.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await
-                .map_err(|_| GetViperTestSuiteParametersError::Compilation { source_id })?;
+                .map_err(|_| GetViperTestSuiteParametersError::Compilation { source_id, source_name: source_name.clone() })?;
 
             Ok((compilation.identifier().to_owned(), compilation.parameters().to_owned()))
         })
@@ -62,9 +62,10 @@ async fn discover_suite(source: ViperSourceDescriptor) -> Result<Option<ViperTes
 
 #[derive(thiserror::Error, Debug)]
 pub enum GetViperTestSuiteParametersError {
-    #[error("Compilation failed while getting VIPER test suite descriptor for source <{source_id}>.")]
+    #[error("Compilation failed while getting VIPER test suite descriptor for source {source_name} with ID <{source_id}>.")]
     Compilation {
         source_id: ViperSourceId,
+        source_name: ViperSourceName,
     },
     #[error("Async task failed when {when} while getting VIPER test suite descriptor for source <{source_id}>.")]
     TaskJoin {
@@ -72,9 +73,10 @@ pub enum GetViperTestSuiteParametersError {
         when: &'static str,
         #[source] cause: tokio::task::JoinError,
     },
-    #[error("Error while initializing VIPER runtime for VIPER test source <{source_id}>.")]
+    #[error("Error while initializing VIPER runtime for VIPER test source {source_name} with ID <{source_id}>.")]
     ViperRuntime {
         source_id: ViperSourceId,
+        source_name: ViperSourceName,
     },
     #[error("Error when accessing persistence while getting VIPER test suite descriptor for source <{source_id}>")]
     Persistence {
