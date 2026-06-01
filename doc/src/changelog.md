@@ -12,15 +12,21 @@ Always create a database backup before upgrading CARL.
 
 ### Fixed
 * Connections via CAN should work again, after fixes for two issues:
-  * https://github.com/eclipse-opendut/opendut/pull/494
-  * https://github.com/eclipse-opendut/opendut/issues/518
+  * <https://github.com/eclipse-opendut/opendut/pull/494>
+  * <https://github.com/eclipse-opendut/opendut/issues/518>
 * EDGAR: Don't use the operating system's certificate management anymore, making EDGAR more portable across distributions.
+* LEA has been made about 1/3 smaller to improve loading times.
+
+## Added
+* LEA can now optionally display a footer.
+* LEA now allows deploying a cluster from the configuration view.
+* LEA now shows a message when a list contains no elements.
 
 New contributors:
 [@mohammadp1001](https://github.com/mohammadp1001),
 [@raihhann](https://github.com/raihhann),
 [@likhithst](https://github.com/likhithst),
-[@sdv-infy](https://github.com/sdv-infy]
+[@sdv-infy](https://github.com/sdv-infy)
 
 
 ## [0.10.0] - 2026-04-02
