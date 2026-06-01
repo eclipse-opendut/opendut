@@ -71,41 +71,43 @@ pub(super) fn update_peer_configuration(
         }];
         let can_dependencies = can_bridges.set_all_present(expected_can_bridges, device_dependencies.clone());
 
-        // CAN connections
-        if cluster_assignment.leader == peer_descriptor.id {
-            let remote_peers = cluster_assignment.non_leader_assignments();
-            let expected_can_connections = remote_peers.into_iter()
-                .map(|(remote_peer_id, peer_cluster_assignment)| {
-                    parameter::CanConnection {
-                        can_interface_name: can_bridge.clone(),
-                        local_is_server: true,
-                        remote_peer_id,
-                        remote_ip: peer_cluster_assignment.vpn_address,
-                        remote_port: peer_cluster_assignment.can_server_port,
-                        local_port: peer_cluster_assignment.can_server_port,
-                        buffer_timeout_microseconds: 100,
-                    }
-                });
-            can_connections.set_all_present(expected_can_connections, can_dependencies.clone());
-        } else {
-            let leader = cluster_assignment.leader_assignment();
-            match leader {
-                Some(leader_assignment) => {
-                    let can_connection = parameter::CanConnection {
-                        can_interface_name: can_bridge.clone(),
-                        local_is_server: false,
-                        remote_peer_id: cluster_assignment.leader,
-                        remote_ip: leader_assignment.vpn_address,
-                        remote_port: leader_assignment.can_server_port,
-                        local_port: leader_assignment.can_server_port,
-                        buffer_timeout_microseconds: 100,
-                    };
-                    let expected_can_connections = vec![can_connection];
-                    can_connections.set_all_present(expected_can_connections, can_dependencies.clone());
-                }
-                None => {
-                    return Err(AssignClusterError::PeerNotFound(cluster_assignment.leader));
-                }
+        { // CAN connections
+            let buffer_timeout_microseconds = 100;
+            let leader_assignment = cluster_assignment.leader_assignment()
+                .ok_or(AssignClusterError::PeerNotFound(cluster_assignment.leader))?;
+
+            if cluster_assignment.leader == peer_descriptor.id {
+                let remote_peers = cluster_assignment.non_leader_assignments();
+
+                let expected_can_connections = remote_peers.into_iter()
+                    .map(|(remote_peer_id, remote_assignment)| {
+                        parameter::CanConnection {
+                            can_interface_name: can_bridge.clone(),
+                            local_is_server: true,
+                            remote_peer_id,
+                            remote_ip: remote_assignment.vpn_address,
+                            remote_port: remote_assignment.can_server_port,
+                            local_port: leader_assignment.can_server_port,
+                            buffer_timeout_microseconds,
+                        }
+                    });
+                can_connections.set_all_present(expected_can_connections, can_dependencies.clone());
+            }
+            else {
+                let local_assignment = cluster_assignment.assignments.get(&peer_descriptor.id)
+                    .ok_or(AssignClusterError::PeerNotFound(peer_descriptor.id))?;
+
+                let can_connection = parameter::CanConnection {
+                    can_interface_name: can_bridge.clone(),
+                    local_is_server: false,
+                    remote_peer_id: cluster_assignment.leader,
+                    remote_ip: leader_assignment.vpn_address,
+                    remote_port: leader_assignment.can_server_port,
+                    local_port: local_assignment.can_server_port,
+                    buffer_timeout_microseconds,
+                };
+                let expected_can_connections = vec![can_connection];
+                can_connections.set_all_present(expected_can_connections, can_dependencies.clone());
             }
         }
 

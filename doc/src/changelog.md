@@ -11,6 +11,9 @@ Always create a database backup before upgrading CARL.
 ## Unreleased
 
 ### Fixed
+* Connections via CAN should work again, after fixes for two issues:
+  * https://github.com/eclipse-opendut/opendut/pull/494
+  * https://github.com/eclipse-opendut/opendut/issues/518
 * EDGAR: Don't use the operating system's certificate management anymore, making EDGAR more portable across distributions.
 
 New contributors:
