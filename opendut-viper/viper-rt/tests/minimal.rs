@@ -10,7 +10,7 @@ use opendut_viper_rt::source::Source;
 use opendut_viper_rt::ViperRuntime;
 
 async fn compile_test(runtime: &ViperRuntime, source: &Source) -> CompileResult<Compilation> {
-    runtime.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await
+    runtime.compile(source, &mut emitter::drain(), &IdentifierFilter::default()).await
 }
 
 #[tokio::test]

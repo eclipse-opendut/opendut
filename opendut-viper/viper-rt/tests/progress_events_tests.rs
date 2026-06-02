@@ -13,7 +13,7 @@ use opendut_viper_rt::source::Source;
 use opendut_viper_rt::ViperRuntime;
 
 async fn compile_test(runtime: &ViperRuntime, source: &Source, emitter: &mut dyn EventEmitter<CompileEvent>) -> CompileResult<Compilation> {
-    runtime.compile(&source, emitter, &IdentifierFilter::default()).await
+    runtime.compile(source, emitter, &IdentifierFilter::default()).await
 }
 
 const EXAMPLE_CODE: &str = indoc!(r#"
