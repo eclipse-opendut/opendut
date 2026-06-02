@@ -54,8 +54,8 @@ jobs:
     with:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
 
-  lint-viper-rt:
-    uses: ./.github/workflows/job-lint-viper-rt.yaml
+  lint:
+    uses: ./.github/workflows/job-lint.yaml
     with:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
 

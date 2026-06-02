@@ -1,4 +1,4 @@
-name: lint-viper-rt  # VIPER RT has many feature flags, which can lead to dead code warnings that we want to avoid.
+name: lint
 on:
   workflow_call:  # allow this workflow to be called from other workflows
     inputs:
@@ -12,8 +12,8 @@ defaults:
     shell: bash  # turns on pipefail in all run-blocks: https://github.com/actions/runner-images/issues/4459#issuecomment-1374859960
 
 jobs:
-  test:
-    name: Lint VIPER-RT
+  lint:
+    name: Run Linter
     runs-on: ${{ fromJson(inputs.runs-on) }}
     steps:
       - name: Checkout sources
@@ -22,8 +22,9 @@ jobs:
       - name: Rust setup
         uses: ./.github/actions/rust-setup
 
-      - name: Run linter with default features
-        run: cargo clippy --package opendut-viper-rt -- --deny warnings
-
       - name: Run linter with all features
-        run: cargo clippy --package opendut-viper-rt --all-features -- --deny warnings
+        run: cargo clippy --all-features --all-targets -- --deny warnings
+
+      # VIPER RT has many feature flags, which can lead to dead code warnings that we want to avoid.
+      - name: Run linter with default features
+        run: cargo clippy --package opendut-viper-rt --all-targets -- --deny warnings
