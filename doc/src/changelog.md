@@ -8,7 +8,7 @@ When upgrading between versions of CARL, do not skip versions,
 since migrations are only provided from one version to the next.
 Always create a database backup before upgrading CARL.
 
-## Unreleased
+## [v0.10.1] - 2026-06-03
 
 ### Fixed
 * Connections via CAN should work again, after fixes for two issues:
