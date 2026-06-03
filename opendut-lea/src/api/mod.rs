@@ -35,6 +35,7 @@ mod licenses {
     #[derive(Deserialize)]
     pub struct LicensesIndexJson {
         pub carl: String,
+        pub cleo: String,
         pub edgar: String,
         pub lea: String,
     }
@@ -53,7 +54,7 @@ mod licenses {
                 .await
                 .map_err(|cause| ApiError::HttpError {
                     message: format!(
-                        "Failed to request the licenses index file due to: {cause}"                        
+                        "Failed to request the licenses index file due to: {cause}"
                     ),
                 })?
                 .json::<LicensesIndexJson>()
@@ -65,6 +66,7 @@ mod licenses {
             [
                 ("carl", format!("/api/licenses/{}", licenses_index.carl)),
                 ("edgar", format!("/api/licenses/{}", licenses_index.edgar)),
+                ("cleo", format!("/api/licenses/{}", licenses_index.cleo)),
                 ("lea", format!("/api/licenses/{}", licenses_index.lea)),
             ]
         };
