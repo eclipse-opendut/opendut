@@ -12,7 +12,6 @@ services:
         aliases:
           - ${OPENDUT_DOMAIN_CARL}
           - ${OPENDUT_DOMAIN_OPENTELEMETRY}
-          - ${OPENDUT_DOMAIN_SUFFIX}
 
 
   traefik-internal:

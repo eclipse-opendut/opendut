@@ -38,7 +38,6 @@ services:
       dockerfile: ./.ci/deploy/localenv/data/provision/Dockerfile
     environment:
       - SSL_CERT_FILE=${OPENDUT_CERT_CA_PATH}
-      - OPENDUT_DOMAIN_SUFFIX
       - OPENDUT_DOMAIN_CARL
       - OPENDUT_DOMAIN_AUTH
       - OPENDUT_DOMAIN_NETBIRD
@@ -222,7 +221,6 @@ services:
     networks:
       opendut_local:
         aliases:
-          - ${OPENDUT_DOMAIN_SUFFIX}
           - ${OPENDUT_DOMAIN_NETBIRD}
           - ${OPENDUT_DOMAIN_NETBIRD_API}
           - ${OPENDUT_DOMAIN_AUTH}
@@ -297,11 +295,6 @@ services:
       - NETBIRD_SIGNAL_DOMAIN=${OPENDUT_DOMAIN_SIGNAL}
       - NETBIRD_SIGNAL_PROTOCOL=https
       - NETBIRD_SIGNAL_PORT=443
-      # TURN server settings, to be removed
-      - TURN_DOMAIN=${OPENDUT_DOMAIN_SUFFIX}
-      - TURN_PORT=3478
-      - TURN_USER=self
-      - TURN_PASSWORD
       # Relay server settings
       - NETBIRD_RELAY_DOMAIN=${OPENDUT_DOMAIN_NETBIRD_RELAY}
       - NETBIRD_RELAY_PORT=443

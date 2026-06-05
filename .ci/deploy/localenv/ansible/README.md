@@ -17,7 +17,6 @@
         opendut_version_ref: "development"
         opendut_carl_image_version: "0.8.0"
         opendut_compose_environment_config: |
-          OPENDUT_DOMAIN_SUFFIX="opendut.local"
           OPENDUT_DOMAIN_NETBIRD_API="netbird-api.opendut.local"
           OPENDUT_DOMAIN_AUTH="auth.opendut.local"
           OPENDUT_DOMAIN_SIGNAL="signal.opendut.local"
