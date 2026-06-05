@@ -7,7 +7,6 @@ set -x
 
 # Fail fast if any required domain variable is empty
 required_vars=(
-    OPENDUT_DOMAIN_SUFFIX
 	OPENDUT_DOMAIN_CARL
 	OPENDUT_DOMAIN_AUTH
 	OPENDUT_DOMAIN_NETBIRD
@@ -29,7 +28,6 @@ done
 /scripts/generate-intermediate-ca.sh "intermediate-ca"
 
 # Create server certificates
-/scripts/generate-certificate.sh "${OPENDUT_DOMAIN_SUFFIX}"
 /scripts/generate-certificate.sh "${OPENDUT_DOMAIN_AUTH}"
 /scripts/generate-certificate.sh "${OPENDUT_DOMAIN_NETBIRD}"
 /scripts/generate-certificate.sh "${OPENDUT_DOMAIN_NETBIRD_RELAY}"
@@ -46,7 +44,6 @@ done
 /scripts/generate-client-certificate.sh "edgar-leader"
 
 # Create CARL certificate from intermediate CA (for testing) and store in different directory (/provision/pki/deploy-intermediate)
-/scripts/generate-certificate.sh "${OPENDUT_DOMAIN_SUFFIX}" "intermediate-ca" "deploy-intermediate"
 /scripts/generate-certificate.sh "${OPENDUT_DOMAIN_AUTH}" "intermediate-ca" "deploy-intermediate"
 /scripts/generate-certificate.sh "${OPENDUT_DOMAIN_NETBIRD}" "intermediate-ca" "deploy-intermediate"
 /scripts/generate-certificate.sh "${OPENDUT_DOMAIN_NETBIRD_RELAY}" "intermediate-ca" "deploy-intermediate"
