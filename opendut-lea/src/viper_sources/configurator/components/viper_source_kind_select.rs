@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use opendut_lea_components::{SelectionOption, UserInputValue, UserSelect};
+use opendut_lea_components::{SelectionOption, UserSelect};
 use crate::viper_sources::configurator::types::UserViperSourceConfiguration;
 
 #[component]
@@ -27,7 +27,7 @@ pub fn ViperSourceKindSelect(viper_source_configuration: RwSignal<UserViperSourc
         <UserSelect
             options
             initial_option
-            getter=getter.into()
+            getter=getter
             setter=setter
             label="Source Kind"
         />

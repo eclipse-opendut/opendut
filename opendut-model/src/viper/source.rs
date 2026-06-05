@@ -104,18 +104,12 @@ impl FromStr for ViperSourceName {
 }
 
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ViperSourceKind {
     Git,
+    #[default]
     Http,
 }
-
-impl Default for ViperSourceKind {
-    fn default() -> Self {
-        Self::Http
-    }
-}
-
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ViperSourceDescriptor {

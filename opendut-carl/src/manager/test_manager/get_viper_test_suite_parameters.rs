@@ -36,6 +36,7 @@ async fn discover_suite(source: ViperSourceDescriptor) -> Result<Option<ViperTes
 
     let handle = tokio::task::spawn_blocking(move || {
         tokio::runtime::Handle::current().block_on(async move {
+            #[allow(clippy::needless_update)]
             let viper_runtime = ViperRuntime::new(ViperOptions {
                 source_loaders: vec![Box::new(HttpSourceLoader)],
                 ..Default::default()
