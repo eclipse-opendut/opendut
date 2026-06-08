@@ -143,7 +143,7 @@ pub(crate) mod testing {
                     id: source_id,
                     name: ViperSourceName::try_from(format!("ViperSource-{source_id}"))?,
                     url: Url::parse("http://localhost")?,
-                    kind: ViperSourceKind::default(),
+                    kind: ViperSourceKind::Http,
                 };
 
                 resource_manager.insert(source_id, source_descriptor.clone()).await?;

@@ -104,10 +104,9 @@ impl FromStr for ViperSourceName {
 }
 
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ViperSourceKind {
     Git,
-    #[default]
     Http,
 }
 

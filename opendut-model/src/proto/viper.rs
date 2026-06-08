@@ -51,10 +51,10 @@ mod conversions {
         fn from(value: Model) -> Proto {
             let kind = match value.kind {
                 crate::viper::ViperSourceKind::Git => {
-                    viper_source_descriptor::Kind::Git(GitViperSource {})
+                    viper_source_descriptor::Kind::Git(ViperSourceKindGit {})
                 }
                 crate::viper::ViperSourceKind::Http => {
-                    viper_source_descriptor::Kind::Http(HttpViperSource {})
+                    viper_source_descriptor::Kind::Http(ViperSourceKindHttp {})
                 }
             };
             Proto {
