@@ -36,8 +36,11 @@ async fn discover_suite(source: ViperSourceDescriptor) -> Result<Option<ViperTes
 
     let handle = tokio::task::spawn_blocking(move || {
         tokio::runtime::Handle::current().block_on(async move {
+            // The ..Default::default() is needed here because ViperOptions has additional fields (e.g. container_runtime) under other feature flags. Removing it breaks the --all-features build.
+            #[allow(clippy::needless_update)]
             let viper_runtime = ViperRuntime::new(ViperOptions {
                 source_loaders: vec![Box::new(HttpSourceLoader)],
+                ..Default::default()
             }).map_err(|_| GetViperTestSuiteParametersError::ViperRuntime { source_id, source_name: source_name.clone() })?;
 
             let compilation = viper_runtime.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await
