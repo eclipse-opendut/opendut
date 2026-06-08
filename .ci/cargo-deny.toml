@@ -25,6 +25,8 @@ ignore = [
     { id = "RUSTSEC-2025-0134", reason = "`rustls-pemfile` library is unmaintained. No actual vulnerability known and the advisory says that it is just a thin wrapper at this point. Is depended on by the `axum-server` library in version 0.7.x, which is what we're currently pinned to by axum-server-dual-protocol v0.7.0. Tracked by issue #426." },
 
     { id = "RUSTSEC-2025-0057", reason = "`fxhash` library is unmaintained. No actual vulnerability known. Is depended on by `wasmtime` in version 36.x. We stick to this `wasmtime` version, because it is an LTS and versions 39+ contain the `im-rc` dependency, which is under MPL-2.0." },
+
+    { id = "RUSTSEC-2026-0173", reason = "`proc-macro-error2` library is unmaintained. No actual vulnerability known."}
 ]
 
 [licenses]
