@@ -36,10 +36,8 @@ async fn discover_suite(source: ViperSourceDescriptor) -> Result<Option<ViperTes
 
     let handle = tokio::task::spawn_blocking(move || {
         tokio::runtime::Handle::current().block_on(async move {
-            #[allow(clippy::needless_update)]
             let viper_runtime = ViperRuntime::new(ViperOptions {
                 source_loaders: vec![Box::new(HttpSourceLoader)],
-                ..Default::default()
             }).map_err(|_| GetViperTestSuiteParametersError::ViperRuntime { source_id, source_name: source_name.clone() })?;
 
             let compilation = viper_runtime.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await
