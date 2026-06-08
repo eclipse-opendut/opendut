@@ -3,7 +3,7 @@ mod inspect;
 mod prepare;
 mod py;
 
-use crate::compile::{Compilation, CompileEvent, IdentifierFilter};
+use crate::compile::{Compilation, CompileEvent, IdentifierFilter, SourceCode};
 use crate::runtime::compile::inspect::inspect;
 use crate::runtime::compile::prepare::prepare_source_code;
 use crate::runtime::compile::py::{compile_source_code, create_interpreter};
@@ -13,6 +13,13 @@ use crate::runtime::types::compile::error::{CompilationError, CompileResult};
 use crate::source::Source;
 use tracing::{debug, error, info};
 use crate::runtime::types::compile::filter::FilterError;
+
+pub async fn fetch_source_code (
+    source: &Source,
+    context: &Context,
+) -> CompileResult<SourceCode> {
+    prepare_source_code(source, context).await
+}
 
 pub async fn compile_tree<Emitter>(
     sources: Vec<(Source, Emitter)>,
