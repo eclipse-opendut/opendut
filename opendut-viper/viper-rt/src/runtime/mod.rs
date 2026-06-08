@@ -83,6 +83,14 @@ impl ViperRuntime {
         compile::compile(source, &self.context, emitter, identifier_filter).await
     }
 
+    #[cfg(feature = "compile")]
+    pub async fn fetch_source_code(
+        &self,
+        source: &types::source::Source
+    ) -> types::compile::error::CompileResult<crate::compile::SourceCode> {
+        compile::fetch_source_code(source, &self.context).await
+    }
+
     #[cfg(feature = "run")]
     pub async fn run(
         &self,
