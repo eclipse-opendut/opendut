@@ -84,8 +84,10 @@ services:
     #command: ['start', '--optimized']
     restart: unless-stopped
     depends_on:
-      - keycloak-postgres
-      - traefik
+      traefik:
+        condition: service_started
+      keycloak-postgres:
+        condition: service_healthy
     # this healthcheck requires the init container for provisioning
     healthcheck:
       <<: *keycloak-healthcheck-params
