@@ -46,6 +46,7 @@ pub fn ViperSourceConfigurator() -> impl IntoView {
                 id: viper_source_id,
                 name: UserInputValue::Left(UserInputError::from("Enter a valid VIPER source name.")),
                 url: UserInputValue::Left(UserInputError::from("Enter a valid VIPER source url.")),
+                kind: UserInputValue::Left(UserInputError::from("Select source kind")),
                 is_new: true,
             }
         );
@@ -57,6 +58,10 @@ pub fn ViperSourceConfigurator() -> impl IntoView {
                     viper_source_configuration.update(|user_configuration| {
                         user_configuration.name = UserInputValue::Right(configuration.name.value().to_owned());
                         user_configuration.url = UserInputValue::Right(configuration.url.to_string());
+                        user_configuration.kind = UserInputValue::Right(match configuration.kind {
+                            opendut_model::viper::ViperSourceKind::Git => String::from("Git"),
+                            opendut_model::viper::ViperSourceKind::Http => String::from("HTTP"),
+                        });
                     })
                 }
             }
@@ -66,6 +71,7 @@ pub fn ViperSourceConfigurator() -> impl IntoView {
             viper_source_configuration.with(|source_configuration| {
                 source_configuration.name.is_right()
                 && source_configuration.url.is_right()
+                && source_configuration.kind.is_right()
             })
         });
 

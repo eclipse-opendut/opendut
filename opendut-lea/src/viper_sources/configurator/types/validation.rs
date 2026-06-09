@@ -4,5 +4,6 @@ impl UserViperSourceConfiguration {
     pub fn is_valid(&self) -> bool {
         self.name.is_right()
             && self.url.is_right()
+            && self.kind.is_right()
     }
 }

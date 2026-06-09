@@ -10,7 +10,15 @@ message ViperSourceDescriptor {
   ViperSourceId id = 1;
   ViperSourceName name = 2;
   opendut.model.util.Url url = 3;
+  oneof kind {
+    ViperSourceKindGit git = 4;
+    ViperSourceKindHttp http = 5;
+  }
 }
+
+message ViperSourceKindGit {}
+
+message ViperSourceKindHttp {}
 
 message ViperSourceId {
   opendut.model.util.Uuid uuid = 1;

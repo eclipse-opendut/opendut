@@ -49,10 +49,19 @@ mod conversions {
         type Proto = ViperSourceDescriptor;
 
         fn from(value: Model) -> Proto {
+            let kind = match value.kind {
+                crate::viper::ViperSourceKind::Git => {
+                    viper_source_descriptor::Kind::Git(ViperSourceKindGit {})
+                }
+                crate::viper::ViperSourceKind::Http => {
+                    viper_source_descriptor::Kind::Http(ViperSourceKindHttp {})
+                }
+            };
             Proto {
                 id: Some(value.id.into()),
                 name: Some(value.name.into()),
                 url: Some(value.url.into()),
+                kind: Some(kind),
             }
         }
 
@@ -66,7 +75,12 @@ mod conversions {
             let url = extract!(value.url)?
                 .try_into()?;
 
-            Ok(Model { id, name, url })
+            let kind = match extract!(value.kind)? {
+                viper_source_descriptor::Kind::Git(_) => crate::viper::ViperSourceKind::Git,
+                viper_source_descriptor::Kind::Http(_) => crate::viper::ViperSourceKind::Http,
+            };
+
+            Ok(Model { id, name, url, kind })
         }
     }
 

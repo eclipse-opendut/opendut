@@ -25,7 +25,7 @@ impl Resources<'_> {
 
 
 async fn discover_suite(source: ViperSourceDescriptor) -> Result<Option<ViperTestSuiteParameters>, GetViperTestSuiteParametersError>  {
-    let ViperSourceDescriptor { id: source_id, name: source_name, url } = source;
+    let ViperSourceDescriptor { id: source_id, name: source_name, url, .. } = source;
 
     let test_suite_identifier = TestSuiteIdentifier::try_from(source_name.value())
         .expect("Conversion of source name to TestSuiteIdentifier failed."); //FIXME ViperSourceDescriptor should use TestSuiteIdentifier directly, making this conversion obsolete
@@ -36,6 +36,8 @@ async fn discover_suite(source: ViperSourceDescriptor) -> Result<Option<ViperTes
 
     let handle = tokio::task::spawn_blocking(move || {
         tokio::runtime::Handle::current().block_on(async move {
+            // The ..Default::default() is needed here because ViperOptions has additional fields (e.g. container_runtime) under other feature flags. Removing it breaks the --all-features build.
+            #[allow(clippy::needless_update)]
             let viper_runtime = ViperRuntime::new(ViperOptions {
                 source_loaders: vec![Box::new(HttpSourceLoader)],
                 ..Default::default()

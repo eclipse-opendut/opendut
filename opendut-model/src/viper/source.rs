@@ -105,8 +105,15 @@ impl FromStr for ViperSourceName {
 
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ViperSourceKind {
+    Git,
+    Http,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ViperSourceDescriptor {
     pub id: ViperSourceId,
     pub name: ViperSourceName,
     pub url: Url,
+    pub kind: ViperSourceKind,
 }
