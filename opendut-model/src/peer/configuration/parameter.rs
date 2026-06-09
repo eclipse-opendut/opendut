@@ -67,7 +67,9 @@ impl Display for RemotePeerConnectionCheck {
 pub struct CanConnection {
     pub remote_peer_id: PeerId,
     pub remote_ip: IpAddr,
+    /// Remote port to connect to
     pub remote_port: Port,
+    /// Local listening port for server
     pub local_port: Port,
     pub can_interface_name: NetworkInterfaceName,
     /// starts a CAN server for other peers to connect to
