@@ -38,7 +38,7 @@ where F: Fn() + Clone + Send + 'static {
 
             match result {
                 Ok(_) => {
-                    info!("Successfully deleted viper source: {:?}", viper_source_id);
+                    info!("Successfully deleted viper source: {}", viper_source_id.get_untracked());
                     on_delete();
                     toaster.toast(
                         Toast::builder()
@@ -47,10 +47,10 @@ where F: Fn() + Clone + Send + 'static {
                     );
                 }
                 Err(cause) => {
-                    error!("Failed to delete viper source <{:?}>, due to error: {cause:?}", viper_source_id);
+                    error!("Failed to delete viper source <{}>, due to error: {cause}", viper_source_id.get_untracked());
                     toaster.toast(
                         Toast::builder()
-                            .simple("Failed to delete viper source!")
+                            .simple(cause.to_string())
                             .error()
                     );
                 }
