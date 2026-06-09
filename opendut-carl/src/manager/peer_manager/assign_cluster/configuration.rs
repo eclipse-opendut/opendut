@@ -87,7 +87,7 @@ pub(super) fn update_peer_configuration(
                             remote_peer_id,
                             remote_ip: remote_assignment.vpn_address,
                             remote_port: remote_assignment.can_server_port,
-                            local_port: leader_assignment.can_server_port,
+                            local_port: remote_assignment.can_server_port, // EDGAR leader opens listening ports for each client in CanManager::fill_cannelloni_cmd()
                             buffer_timeout_microseconds,
                         }
                     });
@@ -102,7 +102,7 @@ pub(super) fn update_peer_configuration(
                     local_is_server: false,
                     remote_peer_id: cluster_assignment.leader,
                     remote_ip: leader_assignment.vpn_address,
-                    remote_port: leader_assignment.can_server_port,
+                    remote_port: local_assignment.can_server_port,  // EDGAR peer opens connection to this port
                     local_port: local_assignment.can_server_port,
                     buffer_timeout_microseconds,
                 };

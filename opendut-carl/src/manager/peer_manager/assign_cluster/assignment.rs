@@ -6,6 +6,7 @@ use opendut_model::peer::PeerId;
 use opendut_model::util::Port;
 
 
+/// Cluster assignments are determined in ClusterManager here opendut_carl::manager::cluster_manager::rollout_cluster
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct ClusterAssignment {
     pub id: ClusterId,
