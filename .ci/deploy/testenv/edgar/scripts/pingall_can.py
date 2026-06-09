@@ -63,13 +63,13 @@ def send_ping(bus):
 
 def run_ping():
     print("Checking whether other peer responds to CAN pings...")
-    bus = can.Bus(channel=channel, interface=interface)
-
     latencies = []
-    for _ in range(n_pings):
-        if (latency := send_ping(bus)) is not None:
-            latencies.append(latency)
-        time.sleep(ping_sleep)
+
+    with can.Bus(channel=channel, interface=interface) as bus:
+        for _ in range(n_pings):
+            if (latency := send_ping(bus)) is not None:
+                latencies.append(latency)
+            time.sleep(ping_sleep)
 
     if len(latencies):
         avg = int(sum(latencies) / len(latencies))
@@ -86,7 +86,9 @@ def run_ping():
         f"CAN ping stats (n={n_pings}): avg: {avg}{unit}, lowest: {lowest}{unit}, highest: {highest}{unit}, loss: {loss_percent}%"
     )
 
-    bus.shutdown()
+    # Make this script exit with a code indicating error if not all ping messages went through
+    if loss_percent > 0:
+        sys.exit(1)
 
 
 if __name__ == "__main__":
