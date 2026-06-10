@@ -91,14 +91,13 @@ impl CanManager {
         }
     }
 
-    /*
-     cannelloni with SCTP transport for CAN bus tunneling
-
-     With SCTP it is possible to use cannelloni over lossy connections where packet loss and re-ordering is very likely.
-     The SCTP implementation uses the server-client model (for now). One instance binds on a fixed port and the other instance (client) connects to it.
-
-     https://github.com/mguentner/cannelloni?tab=readme-ov-file#sctp
-     */
+    /// cannelloni with SCTP transport for CAN bus tunneling
+    ///
+    /// With SCTP it is possible to use cannelloni over lossy connections where packet loss and re-ordering is very likely.
+    /// The SCTP implementation uses the server-client model (for now). One instance binds on a fixed port and the other instance (client) connects to it.
+    /// https://github.com/mguentner/cannelloni?tab=readme-ov-file#sctp
+    ///
+    /// Cannelloni is expected to be replaced with open1722, see https://github.com/eclipse-opendut/opendut/issues/306
     fn fill_cannelloni_cmd(parameter: &CanConnection, cmd: &mut Command) {
         let instance_type = if parameter.local_is_server {"s"} else {"c"}; // act as server or client
         let port_arg = if parameter.local_is_server {"-l"} else {"-r"};  // listening port or remote port
