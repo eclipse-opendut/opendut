@@ -257,7 +257,7 @@ impl ClusterManager {
 
         let can_server_ports = self.determine_can_server_ports(&member_ids, cluster_id)?;
 
-        // determine CAN ports for cluster assignment
+        // Determine CAN ports for cluster assignment
         let member_assignments: Vec<Result<(PeerId, PeerClusterAssignment), RolloutClusterError>> = {
             let assignment_futures = std::iter::zip(member_ids, can_server_ports)
                 .map(|(peer_id, can_server_port)| {

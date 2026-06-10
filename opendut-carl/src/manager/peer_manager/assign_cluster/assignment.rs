@@ -6,7 +6,9 @@ use opendut_model::peer::PeerId;
 use opendut_model::util::Port;
 
 
-/// Cluster assignments are determined in ClusterManager here opendut_carl::manager::cluster_manager::rollout_cluster
+/// Cluster assignments are determined in ClusterManager here [`crate::manager::cluster_manager::ClusterManager::rollout_cluster`]
+/// The ports defined in the [`PeerClusterAssignment`] are used in the can manager in EDGAR opendut-edgar/src/service/can/can_manager.rs
+/// CAN connection parameters are defined in the model [`opendut_model::peer::configuration::parameter::CanConnection`]
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct ClusterAssignment {
     pub id: ClusterId,
