@@ -7,6 +7,7 @@ This is a checklist for the steps to take to create a release for public usage.
 * [ ] Increment version number in workspace `Cargo.toml`.
 * [ ] Run `cargo ci check` to update all `Cargo.lock` files.
 * [ ] Increment the version of the CARL container used in CI/CD deployments (in the `.ci/` folder).
+  * Compose file: `.ci/deploy/localenv/docker-compose.yml`
 * [ ] Create commit and push to `development`.
 * [ ] Open PR from `development` to `main`.
 * [ ] Merge PR once its checks have succeeded.

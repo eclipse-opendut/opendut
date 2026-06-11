@@ -8,15 +8,26 @@ When upgrading between versions of CARL, do not skip versions,
 since migrations are only provided from one version to the next.
 Always create a database backup before upgrading CARL.
 
-## Unreleased 
+## [v0.10.2] - 2026-06-11
 
-TBD
+### Fixed
+
+* CARL, EDGAR: CAN connections between peers were broken due to a port assignment error
+  In v0.10.0, the clients used the leader port instead of the common follower port for the connection.
+  In v0.10.1, the leader and follower peer were configured with the leader port instead of each follower's port. Only two peers in a cluster could work with CAN.
+
+### Changed
+
+* CARL API: The `CanConnection` protobuf message now uses a single `port` field, replacing the former `remote_port` and `local_port` fields.
+  Both fields always held the same value (the follower's assigned port), so the split was redundant and was the root cause of the bug above.
+  The old `local_port` field (proto field 4) is kept as deprecated for one release cycle to allow rolling upgrades between CARL and EDGAR instances.
+* Localenv: The CAN ping test script now exits with a non-zero error code on failure, making it usable in automated tests.
 
 
 ## [v0.10.1] - 2026-06-03
 
 ### Fixed
-* Connections via CAN should work again, after fixes for two issues:
+* Connections via CAN should work again, at least with two peers, after fixes for two issues:
   * <https://github.com/eclipse-opendut/opendut/pull/494>
   * <https://github.com/eclipse-opendut/opendut/issues/518>
 * EDGAR: Don't use the operating system's certificate management anymore, making EDGAR more portable across distributions.
