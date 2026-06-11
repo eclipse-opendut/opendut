@@ -138,8 +138,12 @@ conversion! {
         Proto {
             remote_peer_id: Some(value.remote_peer_id.into()),
             remote_ip: Some(value.remote_ip.into()),
-            remote_port: Some(value.remote_port.into()),
-            local_port: Some(value.local_port.into()),
+            port: Some(value.port.into()),
+            // Deprecated field kept for backwards compatibility with old EDGAR instances that still use
+            // extract!(value.local_port) in their generated conversion. Always equal to `port`.
+            // TODO: remove after one release cycle once all EDGAR instances run >= this version.
+            #[allow(deprecated)]
+            local_port: Some(value.port.into()),
             can_interface_name: Some(value.can_interface_name.into()),
             local_is_server: value.local_is_server,
             buffer_timeout_microseconds: value.buffer_timeout_microseconds,
@@ -149,15 +153,14 @@ conversion! {
     fn try_from(value: Proto) -> ConversionResult<Model> {
         let remote_peer_id = extract!(value.remote_peer_id)?.try_into()?;
         let remote_ip = extract!(value.remote_ip)?.try_into()?;
-        let remote_port = extract!(value.remote_port)?.try_into()?;
-        let local_port = extract!(value.local_port)?.try_into()?;
+        let port = extract!(value.port)?.try_into()?;
+        // `local_port` (field 4) is deprecated and always equal to `port`; intentionally ignored here.
         let can_interface_name = extract!(value.can_interface_name)?.try_into()?;
 
         Ok(Model {
             remote_peer_id,
             remote_ip,
-            remote_port,
-            local_port,
+            port,
             can_interface_name,
             local_is_server: value.local_is_server,
             buffer_timeout_microseconds: value.buffer_timeout_microseconds,

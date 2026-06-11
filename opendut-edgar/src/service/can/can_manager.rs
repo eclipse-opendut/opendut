@@ -28,7 +28,7 @@ impl CanManager {
 
     pub async fn spawn_process(&self, parameter: &CanConnection) -> anyhow::Result<()> {
         let name = if parameter.local_is_server {
-            format!("cannelloni-server-on-port-{}", parameter.local_port)
+            format!("cannelloni-server-on-port-{}", parameter.port)
         } else {
             format!("cannelloni-to-leader-peer-{}", parameter.remote_peer_id)
         };
@@ -47,7 +47,7 @@ impl CanManager {
             .with_output_config(OutputConfig::Capture);
 
         let process_id = if parameter.local_is_server {
-            let local_port = parameter.local_port.0;
+            let local_port = parameter.port.0;
             let log_function = create_process_log_function!("opendut-cannelloni-server", local_port=local_port);
             AsyncProcessManager::spawn_process(self.process_manager.clone(), config, log_function).await?
         } else {
@@ -99,13 +99,8 @@ impl CanManager {
     ///
     /// Cannelloni is expected to be replaced with open1722, see https://github.com/eclipse-opendut/opendut/issues/306
     fn fill_cannelloni_cmd(parameter: &CanConnection, cmd: &mut Command) {
-        let instance_type = if parameter.local_is_server {"s"} else {"c"}; // act as server or client
-        let port_arg = if parameter.local_is_server {"-l"} else {"-r"};  // listening port or remote port
-        let port = if parameter.local_is_server {
-            parameter.local_port
-        } else {
-            parameter.remote_port
-        };
+        let instance_type = if parameter.local_is_server { "s" } else { "c" }; // act as server or client
+        let port_arg = if parameter.local_is_server { "-l" } else { "-r" }; // listening port or remote port
 
         cmd.arg("-I")
             .arg(parameter.can_interface_name.name())
@@ -116,7 +111,7 @@ impl CanManager {
             .arg("-R")  // remote IP address
             .arg(parameter.remote_ip.to_string())
             .arg(port_arg)
-            .arg(port.to_string())
+            .arg(parameter.port.to_string())
             .stderr(Stdio::piped())
             .stdout(Stdio::piped());
     }

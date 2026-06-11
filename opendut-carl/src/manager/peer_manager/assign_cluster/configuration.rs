@@ -77,36 +77,33 @@ pub(super) fn update_peer_configuration(
                 .ok_or(AssignClusterError::PeerNotFound(cluster_assignment.leader))?;
 
             if cluster_assignment.leader == peer_descriptor.id {
-                let remote_peers = cluster_assignment.non_leader_assignments();
-
-                let expected_can_connections = remote_peers.into_iter()
-                    .map(|(remote_peer_id, remote_assignment)| {
-                        parameter::CanConnection {
-                            can_interface_name: can_bridge.clone(),
-                            local_is_server: true,
-                            remote_peer_id,
-                            remote_ip: remote_assignment.vpn_address,
-                            remote_port: remote_assignment.can_server_port,
-                            local_port: remote_assignment.can_server_port, // EDGAR leader opens listening ports for each follower in CanManager::fill_cannelloni_cmd()
+                // Leader: open one listening connection per follower, each on the follower's assigned port.
+                let expected_can_connections = cluster_assignment.non_leader_assignments()
+                    .into_iter()
+                    .map(|(follower_id, follower_assignment)| {
+                        can_connection_for_leader(
+                            can_bridge.clone(),
+                            follower_id,
+                            follower_assignment.vpn_address,
+                            follower_assignment.can_server_port,
                             buffer_timeout_microseconds,
-                        }
+                        )
                     });
                 can_connections.set_all_present(expected_can_connections, can_dependencies.clone());
-            }
-            else {
+            } else {
+                // Follower: connect to the leader using this peer's own assigned port.
                 let local_assignment = cluster_assignment.assignments.get(&peer_descriptor.id)
                     .ok_or(AssignClusterError::PeerNotFound(peer_descriptor.id))?;
 
-                let can_connection = parameter::CanConnection {
-                    can_interface_name: can_bridge.clone(),
-                    local_is_server: false,
-                    remote_peer_id: cluster_assignment.leader,
-                    remote_ip: leader_assignment.vpn_address,
-                    remote_port: local_assignment.can_server_port,  // EDGAR peer opens connection to this port
-                    local_port: local_assignment.can_server_port,
-                    buffer_timeout_microseconds,
-                };
-                let expected_can_connections = vec![can_connection];
+                let expected_can_connections = vec![
+                    can_connection_for_follower(
+                        can_bridge.clone(),
+                        cluster_assignment.leader,
+                        leader_assignment.vpn_address,
+                        local_assignment.can_server_port,
+                        buffer_timeout_microseconds,
+                    )
+                ];
                 can_connections.set_all_present(expected_can_connections, can_dependencies.clone());
             }
         }
@@ -231,3 +228,46 @@ fn require_ipv4_for_gre(ip_address: IpAddr) -> Result<Ipv4Addr, AssignClusterErr
         IpAddr::V6(_) => Err(AssignClusterError::Ipv6NotSupported),
     }
 }
+
+/// Build a [`parameter::CanConnection`] for the **leader** side of a CAN tunnel.
+///
+/// The leader acts as the SCTP server and listens on `follower_port`.
+/// The follower is identified by `follower_id` and reachable at `follower_ip`.
+fn can_connection_for_leader(
+    can_interface_name: NetworkInterfaceName,
+    follower_id: PeerId,
+    follower_ip: IpAddr,
+    follower_port: opendut_model::util::Port,
+    buffer_timeout_microseconds: u64,
+) -> parameter::CanConnection {
+    parameter::CanConnection {
+        can_interface_name,
+        local_is_server: true,
+        remote_peer_id: follower_id,
+        remote_ip: follower_ip,
+        port: follower_port,
+        buffer_timeout_microseconds,
+    }
+}
+
+/// Build a [`parameter::CanConnection`] for a **follower** side of a CAN tunnel.
+///
+/// The follower acts as the SCTP client and connects to the leader at `leader_ip:my_port`,
+/// where `my_port` is this follower's own assigned port (`PeerClusterAssignment::can_server_port`).
+fn can_connection_for_follower(
+    can_interface_name: NetworkInterfaceName,
+    leader_id: PeerId,
+    leader_ip: IpAddr,
+    my_port: opendut_model::util::Port,
+    buffer_timeout_microseconds: u64,
+) -> parameter::CanConnection {
+    parameter::CanConnection {
+        can_interface_name,
+        local_is_server: false,
+        remote_peer_id: leader_id,
+        remote_ip: leader_ip,
+        port: my_port,
+        buffer_timeout_microseconds,
+    }
+}
+

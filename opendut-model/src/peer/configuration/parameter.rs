@@ -64,26 +64,28 @@ impl Display for RemotePeerConnectionCheck {
 }
 
 
-/// The following struct defines the relevant information to form a CAN connection over TCP using cannelloni
+/// The relevant information to form a CAN tunnel between the leader and a follower peer.
 ///
-/// Cannelloni is expected to be replaced with open1722, see https://github.com/eclipse-opendut/opendut/issues/306
-/// Leader peer (PEER_LEADER_IP):
-///     connection to Peer A: acf-can-bridge --canif <PEER_LEADER_CAN_BRIDGE>     -u -p <PEER_FOLLOWER_A_LOCAL_PORT>  --dst-nw-addr <PEER_FOLLOWER_A_IP:PEER_FOLLOWER_A_REMOTE_PORT>
-///     connection to Peer B: acf-can-bridge --canif <PEER_LEADER_CAN_BRIDGE>     -u -p <PEER_FOLLOWER_B_LOCAL_PORT>  --dst-nw-addr <PEER_FOLLOWER_B_IP:PEER_FOLLOWER_B_REMOTE_PORT>
-/// Follower Peer A (PEER_FOLLOWER_A_IP): acf-can-bridge --canif <PEER_FOLLOWER_A_CAN_BRIDGE> -u -p <PEER_FOLLOWER_A_REMOTE_PORT> --dst-nw-addr <PEER_LEADER_IP:PEER_FOLLOWER_A_LOCAL_PORT>
-/// Follower Peer B (PEER_FOLLOWER_B_IP): acf-can-bridge --canif <PEER_FOLLOWER_B_CAN_BRIDGE> -u -p <PEER_FOLLOWER_B_REMOTE_PORT> --dst-nw-addr <PEER_LEADER_IP:PEER_FOLLOWER_B_LOCAL_PORT>
+/// Each follower is assigned a unique `port` (see `PeerClusterAssignment::can_server_port`).
+/// Both sides of the tunnel use this same port number:
+///   - The leader (server) binds/listens on `port` for this follower.
+///   - The follower (client) connects to the leader's IP on `port`.
 ///
-/// Ideally local port and remote port are the same, these were added to ensure we can handle it otherwise.
+/// This maps directly to both cannelloni (current) and acf-can-bridge / open1722 (future):
+///   Leader:   cannelloni -S s -l <port> -R <follower_ip>  (or acf-can-bridge -u -p <port> --dst-nw-addr <follower_ip:port>)
+///   Follower: cannelloni -S c -r <port> -R <leader_ip>   (or acf-can-bridge -u -p <port> --dst-nw-addr <leader_ip:port>)
+///
+/// See also: https://github.com/eclipse-opendut/opendut/issues/306
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize)]
 pub struct CanConnection {
     pub remote_peer_id: PeerId,
     pub remote_ip: IpAddr,
-    /// Local listening port for server.
-    pub local_port: Port,
-    /// Remote port to connect to.
-    pub remote_port: Port,
+    /// The port for this CAN tunnel.
+    /// The leader listens on it; the follower connects to it.
+    /// Always equal to the follower peer's `PeerClusterAssignment::can_server_port`.
+    pub port: Port,
     pub can_interface_name: NetworkInterfaceName,
-    /// starts a CAN server for other peers to connect to
+    /// `true` on the leader (acts as server); `false` on the follower (acts as client).
     pub local_is_server: bool,
     pub buffer_timeout_microseconds: u64,
 }
