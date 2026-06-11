@@ -36,8 +36,13 @@ message RemotePeerConnectionCheck {
 message CanConnection {
   opendut.model.peer.PeerId remote_peer_id = 1;
   opendut.model.util.IpAddress remote_ip = 2;
-  opendut.model.util.Port remote_port = 3;
-  opendut.model.util.Port local_port = 4;
+  // The single port used for this CAN tunnel.
+  // The leader (server) listens on this port; the follower (client) connects to it.
+  // Both sides use the follower's assigned can_server_port, so local and remote port are always identical.
+  opendut.model.util.Port port = 3;
+  // Deprecated: always equal to `port` (field 3). Kept so that a new CARL can still be decoded by an
+  // old EDGAR whose generated conversion uses extract!(value.local_port). Remove after one release cycle.
+  opendut.model.util.Port local_port = 4 [deprecated = true];
   opendut.model.util.NetworkInterfaceName can_interface_name = 5;
   bool local_is_server = 6;
   // Additional configuration parameters
