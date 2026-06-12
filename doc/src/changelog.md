@@ -8,6 +8,10 @@ When upgrading between versions of CARL, do not skip versions,
 since migrations are only provided from one version to the next.
 Always create a database backup before upgrading CARL.
 
+## Unreleased
+
+TBD
+
 ## [v0.10.2] - 2026-06-11
 
 ### Fixed
@@ -15,12 +19,14 @@ Always create a database backup before upgrading CARL.
 * CARL, EDGAR: CAN connections between peers were broken due to a port assignment error
   In v0.10.0, the clients used the leader port instead of the common follower port for the connection.
   In v0.10.1, the leader and follower peer were configured with the leader port instead of each follower's port. Only two peers in a cluster could work with CAN.
+* Localenv: Keycloak now waits until its database is healthy before starting, rather than only waiting for the container to have started.
 
 ### Changed
 
 * CARL API: The `CanConnection` protobuf message now uses a single `port` field, replacing the former `remote_port` and `local_port` fields.
   Both fields always held the same value (the follower's assigned port), so the split was redundant and was the root cause of the bug above.
   The old `local_port` field (proto field 4) is kept as deprecated for one release cycle to allow rolling upgrades between CARL and EDGAR instances.
+* Localenv: CARL is now accessible via the `opendut.local` domain, running behind the reverse proxy like the other services. (Thanks to [@sdv-infy](https://github.com/sdv-infy)!)
 * Localenv: The CAN ping test script now exits with a non-zero error code on failure, making it usable in automated tests.
 
 
