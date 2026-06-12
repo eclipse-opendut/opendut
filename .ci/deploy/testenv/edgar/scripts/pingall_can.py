@@ -96,9 +96,24 @@ def run_ping_sender(can_bus):
     return True
 
 
+def run_listener(can_bus):
+    print("Listening for CAN ping messages (Ctrl+C to stop)...")
+    try:
+        while True:
+            msg = can_bus.recv(1)
+            if msg is None:
+                continue
+            if msg.arbitration_id == PING_ARBITRATION_ID:
+                payload = int.from_bytes(msg.data, byteorder="big")
+                msg_type = "response" if payload % 2 == 1 else "request"
+                print(f"Received CAN ping {msg_type}: payload={payload:#018x}")
+    except KeyboardInterrupt:
+        print("Listener stopped.")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="CAN ping test utility")
-    parser.add_argument("runtype", choices=["sender", "responder"], help="Run as 'sender' or 'responder'")
+    parser.add_argument("runtype", choices=["sender", "responder", "listener"], help="Run as 'sender', 'responder', or 'listener'")
     args = parser.parse_args()
 
     with can.Bus(channel=CAN_CHANNEL_NAME, interface=CAN_INTERFACE_BACKEND) as can_bus:
@@ -107,3 +122,5 @@ if __name__ == "__main__":
                 sys.exit(1)
         elif args.runtype == "responder":
             run_ping_responder(can_bus)
+        elif args.runtype == "listener":
+            run_listener(can_bus)
