@@ -7,7 +7,7 @@ use crate::resource::manager::ResourceManager;
 
 #[tokio::test]
 async fn should_rollback_from_an_error_during_a_transaction() -> anyhow::Result<()> {
-    let resource_manager = ResourceManager::new_in_memory();
+    let (resource_manager, _cancel) = ResourceManager::new_in_memory();
 
     let peer = peer_descriptor()?;
     let peer_id = peer.id;

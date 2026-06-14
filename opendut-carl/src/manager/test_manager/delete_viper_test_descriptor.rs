@@ -65,7 +65,7 @@ mod tests {
     #[tokio::test]
     async fn delete_test_descriptor_when_no_run_deployment_is_using_it() -> anyhow::Result<()> {
         // Arrange
-        let resource_manager = ResourceManager::new_in_memory();
+        let (resource_manager, _cancel) = ResourceManager::new_in_memory();
         let test = ViperTestFixture::create(resource_manager.clone()).await?;
 
         // Act
@@ -82,7 +82,7 @@ mod tests {
     #[tokio::test]
     async fn block_deletion_of_test_descriptor_if_a_run_deployment_is_still_using_it() -> anyhow::Result<()> {
         // Arrange
-        let resource_manager = ResourceManager::new_in_memory();
+        let (resource_manager, _cancel) = ResourceManager::new_in_memory();
         let run_deployment = ViperRunDeploymentFixture::create(resource_manager.clone()).await?;
 
         // Act

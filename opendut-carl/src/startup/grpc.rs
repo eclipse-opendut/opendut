@@ -36,26 +36,26 @@ impl GrpcFacades {
         let vpn = vpn::create(settings).await
             .context("Error while parsing VPN configuration.")?;
 
-        startup::metrics::initialize_metrics_collection(Arc::clone(&resource_manager));
+        startup::metrics::initialize_metrics_collection(resource_manager.clone());
 
         let peer_messaging_broker = PeerMessagingBroker::new(
-            Arc::clone(&resource_manager),
+            resource_manager.clone(),
             PeerMessagingBrokerOptions::load(settings)?,
         ).await;
         let cluster_manager = ClusterManager::create(
-            Arc::clone(&resource_manager),
+            resource_manager.clone(),
             Arc::clone(&peer_messaging_broker),
             Clone::clone(&vpn),
             ClusterManagerOptions::load(settings)?,
         ).await;
 
 
-        let cluster_manager_facade = ClusterManagerFacade::new(Arc::clone(&cluster_manager), Arc::clone(&resource_manager));
+        let cluster_manager_facade = ClusterManagerFacade::new(Arc::clone(&cluster_manager), resource_manager.clone());
 
         let metadata_provider_facade = MetadataProviderFacade::new();
 
         let peer_manager_facade = PeerManagerFacade::new(
-            Arc::clone(&resource_manager),
+            resource_manager.clone(),
             vpn,
             Clone::clone(&carl_url.value()),
             ca_certificate,
@@ -63,12 +63,12 @@ impl GrpcFacades {
         );
         let peer_messaging_broker_facade = PeerMessagingBrokerFacade::new(Arc::clone(&peer_messaging_broker));
         
-        let observer_messaging_broker = ObserverMessagingBroker::new(Arc::clone(&resource_manager), Arc::clone(&cluster_manager));
-        let observer_messaging_broker_facade = ObserverMessagingBrokerFacade::new(Arc::clone(&resource_manager), Arc::clone(&observer_messaging_broker));
+        let observer_messaging_broker = ObserverMessagingBroker::new(resource_manager.clone(), Arc::clone(&cluster_manager));
+        let observer_messaging_broker_facade = ObserverMessagingBrokerFacade::new(resource_manager.clone(), Arc::clone(&observer_messaging_broker));
 
         #[cfg(feature = "viper")]
         let test_manager_facade = TestManagerFacade {
-            resource_manager: Arc::clone(&resource_manager),
+            resource_manager: resource_manager.clone(),
         };
 
         Ok(GrpcFacades {

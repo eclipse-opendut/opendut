@@ -346,8 +346,6 @@ impl PeerManagerService for PeerManagerFacade {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-
     use googletest::prelude::*;
     use url::Url;
 
@@ -365,9 +363,9 @@ mod tests {
     #[tokio::test]
     async fn test_successful_create_delete() -> Result<()> {
 
-        let resource_manager = ResourceManager::new_in_memory();
+        let (resource_manager, _cancel) = ResourceManager::new_in_memory();
         let testee = PeerManagerFacade::new(
-            Arc::clone(&resource_manager),
+            resource_manager.clone(),
             Vpn::Disabled,
             Url::parse("https://example.com:1234")?,
             get_cert(),
@@ -465,9 +463,9 @@ mod tests {
     #[tokio::test]
     async fn register_fails_when_no_id_specified() -> Result<()> {
 
-        let resource_manager = ResourceManager::new_in_memory();
+        let (resource_manager, _cancel) = ResourceManager::new_in_memory();
         let testee = PeerManagerFacade::new(
-            Arc::clone(&resource_manager),
+            resource_manager.clone(),
             Vpn::Disabled,
             Url::parse("https://example.com:1234").unwrap(),
             get_cert(),
@@ -504,9 +502,9 @@ mod tests {
     #[tokio::test]
     async fn unregister_fails_when_no_id_specified() -> Result<()> {
 
-        let resource_manager = ResourceManager::new_in_memory();
+        let (resource_manager, _cancel) = ResourceManager::new_in_memory();
         let testee = PeerManagerFacade::new(
-            Arc::clone(&resource_manager),
+            resource_manager.clone(),
             Vpn::Disabled,
             Url::parse("https://example.com:1234").unwrap(),
             get_cert(),

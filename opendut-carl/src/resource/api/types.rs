@@ -11,7 +11,7 @@ use std::hash::Hash;
 use opendut_model::viper::{ViperRunDeployment, ViperTestRunDescriptor, ViperTestId, ViperSourceDescriptor, ViperSourceId, ViperRunId};
 
 pub trait Resource: Any + Send + Sync + Debug + Clone {
-    type Id: ResourceId<Self> + Clone + Hash + PartialEq + Eq + Debug;
+    type Id: ResourceId<Self> + Clone + Hash + PartialEq + Eq + Debug + Send + Sync;
 }
 
 impl Resource for ClusterDeployment {

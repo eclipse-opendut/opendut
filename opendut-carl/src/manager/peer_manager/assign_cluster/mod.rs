@@ -110,9 +110,9 @@ mod tests {
         let settings = crate::settings::load_defaults()?;
         let peer_id = peer.id;
 
-        let resource_manager = ResourceManager::new_in_memory();
+        let (resource_manager, _cancel) = ResourceManager::new_in_memory();
         let peer_messaging_broker = PeerMessagingBroker::new(
-            Arc::clone(&resource_manager),
+            resource_manager.clone(),
             PeerMessagingBrokerOptions::load(&settings)?,
         ).await;
 

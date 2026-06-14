@@ -65,7 +65,7 @@ impl ClusterManager {
         let can_server_port_counter = options.can_server_port_range_start;
 
         let self_ref = Arc::new(Mutex::new(Self {
-            resource_manager: Arc::clone(&resource_manager),
+            resource_manager: resource_manager.clone(),
             peer_messaging_broker,
             vpn,
             options,
@@ -534,7 +534,7 @@ mod test {
     use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceId, NetworkInterfaceName};
 
     use crate::manager::peer_messaging_broker::{PeerMessagingBroker, PeerMessagingBrokerOptions};
-    use crate::resource::manager::ResourceManager;
+    use crate::resource::manager::{ResourceManager, ResourceManagerCancel};
     use crate::settings;
 
     use super::*;
@@ -660,7 +660,6 @@ mod test {
         else { panic!("Result is not a ClusterDescriptorNotFoundError.") };
 
         assert_eq!(cluster, unknown_cluster);
-
         Ok(())
     }
 
@@ -731,30 +730,34 @@ mod test {
         resource_manager: ResourceManagerRef,
         peer_messaging_broker: PeerMessagingBrokerRef,
         cluster_manager_options: ClusterManagerOptions,
+        /// CancellationToken carried along, so cancel happens at end of test.
+        _resource_manager_cancel: ResourceManagerCancel,
     }
     impl Fixture {
         async fn create() -> Fixture {
             let settings = settings::load_defaults().unwrap();
 
-            let resource_manager = ResourceManager::new_in_memory();
+            let (resource_manager, _cancel) = ResourceManager::new_in_memory();
             let peer_messaging_broker = PeerMessagingBroker::new(
-                Arc::clone(&resource_manager),
+                resource_manager.clone(),
                 PeerMessagingBrokerOptions::load(&settings).unwrap(),
             ).await;
 
             let cluster_manager_options = ClusterManagerOptions::load(&settings).unwrap();
 
             let testee = ClusterManager::create(
-                Arc::clone(&resource_manager),
+                resource_manager.clone(),
                 Arc::clone(&peer_messaging_broker),
                 Vpn::Disabled,
                 cluster_manager_options.clone(),
             ).await;
+
             Fixture {
                 testee,
                 resource_manager,
                 peer_messaging_broker,
                 cluster_manager_options,
+                _resource_manager_cancel: _cancel,
             }
         }
     }

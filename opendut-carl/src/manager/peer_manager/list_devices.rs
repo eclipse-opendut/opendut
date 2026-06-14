@@ -48,7 +48,7 @@ mod tests {
     async fn should_list_all_devices() -> anyhow::Result<()> {
         let peer = PeerFixture::new();
 
-        let resource_manager = ResourceManager::new_in_memory();
+        let (resource_manager, _cancel) = ResourceManager::new_in_memory();
 
         let result = resource_manager.resources(async |resources|
             resources.list_devices()

@@ -55,7 +55,7 @@ mod tests {
 
     #[tokio::test]
     async fn should_get_peer_state_down() -> anyhow::Result<()> {
-        let resource_manager = ResourceManager::new_in_memory();
+        let (resource_manager, _cancel) = ResourceManager::new_in_memory();
         let peer = PeerFixture::new();
 
         resource_manager.resources_mut(async |resources| {
@@ -75,7 +75,7 @@ mod tests {
 
     #[tokio::test]
     async fn should_throw_error_if_peer_not_found() -> anyhow::Result<()> {
-        let resource_manager = ResourceManager::new_in_memory();
+        let (resource_manager, _cancel) = ResourceManager::new_in_memory();
         let peer = PeerFixture::new();
 
         resource_manager.resources_mut(async |resources| {

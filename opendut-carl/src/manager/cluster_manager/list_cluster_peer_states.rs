@@ -293,7 +293,7 @@ mod tests {
     }
     impl Fixture {
         async fn create() -> anyhow::Result<Self> {
-            let resource_manager = ResourceManager::new_in_memory();
+            let (resource_manager, _cancel) = ResourceManager::new_in_memory();
 
             let peer_a = generate_peer_descriptor()?;
             resource_manager.insert(peer_a.id, peer_a.clone()).await?;

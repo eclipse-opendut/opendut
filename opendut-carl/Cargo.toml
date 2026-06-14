@@ -58,6 +58,7 @@ tempfile = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 tokio-stream = { workspace = true, features = ["full"] }
+tokio-util = { workspace = true }
 tonic = { workspace = true }
 tonic-web = { workspace = true }
 tonic-async-interceptor = { workspace = true }

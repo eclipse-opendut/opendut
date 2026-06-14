@@ -10,12 +10,16 @@ use std::fmt::Display;
 use std::sync::Arc;
 use config::Config;
 use tokio::sync::{RwLock, RwLockWriteGuard};
+use tokio_util::sync::CancellationToken;
+use tracing::{debug, warn};
 use crate::resource::ConnectError;
+
 
 pub type ResourceManagerRef = Arc<ResourceManager>;
 
 pub struct ResourceManager {
     state: RwLock<State>,
+    event_listener_cancel: CancellationToken,
 }
 
 struct State {
@@ -25,15 +29,24 @@ struct State {
 
 impl ResourceManager {
 
-    pub async fn load_from_config(settings: &Config) -> Result<ResourceManagerRef, ConnectError> {
+    /// Create a ResourceManager from configured values.
+    ///
+    /// Returns a tuple with a reference for using the ResourceManager,
+    /// and another reference which, when it goes out of scope, ensures
+    /// the ResourceManager is shut down properly.
+    pub async fn load_from_config(settings: &Config) -> Result<(ResourceManagerRef, ResourceManagerCancel), ConnectError> {
         let persistence_options = PersistenceOptions::load(settings)?;
 
         let resources = ResourceStorage::connect(&persistence_options).await?;
         let subscribers = ResourceSubscriptionChannels::default();
 
-        Ok(Arc::new(Self {
+        let cancel = ResourceManagerCancel::new();
+        let resource_manager = ResourceManagerRef::new(Self {
             state: RwLock::new(State { storage: resources, subscribers }),
-        }))
+            event_listener_cancel: cancel.token(),
+        });
+
+        Ok((resource_manager, cancel))
     }
 
     pub async fn insert<R>(&self, id: R::Id, resource: R) -> PersistenceResult<()>
@@ -95,6 +108,54 @@ impl ResourceManager {
         Ok(result)
     }
 
+
+    /// Run a closure when a resource is inserted/updated or removed.
+    ///
+    /// This spawns a Tokio task, which may run in a separate thread.
+    /// It will be automatically cancelled when the `ResourceManagerRef` is dropped.
+    ///
+    /// For more control, see: [ResourceManager::subscribe]
+    pub async fn spawn_event_listener<R: Resource + Subscribable>(
+        &self,
+        on_event: impl AsyncFn(SubscriptionEvent<R>) + Send + 'static,
+    ) {
+        let resource_name = std::any::type_name::<R>();
+        let mut subscription = self.subscribe::<R>().await;
+        let cancel = self.event_listener_cancel.clone();
+
+        tokio::task::spawn_blocking(move || {
+            tokio::runtime::Handle::current().block_on(async move {
+                loop {
+                    tokio::select! {
+                        received = subscription.receive() => {
+                            match received {
+                                Ok(event) => {
+                                    on_event(event).await;
+                                }
+                                Err(super::subscription::ReceiveError::Broadcast(error)) => match error {
+                                    tokio::sync::broadcast::error::RecvError::Closed => {
+                                        debug!("ResourceManager subscription channel for {resource_name} closed. Aborting.");
+                                        break;
+                                    }
+                                    tokio::sync::broadcast::error::RecvError::Lagged(skipped_messages) => {
+                                        warn!("ResourceManager subscription channel for {resource_name} lagged behind and had to skip {skipped_messages} messages.");
+                                    },
+                                }
+                            };
+                        }
+                        _ = cancel.cancelled() => {
+                            debug!("ResourceManager is cancelling subscription channel for {resource_name}.");
+                            break;
+                        }
+                    }
+                }
+            })
+        });
+    }
+
+    /// Get events when a resource is inserted/updated or removed.
+    ///
+    /// For an easier to use interface, see: [ResourceManager::spawn_event_listener]
     pub async fn subscribe<R>(&self) -> Subscription<R>
     where R: Resource + Subscribable {
         let mut state = self.state.write().await;
@@ -180,7 +241,7 @@ impl ResourceManager {
 
 #[cfg(test)]
 impl ResourceManager {
-    pub fn new_in_memory() -> ResourceManagerRef {
+    pub fn new_in_memory() -> (ResourceManagerRef, ResourceManagerCancel) {
         let resources = futures::executor::block_on(
             ResourceStorage::connect(&PersistenceOptions::Disabled)
         )
@@ -188,30 +249,62 @@ impl ResourceManager {
 
         let subscribers = ResourceSubscriptionChannels::default();
 
-        Arc::new(Self {
+        let cancel = ResourceManagerCancel::new();
+
+        let resource_manager = ResourceManagerRef::new(Self {
             state: RwLock::new(State { storage: resources, subscribers }),
-        })
+            event_listener_cancel: cancel.token(),
+        });
+
+        (resource_manager, cancel)
     }
 }
+
+/// Cancels the ResourceManager's event listeners when dropped.
+///
+/// This is a separate type from [`ResourceManagerRef`], because:
+/// - Multiple references to the ResourceManagerRef will exist, as used by PeerManager, ClusterManager etc..
+///   As such, it will never be dropped naturally.
+/// - If we wrap the ResourceManagerRef with a struct that implements `Drop` and `Clone`,
+///   then it will get dropped when any clone goes out of scope, which cancels prematurely.
+pub struct ResourceManagerCancel {
+    inner: CancellationToken,
+}
+impl ResourceManagerCancel {
+    fn new() -> Self {
+        Self { inner: CancellationToken::new() }
+    }
+    fn token(&self) -> CancellationToken {
+        self.inner.clone()
+    }
+}
+impl Drop for ResourceManagerCancel {
+    fn drop(&mut self) {
+        self.inner.cancel();
+    }
+}
+
 
 #[cfg(test)]
 mod test {
     use std::collections::HashSet;
+    use std::time::Duration;
     use std::vec;
 
     use googletest::prelude::*;
+    use tokio::sync::mpsc;
 
     use super::*;
-    use opendut_model::cluster::{ClusterDescriptor, ClusterId, ClusterName};
+    use opendut_model::cluster::{ClusterDeployment, ClusterDescriptor, ClusterId, ClusterName};
     use opendut_model::peer::executor::{container::{ContainerCommand, ContainerImage, ContainerName, Engine}, ExecutorDescriptor, ExecutorDescriptors, ExecutorId, ExecutorKind};
     use opendut_model::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
     use opendut_model::topology::Topology;
     use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
     #[tokio::test]
-    async fn test() -> Result<()> {
+    async fn should_support_create_read_update_delete_operations() -> Result<()> {
 
-        let testee = ResourceManager::new_in_memory();
+        let (testee, _cancel) = ResourceManager::new_in_memory();
 
         let peer_resource_id = PeerId::random();
         let peer = PeerDescriptor {
@@ -284,6 +377,28 @@ mod test {
             PersistenceResult::Ok(())
         }).await??;
 
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn should_spawn_an_event_listener() -> Result<()> {
+        let (testee, _cancel) = ResourceManager::new_in_memory();
+
+        let (sender, mut receiver) = mpsc::channel(1);
+
+        testee.spawn_event_listener::<ClusterDeployment>(async move |_event| {
+            sender.send(()).await.unwrap();
+        }).await;
+
+        let id = ClusterId::random();
+        testee.insert(id, ClusterDeployment { id }).await?;
+
+        let received = tokio::time::timeout(
+            Duration::from_secs(5),
+            receiver.recv()
+        ).await?;
+
+        assert!(received.is_some());
         Ok(())
     }
 }

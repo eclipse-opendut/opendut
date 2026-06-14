@@ -150,8 +150,8 @@ impl PeerMessagingBroker {
         let timeout_duration = self.options.peer_disconnect_timeout;
 
         {
-            let peers = Arc::clone(&self.peers);
-            let resource_manager = Arc::clone(&self.resource_manager);
+            let peers = self.peers.clone();
+            let resource_manager = self.resource_manager.clone();
 
             tokio::spawn(async move {
                 loop {
@@ -398,7 +398,7 @@ mod tests {
         let options = PeerMessagingBrokerOptions {
             peer_disconnect_timeout: Duration::from_millis(200),
         };
-        let testee = PeerMessagingBroker::new(Arc::clone(&resource_manager), options.clone()).await;
+        let testee = PeerMessagingBroker::new(resource_manager.clone(), options.clone()).await;
 
         let remote_host = IpAddr::from_str("1.2.3.4")?;
 
@@ -470,7 +470,7 @@ mod tests {
         let options = PeerMessagingBrokerOptions {
             peer_disconnect_timeout: Duration::from_millis(200),
         };
-        let testee = PeerMessagingBroker::new(Arc::clone(&resource_manager), options.clone()).await;
+        let testee = PeerMessagingBroker::new(resource_manager.clone(), options.clone()).await;
         let remote_host = IpAddr::from_str("1.2.3.4")?;
 
         let result = testee.open(peer_id, remote_host, stream_header::ExtraHeaders::default()).await;
@@ -495,7 +495,7 @@ mod tests {
         let options = PeerMessagingBrokerOptions {
             peer_disconnect_timeout: Duration::from_millis(200),
         };
-        let testee = PeerMessagingBroker::new(Arc::clone(&resource_manager), options.clone()).await;
+        let testee = PeerMessagingBroker::new(resource_manager.clone(), options.clone()).await;
         let remote_host = IpAddr::from_str("1.2.3.4")?;
 
         let result = testee.open(peer_id, remote_host, stream_header::ExtraHeaders::default()).await;
@@ -523,7 +523,7 @@ mod tests {
         let options = PeerMessagingBrokerOptions {
             peer_disconnect_timeout: Duration::from_millis(200),
         };
-        let testee = PeerMessagingBroker::new(Arc::clone(&resource_manager), options.clone()).await;
+        let testee = PeerMessagingBroker::new(resource_manager.clone(), options.clone()).await;
 
         let remote_host = IpAddr::from_str("1.2.3.4")?;
 
@@ -553,7 +553,7 @@ mod tests {
         peer_id: PeerId,
     }
     async fn fixture() -> anyhow::Result<Fixture> {
-        let resource_manager = ResourceManager::new_in_memory();
+        let (resource_manager, _cancel) = ResourceManager::new_in_memory();
 
         let peer_id = PeerId::random();
         let peer_descriptor = create_peer_descriptor(peer_id);
