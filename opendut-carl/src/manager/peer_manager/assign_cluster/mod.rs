@@ -112,7 +112,7 @@ mod tests {
 
         let resource_manager = ResourceManager::new_in_memory();
         let peer_messaging_broker = PeerMessagingBroker::new(
-            Arc::clone(&resource_manager),
+            resource_manager.clone(),
             PeerMessagingBrokerOptions::load(&settings)?,
         ).await;
 

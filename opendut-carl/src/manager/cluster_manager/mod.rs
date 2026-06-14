@@ -65,7 +65,7 @@ impl ClusterManager {
         let can_server_port_counter = options.can_server_port_range_start;
 
         let self_ref = Arc::new(Mutex::new(Self {
-            resource_manager: Arc::clone(&resource_manager),
+            resource_manager: resource_manager.clone(),
             peer_messaging_broker,
             vpn,
             options,
@@ -660,7 +660,6 @@ mod test {
         else { panic!("Result is not a ClusterDescriptorNotFoundError.") };
 
         assert_eq!(cluster, unknown_cluster);
-
         Ok(())
     }
 
@@ -738,18 +737,19 @@ mod test {
 
             let resource_manager = ResourceManager::new_in_memory();
             let peer_messaging_broker = PeerMessagingBroker::new(
-                Arc::clone(&resource_manager),
+                resource_manager.clone(),
                 PeerMessagingBrokerOptions::load(&settings).unwrap(),
             ).await;
 
             let cluster_manager_options = ClusterManagerOptions::load(&settings).unwrap();
 
             let testee = ClusterManager::create(
-                Arc::clone(&resource_manager),
+                resource_manager.clone(),
                 Arc::clone(&peer_messaging_broker),
                 Vpn::Disabled,
                 cluster_manager_options.clone(),
             ).await;
+
             Fixture {
                 testee,
                 resource_manager,

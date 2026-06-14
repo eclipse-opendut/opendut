@@ -10,12 +10,14 @@ use std::fmt::Display;
 use std::sync::Arc;
 use config::Config;
 use tokio::sync::{RwLock, RwLockWriteGuard};
+use tokio_util::sync::CancellationToken;
+use tracing::{debug, warn};
 use crate::resource::ConnectError;
 
-pub type ResourceManagerRef = Arc<ResourceManager>;
 
 pub struct ResourceManager {
     state: RwLock<State>,
+    event_listener_cancel: CancellationToken,
 }
 
 struct State {
@@ -31,8 +33,9 @@ impl ResourceManager {
         let resources = ResourceStorage::connect(&persistence_options).await?;
         let subscribers = ResourceSubscriptionChannels::default();
 
-        Ok(Arc::new(Self {
+        Ok(ResourceManagerRef::new(Self {
             state: RwLock::new(State { storage: resources, subscribers }),
+            event_listener_cancel: CancellationToken::new(),
         }))
     }
 
@@ -95,6 +98,54 @@ impl ResourceManager {
         Ok(result)
     }
 
+
+    /// Run a closure when a resource is inserted/updated or removed.
+    ///
+    /// This spawns a Tokio task, which may run in a separate thread.
+    /// It will be automatically cancelled when the `ResourceManagerRef` is dropped.
+    ///
+    /// For more control, see: [ResourceManager::subscribe]
+    pub async fn spawn_event_listener<R: Resource + Subscribable>(
+        &self,
+        on_event: impl AsyncFn(SubscriptionEvent<R>) + Send + 'static,
+    ) {
+        let resource_name = std::any::type_name::<R>();
+        let mut subscription = self.subscribe::<R>().await;
+        let cancel = self.event_listener_cancel.clone();
+
+        tokio::task::spawn_blocking(move || {
+            tokio::runtime::Handle::current().block_on(async move {
+                loop {
+                    tokio::select! {
+                        received = subscription.receive() => {
+                            match received {
+                                Ok(event) => {
+                                    on_event(event).await;
+                                }
+                                Err(super::subscription::ReceiveError::Broadcast(error)) => match error {
+                                    tokio::sync::broadcast::error::RecvError::Closed => {
+                                        debug!("ResourceManager subscription channel for {resource_name} closed. Aborting.");
+                                        break;
+                                    }
+                                    tokio::sync::broadcast::error::RecvError::Lagged(skipped_messages) => {
+                                        warn!("ResourceManager subscription channel for {resource_name} lagged behind and had to skip {skipped_messages} messages.");
+                                    },
+                                }
+                            };
+                        }
+                        _ = cancel.cancelled() => {
+                            debug!("ResourceManager is cancelling subscription channel for {resource_name}.");
+                            break;
+                        }
+                    }
+                }
+            })
+        });
+    }
+
+    /// Get events when a resource is inserted/updated or removed.
+    ///
+    /// For an easier to use interface, see: [ResourceManager::spawn_event_listener]
     pub async fn subscribe<R>(&self) -> Subscription<R>
     where R: Resource + Subscribable {
         let mut state = self.state.write().await;
@@ -178,6 +229,28 @@ impl ResourceManager {
 }
 
 
+#[derive(Clone)]
+pub struct ResourceManagerRef {
+    inner: Arc<ResourceManager>,
+}
+impl ResourceManagerRef {
+    fn new(resource_manager: ResourceManager) -> Self {
+        Self { inner: Arc::new(resource_manager) }
+    }
+}
+impl std::ops::Deref for ResourceManagerRef {
+    type Target = Arc<ResourceManager>;
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+impl Drop for ResourceManagerRef {
+    fn drop(&mut self) {
+        self.event_listener_cancel.cancel();
+    }
+}
+
+
 #[cfg(test)]
 impl ResourceManager {
     pub fn new_in_memory() -> ResourceManagerRef {
@@ -188,28 +261,32 @@ impl ResourceManager {
 
         let subscribers = ResourceSubscriptionChannels::default();
 
-        Arc::new(Self {
+        ResourceManagerRef::new(Self {
             state: RwLock::new(State { storage: resources, subscribers }),
+            event_listener_cancel: CancellationToken::new(),
         })
     }
 }
 
+
 #[cfg(test)]
 mod test {
     use std::collections::HashSet;
+    use std::time::Duration;
     use std::vec;
 
     use googletest::prelude::*;
+    use tokio::sync::mpsc;
 
     use super::*;
-    use opendut_model::cluster::{ClusterDescriptor, ClusterId, ClusterName};
+    use opendut_model::cluster::{ClusterDeployment, ClusterDescriptor, ClusterId, ClusterName};
     use opendut_model::peer::executor::{container::{ContainerCommand, ContainerImage, ContainerName, Engine}, ExecutorDescriptor, ExecutorDescriptors, ExecutorId, ExecutorKind};
     use opendut_model::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
     use opendut_model::topology::Topology;
     use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
     #[tokio::test]
-    async fn test() -> Result<()> {
+    async fn should_support_create_read_update_delete_operations() -> Result<()> {
 
         let testee = ResourceManager::new_in_memory();
 
@@ -284,6 +361,28 @@ mod test {
             PersistenceResult::Ok(())
         }).await??;
 
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn should_spawn_an_event_listener() -> Result<()> {
+        let testee = ResourceManager::new_in_memory();
+
+        let (sender, mut receiver) = mpsc::channel(1);
+
+        testee.spawn_event_listener::<ClusterDeployment>(async move |_event| {
+            sender.send(()).await.unwrap();
+        }).await;
+
+        let id = ClusterId::random();
+        testee.insert(id, ClusterDeployment { id }).await?;
+
+        let received = tokio::time::timeout(
+            Duration::from_secs(5),
+            receiver.recv()
+        ).await?;
+
+        assert!(received.is_some());
         Ok(())
     }
 }

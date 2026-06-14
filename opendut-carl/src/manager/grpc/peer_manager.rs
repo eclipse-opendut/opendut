@@ -346,8 +346,6 @@ impl PeerManagerService for PeerManagerFacade {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-
     use googletest::prelude::*;
     use url::Url;
 
@@ -367,7 +365,7 @@ mod tests {
 
         let resource_manager = ResourceManager::new_in_memory();
         let testee = PeerManagerFacade::new(
-            Arc::clone(&resource_manager),
+            resource_manager.clone(),
             Vpn::Disabled,
             Url::parse("https://example.com:1234")?,
             get_cert(),
@@ -467,7 +465,7 @@ mod tests {
 
         let resource_manager = ResourceManager::new_in_memory();
         let testee = PeerManagerFacade::new(
-            Arc::clone(&resource_manager),
+            resource_manager.clone(),
             Vpn::Disabled,
             Url::parse("https://example.com:1234").unwrap(),
             get_cert(),
@@ -506,7 +504,7 @@ mod tests {
 
         let resource_manager = ResourceManager::new_in_memory();
         let testee = PeerManagerFacade::new(
-            Arc::clone(&resource_manager),
+            resource_manager.clone(),
             Vpn::Disabled,
             Url::parse("https://example.com:1234").unwrap(),
             get_cert(),
