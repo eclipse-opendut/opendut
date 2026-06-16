@@ -15,7 +15,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     builder.type_attribute(".", "#[allow(clippy::all)]");
 
 
-    // Only include protos for VIPER, when the feature flag i
+    // Only include protos for VIPER, when the feature flag is enabled
     #[cfg(feature = "viper")]
     let includes = {
         let mut includes = includes;
