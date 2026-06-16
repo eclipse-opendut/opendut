@@ -1,6 +1,5 @@
 use leptos::prelude::*;
-
-use opendut_model::viper::{IllegalViperSourceName, ViperSourceName};
+use opendut_model::viper::{InvalidViperTestSuiteIdentifierErrorKind, ViperTestSuiteIdentifier};
 use crate::components::{UserInput, UserInputValue};
 use crate::viper_sources::configurator::types::UserViperSourceConfiguration;
 
@@ -17,30 +16,21 @@ pub fn ViperSourceNameInput(viper_source_configuration: RwSignal<UserViperSource
     );
 
     let validator = |input: String| {
-        match ViperSourceName::try_from(input.clone()) {
+        match ViperTestSuiteIdentifier::try_from(input.clone()) {
             Ok(_) => {
                 UserInputValue::Right(input)
             }
             Err(cause) => {
-                match cause {
-                    IllegalViperSourceName::TooShort { expected, actual, value } => {
-                        if actual > 0 {
-                            UserInputValue::Both(format!("A VIPER source name must be at least {expected} characters long."), value)
-                        }
-                        else {
-                            UserInputValue::Both("Enter a VIPER viper source name.".to_string(), value)
-                        }
+                match cause.kind {
+                    InvalidViperTestSuiteIdentifierErrorKind::Empty => {
+                        UserInputValue::Both("Enter a VIPER source name.".to_string(), cause.value)
                     }
-                    IllegalViperSourceName::TooLong { expected, value, .. } => {
-                        UserInputValue::Both(format!("A VIPER source name must be at most {expected} characters long."), value)
-                    },
-                    IllegalViperSourceName::InvalidStartEndCharacter { value } => {
-                        UserInputValue::Both("The VIPER source name starts/ends with an invalid character. \
-                        Valid characters are a-z, A-Z and 0-9.".to_string(), value)
+                    InvalidViperTestSuiteIdentifierErrorKind::IllegalTestSuiteIdentifierCharacter { character } => {
+                        UserInputValue::Both(format!("The VIPER source name contains an invalid character: '{character}'"), cause.value)
                     }
-                    IllegalViperSourceName::InvalidCharacter { value } => {
-                        UserInputValue::Both("The VIPER source name contains invalid characters.".to_string(), value)
-                    },
+                    _ => {
+                        UserInputValue::Both("The VIPER source name is invalid.".to_string(), cause.value)
+                    }
                 }
             }
         }

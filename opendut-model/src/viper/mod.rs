@@ -8,6 +8,8 @@ pub use test::*;
 pub use source::*;
 pub use suite::*;
 pub use opendut_viper_rt::common::TestSuiteIdentifier as ViperTestSuiteIdentifier;
+pub use opendut_viper_rt::common::InvalidIdentifierError as InvalidViperTestSuiteIdentifierError;
+pub use opendut_viper_rt::common::InvalidIdentifierErrorKind as InvalidViperTestSuiteIdentifierErrorKind;
 pub use opendut_viper_rt::compile::InvalidTextParameterValueError;
 pub use opendut_viper_rt::compile::InvalidTextParameterValueErrorKind;
 pub use opendut_viper_rt::compile::InvalidNumberParameterValueError;

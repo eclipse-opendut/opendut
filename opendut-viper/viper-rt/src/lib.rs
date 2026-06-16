@@ -117,6 +117,10 @@ pub mod common {
         TestCaseIdentifier,
         TestSuiteIdentifier,
     };
+    pub use crate::runtime::types::naming::error::{
+        InvalidIdentifierError,
+        InvalidIdentifierErrorKind,
+    };
     pub mod error {
         pub use crate::runtime::types::py::error::{
             PythonReflectionError,

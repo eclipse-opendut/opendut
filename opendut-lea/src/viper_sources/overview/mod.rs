@@ -27,8 +27,8 @@ pub fn ViperSourcesOverview() -> impl IntoView {
                     .expect("Failed to request the list of VIPER sources");
 
                 viper_sources.sort_by(|viper_source_a, viper_source_b| {
-                    viper_source_a.name.value().to_lowercase()
-                        .cmp(&viper_source_b.name.value().to_lowercase())
+                    viper_source_a.name.to_string().to_lowercase()
+                        .cmp(&viper_source_b.name.to_string().to_lowercase())
                 });
 
                 viper_sources

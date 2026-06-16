@@ -1,7 +1,7 @@
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 pub use client::*;
 
-use opendut_model::viper::{ViperTestId, ViperSourceId, ViperSourceName, ViperRunId};
+use opendut_model::viper::{ViperTestId, ViperSourceId, ViperRunId, ViperTestSuiteIdentifier};
 use opendut_model::format::{format_id_with_name, format_id_with_optional_name};
 
 
@@ -14,7 +14,7 @@ pub enum StoreViperSourceDescriptorError {
     #[error("VIPER source {source} could not be created, due to internal errors:\n  {cause}", source=format_id_with_name(source_id, source_name))]
     Internal {
         source_id: ViperSourceId,
-        source_name: ViperSourceName,
+        source_name: ViperTestSuiteIdentifier,
         cause: String
     }
 }
@@ -33,7 +33,7 @@ pub enum DeleteViperSourceDescriptorError {
     #[error("VIPER source {source} deleted with internal errors:\n  {cause}", source=format_id_with_optional_name(source_id, source_name))]
     Internal {
         source_id: ViperSourceId,
-        source_name: Option<ViperSourceName>,
+        source_name: Option<ViperTestSuiteIdentifier>,
         cause: String,
     }
 }
@@ -73,12 +73,12 @@ pub enum GetViperTestSuiteParametersError {
     #[error("Compilation failed while getting VIPER test suite descriptor for source {source_name} <{source_id}>.")]
     Compilation {
         source_id: ViperSourceId,
-        source_name: ViperSourceName,
+        source_name: ViperTestSuiteIdentifier,
     },
     #[error("Error while initializing VIPER runtime for VIPER test source {source_name} with the ID <{source_id}>.")]
     ViperRuntime {
         source_id: ViperSourceId,
-        source_name: ViperSourceName,
+        source_name: ViperTestSuiteIdentifier,
     },
     #[error("An internal error occurred while fetching the VIPER test suite descriptor for source <{source_id}>:\n  {cause}")]
     Internal {

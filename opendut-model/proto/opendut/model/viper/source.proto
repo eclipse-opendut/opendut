@@ -4,11 +4,12 @@ package opendut.model.viper;
 
 import "opendut/model/util/net.proto";
 import "opendut/model/util/uuid.proto";
+import "opendut/viper/rt/test_suite.proto";
 
 
 message ViperSourceDescriptor {
   ViperSourceId id = 1;
-  ViperSourceName name = 2;
+  opendut.viper.rt.test_suite.ViperTestSuiteIdentifier name = 2;
   opendut.model.util.Url url = 3;
   oneof kind {
     ViperSourceKindGit git = 4;
@@ -22,8 +23,4 @@ message ViperSourceKindHttp {}
 
 message ViperSourceId {
   opendut.model.util.Uuid uuid = 1;
-}
-
-message ViperSourceName {
-  string value = 1;
 }

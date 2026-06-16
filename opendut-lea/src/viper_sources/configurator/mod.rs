@@ -56,7 +56,7 @@ pub fn ViperSourceConfigurator() -> impl IntoView {
             async move {
                 if let Ok(configuration) = carl.viper.get_viper_source_descriptor(viper_source_id).await {
                     viper_source_configuration.update(|user_configuration| {
-                        user_configuration.name = UserInputValue::Right(configuration.name.value().to_owned());
+                        user_configuration.name = UserInputValue::Right(configuration.name.to_string());
                         user_configuration.url = UserInputValue::Right(configuration.url.to_string());
                         user_configuration.kind = UserInputValue::Right(match configuration.kind {
                             opendut_model::viper::ViperSourceKind::Git => String::from("Git"),

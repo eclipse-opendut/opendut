@@ -1,4 +1,4 @@
-use opendut_model::viper::ViperSourceName;
+use opendut_model::viper::ViperTestSuiteIdentifier;
 use opendut_util::conversion;
 use opendut_util::proto::ConversionResult;
 
@@ -86,7 +86,7 @@ conversion! {
             }
             delete_viper_source_descriptor_failure::Error::Internal(error) => {
                 let source_id = extract!(error.source_id)?.try_into()?;
-                let source_name: Option<ViperSourceName> = error.source_name
+                let source_name: Option<ViperTestSuiteIdentifier> = error.source_name
                     .map(TryInto::try_into)
                     .transpose()?;
                 let cause = error.cause;

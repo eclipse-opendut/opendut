@@ -2,7 +2,7 @@ pub mod validation;
 
 use url::Url;
 use opendut_lea_components::UserInputValue;
-use opendut_model::viper::{ViperSourceDescriptor, ViperSourceId, ViperSourceKind, ViperSourceName};
+use opendut_model::viper::{ViperSourceDescriptor, ViperSourceId, ViperSourceKind, ViperTestSuiteIdentifier};
 
 #[derive(thiserror::Error, Clone, Debug)]
 #[allow(clippy::enum_variant_names)]
@@ -32,7 +32,7 @@ impl TryFrom<UserViperSourceConfiguration> for ViperSourceDescriptor {
             .name
             .right_ok_or(ViperSourceMisconfigurationError::InvalidSourceName)
             .and_then(|name| {
-                ViperSourceName::try_from(name)
+                ViperTestSuiteIdentifier::try_from(name)
                     .map_err(|_| ViperSourceMisconfigurationError::InvalidSourceName)
             })?;
 

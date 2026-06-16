@@ -33,8 +33,8 @@ pub fn ViperTestSourceSelector(viper_test_run_descriptor: RwSignal<UserViperTest
     let viper_sources = Signal::derive(move || {
         if let Some(mut viper_sources) = viper_sources.get() {
             viper_sources.sort_by(|viper_source_a, viper_source_b| {
-                viper_source_a.name.value().to_lowercase()
-                    .cmp(&viper_source_b.name.value().to_lowercase())
+                viper_source_a.name.to_string().to_lowercase()
+                    .cmp(&viper_source_b.name.to_string().to_lowercase())
             });
 
             let rows = viper_sources.iter().map(|viper_source_descriptor| {

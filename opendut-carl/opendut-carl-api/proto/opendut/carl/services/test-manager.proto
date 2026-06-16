@@ -8,6 +8,7 @@ import "opendut/model/viper/test.proto";
 import "opendut/model/viper_test_id.proto";
 import "opendut/model/viper/source.proto";
 import "opendut/model/viper/suite.proto";
+import "opendut/viper/rt/test_suite.proto";
 
 service TestManager {
   rpc StoreViperSourceDescriptor(StoreViperSourceDescriptorRequest) returns (StoreViperSourceDescriptorResponse) {}
@@ -59,7 +60,7 @@ message StoreViperSourceDescriptorFailure {
 
 message StoreViperSourceDescriptorFailureInternal {
   opendut.model.viper.ViperSourceId source_id = 1;
-  opendut.model.viper.ViperSourceName source_name = 2;
+  opendut.viper.rt.test_suite.ViperTestSuiteIdentifier source_name = 2;
   string cause = 3;
 }
 
@@ -96,7 +97,7 @@ message DeleteViperSourceDescriptorFailureSourceNotFound {
 
 message DeleteViperSourceDescriptorFailureInternal {
   opendut.model.viper.ViperSourceId source_id = 1;
-  optional opendut.model.viper.ViperSourceName source_name = 2;
+  optional opendut.viper.rt.test_suite.ViperTestSuiteIdentifier source_name = 2;
   string cause = 3;
 }
 
@@ -206,12 +207,12 @@ message GetViperTestSuiteParametersFailureSourceNotFound {
 
 message GetViperTestSuiteParametersFailureCompilation {
   opendut.model.viper.ViperSourceId source_id = 1;
-  opendut.model.viper.ViperSourceName source_name = 2;
+  opendut.viper.rt.test_suite.ViperTestSuiteIdentifier source_name = 2;
 }
 
 message GetViperTestSuiteParametersFailureViperRuntime {
   opendut.model.viper.ViperSourceId source_id = 1;
-  opendut.model.viper.ViperSourceName source_name = 2;
+  opendut.viper.rt.test_suite.ViperTestSuiteIdentifier source_name = 2;
 }
 
 message GetViperTestSuiteParametersFailureInternal {

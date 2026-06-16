@@ -54,7 +54,7 @@ pub trait Identifier : Debug + Display {
 ///     Ok(())
 /// }
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq)]
 pub struct TestSuiteIdentifier {
     value: String
 }

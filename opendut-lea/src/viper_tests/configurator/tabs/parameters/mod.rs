@@ -117,7 +117,7 @@ pub fn ParametersTab(
                             }.into_any()
                         },
                         GetViperTestSuiteParametersError::Compilation { source_id, source_name } => {
-                            let source_name = source_name.value();
+                            let source_name = source_name.to_string();
                             let source_href = create_source_href(&source_id);
                             view! {
                                 <p class="help has-text-danger">
@@ -127,7 +127,7 @@ pub fn ParametersTab(
                             }.into_any()
                         },
                         GetViperTestSuiteParametersError::ViperRuntime { source_id, source_name } => {
-                            let source_name = source_name.value();
+                            let source_name = source_name.to_string();
                             let source_href = create_source_href(&source_id);
                             view! {
                                 <p class="help has-text-danger">

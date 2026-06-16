@@ -4540,6 +4540,7 @@ dependencies = [
  "opendut-auth",
  "opendut-model",
  "opendut-util",
+ "opendut-viper-rt",
  "prost",
  "protobuf-src",
  "repo_path",

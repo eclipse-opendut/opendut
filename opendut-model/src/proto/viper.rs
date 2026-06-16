@@ -28,21 +28,6 @@ mod conversions {
         }
     }
 
-    conversion! {
-        type Model = crate::viper::ViperSourceName;
-        type Proto = ViperSourceName;
-
-        fn from(value: Model) -> Proto {
-            Proto {
-                value: value.0
-            }
-        }
-
-        fn try_from(value: Proto) -> ConversionResult<Model> {
-            Model::try_from(value.value)
-                .map_err(|cause| ErrorBuilder::message(cause.to_string()))
-        }
-    }
 
     conversion! {
         type Model = crate::viper::ViperSourceDescriptor;

@@ -30,12 +30,16 @@ wasm-client = [
     "dep:tonic-web-wasm-client",
     "dep:tracing",
 ]
-viper = ["opendut-model/viper"]
+viper = [
+    "dep:opendut-viper-rt",
+    "opendut-model/viper",
+]
 
 [dependencies]
 opendut-auth = { workspace = true, optional = true }
 opendut-model = { workspace = true }
 opendut-util = { workspace = true, features = ["future", "proto"] }
+opendut-viper-rt = { workspace = true, features = ["proto"], optional = true }
 
 anyhow = { workspace = true, optional = true }
 config = { workspace = true, optional = true }

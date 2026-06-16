@@ -1,6 +1,6 @@
-use opendut_model::{format::format_id_with_optional_name, viper::{ViperSourceDescriptor, ViperSourceId, ViperSourceName, ViperTestRunDescriptor, ViperTestId}};
+use opendut_model::{format::format_id_with_optional_name, viper::{ViperSourceDescriptor, ViperSourceId, ViperTestRunDescriptor, ViperTestId}};
 use tracing::debug;
-
+use opendut_model::viper::ViperTestSuiteIdentifier;
 use crate::resource::{api::resources::Resources, persistence::error::PersistenceError, storage::ResourcesStorageApi};
 
 
@@ -46,7 +46,7 @@ pub enum DeleteViperSourceDescriptorError {
     #[error("Error when accessing persistence while deleting VIPER source descriptor for source {source}", source=format_id_with_optional_name(source_id, source_name))]
     Persistence {
         source_id: ViperSourceId,
-        source_name: Option<ViperSourceName>,
+        source_name: Option<ViperTestSuiteIdentifier>,
         #[source] cause: PersistenceError,
     },
 }
