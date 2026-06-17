@@ -90,8 +90,9 @@ async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::
     info!("Started with configuration: {settings:?}");
     let settings = settings;
 
-    let resource_manager = ResourceManager::load_from_config(&settings).await
-        .context("Creating ResourceManager failed")?;
+    let (resource_manager, _resource_manager_cancel) =  // _resource_manager_cancel will not get dropped until end of application
+        ResourceManager::load_from_config(&settings).await
+            .context("Creating ResourceManager failed")?;
 
     startup::migration::run(resource_manager.clone()).await?;
 

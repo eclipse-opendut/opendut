@@ -553,7 +553,7 @@ mod tests {
         peer_id: PeerId,
     }
     async fn fixture() -> anyhow::Result<Fixture> {
-        let resource_manager = ResourceManager::new_in_memory();
+        let (resource_manager, _cancel) = ResourceManager::new_in_memory();
 
         let peer_id = PeerId::random();
         let peer_descriptor = create_peer_descriptor(peer_id);

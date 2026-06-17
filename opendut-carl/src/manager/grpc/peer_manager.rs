@@ -363,7 +363,7 @@ mod tests {
     #[tokio::test]
     async fn test_successful_create_delete() -> Result<()> {
 
-        let resource_manager = ResourceManager::new_in_memory();
+        let (resource_manager, _cancel) = ResourceManager::new_in_memory();
         let testee = PeerManagerFacade::new(
             resource_manager.clone(),
             Vpn::Disabled,
@@ -463,7 +463,7 @@ mod tests {
     #[tokio::test]
     async fn register_fails_when_no_id_specified() -> Result<()> {
 
-        let resource_manager = ResourceManager::new_in_memory();
+        let (resource_manager, _cancel) = ResourceManager::new_in_memory();
         let testee = PeerManagerFacade::new(
             resource_manager.clone(),
             Vpn::Disabled,
@@ -502,7 +502,7 @@ mod tests {
     #[tokio::test]
     async fn unregister_fails_when_no_id_specified() -> Result<()> {
 
-        let resource_manager = ResourceManager::new_in_memory();
+        let (resource_manager, _cancel) = ResourceManager::new_in_memory();
         let testee = PeerManagerFacade::new(
             resource_manager.clone(),
             Vpn::Disabled,

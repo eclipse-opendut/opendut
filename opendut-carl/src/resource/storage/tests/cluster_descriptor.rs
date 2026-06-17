@@ -6,7 +6,7 @@ use std::collections::HashSet;
 
 #[tokio::test]
 async fn should_persist_cluster_descriptor() -> anyhow::Result<()> {
-    let resource_manager = ResourceManager::new_in_memory();
+    let (resource_manager, _cancel) = ResourceManager::new_in_memory();
 
     let peer = super::peer_descriptor::peer_descriptor()?;
     resource_manager.insert(peer.id, peer.clone()).await?;

@@ -15,6 +15,8 @@ use tracing::{debug, warn};
 use crate::resource::ConnectError;
 
 
+pub type ResourceManagerRef = Arc<ResourceManager>;
+
 pub struct ResourceManager {
     state: RwLock<State>,
     event_listener_cancel: CancellationToken,
@@ -27,16 +29,19 @@ struct State {
 
 impl ResourceManager {
 
-    pub async fn load_from_config(settings: &Config) -> Result<ResourceManagerRef, ConnectError> {
+    pub async fn load_from_config(settings: &Config) -> Result<(ResourceManagerRef, ResourceManagerCancel), ConnectError> {
         let persistence_options = PersistenceOptions::load(settings)?;
 
         let resources = ResourceStorage::connect(&persistence_options).await?;
         let subscribers = ResourceSubscriptionChannels::default();
 
-        Ok(ResourceManagerRef::new(Self {
+        let cancel = ResourceManagerCancel::new();
+        let resource_manager = ResourceManagerRef::new(Self {
             state: RwLock::new(State { storage: resources, subscribers }),
-            event_listener_cancel: CancellationToken::new(),
-        }))
+            event_listener_cancel: cancel.token(),
+        });
+
+        Ok((resource_manager, cancel))
     }
 
     pub async fn insert<R>(&self, id: R::Id, resource: R) -> PersistenceResult<()>
@@ -229,31 +234,9 @@ impl ResourceManager {
 }
 
 
-#[derive(Clone)]
-pub struct ResourceManagerRef {
-    inner: Arc<ResourceManager>,
-}
-impl ResourceManagerRef {
-    fn new(resource_manager: ResourceManager) -> Self {
-        Self { inner: Arc::new(resource_manager) }
-    }
-}
-impl std::ops::Deref for ResourceManagerRef {
-    type Target = Arc<ResourceManager>;
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
-}
-impl Drop for ResourceManagerRef {
-    fn drop(&mut self) {
-        self.event_listener_cancel.cancel();
-    }
-}
-
-
 #[cfg(test)]
 impl ResourceManager {
-    pub fn new_in_memory() -> ResourceManagerRef {
+    pub fn new_in_memory() -> (ResourceManagerRef, ResourceManagerCancel) {
         let resources = futures::executor::block_on(
             ResourceStorage::connect(&PersistenceOptions::Disabled)
         )
@@ -261,10 +244,38 @@ impl ResourceManager {
 
         let subscribers = ResourceSubscriptionChannels::default();
 
-        ResourceManagerRef::new(Self {
+        let cancel = ResourceManagerCancel::new();
+
+        let resource_manager = ResourceManagerRef::new(Self {
             state: RwLock::new(State { storage: resources, subscribers }),
-            event_listener_cancel: CancellationToken::new(),
-        })
+            event_listener_cancel: cancel.token(),
+        });
+
+        (resource_manager, cancel)
+    }
+}
+
+/// Cancels the ResourceManager's event listeners when dropped.
+///
+/// This is a separate type from [`ResourceManagerRef`], because:
+/// - Multiple references to the ResourceManagerRef will exist, as used by PeerManager, ClusterManager etc..
+///   As such, it will never be dropped naturally.
+/// - If we wrap the ResourceManagerRef with a struct that implements `Drop` and `Clone`,
+///   then it will get dropped when any clone goes out of scope, which cancels prematurely.
+pub struct ResourceManagerCancel {
+    inner: CancellationToken,
+}
+impl ResourceManagerCancel {
+    fn new() -> Self {
+        Self { inner: CancellationToken::new() }
+    }
+    fn token(&self) -> CancellationToken {
+        self.inner.clone()
+    }
+}
+impl Drop for ResourceManagerCancel {
+    fn drop(&mut self) {
+        self.inner.cancel();
     }
 }
 
@@ -288,7 +299,7 @@ mod test {
     #[tokio::test]
     async fn should_support_create_read_update_delete_operations() -> Result<()> {
 
-        let testee = ResourceManager::new_in_memory();
+        let (testee, _cancel) = ResourceManager::new_in_memory();
 
         let peer_resource_id = PeerId::random();
         let peer = PeerDescriptor {
@@ -366,7 +377,7 @@ mod test {
 
     #[tokio::test]
     async fn should_spawn_an_event_listener() -> Result<()> {
-        let testee = ResourceManager::new_in_memory();
+        let (testee, _cancel) = ResourceManager::new_in_memory();
 
         let (sender, mut receiver) = mpsc::channel(1);
 

@@ -8,7 +8,7 @@ use crate::resource::manager::ResourceManager;
 
 #[tokio::test]
 async fn should_persist_peer_descriptor() -> anyhow::Result<()> {
-    let resource_manager = ResourceManager::new_in_memory();
+    let (resource_manager, _cancel) = ResourceManager::new_in_memory();
 
     let testee = peer_descriptor()?;
 

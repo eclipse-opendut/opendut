@@ -534,7 +534,7 @@ mod test {
     use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceId, NetworkInterfaceName};
 
     use crate::manager::peer_messaging_broker::{PeerMessagingBroker, PeerMessagingBrokerOptions};
-    use crate::resource::manager::ResourceManager;
+    use crate::resource::manager::{ResourceManager, ResourceManagerCancel};
     use crate::settings;
 
     use super::*;
@@ -730,12 +730,14 @@ mod test {
         resource_manager: ResourceManagerRef,
         peer_messaging_broker: PeerMessagingBrokerRef,
         cluster_manager_options: ClusterManagerOptions,
+        /// CancellationToken carried along, so cancel happens at end of test.
+        _resource_manager_cancel: ResourceManagerCancel,
     }
     impl Fixture {
         async fn create() -> Fixture {
             let settings = settings::load_defaults().unwrap();
 
-            let resource_manager = ResourceManager::new_in_memory();
+            let (resource_manager, _cancel) = ResourceManager::new_in_memory();
             let peer_messaging_broker = PeerMessagingBroker::new(
                 resource_manager.clone(),
                 PeerMessagingBrokerOptions::load(&settings).unwrap(),
@@ -755,6 +757,7 @@ mod test {
                 resource_manager,
                 peer_messaging_broker,
                 cluster_manager_options,
+                _resource_manager_cancel: _cancel,
             }
         }
     }

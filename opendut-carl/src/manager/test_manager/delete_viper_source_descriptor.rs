@@ -62,7 +62,7 @@ mod tests {
     #[tokio::test]
     async fn delete_source_descriptor_when_no_test_is_using_it() -> anyhow::Result<()> {
         // Arrange
-        let resource_manager = ResourceManager::new_in_memory();
+        let (resource_manager, _cancel) = ResourceManager::new_in_memory();
         let source = ViperSourceFixture::create(resource_manager.clone()).await?;
 
         // Act
@@ -79,7 +79,7 @@ mod tests {
     #[tokio::test]
     async fn block_deletion_of_source_descriptor_if_a_test_with_this_source_is_still_deployed() -> anyhow::Result<()> {
         // Arrange
-        let resource_manager = ResourceManager::new_in_memory();
+        let (resource_manager, _cancel) = ResourceManager::new_in_memory();
         let test = ViperTestFixture::create(resource_manager.clone()).await?;
 
         // Act

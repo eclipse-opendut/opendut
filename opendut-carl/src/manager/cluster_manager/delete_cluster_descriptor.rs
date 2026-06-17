@@ -88,7 +88,7 @@ mod tests {
 
     #[tokio::test]
     async fn block_deletion_of_cluster_descriptor_if_cluster_is_still_deployed() -> anyhow::Result<()> {
-        let resource_manager = ResourceManager::new_in_memory();
+        let (resource_manager, _cancel) = ResourceManager::new_in_memory();
         let cluster = ClusterFixture::create(resource_manager.clone()).await?;
         resource_manager.insert(cluster.id, ClusterDeployment { id: cluster.id }).await?;
 
@@ -108,7 +108,7 @@ mod tests {
     async fn block_deletion_of_cluster_descriptor_if_viper_test_uses_it() -> anyhow::Result<()> {
         use crate::manager::testing::ViperTestFixture;
 
-        let resource_manager = ResourceManager::new_in_memory();
+        let (resource_manager, _cancel) = ResourceManager::new_in_memory();
 
         let viper_test = ViperTestFixture::create(resource_manager.clone()).await?;
         let cluster_id = viper_test.descriptor.cluster;
@@ -127,7 +127,7 @@ mod tests {
 
     #[tokio::test]
     async fn delete_cluster_descriptor_when_cluster_is_not_deployed() -> anyhow::Result<()> {
-        let resource_manager = ResourceManager::new_in_memory();
+        let (resource_manager, _cancel) = ResourceManager::new_in_memory();
         let cluster = ClusterFixture::create(resource_manager.clone()).await?;
         let result = resource_manager.resources_mut(async |resources|
             resources.delete_cluster_descriptor(DeleteClusterDescriptorParams { cluster_id: cluster.id })

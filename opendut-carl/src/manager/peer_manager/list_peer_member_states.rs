@@ -73,7 +73,7 @@ mod tests {
     #[tokio::test]
     async fn test_list_blocked_peers() -> anyhow::Result<()> {
         // Arrange
-        let resource_manager = ResourceManager::new_in_memory();
+        let (resource_manager, _cancel) = ResourceManager::new_in_memory();
         let cluster_a = ClusterFixture::create(resource_manager.clone()).await?;
         let cluster_b = ClusterFixture::create(resource_manager.clone()).await?;
         resource_manager.insert(cluster_a.id, ClusterDeployment { id: cluster_a.id }).await?;

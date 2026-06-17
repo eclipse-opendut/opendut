@@ -99,7 +99,7 @@ mod tests {
 
     #[tokio::test]
     async fn should_update_expected_resources() -> anyhow::Result<()> {
-        let resource_manager = ResourceManager::new_in_memory();
+        let (resource_manager, _cancel) = ResourceManager::new_in_memory();
         let peer = PeerFixture::new();
 
         resource_manager.resources_mut(async |resources|
