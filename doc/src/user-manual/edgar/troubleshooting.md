@@ -71,6 +71,8 @@ Run `ip link` and check that all of these interfaces exist:
   journalctl -u opendut-edgar
   ```
 
+  There is also a monitoring dashboard available at the `monitoring` subdomain, for example at `monitoring.opendut.local`.
+
   You can configure the log level of EDGAR via the environment variable `OPENDUT_LOG`, by setting it in the SystemD file.  
   For example, to only show INFO logging and above, set it as `OPENDUT_LOG=info`.  
   For more fine-grained control, see the documentation here: <https://docs.rs/tracing-subscriber/latest/tracing_subscriber/filter/struct.EnvFilter.html#directives>
