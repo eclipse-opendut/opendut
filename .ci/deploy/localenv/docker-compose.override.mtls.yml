@@ -46,9 +46,8 @@ services:
       - OPENDUT_CARL_NETWORK_TLS_CLIENT_AUTH_CERTIFICATE=/provision/pki/deploy/opendut-auth-client.pem
       - OPENDUT_CARL_NETWORK_TLS_CLIENT_AUTH_KEY=/provision/pki/deploy/opendut-auth-client.key
 
-    # TODO: implement another healthcheck that sidesteps mTLS requirement
     healthcheck:
-      test: [ "CMD-SHELL", "exit 0" ]
+      test: [ "CMD-SHELL", "curl --fail --silent --output /dev/null --noproxy '*' --insecure --cert $$OPENDUT_CARL_NETWORK_TLS_CLIENT_AUTH_CERTIFICATE --key $$OPENDUT_CARL_NETWORK_TLS_CLIENT_AUTH_KEY https://localhost || exit 1" ]
 
   netbird-management:
     labels:
