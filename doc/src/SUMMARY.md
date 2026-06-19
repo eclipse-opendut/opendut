@@ -5,6 +5,7 @@
 - [User Manual](user-manual/index.md)
   - [CARL](user-manual/carl/index.md)
     - [Setup](user-manual/carl/setup.md)
+    - [Mutual TLS (mTLS)](user-manual/carl/mtls.md)
   - [EDGAR](user-manual/edgar/index.md)
     - [Setup](user-manual/edgar/setup.md)
     - [Docker](user-manual/edgar/docker.md)
