@@ -53,77 +53,26 @@ impl Resources<'_> {
 
 #[cfg(test)]
 mod test {
-    use std::collections::HashMap;
-    use url::Url;
-    use opendut_model::cluster::ClusterId;
-    use opendut_model::viper::{ViperSourceId, ViperSourceKind, ViperTestName, ViperTestSuiteIdentifier};
-    use opendut_viper_rt::common::TestSuiteIdentifier;
-    use opendut_viper_rt::compile::ApiVersion;
-    use crate::resource::manager::{ResourceManager, ResourceManagerCancel, ResourceManagerRef};
+    use crate::manager::testing::{SourceCodeFixture, ViperTestFixture};
+    use crate::resource::manager::ResourceManager;
     use super::*;
 
     #[tokio::test]
     async fn test_fetch_source_code() -> anyhow::Result<()> {
-        let mut fixture = Fixture::create().await;
-        let test_id = ViperTestId::random();
-        let source_id = ViperSourceId::random();
-
-        fixture.insert_test_data(test_id, source_id).await?;
+        let (resource_manager, _resource_manager_cancel) = ResourceManager::new_in_memory();
+        let viper_test_fixture = ViperTestFixture::create(resource_manager.clone()).await?;
 
         let mock_fetch_source_code = async move |_viper_runtime: ViperRuntime, _source: &Source| {
-            let source_code = SourceCode {
-                identifier: TestSuiteIdentifier::try_from("TestSuite")
-                    .expect("Invalid TestSuiteIdentifier!"),
-                code: String::from("print(Hello World!)"),
-                version: ApiVersion::V1_0,
-            };
+            let source_code = SourceCodeFixture::new().source_code;
             Ok(source_code)
         };
 
-        fixture.resource_manager.resources_mut(async |resources| {
-           resources.fetch_source_code_impl(test_id, mock_fetch_source_code).await
+        resource_manager.resources_mut(async |resources| {
+            let test_id = viper_test_fixture.id;
+            resources.fetch_source_code_impl(test_id, mock_fetch_source_code).await
         }).await??;
 
         Ok(())
-    }
-
-    struct Fixture {
-        resource_manager: ResourceManagerRef,
-        _resource_manager_cancel: ResourceManagerCancel, // Carried along, so that it's dropped at the end of the test.
-    }
-
-    impl Fixture {
-        async fn create() -> Fixture {
-            let (resource_manager, _resource_manager_cancel) = ResourceManager::new_in_memory();
-
-            Fixture {
-                resource_manager,
-                _resource_manager_cancel,
-            }
-        }
-
-        async fn insert_test_data(&mut self, test_id: ViperTestId, source_id: ViperSourceId) -> anyhow::Result<()> {
-            let test_run_descriptor = ViperTestRunDescriptor {
-                id: test_id,
-                name: ViperTestName::try_from("VIPER")?,
-                source: source_id,
-                cluster: ClusterId::random(),
-                parameters: HashMap::new(),
-            };
-            self.resource_manager.insert::<ViperTestRunDescriptor>(test_id, test_run_descriptor)
-                .await?;
-
-            let viper_source_descriptor = ViperSourceDescriptor {
-                id: source_id,
-                name: ViperTestSuiteIdentifier::try_from("VIPER")?,
-                url: Url::try_from("https://example.com/")?,
-                kind: ViperSourceKind::Http,
-            };
-            self.resource_manager.insert::<ViperSourceDescriptor>(source_id, viper_source_descriptor)
-                .await?;
-
-            Ok(())
-        }
     }
 }
 

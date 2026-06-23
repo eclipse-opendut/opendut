@@ -131,6 +131,8 @@ pub(crate) mod testing {
         use opendut_model::viper::{ViperRunDeployment, ViperRunId, ViperSourceDescriptor, ViperSourceId, ViperSourceKind, ViperTestSuiteIdentifier, ViperTestRunDescriptor, ViperTestId, ViperTestName, ViperParameterName, ViperBindingValue};
         use url::Url;
         use std::collections::HashMap;
+        use opendut_viper_rt::common::TestSuiteIdentifier;
+        use opendut_viper_rt::compile::{ApiVersion, SourceCode};
 
         pub struct ViperSourceFixture {
             pub id: ViperSourceId,
@@ -214,6 +216,27 @@ pub(crate) mod testing {
                     id: run_id,
                     deployment,
                 })
+            }
+        }
+
+        pub struct SourceCodeFixture {
+            pub source_code: SourceCode,
+        }
+
+        impl SourceCodeFixture {
+            pub fn new() -> Self {
+                let id = TestSuiteIdentifier::try_from("TestSuite")
+                    .expect("Invalid TestSuiteIdentifier!");
+
+                let source_code = SourceCode {
+                    identifier: id.clone(),
+                    code: String::from("print(Hello World!)"),
+                    version: ApiVersion::V1_0,
+                };
+
+                Self {
+                    source_code,
+                }
             }
         }
     }
