@@ -7,7 +7,7 @@ use tonic::codegen::InterceptedService;
     use crate::carl::metadata::MetadataProvider;
     use crate::carl::peer::PeersRegistrar;
     #[cfg(feature="viper")]
-    use crate::carl::viper::TestManager;
+    use crate::carl::viper::ViperManager;
 
 #[derive(Debug, Clone)]
 pub struct CarlClient {
@@ -15,7 +15,7 @@ pub struct CarlClient {
     pub metadata: MetadataProvider<InterceptedService<tonic_web_wasm_client::Client, AuthInterceptor>>,
     pub peers: PeersRegistrar<InterceptedService<tonic_web_wasm_client::Client, AuthInterceptor>>,
     #[cfg(feature="viper")]
-    pub viper: TestManager<InterceptedService<tonic_web_wasm_client::Client, AuthInterceptor>>,
+    pub viper: ViperManager<InterceptedService<tonic_web_wasm_client::Client, AuthInterceptor>>,
 }
 
 impl CarlClient {
@@ -36,7 +36,7 @@ impl CarlClient {
             metadata: MetadataProvider::with_interceptor(Clone::clone(&client), Clone::clone(&auth_interceptor)),
             peers: PeersRegistrar::with_interceptor(Clone::clone(&client), Clone::clone(&auth_interceptor)),
             #[cfg(feature="viper")]
-            viper: TestManager::with_interceptor(Clone::clone(&client), Clone::clone(&auth_interceptor)),
+            viper: ViperManager::with_interceptor(Clone::clone(&client), Clone::clone(&auth_interceptor)),
         })
     }
 }

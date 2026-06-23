@@ -195,22 +195,22 @@ mod client {
     use tonic::codegen::{Body, Bytes, http, InterceptedService, StdError};
     use opendut_model::viper::{ViperSourceDescriptor, ViperSourceId, ViperTestRunDescriptor, ViperTestId, ViperTestSuiteParameters, ViperRunDeployment};
     use crate::carl::{extract, ClientError};
-    use crate::proto::services::test_manager;
-    use crate::proto::services::test_manager::test_manager_client::TestManagerClient;
+    use crate::proto::services::viper_manager;
+    use crate::proto::services::viper_manager::viper_manager_client::ViperManagerClient;
 
     #[derive(Debug, Clone)]
-    pub struct TestManager<T> {
-        inner: TestManagerClient<T>,
+    pub struct ViperManager<T> {
+        inner: ViperManagerClient<T>,
     }
 
-    impl<T> TestManager<T>
+    impl<T> ViperManager<T>
     where T: tonic::client::GrpcService<tonic::body::Body>,
           T::Error: Into<StdError>,
           T::ResponseBody: Body<Data=Bytes> + Send + 'static,
           <T::ResponseBody as Body>::Error: Into<StdError> + Send,
     {
-        pub fn new(inner: TestManagerClient<T>) -> TestManager<T> {
-            TestManager {
+        pub fn new(inner: ViperManagerClient<T>) -> ViperManager<T> {
+            ViperManager {
                 inner
             }
         }
@@ -218,7 +218,7 @@ mod client {
         pub fn with_interceptor<F>(
             inner: T,
             interceptor: F,
-        ) -> TestManager<InterceptedService<T, F>>
+        ) -> ViperManager<InterceptedService<T, F>>
             where
                 F: tonic::service::Interceptor,
                 T::ResponseBody: Default,
@@ -232,8 +232,8 @@ mod client {
                     http::Request<tonic::body::Body>,
                 >>::Error: Into<StdError> + Send + Sync,
         {
-            let inner_client = TestManagerClient::new(InterceptedService::new(inner, interceptor));
-            TestManager {
+            let inner_client = ViperManagerClient::new(InterceptedService::new(inner, interceptor));
+            ViperManager {
                 inner: inner_client
             }
         }
@@ -241,7 +241,7 @@ mod client {
 
         pub async fn store_viper_source_descriptor(&mut self, descriptor: ViperSourceDescriptor) -> Result<ViperSourceId, ClientError<StoreViperSourceDescriptorError>> {
 
-            let request = tonic::Request::new(test_manager::StoreViperSourceDescriptorRequest {
+            let request = tonic::Request::new(viper_manager::StoreViperSourceDescriptorRequest {
                 source: Some(descriptor.into()),
             });
 
@@ -249,11 +249,11 @@ mod client {
                 .into_inner();
 
             match extract!(response.reply)? {
-                test_manager::store_viper_source_descriptor_response::Reply::Failure(failure) => {
+                viper_manager::store_viper_source_descriptor_response::Reply::Failure(failure) => {
                     let error = StoreViperSourceDescriptorError::try_from(failure)?;
                     Err(ClientError::UsageError(error))
                 }
-                test_manager::store_viper_source_descriptor_response::Reply::Success(success) => {
+                viper_manager::store_viper_source_descriptor_response::Reply::Success(success) => {
                     let source_id = extract!(success.source_id)?;
                     Ok(source_id)
                 }
@@ -263,7 +263,7 @@ mod client {
 
         pub async fn delete_viper_source_descriptor(&mut self, source_id: ViperSourceId) -> Result<ViperSourceId, ClientError<DeleteViperSourceDescriptorError>> {
 
-            let request = tonic::Request::new(test_manager::DeleteViperSourceDescriptorRequest {
+            let request = tonic::Request::new(viper_manager::DeleteViperSourceDescriptorRequest {
                 source_id: Some(source_id.into()),
             });
 
@@ -271,11 +271,11 @@ mod client {
                 .into_inner();
 
             match extract!(response.reply)? {
-                test_manager::delete_viper_source_descriptor_response::Reply::Failure(failure) => {
+                viper_manager::delete_viper_source_descriptor_response::Reply::Failure(failure) => {
                     let error = DeleteViperSourceDescriptorError::try_from(failure)?;
                     Err(ClientError::UsageError(error))
                 }
-                test_manager::delete_viper_source_descriptor_response::Reply::Success(success) => {
+                viper_manager::delete_viper_source_descriptor_response::Reply::Success(success) => {
                     let source_id = extract!(success.source_id)?;
                     Ok(source_id)
                 }
@@ -284,7 +284,7 @@ mod client {
 
         pub async fn get_viper_source_descriptor(&mut self, source_id: ViperSourceId) -> Result<ViperSourceDescriptor, ClientError<GetViperSourceDescriptorError>> {
 
-            let request = tonic::Request::new(test_manager::GetViperSourceDescriptorRequest {
+            let request = tonic::Request::new(viper_manager::GetViperSourceDescriptorRequest {
                 source_id: Some(source_id.into()),
             });
 
@@ -292,11 +292,11 @@ mod client {
                 .into_inner();
 
             match extract!(response.reply)? {
-                test_manager::get_viper_source_descriptor_response::Reply::Failure(failure) => {
+                viper_manager::get_viper_source_descriptor_response::Reply::Failure(failure) => {
                     let error = GetViperSourceDescriptorError::try_from(failure)?;
                     Err(ClientError::UsageError(error))
                 }
-                test_manager::get_viper_source_descriptor_response::Reply::Success(success) => {
+                viper_manager::get_viper_source_descriptor_response::Reply::Success(success) => {
                     let peer_descriptor = extract!(success.descriptor)?;
                     Ok(peer_descriptor)
                 }
@@ -305,17 +305,17 @@ mod client {
 
         pub async fn list_viper_source_descriptors(&mut self) -> Result<Vec<ViperSourceDescriptor>, ClientError<ListViperSourceDescriptorsError>> {
 
-            let request = tonic::Request::new(test_manager::ListViperSourceDescriptorsRequest {});
+            let request = tonic::Request::new(viper_manager::ListViperSourceDescriptorsRequest {});
 
             let response = self.inner.list_viper_source_descriptors(request).await?
                 .into_inner();
 
             match extract!(response.reply)? {
-                test_manager::list_viper_source_descriptors_response::Reply::Failure(failure) => {
+                viper_manager::list_viper_source_descriptors_response::Reply::Failure(failure) => {
                     let error = ListViperSourceDescriptorsError::try_from(failure)?;
                     Err(ClientError::UsageError(error))
                 }
-                test_manager::list_viper_source_descriptors_response::Reply::Success(success) => {
+                viper_manager::list_viper_source_descriptors_response::Reply::Success(success) => {
                     Ok(success.sources.into_iter()
                         .map(ViperSourceDescriptor::try_from)
                         .collect::<Result<Vec<_>, _>>()?
@@ -327,7 +327,7 @@ mod client {
 
         pub async fn get_viper_test_suite_parameters(&mut self, source_id: ViperSourceId) -> Result<ViperTestSuiteParameters, ClientError<GetViperTestSuiteParametersError>> {
 
-            let request = tonic::Request::new(test_manager::GetViperTestSuiteParametersRequest {
+            let request = tonic::Request::new(viper_manager::GetViperTestSuiteParametersRequest {
                 source_id: Some(source_id.into()),
             });
 
@@ -335,11 +335,11 @@ mod client {
                 .into_inner();
 
             match extract!(response.reply)? {
-                test_manager::get_viper_test_suite_parameters_response::Reply::Failure(failure) => {
+                viper_manager::get_viper_test_suite_parameters_response::Reply::Failure(failure) => {
                     let error = GetViperTestSuiteParametersError::try_from(failure)?;
                     Err(ClientError::UsageError(error))
                 }
-                test_manager::get_viper_test_suite_parameters_response::Reply::Success(success) => {
+                viper_manager::get_viper_test_suite_parameters_response::Reply::Success(success) => {
                     let peer_descriptor = extract!(success.descriptor)?;
                     Ok(peer_descriptor)
                 }
@@ -349,7 +349,7 @@ mod client {
 
         pub async fn store_viper_test_run_descriptor(&mut self, descriptor: ViperTestRunDescriptor) -> Result<ViperTestId, ClientError<StoreViperTestRunDescriptorError>> {
 
-            let request = tonic::Request::new(test_manager::StoreViperTestRunDescriptorRequest {
+            let request = tonic::Request::new(viper_manager::StoreViperTestRunDescriptorRequest {
                 test: Some(descriptor.into()),
             });
 
@@ -357,11 +357,11 @@ mod client {
                 .into_inner();
 
             match extract!(response.reply)? {
-                test_manager::store_viper_test_run_descriptor_response::Reply::Failure(failure) => {
+                viper_manager::store_viper_test_run_descriptor_response::Reply::Failure(failure) => {
                     let error = StoreViperTestRunDescriptorError::try_from(failure)?;
                     Err(ClientError::UsageError(error))
                 }
-                test_manager::store_viper_test_run_descriptor_response::Reply::Success(success) => {
+                viper_manager::store_viper_test_run_descriptor_response::Reply::Success(success) => {
                     let test_id = extract!(success.test_id)?;
                     Ok(test_id)
                 }
@@ -371,7 +371,7 @@ mod client {
 
         pub async fn delete_viper_test_run_descriptor(&mut self, test_id: ViperTestId) -> Result<ViperTestId, ClientError<DeleteViperTestRunDescriptorError>> {
 
-            let request = tonic::Request::new(test_manager::DeleteViperTestRunDescriptorRequest {
+            let request = tonic::Request::new(viper_manager::DeleteViperTestRunDescriptorRequest {
                 test_id: Some(test_id.into()),
             });
 
@@ -379,11 +379,11 @@ mod client {
                 .into_inner();
 
             match extract!(response.reply)? {
-                test_manager::delete_viper_test_run_descriptor_response::Reply::Failure(failure) => {
+                viper_manager::delete_viper_test_run_descriptor_response::Reply::Failure(failure) => {
                     let error = DeleteViperTestRunDescriptorError::try_from(failure)?;
                     Err(ClientError::UsageError(error))
                 }
-                test_manager::delete_viper_test_run_descriptor_response::Reply::Success(success) => {
+                viper_manager::delete_viper_test_run_descriptor_response::Reply::Success(success) => {
                     let test_id = extract!(success.test_id)?;
                     Ok(test_id)
                 }
@@ -392,7 +392,7 @@ mod client {
 
         pub async fn get_viper_test_run_descriptor(&mut self, test_id: ViperTestId) -> Result<ViperTestRunDescriptor, ClientError<GetViperTestRunDescriptorError>> {
 
-            let request = tonic::Request::new(test_manager::GetViperTestRunDescriptorRequest {
+            let request = tonic::Request::new(viper_manager::GetViperTestRunDescriptorRequest {
                 test_id: Some(test_id.into()),
             });
 
@@ -400,11 +400,11 @@ mod client {
                 .into_inner();
 
             match extract!(response.reply)? {
-                test_manager::get_viper_test_run_descriptor_response::Reply::Failure(failure) => {
+                viper_manager::get_viper_test_run_descriptor_response::Reply::Failure(failure) => {
                     let error = GetViperTestRunDescriptorError::try_from(failure)?;
                     Err(ClientError::UsageError(error))
                 }
-                test_manager::get_viper_test_run_descriptor_response::Reply::Success(success) => {
+                viper_manager::get_viper_test_run_descriptor_response::Reply::Success(success) => {
                     let run_descriptor = extract!(success.descriptor)?;
                     Ok(run_descriptor)
                 }
@@ -413,17 +413,17 @@ mod client {
 
         pub async fn list_viper_test_run_descriptors(&mut self) -> Result<Vec<ViperTestRunDescriptor>, ClientError<ListViperTestRunDescriptorsError>> {
 
-            let request = tonic::Request::new(test_manager::ListViperTestRunDescriptorsRequest {});
+            let request = tonic::Request::new(viper_manager::ListViperTestRunDescriptorsRequest {});
 
             let response = self.inner.list_viper_test_run_descriptors(request).await?
                 .into_inner();
 
             match extract!(response.reply)? {
-                test_manager::list_viper_test_run_descriptors_response::Reply::Failure(failure) => {
+                viper_manager::list_viper_test_run_descriptors_response::Reply::Failure(failure) => {
                     let error = ListViperTestRunDescriptorsError::try_from(failure)?;
                     Err(ClientError::UsageError(error))
                 }
-                test_manager::list_viper_test_run_descriptors_response::Reply::Success(success) => {
+                viper_manager::list_viper_test_run_descriptors_response::Reply::Success(success) => {
                     Ok(success.tests.into_iter()
                         .map(ViperTestRunDescriptor::try_from)
                         .collect::<Result<Vec<_>, _>>()?
@@ -434,7 +434,7 @@ mod client {
 
         pub async fn store_viper_run_deployment(&mut self, deployment: ViperRunDeployment) -> Result<ViperRunId, ClientError<StoreViperRunDeploymentError>> {
 
-            let request = tonic::Request::new(test_manager::StoreViperRunDeploymentRequest {
+            let request = tonic::Request::new(viper_manager::StoreViperRunDeploymentRequest {
                 run: Some(deployment.into()),
             });
 
@@ -442,11 +442,11 @@ mod client {
                 .into_inner();
 
             match extract!(response.reply)? {
-                test_manager::store_viper_run_deployment_response::Reply::Failure(failure) => {
+                viper_manager::store_viper_run_deployment_response::Reply::Failure(failure) => {
                     let error = StoreViperRunDeploymentError::try_from(failure)?;
                     Err(ClientError::UsageError(error))
                 }
-                test_manager::store_viper_run_deployment_response::Reply::Success(success) => {
+                viper_manager::store_viper_run_deployment_response::Reply::Success(success) => {
                     let run_id = extract!(success.run_id)?;
                     Ok(run_id)
                 }
@@ -455,7 +455,7 @@ mod client {
 
         pub async fn delete_viper_run_deployment(&mut self, run_id: ViperRunId) -> Result<ViperRunId, ClientError<DeleteViperRunDeploymentError>> {
 
-            let request = tonic::Request::new(test_manager::DeleteViperRunDeploymentRequest {
+            let request = tonic::Request::new(viper_manager::DeleteViperRunDeploymentRequest {
                 run_id: Some(run_id.into()),
             });
 
@@ -463,11 +463,11 @@ mod client {
                 .into_inner();
 
             match extract!(response.reply)? {
-                test_manager::delete_viper_run_deployment_response::Reply::Failure(failure) => {
+                viper_manager::delete_viper_run_deployment_response::Reply::Failure(failure) => {
                     let error = DeleteViperRunDeploymentError::try_from(failure)?;
                     Err(ClientError::UsageError(error))
                 }
-                test_manager::delete_viper_run_deployment_response::Reply::Success(success) => {
+                viper_manager::delete_viper_run_deployment_response::Reply::Success(success) => {
                     let run_id = extract!(success.run_id)?;
                     Ok(run_id)
                 }
@@ -476,7 +476,7 @@ mod client {
 
         pub async fn get_viper_run_deployment(&mut self, run_id: ViperRunId) -> Result<ViperRunDeployment, ClientError<GetViperRunDeploymentError>> {
 
-            let request = tonic::Request::new(test_manager::GetViperRunDeploymentRequest {
+            let request = tonic::Request::new(viper_manager::GetViperRunDeploymentRequest {
                 run_id: Some(run_id.into()),
             });
 
@@ -484,11 +484,11 @@ mod client {
                 .into_inner();
 
             match extract!(response.reply)? {
-                test_manager::get_viper_run_deployment_response::Reply::Failure(failure) => {
+                viper_manager::get_viper_run_deployment_response::Reply::Failure(failure) => {
                     let error = GetViperRunDeploymentError::try_from(failure)?;
                     Err(ClientError::UsageError(error))
                 }
-                test_manager::get_viper_run_deployment_response::Reply::Success(success) => {
+                viper_manager::get_viper_run_deployment_response::Reply::Success(success) => {
                     let run_deployment = extract!(success.deployment)?;
                     Ok(run_deployment)
                 }
@@ -497,17 +497,17 @@ mod client {
 
         pub async fn list_viper_run_deployments(&mut self) -> Result<Vec<ViperRunDeployment>, ClientError<ListViperRunDeploymentsError>> {
 
-            let request = tonic::Request::new(test_manager::ListViperRunDeploymentsRequest {});
+            let request = tonic::Request::new(viper_manager::ListViperRunDeploymentsRequest {});
 
             let response = self.inner.list_viper_run_deployments(request).await?
                 .into_inner();
 
             match extract!(response.reply)? {
-                test_manager::list_viper_run_deployments_response::Reply::Failure(failure) => {
+                viper_manager::list_viper_run_deployments_response::Reply::Failure(failure) => {
                     let error = ListViperRunDeploymentsError::try_from(failure)?;
                     Err(ClientError::UsageError(error))
                 }
-                test_manager::list_viper_run_deployments_response::Reply::Success(success) => {
+                viper_manager::list_viper_run_deployments_response::Reply::Success(success) => {
                     Ok(success.runs.into_iter()
                         .map(ViperRunDeployment::try_from)
                         .collect::<Result<Vec<_>, _>>()?

@@ -1,29 +1,29 @@
 use tonic::{Request, Response, Status};
 use tracing::{error, trace};
-use opendut_carl_api::proto::services::test_manager::{delete_viper_source_descriptor_response, get_viper_source_descriptor_response, get_viper_test_suite_parameters_response, list_viper_source_descriptors_response, store_viper_source_descriptor_response, DeleteViperSourceDescriptorRequest, DeleteViperSourceDescriptorResponse, DeleteViperSourceDescriptorSuccess, GetViperSourceDescriptorRequest, GetViperSourceDescriptorResponse, GetViperSourceDescriptorSuccess, GetViperTestSuiteParametersRequest, GetViperTestSuiteParametersResponse, GetViperTestSuiteParametersSuccess, ListViperSourceDescriptorsRequest, ListViperSourceDescriptorsResponse, ListViperSourceDescriptorsSuccess, StoreViperSourceDescriptorRequest, StoreViperSourceDescriptorResponse, StoreViperSourceDescriptorSuccess};
-use opendut_carl_api::proto::services::test_manager::{delete_viper_test_run_descriptor_response, get_viper_test_run_descriptor_response, list_viper_test_run_descriptors_response, store_viper_test_run_descriptor_response, DeleteViperTestRunDescriptorRequest, DeleteViperTestRunDescriptorResponse, DeleteViperTestRunDescriptorSuccess, GetViperTestRunDescriptorRequest, GetViperTestRunDescriptorResponse, GetViperTestRunDescriptorSuccess, ListViperTestRunDescriptorsRequest, ListViperTestRunDescriptorsResponse, ListViperTestRunDescriptorsSuccess, StoreViperTestRunDescriptorRequest, StoreViperTestRunDescriptorResponse, StoreViperTestRunDescriptorSuccess};
-use opendut_carl_api::proto::services::test_manager::{delete_viper_run_deployment_response, get_viper_run_deployment_response, list_viper_run_deployments_response, store_viper_run_deployment_response, DeleteViperRunDeploymentRequest, DeleteViperRunDeploymentResponse, DeleteViperRunDeploymentSuccess, GetViperRunDeploymentRequest, GetViperRunDeploymentResponse, GetViperRunDeploymentSuccess, ListViperRunDeploymentsRequest, ListViperRunDeploymentsResponse, ListViperRunDeploymentsSuccess, StoreViperRunDeploymentRequest, StoreViperRunDeploymentResponse, StoreViperRunDeploymentSuccess};
-use opendut_carl_api::proto::services::test_manager::test_manager_server::{TestManager as TestManagerService, TestManagerServer};
+use opendut_carl_api::proto::services::viper_manager::{delete_viper_source_descriptor_response, get_viper_source_descriptor_response, get_viper_test_suite_parameters_response, list_viper_source_descriptors_response, store_viper_source_descriptor_response, DeleteViperSourceDescriptorRequest, DeleteViperSourceDescriptorResponse, DeleteViperSourceDescriptorSuccess, GetViperSourceDescriptorRequest, GetViperSourceDescriptorResponse, GetViperSourceDescriptorSuccess, GetViperTestSuiteParametersRequest, GetViperTestSuiteParametersResponse, GetViperTestSuiteParametersSuccess, ListViperSourceDescriptorsRequest, ListViperSourceDescriptorsResponse, ListViperSourceDescriptorsSuccess, StoreViperSourceDescriptorRequest, StoreViperSourceDescriptorResponse, StoreViperSourceDescriptorSuccess};
+use opendut_carl_api::proto::services::viper_manager::{delete_viper_test_run_descriptor_response, get_viper_test_run_descriptor_response, list_viper_test_run_descriptors_response, store_viper_test_run_descriptor_response, DeleteViperTestRunDescriptorRequest, DeleteViperTestRunDescriptorResponse, DeleteViperTestRunDescriptorSuccess, GetViperTestRunDescriptorRequest, GetViperTestRunDescriptorResponse, GetViperTestRunDescriptorSuccess, ListViperTestRunDescriptorsRequest, ListViperTestRunDescriptorsResponse, ListViperTestRunDescriptorsSuccess, StoreViperTestRunDescriptorRequest, StoreViperTestRunDescriptorResponse, StoreViperTestRunDescriptorSuccess};
+use opendut_carl_api::proto::services::viper_manager::{delete_viper_run_deployment_response, get_viper_run_deployment_response, list_viper_run_deployments_response, store_viper_run_deployment_response, DeleteViperRunDeploymentRequest, DeleteViperRunDeploymentResponse, DeleteViperRunDeploymentSuccess, GetViperRunDeploymentRequest, GetViperRunDeploymentResponse, GetViperRunDeploymentSuccess, ListViperRunDeploymentsRequest, ListViperRunDeploymentsResponse, ListViperRunDeploymentsSuccess, StoreViperRunDeploymentRequest, StoreViperRunDeploymentResponse, StoreViperRunDeploymentSuccess};
+use opendut_carl_api::proto::services::viper_manager::viper_manager_server::{ViperManager as ViperManagerService, ViperManagerServer};
 use opendut_model::viper::{ViperRunDeployment, ViperRunId, ViperSourceDescriptor, ViperSourceId, ViperTestRunDescriptor, ViperTestId};
 use crate::manager::grpc::error::LogApiErr;
 use crate::manager::grpc::extract;
-use crate::manager::test_manager::delete_viper_source_descriptor::DeleteViperSourceDescriptorError;
-use crate::manager::test_manager::get_viper_test_suite_parameters::GetViperTestSuiteParametersError;
+use crate::manager::viper_manager::delete_viper_source_descriptor::DeleteViperSourceDescriptorError;
+use crate::manager::viper_manager::get_viper_test_suite_parameters::GetViperTestSuiteParametersError;
 use crate::resource::manager::ResourceManagerRef;
 use crate::resource::manager::error::{MapErrToInner, PersistenceError};
 
-pub struct TestManagerFacade {
+pub struct ViperManagerFacade {
     pub resource_manager: ResourceManagerRef,
 }
 
-impl TestManagerFacade {
-    pub fn into_grpc_service(self) -> super::web::CorsGrpcWeb<TestManagerServer<Self>> {
-        super::web::enable(TestManagerServer::new(self))
+impl ViperManagerFacade {
+    pub fn into_grpc_service(self) -> super::web::CorsGrpcWeb<ViperManagerServer<Self>> {
+        super::web::enable(ViperManagerServer::new(self))
     }
 }
 
 #[tonic::async_trait]
-impl TestManagerService for TestManagerFacade {
+impl ViperManagerService for ViperManagerFacade {
 
     //
     // ViperSourceDescriptor

@@ -6,7 +6,7 @@ use opendut_auth::registration::resources::ResourceHomeUrl;
 use opendut_util::pem::Pem;
 use crate::manager::grpc::{ClusterManagerFacade, MetadataProviderFacade, ObserverMessagingBrokerFacade, PeerManagerFacade, PeerMessagingBrokerFacade};
 #[cfg(feature = "viper")]
-use crate::manager::grpc::TestManagerFacade;
+use crate::manager::grpc::ViperManagerFacade;
 use crate::resource::manager::ResourceManagerRef;
 use crate::startup;
 use crate::manager::cluster_manager::{ClusterManager, ClusterManagerOptions};
@@ -21,7 +21,7 @@ pub struct GrpcFacades {
     pub peer_messaging_broker_facade: PeerMessagingBrokerFacade,
     pub observer_messaging_broker_facade: ObserverMessagingBrokerFacade,
     #[cfg(feature = "viper")]
-    pub test_manager_facade: TestManagerFacade,
+    pub viper_manager_facade: ViperManagerFacade,
 }
 
 impl GrpcFacades {
@@ -42,7 +42,7 @@ impl GrpcFacades {
             resource_manager.clone(),
             PeerMessagingBrokerOptions::load(settings)?,
         ).await;
-        
+
         let cluster_manager = ClusterManager::create(
             resource_manager.clone(),
             Arc::clone(&peer_messaging_broker),
@@ -68,12 +68,12 @@ impl GrpcFacades {
         let observer_messaging_broker_facade = ObserverMessagingBrokerFacade::new(resource_manager.clone(), Arc::clone(&observer_messaging_broker));
 
         #[cfg(feature = "viper")]
-        let test_manager_facade = TestManagerFacade {
+        let viper_manager_facade = ViperManagerFacade {
             resource_manager: resource_manager.clone(),
         };
-        
+
         #[cfg(feature = "viper")]
-        crate::manager::test_manager::effects::register(resource_manager.clone()).await;
+        crate::manager::viper_manager::effects::register(resource_manager.clone()).await;
 
         Ok(GrpcFacades {
             cluster_manager_facade,
@@ -82,7 +82,7 @@ impl GrpcFacades {
             peer_messaging_broker_facade,
             observer_messaging_broker_facade,
             #[cfg(feature = "viper")]
-            test_manager_facade,
+            viper_manager_facade,
         })
     }
 }

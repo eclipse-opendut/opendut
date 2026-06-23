@@ -160,7 +160,7 @@ async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::
             .add_service(grpc_facades.observer_messaging_broker_facade.into_grpc_service());
 
         #[cfg(feature = "viper")]
-        routes_builder.add_service(grpc_facades.test_manager_facade.into_grpc_service());
+        routes_builder.add_service(grpc_facades.viper_manager_facade.into_grpc_service());
 
         let reqwest_client = reqwest_client::oidc::create_from_config(&settings)?;
         routes_builder

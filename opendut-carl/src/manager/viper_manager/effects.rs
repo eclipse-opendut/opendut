@@ -3,7 +3,7 @@ use opendut_model::viper::ViperRunDeployment;
 use opendut_viper_rt::compile::SourceCode;
 use opendut_viper_rt::source::Source;
 use opendut_viper_rt::ViperRuntime;
-use crate::manager::test_manager::fetch_source_code::FetchError;
+use crate::manager::viper_manager::fetch_source_code::FetchError;
 use crate::resource::{manager::{ResourceManagerRef, SubscriptionEvent}};
 
 pub(crate) async fn register(resource_manager: ResourceManagerRef) {

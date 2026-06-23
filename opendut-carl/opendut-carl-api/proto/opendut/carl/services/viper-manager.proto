@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package opendut.carl.services.test_manager;
+package opendut.carl.services.viper_manager;
 
 import "opendut/model/cluster/cluster.proto";
 import "opendut/model/viper/run.proto";
@@ -10,7 +10,7 @@ import "opendut/model/viper/source.proto";
 import "opendut/model/viper/suite.proto";
 import "opendut/viper/rt/test_suite.proto";
 
-service TestManager {
+service ViperManager {
   rpc StoreViperSourceDescriptor(StoreViperSourceDescriptorRequest) returns (StoreViperSourceDescriptorResponse) {}
   rpc DeleteViperSourceDescriptor(DeleteViperSourceDescriptorRequest) returns (DeleteViperSourceDescriptorResponse) {}
   rpc GetViperSourceDescriptor(GetViperSourceDescriptorRequest) returns (GetViperSourceDescriptorResponse) {}

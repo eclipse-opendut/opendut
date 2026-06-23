@@ -4,4 +4,4 @@ pub mod peer_manager;
 pub mod peer_messaging_broker;
 pub mod observer_messaging_broker;
 #[cfg(feature="viper")]
-pub mod test_manager;
+pub mod viper_manager;

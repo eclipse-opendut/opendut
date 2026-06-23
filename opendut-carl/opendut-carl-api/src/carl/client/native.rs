@@ -12,7 +12,7 @@ use crate::carl::peer::PeersRegistrar;
 use crate::carl::broker::PeerMessagingBroker;
 use crate::carl::observer::ObserverMessagingBroker;
 #[cfg(feature="viper")]
-use crate::carl::viper::TestManager;
+use crate::carl::viper::ViperManager;
 
 use crate::proto::services::cluster_manager::cluster_manager_client::ClusterManagerClient;
 use crate::proto::services::metadata_provider::metadata_provider_client::MetadataProviderClient;
@@ -20,7 +20,7 @@ use crate::proto::services::peer_manager::peer_manager_client::PeerManagerClient
 use crate::proto::services::peer_messaging_broker::peer_messaging_broker_client::PeerMessagingBrokerClient;
 use crate::proto::services::observer_messaging_broker::observer_messaging_broker_client::ObserverMessagingBrokerClient;
 #[cfg(feature="viper")]
-use crate::proto::services::test_manager::test_manager_client::TestManagerClient;
+use crate::proto::services::viper_manager::viper_manager_client::ViperManagerClient;
 
 use super::InitializationError;
 
@@ -32,7 +32,7 @@ pub struct CarlClient {
     pub peers: PeersRegistrar<TonicAuthenticationService>,
     pub observer: ObserverMessagingBroker<TonicAuthenticationService>,
     #[cfg(feature="viper")]
-    pub viper: TestManager<TonicAuthenticationService>,
+    pub viper: ViperManager<TonicAuthenticationService>,
 }
 
 impl CarlClient {
@@ -102,7 +102,7 @@ impl CarlClient {
             peers: PeersRegistrar::new(PeerManagerClient::new(Clone::clone(&auth_service))),
             observer: ObserverMessagingBroker::new(ObserverMessagingBrokerClient::new(Clone::clone(&auth_service))),
             #[cfg(feature="viper")]
-            viper: TestManager::new(TestManagerClient::new(Clone::clone(&auth_service))),
+            viper: ViperManager::new(ViperManagerClient::new(Clone::clone(&auth_service))),
         })
     }
 }

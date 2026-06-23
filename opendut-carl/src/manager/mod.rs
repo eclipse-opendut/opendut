@@ -4,7 +4,7 @@ pub mod grpc;
 pub mod peer_manager;
 pub mod observer_messaging_broker;
 #[cfg(feature = "viper")]
-pub mod test_manager;
+pub mod viper_manager;
 
 #[cfg(test)]
 pub(crate) mod testing {

@@ -2,7 +2,7 @@ use opendut_model::viper::ViperTestSuiteIdentifier;
 use opendut_util::conversion;
 use opendut_util::proto::ConversionResult;
 
-tonic::include_proto!("opendut.carl.services.test_manager");
+tonic::include_proto!("opendut.carl.services.viper_manager");
 
 
 //
