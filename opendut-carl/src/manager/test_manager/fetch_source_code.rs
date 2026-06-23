@@ -9,18 +9,7 @@ use crate::resource::manager::{Resources, error::PersistenceError, ResourcesStor
 
 
 impl Resources<'_> {
-    pub async fn fetch_source_code(&self, test_id: ViperTestId) -> Result<(), FetchError> {
-        let fetch_source_code = async move |viper_runtime: ViperRuntime, source: &Source| {
-            let source_code = viper_runtime.fetch_source_code(source).await?;
-            Ok(source_code)
-        };
-
-        self.fetch_source_code_impl(test_id, fetch_source_code).await?;
-
-        Ok(())
-    }
-
-    async fn fetch_source_code_impl(
+    pub async fn fetch_source_code(
         &self,
         test_id: ViperTestId,
         fetch_source_code: impl AsyncFnOnce(ViperRuntime, &Source) -> Result<SourceCode, FetchError>,
@@ -69,7 +58,7 @@ mod test {
 
         resource_manager.resources_mut(async |resources| {
             let test_id = viper_test_fixture.id;
-            resources.fetch_source_code_impl(test_id, mock_fetch_source_code).await
+            resources.fetch_source_code(test_id, mock_fetch_source_code).await
         }).await??;
 
         Ok(())

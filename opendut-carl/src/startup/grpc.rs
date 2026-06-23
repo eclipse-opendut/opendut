@@ -42,6 +42,7 @@ impl GrpcFacades {
             resource_manager.clone(),
             PeerMessagingBrokerOptions::load(settings)?,
         ).await;
+        
         let cluster_manager = ClusterManager::create(
             resource_manager.clone(),
             Arc::clone(&peer_messaging_broker),
@@ -70,6 +71,9 @@ impl GrpcFacades {
         let test_manager_facade = TestManagerFacade {
             resource_manager: resource_manager.clone(),
         };
+        
+        #[cfg(feature = "viper")]
+        crate::manager::test_manager::effects::register(resource_manager.clone()).await;
 
         Ok(GrpcFacades {
             cluster_manager_facade,

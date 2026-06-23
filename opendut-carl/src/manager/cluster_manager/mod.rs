@@ -90,7 +90,6 @@ impl ClusterManager {
             .map_err(|source| ListClusterDescriptorsError { source })
     }
 
-
     #[tracing::instrument(skip(self), level="trace")]
     pub async fn store_cluster_deployment(&mut self, deployment: ClusterDeployment) -> Result<ClusterId, StoreClusterDeploymentError> {
         let cluster_id = deployment.id;
