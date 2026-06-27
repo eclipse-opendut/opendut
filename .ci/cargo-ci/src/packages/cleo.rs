@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use cicero::distribution::build::{target, Target};
 
 use crate::Package;
@@ -58,9 +56,6 @@ pub mod build {
 
     pub fn build_release(target: Target, release_build: bool) -> anyhow::Result<()> {
         crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)
-    }
-    pub fn out_dir(target: Target) -> PathBuf {
-        crate::tasks::build::out_file(SELF_PACKAGE, target)
     }
 }
 
