@@ -1,5 +1,5 @@
 use crate::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use anyhow::Context;
 use tracing::info;
 use cicero::distribution::build::Target;
@@ -88,9 +88,6 @@ pub mod build {
     pub fn build_release(target: Target, release_build: bool) -> anyhow::Result<()> {
         crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)
     }
-    pub fn out_dir(target: Target) -> PathBuf {
-        crate::tasks::build::out_file(SELF_PACKAGE, target)
-    }
 }
 
 pub mod distribution {
@@ -133,28 +130,25 @@ pub mod distribution {
         pub fn get_cleo(out_dir: &Path, release_build: bool) -> anyhow::Result<()> {
 
             let cleo_out_dir = out_dir.join(Package::Cleo.ident());
-            fs::create_dir_all(cleo_out_dir)?;
+            fs::create_dir_all(&cleo_out_dir)?;
 
             let architectures = if release_build {
                 crate::packages::cleo::SUPPORTED_TARGETS.to_vec()
             } else {
                 vec![Target::default()]
             };
-            
+
             for arch in architectures {
                 crate::packages::cleo::distribution::cleo_distribution(arch.to_owned(), release_build)?;
                 let cleo_build_dir = crate::tasks::distribution::out_arch_dir(arch.to_owned());
 
-                let cleo_arch_dir = out_dir.join(Package::Cleo.ident());
-                fs::create_dir_all(&cleo_arch_dir)?;
-
                 let tar_file_name = bundle::out_file(Package::Cleo, arch);
 
-                let cleo_tar_file_name = tar_file_name.file_name().context(format!("Could not extract file name {}", &tar_file_name.display()))?;
+                let cleo_tar_file_name = tar_file_name.file_name().context(format!("Could not extract file name {tar_file_name:?}"))?;
 
                 fs_extra::file::copy(
                     cleo_build_dir.join(&tar_file_name),
-                    cleo_arch_dir.join(cleo_tar_file_name),
+                    cleo_out_dir.join(cleo_tar_file_name),
                     &fs_extra::file::CopyOptions::default()
                         .overwrite(true)
                 )?;
@@ -175,7 +169,7 @@ pub mod distribution {
         pub fn get_edgar(out_dir: &Path, release_build: bool) -> anyhow::Result<()> {
 
             let edgar_out_dir = out_dir.join(Package::Edgar.ident());
-            fs::create_dir_all(edgar_out_dir)?;
+            fs::create_dir_all(&edgar_out_dir)?;
 
             let architectures = if release_build {
                 crate::packages::edgar::SUPPORTED_TARGETS.to_vec()
@@ -187,16 +181,13 @@ pub mod distribution {
                 crate::packages::edgar::distribution::edgar_distribution(arch.to_owned(), release_build)?;
                 let edgar_build_dir = crate::tasks::distribution::out_arch_dir(arch.to_owned());
 
-                let edgar_arch_dir = out_dir.join(Package::Edgar.ident());
-                fs::create_dir_all(&edgar_arch_dir)?;
-
                 let tar_file_name = bundle::out_file(Package::Edgar, arch);
 
-                let edgar_tar_file_name = tar_file_name.file_name().context(format!("Could not extract file name {}", &tar_file_name.display()))?;
+                let edgar_tar_file_name = tar_file_name.file_name().context(format!("Could not extract file name {tar_file_name:?}"))?;
 
                 fs_extra::file::copy(
                     edgar_build_dir.join(&tar_file_name),
-                    edgar_arch_dir.join(edgar_tar_file_name),
+                    edgar_out_dir.join(edgar_tar_file_name),
                     &fs_extra::file::CopyOptions::default()
                         .overwrite(true)
                 )?;
@@ -217,7 +208,6 @@ pub mod distribution {
             let lea_build_dir = crate::packages::lea::build::out_dir();
 
             let lea_out_dir = out_dir.join(Package::Lea.ident());
-
             fs::create_dir_all(&lea_out_dir)?;
 
             fs_extra::dir::copy(
