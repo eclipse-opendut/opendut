@@ -1,4 +1,4 @@
-use crate::fs;
+use crate::{fs, workspace};
 use std::path::PathBuf;
 
 use anyhow::{anyhow, bail, Context};
@@ -11,7 +11,7 @@ use crate::core::types::parsing::package::PackageSelection;
 
 pub const SUPPORTED_TARGETS: [Target; 3] = [target::x86_64_unknown_linux_gnu, target::armv7_unknown_linux_gnueabihf, target::aarch64_unknown_linux_gnu];
 
-const SELF_PACKAGE: Package = Package::Edgar;
+const SELF_PACKAGE: &Package = &workspace::package::opendut_edgar;
 
 
 /// Tasks available or specific for EDGAR
@@ -62,7 +62,7 @@ impl EdgarCli {
             TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target, release_build }) => {
                 distribution::edgar_distribution(target, release_build)?;
             }
-            TaskCli::Licenses(cli) => cli.run(PackageSelection::Single(SELF_PACKAGE))?,
+            TaskCli::Licenses(cli) => cli.run(PackageSelection::Single(SELF_PACKAGE.clone()))?,
             TaskCli::Run(cli) => cli.run(SELF_PACKAGE)?,
 
             TaskCli::DistributionNetbirdClient { target } => {
@@ -204,7 +204,7 @@ pub mod distribution {
             crate::constants::target_dir().join("netbird")
         }
 
-        pub fn out_file(package: Package, target: Target) -> PathBuf {
+        pub fn out_file(package: &Package, target: Target) -> PathBuf {
             crate::tasks::distribution::out_package_dir(package, target).join("install").join("netbird.tar.gz")
         }
     }
@@ -292,7 +292,7 @@ pub mod distribution {
             crate::constants::target_dir().join("rperf")
         }
 
-        pub fn out_file(package: Package, target: Target) -> PathBuf {
+        pub fn out_file(package: &Package, target: Target) -> PathBuf {
             crate::tasks::distribution::out_package_dir(package, target).join("install").join("rperf")
         }
     }
@@ -337,10 +337,10 @@ pub mod distribution {
                 unpack_dir
             };
 
-            let edgar_dir = unpack_dir.child(SELF_PACKAGE.ident());
+            let edgar_dir = unpack_dir.child(SELF_PACKAGE.name);
             edgar_dir.assert(path::is_dir());
 
-            let opendut_edgar_executable = edgar_dir.child(SELF_PACKAGE.ident());
+            let opendut_edgar_executable = edgar_dir.child(SELF_PACKAGE.name);
             let install_dir = edgar_dir.child("install");
             let licenses_dir = edgar_dir.child("licenses");
             let plugins_dir = edgar_dir.child("plugins");

@@ -38,7 +38,7 @@ impl LicensesCli {
             }
             TaskCli::Json => {
                 for package in packages.iter() {
-                    json::export_json(package)?
+                    json::export_json(&package)?
                 }
             }
             TaskCli::Sbom => {
@@ -74,7 +74,7 @@ pub mod json {
     use super::*;
 
     #[tracing::instrument(skip_all)]
-    pub fn export_json(package: Package) -> anyhow::Result<()> {
+    pub fn export_json(package: &Package) -> anyhow::Result<()> {
         let out_file = out_file(package);
         fs::create_dir_all(out_file.parent().unwrap())?;
 
@@ -84,7 +84,7 @@ pub mod json {
             .arg("--config").arg(cargo_deny_toml())
             .arg("--layout=crate")
             .arg("--format=json")
-            .current_dir(repo_path!().join(package.ident()))
+            .current_dir(repo_path!().join(package.name))
             .stdout(Stdio::from(std::fs::File::create(&out_file)?))
             .status_exit_ok()?;
 
@@ -93,13 +93,13 @@ pub mod json {
         Ok(())
     }
 
-    pub fn out_file(package: Package) -> PathBuf {
+    pub fn out_file(package: &Package) -> PathBuf {
         constants::target_dir()
             .join("licenses")
             .join(out_file_name(package))
     }
-    pub fn out_file_name(package: Package) -> String {
-        format!("{}.licenses.json", package.ident())
+    pub fn out_file_name(package: &Package) -> String {
+        format!("{package}.licenses.json")
     }
 }
 

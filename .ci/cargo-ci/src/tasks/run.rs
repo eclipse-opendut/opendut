@@ -14,9 +14,9 @@ pub struct RunCli {
 
 impl RunCli {
     #[tracing::instrument(name="run", skip(self))]
-    pub fn run(&self, package: crate::Package) -> anyhow::Result<()> {
+    pub fn run(&self, package: &crate::Package) -> anyhow::Result<()> {
         Command::new("cargo")
-            .args(["run", "--package", &package.ident()])
+            .args(["run", "--package", package.name])
             .arg("--features").arg(self.features.join(","))
             .arg("--")
             .args(&self.passthrough)

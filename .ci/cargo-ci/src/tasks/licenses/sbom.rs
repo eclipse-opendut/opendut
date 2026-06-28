@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use tracing::info;
 
-use crate::core::commands;
+use crate::{core::commands, workspace};
 
 use super::*;
 
@@ -14,19 +14,19 @@ pub struct SbomCli;
 #[tracing::instrument(skip_all)]
 pub fn generate_sboms(packages: PackageSelection) -> anyhow::Result<()> {
     for package in packages.iter() {
-        generate_sbom(package)?
+        generate_sbom(&package)?
     }
 
     info!("Generated SBOMs in: {}", out_dir().display());
     Ok(())
 }
 
-pub fn generate_sbom(package: Package) -> anyhow::Result<()> {
+pub fn generate_sbom(package: &Package) -> anyhow::Result<()> {
     let sbom_dir = out_dir();
     fs::create_dir_all(&sbom_dir)?;
 
     let sbom = commands::CARGO_SBOM.command()
-        .args(["--cargo-package", &package.ident(), "--output-format", "spdx_json_2_3"])
+        .args(["--cargo-package", package.name, "--output-format", "spdx_json_2_3"])
         .output()?
         .stdout;
     let sbom = std::str::from_utf8(&sbom)?;
@@ -45,7 +45,7 @@ pub fn generate_sbom(package: Package) -> anyhow::Result<()> {
         let cargo_metadata = crate::metadata::cargo();
         spdx_packages.push(netbird_spdx_package(&cargo_metadata));
 
-        if package == Package::Edgar {
+        if package == &workspace::package::opendut_edgar {
             spdx_packages.push(cannelloni_spdx_package(&cargo_metadata));
             spdx_packages.push(rperf_spdx_package(&cargo_metadata));
         }
@@ -56,7 +56,7 @@ pub fn generate_sbom(package: Package) -> anyhow::Result<()> {
     let sbom = serde_json::to_string_pretty(&sbom)?;
 
     fs::write(
-        sbom_dir.join(format!("{}-sbom.spdx.json", package.ident())),
+        sbom_dir.join(format!("{package}-sbom.spdx.json")),
         sbom
     )?;
 

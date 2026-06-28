@@ -4,7 +4,7 @@ use tracing::info;
 use std::path::PathBuf;
 
 use crate::core::commands::TRUNK;
-use crate::fs;
+use crate::{fs, workspace};
 
 use crate::core::types::parsing::package::PackageSelection;
 use crate::Package;
@@ -12,7 +12,7 @@ use crate::Package;
 use cicero::command_exit_ok::CommandExitOk;
 
 
-const PACKAGE: Package = Package::Lea;
+const SELF_PACKAGE: &Package = &workspace::package::opendut_lea;
 
 /// Tasks available or specific for LEA
 #[derive(clap::Parser)]
@@ -50,7 +50,7 @@ impl LeaCli {
                 build::build(release_build, passthrough)?
             },
             TaskCli::Run(BuildCli { passthrough }) => run::run(passthrough)?,
-            TaskCli::Licenses(cli) => cli.run(PackageSelection::Single(PACKAGE))?,
+            TaskCli::Licenses(cli) => cli.run(PackageSelection::Single(SELF_PACKAGE.clone()))?,
             TaskCli::DistributionBuild(BuildCli { passthrough }) => {
                 distribution_build::distribution_build(passthrough)?
             },

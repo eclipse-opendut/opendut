@@ -1,11 +1,11 @@
 use cicero::distribution::build::{target, Target};
 
-use crate::Package;
+use crate::{Package, workspace};
 use crate::core::types::parsing::package::PackageSelection;
 
 pub const SUPPORTED_TARGETS: [Target; 3] = [target::x86_64_unknown_linux_gnu, target::armv7_unknown_linux_gnueabihf, target::aarch64_unknown_linux_gnu];
 
-const SELF_PACKAGE: Package = Package::Cleo;
+const SELF_PACKAGE: &Package = &workspace::package::opendut_cleo;
 
 
 /// Tasks available or specific for CLEO
@@ -38,7 +38,7 @@ impl CleoCli {
             TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target, release_build }) => {
                 distribution::cleo_distribution(target, release_build)?;
             }
-            TaskCli::Licenses(cli) => cli.run(PackageSelection::Single(SELF_PACKAGE))?,
+            TaskCli::Licenses(cli) => cli.run(PackageSelection::Single(SELF_PACKAGE.clone()))?,
             TaskCli::Run(cli) => cli.run(SELF_PACKAGE)?,
 
             TaskCli::DistributionCopyLicenseJson(cli) => cli.run(SELF_PACKAGE)?,
@@ -115,10 +115,10 @@ pub mod distribution {
                 unpack_dir
             };
 
-            let cleo_dir = unpack_dir.child(SELF_PACKAGE.ident());
+            let cleo_dir = unpack_dir.child(SELF_PACKAGE.name);
             cleo_dir.assert(path::is_dir());
 
-            let opendut_edgar_executable = cleo_dir.child(SELF_PACKAGE.ident());
+            let opendut_edgar_executable = cleo_dir.child(SELF_PACKAGE.name);
             let licenses_dir = cleo_dir.child("licenses");
 
             cleo_dir.dir_contains_exactly_in_order(vec![

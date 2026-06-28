@@ -12,6 +12,7 @@ pub mod packages;
 mod tasks;
 
 shadow_rs::shadow!(build);
+cicero::workspace!();
 
 
 #[derive(clap::Parser)]
