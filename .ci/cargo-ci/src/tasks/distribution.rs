@@ -20,7 +20,7 @@ pub struct DistributionCli {
 }
 
 #[tracing::instrument(skip_all)]
-pub fn clean(package: Package, target: Target) -> anyhow::Result<()> {
+pub fn clean(package: &Package, target: Target) -> anyhow::Result<()> {
     let package_dir = out_package_dir(package, target);
     if package_dir.exists() {
         fs::remove_dir_all(&package_dir)?;
@@ -30,14 +30,14 @@ pub fn clean(package: Package, target: Target) -> anyhow::Result<()> {
 }
 
 #[tracing::instrument(skip_all)]
-pub fn collect_executables(package: Package, target: Target) -> anyhow::Result<()> {
+pub fn collect_executables(package: &Package, target: Target) -> anyhow::Result<()> {
 
     let out_dir = out_package_dir(package, target);
     fs::create_dir_all(&out_dir)?;
 
     fs::copy(
         crate::tasks::build::out_file(package, target),
-        out_dir.join(package.ident()),
+        out_dir.join(package.name),
     )?;
     Ok(())
 }
@@ -60,7 +60,7 @@ pub mod copy_license_json {
         pub skip_generate: bool,
     }
     impl DistributionCopyLicenseJsonCli {
-        pub fn run(&self, package: Package) -> anyhow::Result<()> {
+        pub fn run(&self, package: &Package) -> anyhow::Result<()> {
             copy_license_json(package, self.target, self.skip_generate.into())
         }
     }
@@ -74,7 +74,7 @@ pub mod copy_license_json {
     }
 
     #[tracing::instrument(skip_all)]
-    pub fn copy_license_json(package: Package, target: Target, skip_generate: SkipGenerate) -> anyhow::Result<()> {
+    pub fn copy_license_json(package: &Package, target: Target, skip_generate: SkipGenerate) -> anyhow::Result<()> {
 
         match skip_generate {
             SkipGenerate::Yes => info!("Skipping generation of licenses, as requested. Directly attempting to copy to target location."),
@@ -89,7 +89,7 @@ pub mod copy_license_json {
 
         Ok(())
     }
-    pub fn out_file(package: Package, target: Target) -> PathBuf {
+    pub fn out_file(package: &Package, target: Target) -> PathBuf {
         out_package_dir(package, target)
             .join("licenses")
             .join(crate::tasks::licenses::json::out_file_name(package))
@@ -108,14 +108,14 @@ pub mod bundle {
         target: Target,
     }
     impl DistributionBundleFilesCli {
-        pub fn run(&self, package: Package) -> anyhow::Result<()> {
+        pub fn run(&self, package: &Package) -> anyhow::Result<()> {
             let release_build = true; //this CLI is only used in CI
             bundle_files(package, self.target, release_build)
         }
     }
 
     #[tracing::instrument(skip_all)]
-    pub fn bundle_files(package: Package, target: Target, release_build: bool) -> anyhow::Result<()> {
+    pub fn bundle_files(package: &Package, target: Target, release_build: bool) -> anyhow::Result<()> {
         use flate2::write::GzEncoder;
 
         let in_dir = out_package_dir(package, target);
@@ -146,7 +146,7 @@ pub mod bundle {
         let mut tar_gz = tar::Builder::new(
             GzEncoder::new(out_file, select_compression_level(release_build))
         );
-        tar_gz.append_dir_all(package.ident(), &in_dir)?;
+        tar_gz.append_dir_all(package.name, &in_dir)?;
         tar_gz.into_inner()?.finish()?;
 
         fs::remove_dir_all(in_dir)?;
@@ -154,7 +154,7 @@ pub mod bundle {
         Ok(())
     }
 
-    pub fn out_file(package: Package, target: Target) -> PathBuf {
+    pub fn out_file(package: &Package, target: Target) -> PathBuf {
         let out_file_name_without_version = out_file_name_without_version(package, target);
         let version = crate::build::PKG_VERSION;
 
@@ -162,8 +162,7 @@ pub mod bundle {
             .join(format!("{out_file_name_without_version}{version}.tar.gz"))
     }
 
-    fn out_file_name_without_version(package: Package, target: Target) -> String {
-        let package = package.ident();
+    fn out_file_name_without_version(package: &Package, target: Target) -> String {
         format!("{package}-{target}-")
     }
 }
@@ -189,8 +188,8 @@ pub fn out_arch_dir(target: Target) -> PathBuf {
     out_dir().join(target.to_string())
 }
 
-pub fn out_package_dir(package: Package, target: Target) -> PathBuf {
-    out_arch_dir(target).join(package.ident())
+pub fn out_package_dir(package: &Package, target: Target) -> PathBuf {
+    out_arch_dir(target).join(package.name)
 }
 
 /// Choose best compression level for different tasks.

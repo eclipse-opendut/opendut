@@ -1,58 +1,27 @@
-use std::fmt::{Display, Formatter};
+use crate::workspace;
 
-/// Package used somewhere in the build process.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, strum::EnumIter)]
-pub enum Package {
-    Carl,
-    CarlApi,
-    Cleo,
-    Edgar,
-    Lea,
-    NetbirdClientApi,
-    Model,
-    Theo,
-    Util,
-    Vpn,
-    VpnNetbird,
-    IntegrationTests
+pub use cicero::workspace::Package;
+
+
+pub trait PackageExt: Sized {
+    fn dockerfile_path(&self) -> Option<&'static str>;
+    fn applications() -> Vec<Self>;
 }
-
-impl Package {
-    pub fn dockerfile_path(&self) -> Option<&'static str> {
-        match self {
-            Package::Carl => Some(".ci/docker/carl/Dockerfile"),
-            Package::Edgar => Some(".ci/docker/edgar/Dockerfile"),
-            _ => None,
+impl PackageExt for cicero::workspace::Package {
+    fn dockerfile_path(&self) -> Option<&'static str> {
+        if self == &workspace::package::opendut_carl {
+            Some(".ci/docker/carl/Dockerfile")
+        }
+        else if self == &workspace::package::opendut_edgar {
+            Some(".ci/docker/edgar/Dockerfile")
+        }
+        else {
+            None
         }
     }
 
-    pub fn ident(&self) -> String {
-        match self {
-            Package::Carl => "opendut-carl",
-            Package::CarlApi => "opendut-carl-api",
-            Package::Cleo => "opendut-cleo",
-            Package::Edgar => "opendut-edgar",
-            Package::Lea => "opendut-lea",
-            Package::NetbirdClientApi => "opendut-netbird-client-api",
-            Package::Model => "opendut-model",
-            Package::Theo => "opendut-theo",
-            Package::Util => "opendut-util",
-            Package::Vpn => "opendut-vpn",
-            Package::VpnNetbird => "opendut-vpn-netbird",
-            Package::IntegrationTests => "opendut-integration-tests",
-        }.to_string()
-    }
-
-    pub fn applications() -> Vec<Self> {
-        use Package::*;
-        vec![Carl, Cleo, Edgar, Lea]
+    fn applications() -> Vec<Self> {
+        use workspace::package::*;
+        vec![opendut_carl, opendut_cleo, opendut_edgar, opendut_lea]
     }
 }
-
-impl Display for Package {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.ident())
-    }
-}
-
-

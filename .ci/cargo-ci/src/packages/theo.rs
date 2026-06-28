@@ -1,9 +1,9 @@
 use cicero::distribution::build::Target;
 
-use crate::Package;
+use crate::{Package, workspace};
 use crate::core::types::parsing::package::PackageSelection;
 
-const SELF_PACKAGE: Package = Package::Theo;
+const SELF_PACKAGE: &Package = &workspace::package::opendut_theo;
 
 
 /// Tasks available or specific for THEO
@@ -36,7 +36,7 @@ impl TheoCli {
             TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target, release_build }) => {
                 distribution::theo_distribution(target, release_build)?;
             }
-            TaskCli::Licenses(cli) => cli.run(PackageSelection::Single(SELF_PACKAGE))?,
+            TaskCli::Licenses(cli) => cli.run(PackageSelection::Single(SELF_PACKAGE.clone()))?,
             TaskCli::Run(cli) => cli.run(SELF_PACKAGE)?,
 
             TaskCli::DistributionCopyLicenseJson(cli) => cli.run(SELF_PACKAGE)?,
@@ -105,10 +105,10 @@ pub mod distribution {
                 unpack_dir
             };
 
-            let theo_dir = unpack_dir.child(SELF_PACKAGE.ident());
+            let theo_dir = unpack_dir.child(SELF_PACKAGE.name);
             theo_dir.assert(path::is_dir());
 
-            let opendut_edgar_executable = theo_dir.child(SELF_PACKAGE.ident());
+            let opendut_edgar_executable = theo_dir.child(SELF_PACKAGE.name);
             let licenses_dir = theo_dir.child("licenses");
 
             theo_dir.dir_contains_exactly_in_order(vec![

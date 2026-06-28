@@ -21,12 +21,12 @@ pub struct DistributionBuildCli {
 }
 
 #[tracing::instrument(skip_all)]
-pub fn distribution_build(package: Package, target: Target, release_build: bool) -> anyhow::Result<()> {
+pub fn distribution_build(package: &Package, target: Target, release_build: bool) -> anyhow::Result<()> {
     let mut command = CROSS.command();
 
     command
         .arg("build")
-        .arg("--package").arg(package.ident())
+        .arg("--package").arg(package.name)
         .arg("--target-dir").arg(cross_target_dir().as_os_str()) //explicitly set target-base-dir to fix unreliable caching behavior
         .arg("--target").arg(target.to_string())
         .arg("--release");
@@ -39,8 +39,8 @@ pub fn distribution_build(package: Package, target: Target, release_build: bool)
     Ok(())
 }
 
-pub fn out_file(package: Package, target: Target) -> PathBuf {
-    cross_target_dir().join(target.to_string()).join("release").join(package.ident())
+pub fn out_file(package: &Package, target: Target) -> PathBuf {
+    cross_target_dir().join(target.to_string()).join("release").join(package.name)
 }
 
 fn cross_target_dir() -> PathBuf {

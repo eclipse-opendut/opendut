@@ -1,7 +1,7 @@
 use std::process::Command;
 use std::str::FromStr;
 
-use crate::core::types::Package;
+use crate::core::types::{Package, PackageExt};
 use anyhow::anyhow;
 use cicero::path::repo_path;
 use cicero::command_exit_ok::CommandExitOk;
@@ -30,10 +30,10 @@ pub struct DockerCli {
 }
 
 impl DockerCli {
-    pub fn run(&self, package: Package) -> anyhow::Result<()> {
-        build_docker_image(&package, self.tag.clone())?;
+    pub fn run(&self, package: &Package) -> anyhow::Result<()> {
+        build_docker_image(package, self.tag.clone())?;
         if self.publish {
-            publish_docker_image(&package, self.tag.clone())?;
+            publish_docker_image(package, self.tag.clone())?;
         }
         Ok(())
     }
@@ -51,7 +51,7 @@ fn docker_container_uri(package: &Package, tag: &Option<DockerTag>) -> String {
             tag.0.as_str()
         }
     };
-    let image_uri = format!("{}/{}/{}:{}", image_host, image_namespace, package.ident(), version);
+    let image_uri = format!("{}/{}/{}:{}", image_host, image_namespace, package.name, version);
     image_uri
 }
 
@@ -69,7 +69,7 @@ pub fn build_docker_image(package: &Package, tag: Option<DockerTag>) -> anyhow::
     let dockerfile_path = match package.dockerfile_path() {
         Some(path) => path.to_string(),
         None => return Err(anyhow!("No Dockerfile for package {}", package)),
-};
+    };
 
 
     Command::new("docker")

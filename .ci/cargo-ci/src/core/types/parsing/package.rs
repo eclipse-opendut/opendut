@@ -2,9 +2,9 @@ use std::fmt::{Display, Formatter};
 use std::iter;
 
 use clap::builder::PossibleValue;
-use strum::IntoEnumIterator;
 
-use crate::core::types::Package;
+use crate::core::types::{Package, PackageExt};
+use crate::workspace;
 
 const PACKAGE_SELECTION_ALL: &str = "all";
 const PACKAGE_SELECTION_APPLICATIONS: &str = "apps";
@@ -21,7 +21,7 @@ impl PackageSelection {
         match self {
             PackageSelection::Single(package) => Box::new(iter::once(Clone::clone(package))),
             PackageSelection::Applications => Box::new(Package::applications().into_iter()),
-            PackageSelection::All => Box::new(Package::iter()),
+            PackageSelection::All => Box::new(workspace::package::ALL.into_iter()),
         }
     }
 }
@@ -37,7 +37,7 @@ impl Display for PackageSelection {
 
 impl clap::ValueEnum for PackageSelection {
     fn value_variants<'a>() -> &'a [PackageSelection] {
-        let variants = Package::iter()
+        let variants = workspace::package::ALL.into_iter()
             .map(PackageSelection::Single)
             .chain(iter::once(PackageSelection::All))
             .collect::<Vec<PackageSelection>>();
@@ -46,7 +46,7 @@ impl clap::ValueEnum for PackageSelection {
     }
     fn to_possible_value(&self) -> Option<PossibleValue> {
         match self {
-            PackageSelection::Single(package) => Some(PossibleValue::new(package.ident())),
+            PackageSelection::Single(package) => Some(PossibleValue::new(package.name)),
             PackageSelection::Applications => Some(PossibleValue::new(PACKAGE_SELECTION_APPLICATIONS)),
             PackageSelection::All => Some(PossibleValue::new(PACKAGE_SELECTION_ALL)),
         }
