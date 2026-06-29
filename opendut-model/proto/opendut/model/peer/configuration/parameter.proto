@@ -5,6 +5,8 @@ package opendut.model.peer.configuration.parameter;
 import "opendut/model/util/net.proto";
 import "opendut/model/peer/executor/executor.proto";
 import "opendut/model/peer/peer.proto";
+import "opendut/model/viper/run.proto";
+import "opendut/viper/rt/test_suite.proto";
 
 message DeviceInterface {
   opendut.model.util.NetworkInterfaceDescriptor descriptor = 1;
@@ -57,4 +59,9 @@ message CanBridge {
 message CanLocalRoute {
   opendut.model.util.NetworkInterfaceName can_source_device_name = 1;
   opendut.model.util.NetworkInterfaceName can_destination_device_name = 2;
+}
+
+message TestRunReport {
+  opendut.model.viper.ViperRunId run_id = 1;
+  opendut.viper.rt.test_suite.ViperSourceCode source_code = 2;
 }

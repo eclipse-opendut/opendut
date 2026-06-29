@@ -1,13 +1,14 @@
 use crate::common::TestSuiteIdentifier;
 use std::fmt::{Display, Formatter};
 
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct SourceCode {
     pub identifier: TestSuiteIdentifier,
     pub code: String,
     pub version: ApiVersion,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum ApiVersion {
     V1_0,
 }

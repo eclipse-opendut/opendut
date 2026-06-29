@@ -16,7 +16,6 @@ fn main() -> anyhow::Result<()> {
 
 
     // Only include protos for VIPER, when the feature flag is enabled
-    #[cfg(feature = "viper")]
     let includes = {
         let mut includes = includes;
         includes.push(
@@ -30,15 +29,6 @@ fn main() -> anyhow::Result<()> {
 
         includes
     };
-    #[cfg(not(feature = "viper"))]
-    let protos = {
-        let mut protos = protos;
-        protos.retain(|proto_path|
-            ! proto_path.starts_with("proto/opendut/model/viper/")
-        );
-        protos
-    };
-
 
     builder
         .compile_protos(&protos, &includes)?;

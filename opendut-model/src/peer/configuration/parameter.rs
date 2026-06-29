@@ -7,6 +7,7 @@ use crate::peer::executor::ExecutorDescriptor;
 use crate::peer::PeerId;
 use crate::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName, NetworkInterfaceNameError};
 use crate::util::Port;
+use crate::viper::{TestRunSourceCode, ViperRunId};
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize)]
 pub struct DeviceInterface {
@@ -103,6 +104,12 @@ pub struct CanLocalRoute {
     pub can_destination_device_name: NetworkInterfaceName,
 }
 
+/// Run a test run until completion and keep the report present.
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize)]
+pub struct TestRunReport {
+    pub run_id: ViperRunId,
+    pub source_code: TestRunSourceCode,
+}
 
 
 #[cfg(test)]

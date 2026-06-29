@@ -46,6 +46,7 @@ pub(super) fn update_peer_configuration(
         can_connections,
         can_bridges,
         can_local_routes,
+        test_run_reports, //TODO do we need to make use of this here?
     } = peer_configuration;
 
     let can_device_names = expected_device_interfaces.iter()

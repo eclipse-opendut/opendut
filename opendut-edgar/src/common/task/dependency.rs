@@ -42,6 +42,7 @@ impl Hash for ParameterVariantWithDependencies {
             ParameterVariant::CanConnections(parameter) => parameter.id.hash(state),
             ParameterVariant::CanBridges(parameter) => parameter.id.hash(state),
             ParameterVariant::CanLocalRoutes(parameter) => parameter.id.hash(state),
+            ParameterVariant::TestRunReport(parameter) => parameter.id.hash(state),
         }
     }
 }

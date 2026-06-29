@@ -20,6 +20,7 @@ conversion! {
             can_connections: value.can_connections.into_iter().map(From::from).collect(),
             can_bridges: value.can_bridges.into_iter().map(From::from).collect(),
             can_local_routes: value.can_local_routes.into_iter().map(From::from).collect(),
+            test_run_reports: value.test_run_reports.into_iter().map(From::from).collect(),
         }
     }
 
@@ -34,6 +35,7 @@ conversion! {
             can_connections: value.can_connections.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
             can_bridges: value.can_bridges.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
             can_local_routes: value.can_local_routes.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
+            test_run_reports: value.test_run_reports.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
         })
     }
 }
@@ -123,6 +125,11 @@ parameter_conversion! {
 parameter_conversion! {
     type ModelParameter = crate::peer::configuration::parameter::CanLocalRoute;
     type ProtoParameter = PeerConfigurationParameterCanLocalRoute;
+}
+
+parameter_conversion! {
+    type ModelParameter = crate::peer::configuration::parameter::TestRunReport;
+    type ProtoParameter = PeerConfigurationParameterTestRunReport;
 }
 
 

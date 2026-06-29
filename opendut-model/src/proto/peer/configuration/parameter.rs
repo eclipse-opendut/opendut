@@ -1,6 +1,8 @@
 use opendut_util::conversion;
 use opendut_util::proto::ConversionResult;
 
+use crate::viper::TestRunSourceCode;
+
 opendut_util::include_proto!("opendut.model.peer.configuration.parameter");
 
 
@@ -205,6 +207,30 @@ conversion! {
         Ok(Model {
             can_source_device_name,
             can_destination_device_name,
+        })
+    }
+}
+
+conversion! {
+    type Model = crate::peer::configuration::parameter::TestRunReport;
+    type Proto = TestRunReport;
+
+    fn from(value: Model) -> Proto {
+        Proto {
+            run_id: Some(value.run_id.into()),
+            source_code: Some(value.source_code.inner.into()),
+        }
+    }
+
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let run_id = extract!(value.run_id)?.try_into()?;
+        let source_code = TestRunSourceCode {
+            inner: extract!(value.source_code)?.try_into()?,
+        };
+
+        Ok(Model {
+            run_id,
+            source_code,
         })
     }
 }

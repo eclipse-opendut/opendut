@@ -6,7 +6,7 @@ edition.workspace = true
 license.workspace = true
 
 [features]
-default = ["json"]
+default = ["json", "viper"]  # need viper here, because we're including it into the PeerConfiguration
 specs = []
 json = ["dep:serde_json"]
 yaml = ["dep:serde_yaml"]
@@ -16,7 +16,7 @@ viper = ["dep:opendut-viper-rt"]
 
 [dependencies]
 opendut-util = { workspace = true, features = ["proto"] }
-opendut-viper-rt = { workspace = true, features = ["proto"], optional = true }
+opendut-viper-rt = { workspace = true, features = ["proto"], optional = true }  # Do not add `py` feature here. See: https://github.com/eclipse-opendut/opendut/issues/408
 
 base64 = { workspace = true }
 brotli = { workspace = true }

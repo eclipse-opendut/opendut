@@ -113,3 +113,29 @@ conversion! {
         })
     }
 }
+
+
+conversion! {
+    type Model = crate::compile::SourceCode;
+    type Proto = ViperSourceCode;
+
+    fn from(value: Model) -> Proto {
+        Proto {
+            identifier: Some(value.identifier.into()),
+            code: value.code.into(),
+            api_version: Some(match value.version {
+                crate::compile::ApiVersion::V1_0 => viper_source_code::ApiVersion::V10(ViperSourceCodeApiVersionV10 {}),
+            }),
+        }
+    }
+
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let identifier = extract!(value.identifier)?.try_into()?;
+        let code = value.code;
+        let version = match extract!(value.api_version)? {
+            viper_source_code::ApiVersion::V10(_) => crate::compile::ApiVersion::V1_0,
+        };
+
+        Ok(Model { identifier, code, version })
+    }
+}

@@ -41,3 +41,13 @@ message ViperParameterDescriptorText {
   optional string default = 11;
   uint32 max_length = 12;
 }
+
+message ViperSourceCode {
+  ViperTestSuiteIdentifier identifier = 1;
+  string code = 2;
+  oneof api_version {
+    ViperSourceCodeApiVersionV1_0 v1_0 = 11;
+  }
+}
+
+message ViperSourceCodeApiVersionV1_0 {}

@@ -32,6 +32,7 @@ reqwest = { workspace = true, optional = true }
 rustpython-vm = { workspace = true, optional = true }
 tracing = { workspace = true }
 url = { workspace = true }
+serde = { version = "1.0.228", features = ["derive"] }
 
 
 [build-dependencies]

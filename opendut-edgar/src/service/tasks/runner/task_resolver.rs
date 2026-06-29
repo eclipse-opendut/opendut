@@ -65,6 +65,9 @@ impl TaskResolver for ServiceTaskResolver {
                     tasks.push(Box::new(tasks::can_local_route::CanLocalRoute { parameter: parameter.value.clone(), network_interface_manager: network_interface_manager.clone(), can_fd: false }));
                     tasks.push(Box::new(tasks::can_local_route::CanLocalRoute { parameter: parameter.value.clone(), network_interface_manager, can_fd: true }));
                 }
+                ParameterVariant::TestRunReport(_parameter) => {
+                    todo!("EDGAR does not yet have a Task for handling TestRunReport parameters.");
+                }
             };
         }
 

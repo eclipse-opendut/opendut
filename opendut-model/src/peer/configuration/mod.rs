@@ -18,6 +18,7 @@ pub struct PeerConfiguration {
     pub can_connections: ParameterField<parameter::CanConnection>,
     pub can_bridges: ParameterField<parameter::CanBridge>,
     pub can_local_routes: ParameterField<parameter::CanLocalRoute>,
+    pub test_run_reports: ParameterField<parameter::TestRunReport>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize)]
@@ -31,6 +32,7 @@ pub enum ParameterVariant {
     CanConnections(Box<Parameter<parameter::CanConnection>>),
     CanBridges(Box<Parameter<parameter::CanBridge>>),
     CanLocalRoutes(Box<Parameter<parameter::CanLocalRoute>>),
+    TestRunReport(Box<Parameter<parameter::TestRunReport>>),
 }
 
 impl ParameterVariant {
@@ -45,6 +47,7 @@ impl ParameterVariant {
             ParameterVariant::CanConnections(parameter) => { parameter.dependencies.clone() }
             ParameterVariant::CanBridges(parameter) => { parameter.dependencies.clone() }
             ParameterVariant::CanLocalRoutes(parameter) => { parameter.dependencies.clone() }
+            ParameterVariant::TestRunReport(parameter) => { parameter.dependencies.clone() }
         }
     }
     pub fn target(&self) -> ParameterTarget {
@@ -58,6 +61,7 @@ impl ParameterVariant {
             ParameterVariant::CanConnections(parameter) => parameter.target,
             ParameterVariant::CanBridges(parameter) => parameter.target,
             ParameterVariant::CanLocalRoutes(parameter) => parameter.target,
+            ParameterVariant::TestRunReport(parameter) => parameter.target,
         }
     }
     pub fn id(&self) -> ParameterId {
@@ -71,6 +75,7 @@ impl ParameterVariant {
             ParameterVariant::CanConnections(parameter) => parameter.id,
             ParameterVariant::CanBridges(parameter) => parameter.id,
             ParameterVariant::CanLocalRoutes(parameter) => parameter.id,
+            ParameterVariant::TestRunReport(parameter) => parameter.id,
         }
     }
 }
@@ -86,7 +91,8 @@ impl PeerConfiguration {
             remote_peer_connection_checks,
             can_connections,
             can_bridges,
-            can_local_routes,            
+            can_local_routes,
+            test_run_reports,
         } = self.clone();
 
         device_interfaces.values.into_iter().map(|(id, parameter) | { (id, ParameterVariant::DeviceInterface(Box::new(parameter))) })
@@ -98,6 +104,7 @@ impl PeerConfiguration {
             .chain(can_connections.values.into_iter().map(|(id, parameter)| { (id, ParameterVariant::CanConnections(Box::new(parameter))) }))
             .chain(can_bridges.values.into_iter().map(|(id, parameter)| { (id, ParameterVariant::CanBridges(Box::new(parameter))) }))
             .chain(can_local_routes.values.into_iter().map(|(id, parameter)| { (id, ParameterVariant::CanLocalRoutes(Box::new(parameter))) }))
+            .chain(test_run_reports.values.into_iter().map(|(id, parameter)| { (id, ParameterVariant::TestRunReport(Box::new(parameter))) }))
             .collect()
     }
 
@@ -116,15 +123,29 @@ impl PeerConfiguration {
             }
         }
 
-        remove_obsolete_parameters_from_field(obsolete_parameter_ids, &mut self.device_interfaces);
-        remove_obsolete_parameters_from_field(obsolete_parameter_ids, &mut self.ethernet_bridges);
-        remove_obsolete_parameters_from_field(obsolete_parameter_ids, &mut self.executors);
-        remove_obsolete_parameters_from_field(obsolete_parameter_ids, &mut self.gre_interfaces);
-        remove_obsolete_parameters_from_field(obsolete_parameter_ids, &mut self.joined_interfaces);
-        remove_obsolete_parameters_from_field(obsolete_parameter_ids, &mut self.remote_peer_connection_checks);
-        remove_obsolete_parameters_from_field(obsolete_parameter_ids, &mut self.can_connections);
-        remove_obsolete_parameters_from_field(obsolete_parameter_ids, &mut self.can_bridges);
-        remove_obsolete_parameters_from_field(obsolete_parameter_ids, &mut self.can_local_routes);
+        let PeerConfiguration {
+            device_interfaces,
+            ethernet_bridges,
+            executors,
+            gre_interfaces,
+            joined_interfaces,
+            remote_peer_connection_checks,
+            can_connections,
+            can_bridges,
+            can_local_routes,
+            test_run_reports,
+        } = self;
+
+        remove_obsolete_parameters_from_field(obsolete_parameter_ids, device_interfaces);
+        remove_obsolete_parameters_from_field(obsolete_parameter_ids, ethernet_bridges);
+        remove_obsolete_parameters_from_field(obsolete_parameter_ids, executors);
+        remove_obsolete_parameters_from_field(obsolete_parameter_ids, gre_interfaces);
+        remove_obsolete_parameters_from_field(obsolete_parameter_ids, joined_interfaces);
+        remove_obsolete_parameters_from_field(obsolete_parameter_ids, remote_peer_connection_checks);
+        remove_obsolete_parameters_from_field(obsolete_parameter_ids, can_connections);
+        remove_obsolete_parameters_from_field(obsolete_parameter_ids, can_bridges);
+        remove_obsolete_parameters_from_field(obsolete_parameter_ids, can_local_routes);
+        remove_obsolete_parameters_from_field(obsolete_parameter_ids, test_run_reports);
     }
 }
 

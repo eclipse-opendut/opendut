@@ -90,6 +90,10 @@ impl ParameterValue for parameter::CanBridge {
     }
 }
 
+impl ParameterValue for parameter::TestRunReport {
+    fn parameter_identifier(&self) -> ParameterId { ParameterId::from_hashable(self) }
+}
+
 
 #[cfg(test)]
 mod tests {

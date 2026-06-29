@@ -4966,6 +4966,7 @@ dependencies = [
  "repo_path",
  "reqwest 0.13.2",
  "rustpython-vm",
+ "serde",
  "tempfile",
  "tokio",
  "tokio-stream",
