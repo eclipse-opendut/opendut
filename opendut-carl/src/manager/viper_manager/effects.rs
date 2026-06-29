@@ -3,12 +3,15 @@ use opendut_model::viper::ViperRunDeployment;
 use opendut_viper_rt::compile::SourceCode;
 use opendut_viper_rt::source::Source;
 use opendut_viper_rt::ViperRuntime;
-use crate::manager::viper_manager::fetch_source_code::FetchError;
+use crate::manager::viper_manager::fetch_source_code::{fetch_source_code, FetchError};
 use crate::resource::{manager::{ResourceManagerRef, SubscriptionEvent}};
 
 pub(crate) async fn register(resource_manager: ResourceManagerRef) {
     let fetch_source_code_closure = async move |viper_runtime: ViperRuntime, source: &Source| {
-        let source_code = viper_runtime.fetch_source_code(source).await?;
+        let Source { identifier: test_suite_identifier, location, .. } = source.clone();
+
+        let source_code = viper_runtime.fetch_source_code(source).await
+            .map_err(|error| FetchError::Compilation { test_suite_identifier, location, cause: error })?;
         Ok(source_code)
     };
 
@@ -31,11 +34,7 @@ async fn schedule_fetch_source_code_when_test_run_deployment_available(
             if let SubscriptionEvent::Inserted { id: run_id, value: viper_run_deployment } = event {
                 let test_id = viper_run_deployment.test_id;
 
-                // Todo: Don't block resource manager throughout fetching (resources_mut)
-                let result = resource_manager.resources_mut(async |resources| {
-                    resources.fetch_source_code(test_id, fetch_source_code_closure).await
-                }).await
-                    .expect("Persistence Error while fetching source code."); //Todo: error handling
+                let result = fetch_source_code(resource_manager, test_id, fetch_source_code_closure).await;
 
                 if let Err(error) = result {
                     error!("Error while fetching source code for run <{run_id}: \n{error}");
