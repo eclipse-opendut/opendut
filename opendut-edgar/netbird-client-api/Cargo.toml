@@ -23,6 +23,7 @@ url = { workspace = true }
 [build-dependencies]
 opendut-util = { workspace = true, features = ["project"] }
 
+anyhow = { workspace = true }
 cargo_metadata = { workspace = true }
 reqwest = { workspace = true, features = ["blocking"] }
 tonic-prost-build = { workspace = true, default-features = true }

@@ -40,6 +40,7 @@ serde_yaml = { workspace = true }
 test-log = { workspace = true }
 
 [build-dependencies]
+anyhow = { workspace = true }
 glob = { workspace = true }
 repo_path = { workspace = true }
 protobuf-src = { workspace = true }

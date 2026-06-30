@@ -35,6 +35,7 @@ url = { workspace = true }
 
 
 [build-dependencies]
+anyhow = { workspace = true }
 glob = { workspace = true }
 protobuf-src = { workspace = true }
 tonic-prost-build = { workspace = true }

@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use repo_path::repo_path;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> anyhow::Result<()> {
     unsafe {
         std::env::set_var("PROTOC", protobuf_src::protoc());
     }

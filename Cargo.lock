@@ -4789,6 +4789,7 @@ dependencies = [
 name = "opendut-netbird-client-api"
 version = "0.11.0-alpha"
 dependencies = [
+ "anyhow",
  "backon",
  "cargo_metadata",
  "hyper-util",
@@ -4949,6 +4950,7 @@ dependencies = [
 name = "opendut-viper-rt"
 version = "0.11.0-alpha"
 dependencies = [
+ "anyhow",
  "async-trait",
  "futures",
  "glob",

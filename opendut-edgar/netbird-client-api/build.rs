@@ -2,11 +2,12 @@ use std::fs;
 use std::ops::Not;
 use std::path::PathBuf;
 
+use anyhow::Context;
 use cargo_metadata::MetadataCommand;
 
 use opendut_util::project;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> anyhow::Result<()> {
     unsafe {
         std::env::set_var("PROTOC", protobuf_src::protoc());
     }
@@ -17,9 +18,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .manifest_path(workspace_dir.join("Cargo.toml"))
         .exec()?;
     let version = metadata.workspace_metadata["ci"]["netbird"]["version"].as_str()
-        .ok_or("NetBird version not defined.")?;
+        .context("NetBird version not defined.")?;
     let netbird_proto_url = metadata.workspace_metadata["ci"]["netbird"]["protobuf"].as_str()
-        .ok_or("NetBird protobuf URL not defined.")?;
+        .context("NetBird protobuf URL not defined.")?;
 
     let proto_dir = PathBuf::from("proto/").join(format!("netbird-v{version}"));
     fs::create_dir_all(&proto_dir)?;
@@ -34,7 +35,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .bytes()?;
 
         fs::write(&proto_file, bytes)
-            .map_err(|cause| format!("Error while writing to {proto_file:?}: {cause}"))?;
+            .context(format!("Error while writing to {proto_file:?}."))?;
     }
 
     let protos = [proto_file];

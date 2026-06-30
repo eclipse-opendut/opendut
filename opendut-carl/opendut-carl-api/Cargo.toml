@@ -60,6 +60,7 @@ tracing = { workspace = true, optional = true }
 url = { workspace = true }
 
 [build-dependencies]
+anyhow = { workspace = true }
 glob = { workspace = true }
 protobuf-src = { workspace = true }
 repo_path = { workspace = true }
