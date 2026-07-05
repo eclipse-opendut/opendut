@@ -1,5 +1,5 @@
 use crate::resource::types::resources::Resources;
-use crate::resource::persistence::error::{PersistenceError, PersistenceResult};
+use crate::resource::manager::error::{PersistenceError, PersistenceResult};
 use crate::resource::manager::ResourcesStorageApi;
 use opendut_model::peer::state::{PeerConnectionState, PeerState};
 use opendut_model::peer::PeerId;

@@ -5,7 +5,7 @@ use opendut_viper_rt::events::emitter;
 use opendut_viper_rt::source::Source;
 use opendut_viper_rt::{ViperOptions, ViperRuntime};
 use opendut_viper_rt::source::loaders::HttpSourceLoader;
-use crate::resource::{types::resources::Resources, persistence::error::PersistenceError, manager::ResourcesStorageApi};
+use crate::resource::{types::resources::Resources, manager::error::PersistenceError, manager::ResourcesStorageApi};
 
 
 impl Resources<'_> {

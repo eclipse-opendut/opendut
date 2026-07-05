@@ -1,4 +1,4 @@
-use crate::resource::persistence::error::PersistenceError;
+use crate::resource::manager::error::PersistenceError;
 use opendut_model::peer::state::PeerMemberState;
 use opendut_model::peer::PeerId;
 use crate::manager::peer_manager::list_peer_member_states::ListPeerMemberStatesError;

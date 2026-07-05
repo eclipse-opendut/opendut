@@ -140,7 +140,7 @@ mod tests {
     use super::*;
     use crate::manager::peer_manager::tests::create_peer_descriptor;
     use crate::resource::manager::{ResourceManager, ResourceManagerRef};
-    use crate::resource::persistence::persistable::Persistable;
+    use crate::resource::manager::persistence::persistable::Persistable;
     use crate::resource::manager::ResourcesStorageApi;
     use opendut_model::peer::state::PeerConnectionState;
     use opendut_model::peer::PeerId;

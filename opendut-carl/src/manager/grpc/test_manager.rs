@@ -10,7 +10,7 @@ use crate::manager::grpc::extract;
 use crate::manager::test_manager::delete_viper_source_descriptor::DeleteViperSourceDescriptorError;
 use crate::manager::test_manager::get_viper_test_suite_parameters::GetViperTestSuiteParametersError;
 use crate::resource::manager::ResourceManagerRef;
-use crate::resource::persistence::error::{MapErrToInner, PersistenceError};
+use crate::resource::manager::error::{MapErrToInner, PersistenceError};
 
 pub struct TestManagerFacade {
     pub resource_manager: ResourceManagerRef,

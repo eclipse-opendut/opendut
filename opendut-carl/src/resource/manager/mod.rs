@@ -1,11 +1,13 @@
-pub use crate::resource::types::subscription::SubscriptionEvent;
-pub use crate::resource::persistence::storage::ResourcesStorageApi;
+pub(super) mod persistence;
 
+pub use crate::resource::types::subscription::SubscriptionEvent;
+pub use persistence::storage::ResourcesStorageApi;
+
+use persistence::error::{MapErrToInner, PersistenceResult};
+use persistence::persistable::Persistable;
+use persistence::storage::{PersistenceOptions, ResourceStorage};
 use crate::resource::types::resources::{RelayedSubscriptionEvents, Resources};
 use crate::resource::types::Resource;
-use crate::resource::persistence::error::{MapErrToInner, PersistenceResult};
-use crate::resource::persistence::persistable::Persistable;
-use crate::resource::persistence::storage::{PersistenceOptions, ResourceStorage};
 use crate::resource::types::subscription::{self, ResourceSubscriptionChannels, Subscribable, Subscription};
 use std::collections::HashMap;
 use std::fmt::Display;
@@ -230,6 +232,7 @@ impl Drop for ResourceManagerCancel {
 
 
 pub mod error {
+    pub use super::persistence::error::{PersistenceError, PersistenceResult, MapErrToInner};
     use std::{io, path::PathBuf};
 
     #[derive(Debug, thiserror::Error)]

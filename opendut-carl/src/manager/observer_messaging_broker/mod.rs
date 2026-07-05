@@ -3,7 +3,7 @@ mod observe_peers_online;
 use crate::manager::cluster_manager::ClusterManagerRef;
 use crate::manager::observer_messaging_broker::observe_peers_online::ObservePeersOnline;
 use crate::resource::manager::ResourceManagerRef;
-use crate::resource::persistence::error::PersistenceError;
+use crate::resource::manager::error::PersistenceError;
 use opendut_carl_api::carl::observer::{WaitForPeersOnlineResponseStatus};
 use opendut_model::peer::PeerId;
 use std::collections::HashSet;

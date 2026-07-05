@@ -4,7 +4,7 @@ use opendut_model::peer::PeerDescriptor;
 use opendut_model::topology::DeviceDescriptor;
 use std::collections::HashMap;
 use tracing::{debug, info};
-use crate::resource::persistence::error::PersistenceError;
+use crate::resource::manager::error::PersistenceError;
 
 impl Resources<'_> {
     #[tracing::instrument(skip_all, level="trace")]

@@ -1,12 +1,12 @@
 use crate::resource::manager::error::ConnectError;
+use crate::resource::manager::persistence;
 use crate::resource::types::id::ResourceId;
 use crate::resource::types::resources::RelayedSubscriptionEvents;
 use crate::resource::types::Resource;
-use crate::resource::persistence::error::PersistenceResult;
-use crate::resource::persistence::persistable::{Persistable, StorageKind};
-use crate::resource::persistence::{Db, Memory};
+use super::error::PersistenceResult;
+use super::persistable::{Persistable, StorageKind};
+use super::{Db, Memory};
 use crate::resource::types::subscription::Subscribable;
-use crate::resource::persistence;
 use anyhow::anyhow;
 use prost::Message;
 use redb::backends::InMemoryBackend;

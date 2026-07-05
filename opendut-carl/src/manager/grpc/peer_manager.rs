@@ -17,7 +17,7 @@ use crate::manager::peer_manager::get_peer_state::GetPeerStateError;
 use crate::manager::peer_manager::list_devices::ListDevicesError;
 use crate::manager::peer_manager::list_peer_states::ListPeerStatesError;
 use crate::resource::manager::ResourceManagerRef;
-use crate::resource::persistence::error::{MapErrToInner, PersistenceError};
+use crate::resource::manager::error::{MapErrToInner, PersistenceError};
 use crate::settings::vpn::Vpn;
 use super::error::LogApiErr;
 

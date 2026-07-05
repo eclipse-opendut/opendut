@@ -1,6 +1,6 @@
 use crate::manager::peer_messaging_broker::PeerMessagingBrokerRef;
 use crate::resource::manager::{ResourceManagerRef, SubscriptionEvent};
-use crate::resource::persistence::error::PersistenceResult;
+use crate::resource::manager::error::PersistenceResult;
 use crate::resource::manager::ResourcesStorageApi;
 use opendut_model::peer::configuration::{PeerConfiguration, EdgePeerConfigurationState, ParameterEdgeDetectedStateKind};
 use opendut_model::peer::PeerDescriptor;

@@ -2,7 +2,7 @@ mod assignment;
 mod configuration;
 
 use crate::manager::peer_messaging_broker::PeerMessagingBrokerRef;
-use crate::resource::persistence::error::PersistenceError;
+use crate::resource::manager::error::PersistenceError;
 use crate::resource::manager::ResourcesStorageApi;
 use opendut_model::peer::configuration::PeerConfiguration;
 use opendut_model::peer::{PeerDescriptor, PeerId};

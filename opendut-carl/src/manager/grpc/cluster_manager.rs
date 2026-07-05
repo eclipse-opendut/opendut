@@ -10,7 +10,7 @@ use crate::manager::cluster_manager::{ClusterManagerRef, ClusterPeerStates, Crea
 use crate::manager::grpc::error::LogApiErr;
 use crate::manager::grpc::extract;
 use crate::resource::manager::ResourceManagerRef;
-use crate::resource::persistence::error::MapErrToInner;
+use crate::resource::manager::error::MapErrToInner;
 
 pub struct ClusterManagerFacade {
     cluster_manager: ClusterManagerRef,

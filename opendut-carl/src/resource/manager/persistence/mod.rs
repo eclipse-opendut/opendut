@@ -1,13 +1,13 @@
 use std::cmp::Ordering;
 
-use crate::resource::persistence::error::PersistenceResult;
+use error::PersistenceResult;
 use opendut_model::resources::Id;
 use redb::{AccessGuard, ReadableTable, TableError, TypeName};
 use uuid::Uuid;
 
 pub(crate) mod error;
 pub(crate) mod persistable;
-pub(super) mod storage;
+pub(crate) mod storage;
 
 pub type Memory<'transaction> = Db<'transaction>;
 

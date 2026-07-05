@@ -1,6 +1,6 @@
+use super::error::PersistenceResult;
+use super::TableDefinition;
 use crate::resource::types::Resource;
-use crate::resource::persistence::error::PersistenceResult;
-use crate::resource::persistence::TableDefinition;
 use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment};
 use opendut_model::peer::configuration::{PeerConfiguration, EdgePeerConfigurationState};
 use opendut_model::peer::state::PeerConnectionState;

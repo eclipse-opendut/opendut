@@ -5,7 +5,7 @@ use opendut_model::peer::PeerId;
 use std::collections::{HashMap, HashSet};
 use crate::manager::peer_manager::list_peer_states::ListPeerStatesError;
 use crate::resource::types::resources::Resources;
-use crate::resource::persistence::error::PersistenceError;
+use crate::resource::manager::error::PersistenceError;
 
 impl Resources<'_> {
     pub async fn list_cluster_peer_states(&self, cluster_id: ClusterId) -> Result<ClusterPeerStates, ListClusterPeerStatesError> {

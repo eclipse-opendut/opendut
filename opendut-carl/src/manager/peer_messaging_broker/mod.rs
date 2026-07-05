@@ -16,7 +16,7 @@ use tracing::{debug, error, info, trace, warn, Span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 use opendut_carl_api::carl::broker::stream_header::PeerVersion;
 use opendut_model::format::DebugJsonDisplay;
-use crate::resource::persistence::error::PersistenceError;
+use crate::resource::manager::error::PersistenceError;
 use crate::resource::manager::ResourceManagerRef;
 use crate::resource::manager::ResourcesStorageApi;
 
