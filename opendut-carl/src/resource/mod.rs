@@ -4,7 +4,6 @@ use std::path::PathBuf;
 pub(crate) mod api;
 pub mod manager;
 pub(crate) mod storage;
-pub(crate) mod subscription;
 pub mod persistence;
 
 #[derive(Debug, thiserror::Error)]

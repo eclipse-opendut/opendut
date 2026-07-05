@@ -4,7 +4,7 @@ use crate::resource::api::Resource;
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::persistable::{Persistable, StorageKind};
 use crate::resource::persistence::{Db, Memory};
-use crate::resource::subscription::Subscribable;
+use crate::resource::api::subscription::Subscribable;
 use crate::resource::{persistence, ConnectError};
 use anyhow::anyhow;
 use prost::Message;
