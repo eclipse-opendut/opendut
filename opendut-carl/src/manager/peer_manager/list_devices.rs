@@ -1,4 +1,4 @@
-use crate::resource::api::resources::Resources;
+use crate::resource::types::resources::Resources;
 use crate::resource::storage::ResourcesStorageApi;
 use opendut_model::peer::PeerDescriptor;
 use opendut_model::topology::DeviceDescriptor;

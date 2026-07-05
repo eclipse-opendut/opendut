@@ -1,11 +1,11 @@
-pub use crate::resource::api::subscription::SubscriptionEvent;
+pub use crate::resource::types::subscription::SubscriptionEvent;
 
-use crate::resource::api::resources::{RelayedSubscriptionEvents, Resources};
-use crate::resource::api::Resource;
+use crate::resource::types::resources::{RelayedSubscriptionEvents, Resources};
+use crate::resource::types::Resource;
 use crate::resource::persistence::error::{MapErrToInner, PersistenceResult};
 use crate::resource::persistence::persistable::Persistable;
 use crate::resource::storage::{PersistenceOptions, ResourceStorage, ResourcesStorageApi};
-use crate::resource::api::subscription::{self, ResourceSubscriptionChannels, Subscribable, Subscription};
+use crate::resource::types::subscription::{self, ResourceSubscriptionChannels, Subscribable, Subscription};
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::sync::Arc;

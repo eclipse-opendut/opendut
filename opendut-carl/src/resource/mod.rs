@@ -1,7 +1,7 @@
 use std::io;
 use std::path::PathBuf;
 
-pub(crate) mod api;
+pub(crate) mod types;
 pub mod manager;
 pub(crate) mod storage;
 pub mod persistence;

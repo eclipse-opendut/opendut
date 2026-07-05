@@ -8,7 +8,7 @@ use opendut_model::vpn::VpnPeerConfiguration;
 use tracing::{debug, info, warn};
 use url::Url;
 use opendut_util::pem::Pem;
-use crate::resource::api::resources::Resources;
+use crate::resource::types::resources::Resources;
 use crate::resource::storage::ResourcesStorageApi;
 
 pub struct GeneratePeerSetupParams {

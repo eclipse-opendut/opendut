@@ -1,4 +1,9 @@
-use crate::resource::api::id::ResourceId;
+pub mod id;
+pub mod resources;
+pub mod subscription;
+
+
+use crate::resource::types::id::ResourceId;
 use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId};
 use opendut_model::peer::configuration::{PeerConfiguration, EdgePeerConfigurationState};
 use opendut_model::peer::state::PeerConnectionState;

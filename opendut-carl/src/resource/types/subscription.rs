@@ -1,4 +1,4 @@
-use crate::resource::api::Resource;
+use crate::resource::types::Resource;
 use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment};
 use opendut_model::peer::configuration::{PeerConfiguration, EdgePeerConfigurationState};
 use opendut_model::peer::state::PeerConnectionState;

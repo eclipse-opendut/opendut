@@ -4,7 +4,7 @@ use opendut_model::peer::state::{PeerConnectionState, PeerMemberState, PeerState
 use opendut_model::peer::PeerId;
 use std::collections::{HashMap, HashSet};
 use crate::manager::peer_manager::list_peer_states::ListPeerStatesError;
-use crate::resource::api::resources::Resources;
+use crate::resource::types::resources::Resources;
 use crate::resource::persistence::error::PersistenceError;
 
 impl Resources<'_> {

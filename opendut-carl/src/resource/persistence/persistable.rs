@@ -1,4 +1,4 @@
-use crate::resource::api::Resource;
+use crate::resource::types::Resource;
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::TableDefinition;
 use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment};

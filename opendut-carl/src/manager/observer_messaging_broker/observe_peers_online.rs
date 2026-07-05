@@ -7,7 +7,7 @@ use opendut_model::peer::PeerId;
 use opendut_model::peer::state::PeerConnectionState;
 use crate::resource::manager::{ResourceManagerRef, SubscriptionEvent};
 use crate::resource::persistence::error::PersistenceError;
-use crate::resource::api::subscription::Subscription;
+use crate::resource::types::subscription::Subscription;
 
 pub struct ObservePeersOnline {
     peers: HashMap<PeerId, PeerConnectionState>,

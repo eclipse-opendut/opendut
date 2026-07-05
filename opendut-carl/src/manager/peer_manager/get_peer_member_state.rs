@@ -2,7 +2,7 @@ use crate::resource::persistence::error::PersistenceError;
 use opendut_model::peer::state::PeerMemberState;
 use opendut_model::peer::PeerId;
 use crate::manager::peer_manager::list_peer_member_states::ListPeerMemberStatesError;
-use crate::resource::api::resources::Resources;
+use crate::resource::types::resources::Resources;
 
 impl Resources<'_> {
     pub fn get_peer_member_state(&self, peer_id: PeerId) -> Result<Option<PeerMemberState>, PersistenceError> {

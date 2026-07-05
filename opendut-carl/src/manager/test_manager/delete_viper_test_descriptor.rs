@@ -1,7 +1,7 @@
 use opendut_model::{viper::{ViperTestRunDescriptor, ViperTestId}};
 use tracing::debug;
 use opendut_model::viper::{ViperRunDeployment, ViperRunId};
-use crate::resource::{api::resources::Resources, persistence::error::PersistenceError, storage::ResourcesStorageApi};
+use crate::resource::{types::resources::Resources, persistence::error::PersistenceError, storage::ResourcesStorageApi};
 
 
 impl Resources<'_> {

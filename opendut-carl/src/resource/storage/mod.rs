@@ -1,10 +1,10 @@
-use crate::resource::api::id::ResourceId;
-use crate::resource::api::resources::RelayedSubscriptionEvents;
-use crate::resource::api::Resource;
+use crate::resource::types::id::ResourceId;
+use crate::resource::types::resources::RelayedSubscriptionEvents;
+use crate::resource::types::Resource;
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::persistable::{Persistable, StorageKind};
 use crate::resource::persistence::{Db, Memory};
-use crate::resource::api::subscription::Subscribable;
+use crate::resource::types::subscription::Subscribable;
 use crate::resource::{persistence, ConnectError};
 use anyhow::anyhow;
 use prost::Message;
