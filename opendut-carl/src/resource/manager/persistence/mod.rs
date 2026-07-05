@@ -1,3 +1,8 @@
+pub(crate) mod error;
+pub(crate) mod storage;
+pub(crate) mod persistable;
+
+
 use std::cmp::Ordering;
 
 use error::PersistenceResult;
@@ -5,9 +10,6 @@ use opendut_model::resources::Id;
 use redb::{AccessGuard, ReadableTable, TableError, TypeName};
 use uuid::Uuid;
 
-pub(crate) mod error;
-pub(crate) mod persistable;
-pub(crate) mod storage;
 
 pub type Memory<'transaction> = Db<'transaction>;
 
@@ -112,5 +114,5 @@ impl From<Id> for Key {
     }
 }
 
-pub(super) type Value = Vec<u8>;
-pub(super) type TableDefinition<'a> = redb::TableDefinition<'a, Key, Value>;
+type Value = Vec<u8>;
+type TableDefinition<'a> = redb::TableDefinition<'a, Key, Value>;
