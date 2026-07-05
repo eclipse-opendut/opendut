@@ -1,10 +1,11 @@
+pub use crate::resource::subscription::SubscriptionEvent;
+
 use crate::resource::api::resources::{RelayedSubscriptionEvents, Resources};
 use crate::resource::api::Resource;
 use crate::resource::persistence::error::{MapErrToInner, PersistenceResult};
 use crate::resource::persistence::persistable::Persistable;
 use crate::resource::storage::{PersistenceOptions, ResourceStorage, ResourcesStorageApi};
-pub use crate::resource::subscription::SubscriptionEvent;
-use crate::resource::subscription::{ResourceSubscriptionChannels, Subscribable, Subscription};
+use crate::resource::subscription::{self, ResourceSubscriptionChannels, Subscribable, Subscription};
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::sync::Arc;
@@ -119,7 +120,7 @@ impl ResourceManager {
         &self,
         on_event: impl AsyncFn(SubscriptionEvent<R>) + Send + 'static,
     ) {
-        let resource_name = std::any::type_name::<R>();
+        let resource_name = R::type_name();
         let mut subscription = self.subscribe::<R>().await;
         let cancel = self.event_listener_cancel.clone();
 
@@ -127,22 +128,20 @@ impl ResourceManager {
             tokio::runtime::Handle::current().block_on(async move {
                 loop {
                     tokio::select! {
-                        received = subscription.receive() => {
-                            match received {
-                                Ok(event) => {
-                                    on_event(event).await;
+                        received = subscription.receive() => match received {
+                            Ok(event) => {
+                                on_event(event).await;
+                            }
+                            Err(subscription::ReceiveError::Broadcast(error)) => match error {
+                                tokio::sync::broadcast::error::RecvError::Closed => {
+                                    warn!("ResourceManager subscription channel for {resource_name} closed. Aborting.");
+                                    break;
                                 }
-                                Err(super::subscription::ReceiveError::Broadcast(error)) => match error {
-                                    tokio::sync::broadcast::error::RecvError::Closed => {
-                                        debug!("ResourceManager subscription channel for {resource_name} closed. Aborting.");
-                                        break;
-                                    }
-                                    tokio::sync::broadcast::error::RecvError::Lagged(skipped_messages) => {
-                                        warn!("ResourceManager subscription channel for {resource_name} lagged behind and had to skip {skipped_messages} messages.");
-                                    },
-                                }
-                            };
-                        }
+                                tokio::sync::broadcast::error::RecvError::Lagged(skipped_messages) => {
+                                    warn!("ResourceManager subscription channel for {resource_name} lagged behind and had to skip {skipped_messages} messages.");
+                                },
+                            }
+                        },
                         _ = cancel.cancelled() => {
                             debug!("ResourceManager is cancelling subscription channel for {resource_name}.");
                             break;
@@ -178,87 +177,32 @@ impl ResourceManager {
             #[cfg(feature = "viper")] mut viper_run_deployment,
         } = relayed_subscription_events;
 
-
-        while let Ok(event) = cluster_descriptor.1.try_recv() {
-            state.subscribers
-                .notify(event)
-                .expect("should successfully send notification about event during resource transaction");
+        macro_rules! send_relayed_subscription_events {
+            ($field:expr) => {
+                while let Ok(event) = $field.1.try_recv() {
+                    state.subscribers
+                        .notify(event)
+                        .expect("should successfully send notification about event during resource transaction");
+                }
+            };
         }
 
-        while let Ok(event) = cluster_deployment.1.try_recv() {
-            state.subscribers
-                .notify(event)
-                .expect("should successfully send notification about event during resource transaction");
-        }
-
-        while let Ok(event) = peer_configuration.1.try_recv() {
-            state.subscribers
-                .notify(event)
-                .expect("should successfully send notification about event during resource transaction");
-        }
-
-        while let Ok(event) = peer_descriptor.1.try_recv() {
-            state.subscribers
-                .notify(event)
-                .expect("should successfully send notification about event during resource transaction");
-        }
-
-        while let Ok(event) = peer_connection_state.1.try_recv() {
-            state.subscribers
-                .notify(event)
-                .expect("should successfully send notification about event during resource transaction");
-        }
-
-        while let Ok(event) = peer_configuration_state.1.try_recv() {
-            state.subscribers
-                .notify(event)
-                .expect("should successfully send notification about event during resource transaction");
-        }
+        send_relayed_subscription_events!(cluster_descriptor);
+        send_relayed_subscription_events!(cluster_deployment);
+        send_relayed_subscription_events!(peer_configuration);
+        send_relayed_subscription_events!(peer_descriptor);
+        send_relayed_subscription_events!(peer_connection_state);
+        send_relayed_subscription_events!(peer_configuration_state);
 
         #[cfg(feature = "viper")]
-        while let Ok(event) = viper_source_descriptor.1.try_recv() {
-            state.subscribers
-                .notify(event)
-                .expect("should successfully send notification about event during resource transaction");
-        }
-
-        #[cfg(feature = "viper")]
-        while let Ok(event) = viper_test_run_descriptor.1.try_recv() {
-            state.subscribers
-                .notify(event)
-                .expect("should successfully send notification about event during resource transaction");
-        }
-
-        #[cfg(feature = "viper")]
-        while let Ok(event) = viper_run_deployment.1.try_recv() {
-            state.subscribers
-                .notify(event)
-                .expect("should successfully send notification about event during resource transaction");
+        {
+            send_relayed_subscription_events!(viper_source_descriptor);
+            send_relayed_subscription_events!(viper_test_run_descriptor);
+            send_relayed_subscription_events!(viper_run_deployment);
         }
     }
 }
 
-
-#[cfg(test)]
-impl ResourceManager {
-    pub fn new_in_memory() -> (ResourceManagerRef, ResourceManagerCancel) {
-        let resources = futures::executor::block_on(
-            ResourceStorage::connect(&PersistenceOptions::Disabled)
-        )
-        .expect("Creating in-memory storage for tests should not fail");
-
-        let subscribers = ResourceSubscriptionChannels::default();
-
-        let cancel = ResourceManagerCancel::new();
-
-        let resource_manager = ResourceManagerRef::new(Self {
-            state: RwLock::new(State { storage: resources, subscribers }),
-            event_listener_cancel: cancel.token(),
-        });
-
-        (resource_manager, cancel)
-    }
-}
 
 /// Cancels the ResourceManager's event listeners when dropped.
 ///
@@ -284,6 +228,27 @@ impl Drop for ResourceManagerCancel {
     }
 }
 
+
+#[cfg(test)]
+impl ResourceManager {
+    pub fn new_in_memory() -> (ResourceManagerRef, ResourceManagerCancel) {
+        let resources = futures::executor::block_on(
+            ResourceStorage::connect(&PersistenceOptions::Disabled)
+        )
+        .expect("Creating in-memory storage for tests should not fail");
+
+        let subscribers = ResourceSubscriptionChannels::default();
+
+        let cancel = ResourceManagerCancel::new();
+
+        let resource_manager = ResourceManagerRef::new(Self {
+            state: RwLock::new(State { storage: resources, subscribers }),
+            event_listener_cancel: cancel.token(),
+        });
+
+        (resource_manager, cancel)
+    }
+}
 
 #[cfg(test)]
 mod test {

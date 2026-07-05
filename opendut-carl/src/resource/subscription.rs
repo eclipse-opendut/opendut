@@ -23,14 +23,6 @@ pub enum SubscriptionEvent<R: Resource> {
     Inserted { id: R::Id, value: R },
     Removed { id: R::Id, value: R },
 }
-impl<R: Resource> SubscriptionEvent<R> {
-    pub fn display_name(&self) -> &str {
-        match self {
-            SubscriptionEvent::Inserted { .. } => { "inserted" }
-            SubscriptionEvent::Removed { .. } => { "removed" }
-        }
-    }
-}
 
 #[derive(Debug, thiserror::Error)]
 pub enum ReceiveError {
@@ -44,10 +36,10 @@ pub trait Subscribable: Resource {
 }
 macro_rules! impl_subscribable {
     ($resource:ty, $field:ident) => {
-        impl $crate::resource::subscription::Subscribable for $resource {
+        impl Subscribable for $resource {
             fn resource_subscribers_field(
-                resource_subscribers: &mut $crate::resource::subscription::ResourceSubscriptionChannels
-            ) -> &tokio::sync::broadcast::Sender<$crate::resource::subscription::SubscriptionEvent<Self>>
+                resource_subscribers: &mut ResourceSubscriptionChannels
+            ) -> &tokio::sync::broadcast::Sender<SubscriptionEvent<Self>>
             where Self: Sized {
                 let (sender, _) = &resource_subscribers.$field;
                 sender

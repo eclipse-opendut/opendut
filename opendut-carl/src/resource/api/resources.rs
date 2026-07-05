@@ -19,10 +19,9 @@ impl<'transaction> Resources<'transaction> {
 fn notify_insertion_on_success<R>(event: SubscriptionEvent<R>, result: &PersistenceResult<()>, relayed_subscription_events: &mut RelayedSubscriptionEvents)
 where R: Resource + Persistable + Subscribable {
     if result.is_ok() {
-        let event_name = event.display_name().to_owned();
         relayed_subscription_events
             .notify(event)
-            .unwrap_or_else(|_| panic!("should successfully queue notification about {event_name} resource during transaction"));
+            .unwrap_or_else(|_| panic!("should successfully queue resource inserted notification during transaction"));
     }
 }
 
@@ -30,11 +29,9 @@ fn notify_removal_on_success<R>(id: R::Id, result: &PersistenceResult<Option<R>>
 where R: Resource + Persistable + Subscribable {
     if let Ok(Some(resource)) = result {
         let event = SubscriptionEvent::Removed { id, value: resource.clone() };
-        let event_name = event.display_name().to_owned();
         relayed_subscription_events
             .notify(event)
-            .unwrap_or_else(|_| panic!("should successfully queue notification about {event_name} resource during transaction"));
-
+            .unwrap_or_else(|_| panic!("should successfully queue resource removed notification during transaction"));
     }
 }
 

@@ -12,6 +12,10 @@ use opendut_model::viper::{ViperRunDeployment, ViperTestRunDescriptor, ViperTest
 
 pub trait Resource: Any + Send + Sync + Debug + Clone {
     type Id: ResourceId<Self> + Clone + Hash + PartialEq + Eq + Debug + Send + Sync;
+
+    fn type_name() -> &'static str {
+        std::any::type_name::<Self>()
+    }
 }
 
 impl Resource for ClusterDeployment {
