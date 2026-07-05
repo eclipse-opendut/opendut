@@ -1,6 +1,6 @@
 use crate::resource::types::resources::Resources;
 use crate::resource::persistence::error::PersistenceError;
-use crate::resource::storage::ResourcesStorageApi;
+use crate::resource::manager::ResourcesStorageApi;
 use crate::settings::vpn::Vpn;
 use opendut_model::peer::state::PeerState;
 use opendut_model::peer::{PeerDescriptor, PeerId, PeerName};

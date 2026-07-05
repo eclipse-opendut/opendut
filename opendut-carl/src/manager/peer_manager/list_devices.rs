@@ -1,5 +1,5 @@
 use crate::resource::types::resources::Resources;
-use crate::resource::storage::ResourcesStorageApi;
+use crate::resource::manager::ResourcesStorageApi;
 use opendut_model::peer::PeerDescriptor;
 use opendut_model::topology::DeviceDescriptor;
 use std::collections::HashMap;

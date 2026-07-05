@@ -3,7 +3,7 @@ mod configuration;
 
 use crate::manager::peer_messaging_broker::PeerMessagingBrokerRef;
 use crate::resource::persistence::error::PersistenceError;
-use crate::resource::storage::ResourcesStorageApi;
+use crate::resource::manager::ResourcesStorageApi;
 use opendut_model::peer::configuration::PeerConfiguration;
 use opendut_model::peer::{PeerDescriptor, PeerId};
 use opendut_model::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName, NetworkInterfaceNameError};

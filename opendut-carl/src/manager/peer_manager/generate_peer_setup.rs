@@ -9,7 +9,7 @@ use tracing::{debug, info, warn};
 use url::Url;
 use opendut_util::pem::Pem;
 use crate::resource::types::resources::Resources;
-use crate::resource::storage::ResourcesStorageApi;
+use crate::resource::manager::ResourcesStorageApi;
 
 pub struct GeneratePeerSetupParams {
     pub peer: PeerId,

@@ -141,7 +141,7 @@ mod tests {
     use crate::manager::peer_manager::tests::create_peer_descriptor;
     use crate::resource::manager::{ResourceManager, ResourceManagerRef};
     use crate::resource::persistence::persistable::Persistable;
-    use crate::resource::storage::ResourcesStorageApi;
+    use crate::resource::manager::ResourcesStorageApi;
     use opendut_model::peer::state::PeerConnectionState;
     use opendut_model::peer::PeerId;
     use std::net::IpAddr;

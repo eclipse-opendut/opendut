@@ -17,7 +17,7 @@ use opendut_model::util::Port;
 use crate::manager::peer_messaging_broker::PeerMessagingBrokerRef;
 use crate::resource::manager::ResourceManagerRef;
 use crate::resource::persistence::error::{MapErrToInner, PersistenceError, PersistenceResult};
-use crate::resource::storage::ResourcesStorageApi;
+use crate::resource::manager::ResourcesStorageApi;
 use crate::settings::vpn::Vpn;
 
 pub mod create_cluster_descriptor;

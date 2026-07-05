@@ -18,7 +18,7 @@ use opendut_carl_api::carl::broker::stream_header::PeerVersion;
 use opendut_model::format::DebugJsonDisplay;
 use crate::resource::persistence::error::PersistenceError;
 use crate::resource::manager::ResourceManagerRef;
-use crate::resource::storage::ResourcesStorageApi;
+use crate::resource::manager::ResourcesStorageApi;
 
 mod effects;
 
@@ -389,7 +389,7 @@ mod tests {
     use crate::manager::peer_manager::tests::create_peer_descriptor;
     use super::*;
     use crate::resource::manager::ResourceManager;
-    use crate::resource::storage::ResourcesStorageApi;
+    use crate::resource::manager::ResourcesStorageApi;
 
     #[test_log::test(tokio::test)]
     async fn peer_stream() -> anyhow::Result<()> {

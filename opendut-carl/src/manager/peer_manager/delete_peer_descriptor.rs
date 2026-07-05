@@ -1,6 +1,6 @@
 use opendut_model::ShortName;
 use opendut_model::format::{format_id_with_name, format_id_with_optional_name};
-use crate::resource::storage::ResourcesStorageApi;
+use crate::resource::manager::ResourcesStorageApi;
 use crate::settings::vpn::Vpn;
 use opendut_auth::registration::client::RegistrationClientRef;
 use opendut_model::peer::{PeerDescriptor, PeerId, PeerName};
