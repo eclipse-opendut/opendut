@@ -1,5 +1,5 @@
 use anyhow::anyhow;
-use crate::resource::storage::tests::peer_descriptor::peer_descriptor;
+use super::peer_descriptor::peer_descriptor;
 use crate::resource::manager::ResourcesStorageApi;
 use googletest::prelude::*;
 use opendut_model::peer::PeerDescriptor;

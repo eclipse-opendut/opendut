@@ -1,11 +1,9 @@
-use std::io;
-use std::path::PathBuf;
-
 pub(crate) mod types;
 pub mod manager;
 pub mod persistence;
 
-mod storage;
+use std::io;
+use std::path::PathBuf;
 
 #[derive(Debug, thiserror::Error)]
 pub enum ConnectError {

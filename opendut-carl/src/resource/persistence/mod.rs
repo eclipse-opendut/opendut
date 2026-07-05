@@ -7,6 +7,7 @@ use uuid::Uuid;
 
 pub(crate) mod error;
 pub(crate) mod persistable;
+pub(super) mod storage;
 
 pub type Memory<'transaction> = Db<'transaction>;
 

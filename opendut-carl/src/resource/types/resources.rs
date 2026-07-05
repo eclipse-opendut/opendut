@@ -2,7 +2,7 @@ use super::Resource;
 use super::subscription::{ResourceSubscriptionChannels, Subscribable, SubscriptionEvent};
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::persistable::Persistable;
-use crate::resource::storage::{ResourceTransaction, ResourcesStorageApi};
+use crate::resource::persistence::storage::{ResourceTransaction, ResourcesStorageApi};
 use std::collections::HashMap;
 
 pub type RelayedSubscriptionEvents = ResourceSubscriptionChannels;
