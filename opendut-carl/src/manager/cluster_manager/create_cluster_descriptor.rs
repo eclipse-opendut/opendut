@@ -1,6 +1,6 @@
 use opendut_model::cluster::{ClusterDescriptor, ClusterId, ClusterName};
 use tracing::{debug, info};
-use crate::resource::types::resources::Resources;
+use crate::resource::manager::Resources;
 use crate::resource::manager::error::PersistenceError;
 use crate::resource::manager::ResourcesStorageApi;
 

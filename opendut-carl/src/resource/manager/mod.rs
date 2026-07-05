@@ -1,12 +1,14 @@
 pub(super) mod persistence;
+mod resources;
 
-pub use crate::resource::types::subscription::SubscriptionEvent;
+pub use resources::Resources;
 pub use persistence::storage::ResourcesStorageApi;
+pub use crate::resource::types::subscription::SubscriptionEvent;
 
+use resources::RelayedSubscriptionEvents;
 use persistence::error::{MapErrToInner, PersistenceResult};
 use persistence::persistable::Persistable;
 use persistence::storage::{PersistenceOptions, ResourceStorage};
-use crate::resource::types::resources::{RelayedSubscriptionEvents, Resources};
 use crate::resource::types::Resource;
 use crate::resource::types::subscription::{self, ResourceSubscriptionChannels, Subscribable, Subscription};
 use std::collections::HashMap;

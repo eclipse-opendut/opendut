@@ -1,6 +1,5 @@
 pub mod id;
 pub mod persistable;
-pub mod resources;
 pub mod subscription;
 
 

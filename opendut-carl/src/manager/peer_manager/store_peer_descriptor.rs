@@ -1,4 +1,4 @@
-use crate::resource::types::resources::Resources;
+use crate::resource::manager::Resources;
 use crate::resource::manager::error::PersistenceError;
 use crate::resource::manager::ResourcesStorageApi;
 use crate::settings::vpn::Vpn;

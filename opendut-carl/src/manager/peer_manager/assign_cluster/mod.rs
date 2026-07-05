@@ -9,7 +9,7 @@ use opendut_model::peer::{PeerDescriptor, PeerId};
 use opendut_model::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName, NetworkInterfaceNameError};
 use tracing::debug;
 use opendut_carl_api::carl::broker::{ApplyPeerConfiguration, DownstreamMessagePayload};
-use crate::resource::types::resources::Resources;
+use crate::resource::manager::Resources;
 
 
 pub(in crate::manager) use assignment::{ClusterAssignment, PeerClusterAssignment};

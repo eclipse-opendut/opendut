@@ -1,7 +1,7 @@
 use crate::resource::manager::error::ConnectError;
 use crate::resource::manager::persistence;
 use crate::resource::types::id::ResourceId;
-use crate::resource::types::resources::RelayedSubscriptionEvents;
+use crate::resource::manager::resources::RelayedSubscriptionEvents;
 use crate::resource::types::Resource;
 use super::error::PersistenceResult;
 use super::persistable::{Persistable, StorageKind};

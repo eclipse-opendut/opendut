@@ -2,7 +2,7 @@ use opendut_model::cluster::ClusterDisplay;
 use opendut_model::ShortName;
 use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId, ClusterName};
 use opendut_model::cluster::state::ClusterState;
-use crate::resource::types::resources::Resources;
+use crate::resource::manager::Resources;
 use crate::resource::manager::error::PersistenceError;
 use crate::resource::manager::ResourcesStorageApi;
 
