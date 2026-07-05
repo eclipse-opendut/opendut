@@ -14,7 +14,6 @@ use config::Config;
 use tokio::sync::{RwLock, RwLockWriteGuard};
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, warn};
-use crate::resource::ConnectError;
 
 
 pub type ResourceManagerRef = Arc<ResourceManager>;
@@ -36,7 +35,7 @@ impl ResourceManager {
     /// Returns a tuple with a reference for using the ResourceManager,
     /// and another reference which, when it goes out of scope, ensures
     /// the ResourceManager is shut down properly.
-    pub async fn load_from_config(settings: &Config) -> Result<(ResourceManagerRef, ResourceManagerCancel), ConnectError> {
+    pub async fn load_from_config(settings: &Config) -> Result<(ResourceManagerRef, ResourceManagerCancel), error::ConnectError> {
         let persistence_options = PersistenceOptions::load(settings)?;
 
         let resources = ResourceStorage::connect(&persistence_options).await?;
@@ -226,6 +225,23 @@ impl ResourceManagerCancel {
 impl Drop for ResourceManagerCancel {
     fn drop(&mut self) {
         self.inner.cancel();
+    }
+}
+
+
+pub mod error {
+    use std::{io, path::PathBuf};
+
+    #[derive(Debug, thiserror::Error)]
+    pub enum ConnectError {
+        #[error("Failed to load configuration.")]
+        ConfigLoad(#[from] opendut_util::settings::LoadError),
+        #[error("Failed to open or create database at {file:?}")]
+        DatabaseCreate { file: PathBuf, #[source] source: redb::DatabaseError },
+        #[error("Failed to create parent directory {dir:?} of database file")]
+        DatabaseDirCreate { dir: PathBuf, #[source] source: io::Error },
+        #[error("Failed to create database in-memory")]
+        DatabaseInMemoryCreate(#[source] redb::DatabaseError),
     }
 }
 
