@@ -6,10 +6,28 @@ use opendut_model::peer::configuration::{PeerConfiguration, EdgePeerConfiguratio
 use opendut_model::peer::PeerDescriptor;
 use std::collections::HashSet;
 use tracing::{debug, error, trace, warn};
+use opendut_carl_api::carl::broker::{ApplyPeerConfiguration, DownstreamMessagePayload};
 
 pub(crate) async fn register(resource_manager: ResourceManagerRef, peer_messaging_broker: PeerMessagingBrokerRef) {
+    send_peer_configuration_on_update(resource_manager.clone(), peer_messaging_broker.clone()).await;
     disconnect_peer_when_removed(resource_manager.clone(), peer_messaging_broker.clone()).await;
     remove_absent_peer_configuration_parameters_that_are_absent(resource_manager).await;
+}
+
+pub async fn send_peer_configuration_on_update(resource_manager: ResourceManagerRef, peer_messaging_broker: PeerMessagingBrokerRef) {
+    resource_manager.spawn_event_listener::<PeerConfiguration>(async move |event| {
+        if let SubscriptionEvent::Inserted { id: peer_id, value: peer_configuration } = event {
+            trace!("PeerConfiguration of peer <{peer_id}> was updated. Sending updated version to EDGAR.");
+
+            let _ = peer_messaging_broker.send_to_peer(
+                peer_id,
+                DownstreamMessagePayload::ApplyPeerConfiguration(Box::new(ApplyPeerConfiguration {
+                    configuration: peer_configuration,
+                }))
+            ).await
+                .inspect_err(|error| error!("Failed to send updated PeerConfiguration to peer <{peer_id}>: {error}"));
+        }
+    }).await;
 }
 
 pub async fn disconnect_peer_when_removed(resource_manager: ResourceManagerRef, peer_messaging_broker: PeerMessagingBrokerRef) {

@@ -1,21 +1,18 @@
 mod assignment;
 mod configuration;
 
-use crate::manager::peer_messaging_broker::PeerMessagingBrokerRef;
 use crate::resource::manager::error::PersistenceError;
 use crate::resource::manager::ResourcesStorageApi;
 use opendut_model::peer::configuration::PeerConfiguration;
 use opendut_model::peer::{PeerDescriptor, PeerId};
 use opendut_model::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName, NetworkInterfaceNameError};
 use tracing::debug;
-use opendut_carl_api::carl::broker::{ApplyPeerConfiguration, DownstreamMessagePayload};
 use crate::resource::manager::Resources;
 
 
 pub(in crate::manager) use assignment::{ClusterAssignment, PeerClusterAssignment};
 
 pub struct AssignClusterParams {
-    pub peer_messaging_broker: PeerMessagingBrokerRef,
     pub peer_id: PeerId,
     pub device_interfaces: Vec<NetworkInterfaceDescriptor>,
     pub cluster_assignment: ClusterAssignment,
@@ -43,45 +40,29 @@ pub enum AssignClusterError {
 
 impl Resources<'_> {
     pub async fn assign_cluster(&mut self, params: AssignClusterParams) -> Result<(), AssignClusterError> {
-        let AssignClusterParams { peer_messaging_broker, peer_id, cluster_assignment, device_interfaces, options } = params;
+        let AssignClusterParams { peer_id, cluster_assignment, device_interfaces, options } = params;
 
         debug!("Assigning cluster to peer <{peer_id}>.");
 
-        let peer_configuration = {
+        let peer_descriptor = self.get::<PeerDescriptor>(peer_id)
+            .map_err(|source| AssignClusterError::Persistence { peer_id, source })?
+            .ok_or(AssignClusterError::PeerNotFound(peer_id))?;
 
-            let peer_descriptor = self.get::<PeerDescriptor>(peer_id)
-                .map_err(|source| AssignClusterError::Persistence { peer_id, source })?
-                .ok_or(AssignClusterError::PeerNotFound(peer_id))?;
+        let mut peer_configuration = self.get::<PeerConfiguration>(peer_id)
+            .map_err(|source| AssignClusterError::Persistence { peer_id, source })?
+            .unwrap_or_default();
 
-            let mut peer_configuration = self.get::<PeerConfiguration>(peer_id)
-                .map_err(|source| AssignClusterError::Persistence { peer_id, source })?
-                .unwrap_or_default();
+        configuration::update_peer_configuration(
+            &mut peer_configuration,
+            peer_descriptor,
+            &cluster_assignment,
+            device_interfaces,
+            options
+        )?;
 
-            configuration::update_peer_configuration(
-                &mut peer_configuration,
-                peer_descriptor,
-                &cluster_assignment,
-                device_interfaces,
-                options
-            )?;
-
-            // store updated peer configuration
-            self.insert(peer_id, Clone::clone(&peer_configuration))
-                .map_err(|source| AssignClusterError::Persistence { peer_id, source })?;
-
-            peer_configuration
-        };
-
-        peer_messaging_broker.send_to_peer(
-            peer_id,
-            DownstreamMessagePayload::ApplyPeerConfiguration(Box::new(ApplyPeerConfiguration {
-                configuration: peer_configuration,
-            }))
-        ).await
-        .map_err(|cause| AssignClusterError::SendingToPeerFailed {
-            peer_id,
-            cause: cause.to_string()
-        })?;
+        // store updated peer configuration
+        self.insert(peer_id, Clone::clone(&peer_configuration))
+            .map_err(|source| AssignClusterError::Persistence { peer_id, source })?;
 
         Ok(())
     }
@@ -97,8 +78,7 @@ mod tests {
     use opendut_model::cluster::ClusterId;
     use std::net::{IpAddr, Ipv4Addr};
     use std::str::FromStr;
-    use std::sync::Arc;
-    use opendut_carl_api::carl::broker::stream_header;
+    use opendut_carl_api::carl::broker::{stream_header, ApplyPeerConfiguration, DownstreamMessagePayload};
     use opendut_model::peer::configuration::{parameter, ParameterTarget};
     use crate::manager::peer_manager::tests::create_peer_descriptor;
     use crate::manager::testing::PeerFixture;
@@ -145,7 +125,6 @@ mod tests {
 
         resource_manager.resources_mut(async |resources|
             resources.assign_cluster(AssignClusterParams {
-                peer_messaging_broker: Arc::clone(&peer_messaging_broker),
                 peer_id,
                 cluster_assignment: Clone::clone(&cluster_assignment),
                 device_interfaces: vec![],

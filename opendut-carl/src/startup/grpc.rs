@@ -45,7 +45,6 @@ impl GrpcFacades {
 
         let cluster_manager = ClusterManager::create(
             resource_manager.clone(),
-            Arc::clone(&peer_messaging_broker),
             Clone::clone(&vpn),
             ClusterManagerOptions::load(settings)?,
         ).await;

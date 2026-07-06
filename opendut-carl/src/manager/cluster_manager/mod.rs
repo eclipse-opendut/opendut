@@ -49,7 +49,6 @@ use error::*;
 
 pub struct ClusterManager {
     resource_manager: ResourceManagerRef,
-    peer_messaging_broker: PeerMessagingBrokerRef,
     pub vpn: Vpn,
     options: ClusterManagerOptions,
     can_server_port_counter: u16,
@@ -58,7 +57,6 @@ pub struct ClusterManager {
 impl ClusterManager {
     pub async fn create(
         resource_manager: ResourceManagerRef,
-        peer_messaging_broker: PeerMessagingBrokerRef,
         vpn: Vpn,
         options: ClusterManagerOptions,
     ) -> ClusterManagerRef {
@@ -66,7 +64,6 @@ impl ClusterManager {
 
         let self_ref = Arc::new(Mutex::new(Self {
             resource_manager: resource_manager.clone(),
-            peer_messaging_broker,
             vpn,
             options,
             can_server_port_counter
@@ -301,7 +298,6 @@ impl ClusterManager {
             for (member_id, device_interfaces) in member_interface_mapping {
 
                 resources.assign_cluster(AssignClusterParams {
-                    peer_messaging_broker: Arc::clone(&self.peer_messaging_broker),
                     peer_id: member_id,
                     cluster_assignment: ClusterAssignment {
                         id: cluster_id,
@@ -746,7 +742,6 @@ mod test {
 
             let testee = ClusterManager::create(
                 resource_manager.clone(),
-                Arc::clone(&peer_messaging_broker),
                 Vpn::Disabled,
                 cluster_manager_options.clone(),
             ).await;
