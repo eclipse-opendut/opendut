@@ -191,7 +191,7 @@ pub(crate) mod testing {
                 Ok(Self {
                     id: test_id,
                     descriptor: test_descriptor,
-                    cluster: cluster,
+                    cluster,
                 })
             }
         }
@@ -218,7 +218,7 @@ pub(crate) mod testing {
                 Ok(Self {
                     id: run_id,
                     deployment,
-                    test: test,
+                    test,
                 })
             }
         }
