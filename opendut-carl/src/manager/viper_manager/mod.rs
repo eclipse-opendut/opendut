@@ -3,3 +3,4 @@ pub mod delete_viper_test_descriptor;
 pub mod get_viper_test_suite_parameters;
 pub mod effects;
 mod fetch_source_code;
+mod get_peer_configuration;

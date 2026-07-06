@@ -5,7 +5,8 @@ use opendut_viper_rt::{ViperOptions, ViperRuntime};
 use opendut_viper_rt::common::TestSuiteIdentifier;
 use opendut_viper_rt::compile::{CompilationError, SourceCode};
 use opendut_viper_rt::source::loaders::HttpSourceLoader;
-use crate::resource::manager::{ResourceManagerRef, Resources, error::PersistenceError, ResourcesStorageApi};
+use crate::resource::manager::{ResourceManagerRef, Resources, ResourcesStorageApi};
+use crate::resource::manager::error::PersistenceError;
 
 pub async fn fetch_source_code(
     resource_manager: ResourceManagerRef,
