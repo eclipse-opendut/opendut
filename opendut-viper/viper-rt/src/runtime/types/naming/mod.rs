@@ -13,6 +13,7 @@ mod validate;
 
 use std::borrow::Cow;
 use std::fmt::{Debug, Display};
+use std::hash::Hash;
 use std::ops::{Not, Range};
 use crate::runtime::types::naming::error::InvalidIdentifierError;
 
@@ -54,7 +55,7 @@ pub trait Identifier : Debug + Display {
 ///     Ok(())
 /// }
 /// ```
-#[derive(Clone, Debug, Eq, Hash)]
+#[derive(Clone, Debug, Eq)]
 pub struct TestSuiteIdentifier {
     value: String
 }
@@ -454,6 +455,11 @@ impl From<TestIdentifier> for String {
 impl PartialEq for TestSuiteIdentifier {
     fn eq(&self, other: &Self) -> bool {
         self.value == other.value
+    }
+}
+impl Hash for TestSuiteIdentifier {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.value.hash(state);
     }
 }
 

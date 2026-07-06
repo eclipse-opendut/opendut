@@ -14,7 +14,6 @@ use opendut_model::topology::{DeviceDescriptor, DeviceId};
 use opendut_model::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
 use opendut_model::util::Port;
 
-use crate::manager::peer_messaging_broker::PeerMessagingBrokerRef;
 use crate::resource::manager::ResourceManagerRef;
 use crate::resource::manager::error::{MapErrToInner, PersistenceError, PersistenceResult};
 use crate::resource::manager::ResourcesStorageApi;
@@ -528,7 +527,7 @@ mod test {
     use opendut_model::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
     use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceId, NetworkInterfaceName};
 
-    use crate::manager::peer_messaging_broker::{PeerMessagingBroker, PeerMessagingBrokerOptions};
+    use crate::manager::peer_messaging_broker::{PeerMessagingBroker, PeerMessagingBrokerOptions, PeerMessagingBrokerRef};
     use crate::resource::manager::{ResourceManager, ResourceManagerCancel};
     use crate::settings;
 
@@ -539,6 +538,7 @@ mod test {
         use opendut_carl_api::carl::broker::{stream_header, DownstreamMessage, DownstreamMessagePayload};
         use opendut_model::peer::configuration::{parameter, PeerConfiguration};
         use crate::manager::peer_manager::StorePeerDescriptorParams;
+        use crate::manager::peer_messaging_broker::PeerMessagingBrokerRef;
 
         #[test_log::test(tokio::test)]
         async fn test_rollout_cluster() -> anyhow::Result<()> {

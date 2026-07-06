@@ -122,7 +122,7 @@ conversion! {
     fn from(value: Model) -> Proto {
         Proto {
             identifier: Some(value.identifier.into()),
-            code: value.code.into(),
+            code: value.code,
             api_version: Some(match value.version {
                 crate::compile::ApiVersion::V1_0 => viper_source_code::ApiVersion::V10(ViperSourceCodeApiVersionV10 {}),
             }),
