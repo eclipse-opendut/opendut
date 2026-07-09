@@ -160,7 +160,6 @@ pub(crate) mod testing {
         pub struct ViperTestFixture {
             pub id: ViperTestId,
             pub descriptor: ViperTestRunDescriptor,
-            pub cluster: ClusterFixture,
         }
         impl ViperTestFixture {
             pub async fn create(resource_manager: ResourceManagerRef) -> anyhow::Result<Self> {
@@ -191,7 +190,6 @@ pub(crate) mod testing {
                 Ok(Self {
                     id: test_id,
                     descriptor: test_descriptor,
-                    cluster,
                 })
             }
         }
@@ -199,7 +197,6 @@ pub(crate) mod testing {
         pub struct ViperRunDeploymentFixture {
             pub id: ViperRunId,
             pub deployment: ViperRunDeployment,
-            pub test: ViperTestFixture,
         }
 
         impl ViperRunDeploymentFixture {
@@ -218,7 +215,6 @@ pub(crate) mod testing {
                 Ok(Self {
                     id: run_id,
                     deployment,
-                    test,
                 })
             }
         }

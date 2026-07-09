@@ -114,10 +114,12 @@ mod test {
             simulate_fetch_source_code
         ).await;
 
+        let mut peer_configuration_subscription = resource_manager.subscribe::<PeerConfiguration>().await;
+
+        
         let viper_run_deployment = ViperRunDeploymentFixture::create(resource_manager.clone()).await?;
 
         let run_id = viper_run_deployment.id;
-        let peer_id = viper_run_deployment.test.cluster.descriptor.leader;
 
         let fetch_was_triggered = tokio::time::timeout(
             Duration::from_secs(5),
@@ -125,9 +127,21 @@ mod test {
         ).await;
         assert_eq!(fetch_was_triggered, Ok(Some(())));
 
-        let peer_configuration = resource_manager.get::<PeerConfiguration>(peer_id).await?;
+        let peer_configuration = {
+            let event = tokio::time::timeout(
+                Duration::from_secs(5),
+                peer_configuration_subscription.receive()
+            ).await??;
 
-        let test_run_report = peer_configuration.unwrap()
+            let SubscriptionEvent::Inserted { id: _, value: peer_configuration } = event else {
+                panic!("Received unexpected subscription event.");
+            };
+
+            peer_configuration
+        };
+
+
+        let test_run_report = peer_configuration
             .test_run_reports.values
             .values()
             .next()
