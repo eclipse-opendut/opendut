@@ -91,6 +91,7 @@ pub fn ViperTestsOverview() -> impl IntoView {
                                     view! {
                                         <Row
                                             viper_test_run_descriptor=RwSignal::new(viper_test_run_descriptor)
+                                            refetch_viper_tests
                                             on_delete
                                         />
                                     }

@@ -3,11 +3,12 @@ use opendut_lea_components::{ButtonColor, OverviewTableCell};
 use opendut_model::viper::ViperTestRunDescriptor;
 use crate::app::use_app_globals;
 use crate::components::ClickableOverviewTableRow;
-use crate::viper_tests::components::{DeleteViperTestButton, DeployViperTestButton};
+use crate::viper_tests::components::{DeleteViperTestButton, DeployViperTestButton, DuplicateViperTestButton};
 
 #[component]
 pub(crate) fn Row<OnDeleteFn>(
     viper_test_run_descriptor: RwSignal<ViperTestRunDescriptor>,
+    refetch_viper_tests: RwSignal<()>,
     on_delete: OnDeleteFn,
 ) -> impl IntoView
 where OnDeleteFn: Fn() + Copy + Send + 'static, {
@@ -69,12 +70,18 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
             })}
         
             <OverviewTableCell>
-                <div class="is-pulled-right">
-                    <DeleteViperTestButton
-                        viper_test_id
-                        button_color=ButtonColor::TextDanger
-                        on_delete
+                <div class="is-flex">
+                    <DuplicateViperTestButton
+                        viper_test_run_descriptor
+                        refetch_viper_tests
                     />
+                    <div class="pl-2">
+                        <DeleteViperTestButton
+                            viper_test_id
+                            button_color=ButtonColor::TextDanger
+                            on_delete
+                        />
+                    </div>
                 </div>
             </OverviewTableCell>
         </ClickableOverviewTableRow>
