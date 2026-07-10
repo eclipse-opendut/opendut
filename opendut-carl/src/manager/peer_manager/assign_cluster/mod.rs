@@ -60,7 +60,7 @@ impl Resources<'_> {
             options
         )?;
 
-        // store updated peer configuration
+        // storing updated peer configuration triggers effect that sends it out to EDGAR
         self.insert(peer_id, Clone::clone(&peer_configuration))
             .map_err(|source| AssignClusterError::Persistence { peer_id, source })?;
 
@@ -91,16 +91,20 @@ mod tests {
         let peer_id = peer.id;
 
         let (resource_manager, _cancel) = ResourceManager::new_in_memory();
-        let peer_messaging_broker = PeerMessagingBroker::new(
-            resource_manager.clone(),
-            PeerMessagingBrokerOptions::load(&settings)?,
-        ).await;
 
         let peer_configuration = PeerConfiguration::default();
         resource_manager.resources_mut(async |resources| {
             resources.insert(peer_id, create_peer_descriptor(peer_id))?;
             resources.insert(peer_id, Clone::clone(&peer_configuration))
         }).await??;
+
+
+        let peer_messaging_broker = PeerMessagingBroker::new(
+            resource_manager.clone(),
+            PeerMessagingBrokerOptions::load(&settings)?,
+        ).await;
+
+
 
         let (_, mut receiver) = peer_messaging_broker.open(peer_id, IpAddr::from_str("1.2.3.4")?, stream_header::ExtraHeaders::default()).await?;
         let received = receiver.recv().await.unwrap()
@@ -141,7 +145,8 @@ mod tests {
             HashSet::new(),
         );
 
-        let received = receiver.recv().await.unwrap()
+
+        let received = receiver.recv().await.unwrap() //PeerMessagingBroker effect should fire correctly
             .payload;
 
         match received {
