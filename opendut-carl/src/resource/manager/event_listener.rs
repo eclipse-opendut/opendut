@@ -1,4 +1,5 @@
-use tracing::{debug, warn};
+use anyhow::anyhow;
+use tracing::{debug, warn, error};
 
 use crate::resource::{manager::{ResourceManager, SubscriptionEvent}, types::{Resource, subscription::{self, Subscribable, Subscription}}};
 
@@ -15,18 +16,9 @@ pub(super) async fn spawn_event_listener<R: Resource + Subscribable>(
         tokio::runtime::Handle::current().block_on(async move {
             loop {
                 tokio::select! {
-                    received = subscription.receive() => match received {
-                        Ok(event) => {
+                    result = receive(&mut subscription, resource_name) => {
+                        if let Some(event) = result? {
                             on_event(event).await;
-                        }
-                        Err(subscription::ReceiveError::Broadcast(error)) => match error {
-                            tokio::sync::broadcast::error::RecvError::Closed => {
-                                warn!("ResourceManager subscription channel for {resource_name} closed. Aborting.");
-                                break;
-                            }
-                            tokio::sync::broadcast::error::RecvError::Lagged(skipped_messages) => {
-                                warn!("ResourceManager subscription channel for {resource_name} lagged behind and had to skip {skipped_messages} messages.");
-                            },
                         }
                     },
                     _ = cancel.cancelled() => {
@@ -35,6 +27,8 @@ pub(super) async fn spawn_event_listener<R: Resource + Subscribable>(
                     }
                 }
             }
+
+            anyhow::Ok(())
         })
     });
 }
@@ -48,61 +42,41 @@ pub async fn spawn_event_listener_aggregate_2<R1: Resource + Subscribable, R2: R
     let mut subscription1 = resource_manager.subscribe::<R1>().await;
     let mut subscription2 = resource_manager.subscribe::<R2>().await;
 
-    let aggregate_resource_name = format!("({}, {})", R1::type_name(), R2::type_name());
+    let aggregate_resource_name = format!(
+        "<{}>",
+        [
+            R1::type_name(),
+            R2::type_name(),
+        ].join(", ")
+    );
 
 
     let cancel = resource_manager.event_listener_cancel.clone();
 
 
-    enum Abort { Yes, No }
-
-    async fn receive<R: Resource>(subscription: &mut Subscription<R>) -> Result<SubscriptionEvent<R>, Abort> { //TODO maybe pull out and re-use for non-aggregate as well
-        let resource_name = R::type_name();
-
-        match subscription.receive().await {
-            Ok(event) => {
-                Ok(event) //TODO simplify
-            }
-            Err(subscription::ReceiveError::Broadcast(error)) => match error {
-                tokio::sync::broadcast::error::RecvError::Closed => {
-                    debug!("ResourceManager subscription channel for {resource_name} closed. Aborting."); //TODO mention aggregate channel name
-                    Err(Abort::Yes)
-                }
-                tokio::sync::broadcast::error::RecvError::Lagged(skipped_messages) => {
-                    warn!("ResourceManager subscription channel for {resource_name} lagged behind and had to skip {skipped_messages} messages.");
-                    Err(Abort::No)
-                },
-            }
-        }
-    }
-
-
     tokio::task::spawn_blocking(move || {
         tokio::runtime::Handle::current().block_on(async move {
+
             let mut previous1 = None;
             let mut previous2 = None;
 
             loop {
                 tokio::select! {
-                    result = receive(&mut subscription1) => match result {
-                        Ok(event) => {
+                    result = receive(&mut subscription1, &aggregate_resource_name) => {
+                        if let Some(event) = result? {
                             previous1.replace(event);
 
                             let notification = (previous1.clone(), previous2.clone());
                             on_event(notification).await;
                         }
-                        Err(Abort::Yes) => break,
-                        Err(Abort::No) => {}, //do nothing
                     },
-                    result = receive(&mut subscription2) => match result {
-                        Ok(event) => {
-                            previous2.replace(event);  //TODO pull into closure?
+                    result = receive(&mut subscription2, &aggregate_resource_name) => {
+                        if let Some(event) = result? {
+                            previous2.replace(event);
 
                             let notification = (previous1.clone(), previous2.clone());
                             on_event(notification).await;
                         }
-                        Err(Abort::Yes) => break,
-                        Err(Abort::No) => {}, //do nothing
                     },
                     _ = cancel.cancelled() => {
                         debug!("ResourceManager is cancelling subscription channel for {aggregate_resource_name}.");
@@ -110,8 +84,33 @@ pub async fn spawn_event_listener_aggregate_2<R1: Resource + Subscribable, R2: R
                     }
                 }
             }
+
+            anyhow::Ok(())
         })
     });
+}
+
+
+async fn receive<R: Resource>(
+    subscription: &mut Subscription<R>,
+    aggregate_resource_name: &str,
+) -> anyhow::Result<Option<SubscriptionEvent<R>>> {
+    let resource_name = R::type_name();
+
+    match subscription.receive().await {
+        Ok(event) => Ok(Some(event)),
+        Err(subscription::ReceiveError::Broadcast(error)) => match error {
+            tokio::sync::broadcast::error::RecvError::Closed => {
+                let message = format!("Channel for {resource_name} in ResourceManager subscription {aggregate_resource_name} closed. Aborting.");
+                error!("{message}");
+                Err(anyhow!(message))
+            }
+            tokio::sync::broadcast::error::RecvError::Lagged(skipped_messages) => {
+                warn!("Channel for {resource_name} in ResourceManager subscription {aggregate_resource_name} lagged behind and had to skip {skipped_messages} messages.");
+                Ok(None)
+            },
+        }
+    }
 }
 
 
