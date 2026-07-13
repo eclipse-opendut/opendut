@@ -1,7 +1,8 @@
 use std::collections::HashSet;
 use std::hash::Hash;
 use leptos::prelude::*;
-use crate::{ButtonColor, ButtonSize, ButtonState, CollapseButton, FontAwesomeIcon, IconButton, Ior, NON_BREAKING_SPACE};
+use crate::{ButtonColor, ButtonSize, ButtonState, CollapseButton, FontAwesomeIcon, IconButton, Ior, Tag, NON_BREAKING_SPACE};
+use crate::tables::TableDisplayType;
 
 #[derive(Clone, Debug)]
 pub struct CollapsableInfo {
@@ -9,10 +10,16 @@ pub struct CollapsableInfo {
     pub value: String,
 }
 
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct MultipleSelectionTableCell {
+    pub value: Vec<String>,
+    pub display_type: TableDisplayType,
+}
+
 #[derive(Clone, Debug)]
 pub struct MultipleSelectionTableRow<Id> {
     pub id: Id,
-    pub cells: Vec<String>,
+    pub cells: Vec<MultipleSelectionTableCell>,
     pub details: Vec<CollapsableInfo>,
 }
 
@@ -63,6 +70,7 @@ where
                             let is_collapsed = RwSignal::new(true);
 
                             let MultipleSelectionTableRow { id: row_id, cells, details } = row;
+
                             let is_selected = {
                                 let row_id = Clone::clone(&row_id);
                                 Signal::derive(move || {
@@ -111,8 +119,34 @@ where
                                         each=move || Clone::clone(&cells)
                                         key=|cell| cell.to_owned()
                                         children=move |cell| {
-                                            view! {
-                                                <td> { cell } </td>
+                                            let MultipleSelectionTableCell { value, display_type } = cell;
+
+                                            match display_type {
+                                                TableDisplayType::Text => {
+                                                    view! {
+                                                        <td> { value } </td>
+                                                    }.into_any()
+                                                }
+                                                TableDisplayType::Tag => {
+                                                    view! {
+                                                        <td>
+                                                            <div class="tags">
+                                                                <For
+                                                                    each=move || value.clone()
+                                                                    key=|value| value.to_owned()
+                                                                    children=move |value| {
+                                                                        view! {
+                                                                            <Tag
+                                                                                text=value
+                                                                                color=Signal::derive(move || if is_selected.get() { ButtonColor::White } else { ButtonColor::Light })
+                                                                            />
+                                                                        }
+                                                                    }
+                                                                />
+                                                            </div>
+                                                        </td>
+                                                    }.into_any()
+                                                }
                                             }
                                         }
                                     />

@@ -4,14 +4,14 @@ use crate::{ButtonColor, ButtonSize};
 #[component]
 pub fn Tag(
     #[prop(into)] text: String,
-    #[prop(default=ButtonColor::Light)] color: ButtonColor,
+    #[prop(into, default=Signal::from(ButtonColor::Light))] color: Signal<ButtonColor>,
     #[prop(default=ButtonSize::Normal)] size: ButtonSize,
     #[prop(optional)] on_delete: Option<Callback<()>>,
 ) -> impl IntoView {
 
-    let tag_class = format!(
+    let tag_class = move || format!(
         "tag {} {}",
-        color.as_class(),
+        color.get().as_class(),
         size.as_class(),
     );
 

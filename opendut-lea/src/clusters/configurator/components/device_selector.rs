@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use leptos::prelude::*;
 use tracing::warn;
-use opendut_lea_components::{CollapsableInfo, Ior, MultipleSelectionTable, MultipleSelectionTableRow};
+use opendut_lea_components::{CollapsableInfo, Ior, MultipleSelectionTable, MultipleSelectionTableCell, MultipleSelectionTableRow, TableDisplayType};
 use opendut_model::peer::PeerDescriptor;
 use opendut_model::topology::{DeviceDescriptor, DeviceId};
 use crate::clusters::configurator::types::UserClusterDescriptor;
@@ -63,31 +63,37 @@ pub fn DeviceSelector(
                         }
                     };
 
-                    let tags = tags.iter().map(|tag| { tag.value() }).collect::<Vec<_>>().join("* ");
+                    let tags_as_string = tags.iter().map(|tag| { tag.value() }).collect::<Vec<_>>().join("* ");
 
                     let device_details = vec![
                         CollapsableInfo { label: String::from("ID"), value: device_id.to_string() },
                         CollapsableInfo { label: String::from("Peer ID"), value: peer_id.to_string() },
                         CollapsableInfo { label: String::from("Interface"), value: network_interface_text },
-                        CollapsableInfo { label: String::from("Tags"), value: tags },
+                        CollapsableInfo { label: String::from("Tags"), value: tags_as_string },
                         CollapsableInfo { label: String::from("Description"), value: device_description.unwrap_or_default().to_string() },
                     ];
 
-                    let device_name = device_name.to_string();
-                    let peer_name = peer_name.to_string();
-                    let peer_location = Clone::clone(&peer_location).unwrap_or_default().value();
+                    let device_name = vec![device_name.to_string()];
+                    let peer_name = vec![peer_name.to_string()];
+                    let peer_location = vec![Clone::clone(&peer_location).unwrap_or_default().value()];
+                    let tags = tags.iter().map(|tag| String::from(tag.value())).collect::<Vec<_>>();
 
                     MultipleSelectionTableRow {
                         id: device_id,
-                        cells: vec![device_name, peer_name, peer_location],
+                        cells: vec![
+                            MultipleSelectionTableCell { value: device_name, display_type: TableDisplayType::Text },
+                            MultipleSelectionTableCell { value: peer_name, display_type: TableDisplayType::Text },
+                            MultipleSelectionTableCell { value: peer_location, display_type: TableDisplayType::Text },
+                            MultipleSelectionTableCell { value: tags, display_type: TableDisplayType::Tag },
+                        ],
                         details: device_details,
                     }
                 })
             }).collect::<Vec<_>>();
 
         rows.sort_by(|a, b| {
-            a.cells[0].to_lowercase()
-                .cmp(&b.cells[0].to_lowercase())
+            a.cells[0].value[0].to_lowercase()
+                .cmp(&b.cells[0].value[0].to_lowercase())
         });
         rows
     });
@@ -96,6 +102,7 @@ pub fn DeviceSelector(
         String::from("Name"),
         String::from("Peer"),
         String::from("Peer Location"),
+        String::from("Tags"),
     ];
 
     view! {
