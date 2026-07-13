@@ -1,10 +1,11 @@
 use anyhow::anyhow;
+use tokio::sync::RwLock;
 use tracing::{debug, warn, error};
 
 use crate::resource::{manager::{ResourceManager, SubscriptionEvent}, types::{Resource, subscription::{self, Subscribable, Subscription}}};
 
 
-pub(super) async fn spawn_event_listener<R: Resource + Subscribable>(
+pub(super) async fn spawn_event_listener<R: Resource + Subscribable>( //separate implementation for non-aggregate events, because the events are not (tuples of) Options
     resource_manager: &ResourceManager,
     on_event: impl AsyncFn(SubscriptionEvent<R>) + Send + 'static,
 ) {
@@ -34,60 +35,88 @@ pub(super) async fn spawn_event_listener<R: Resource + Subscribable>(
 }
 
 
-pub async fn spawn_event_listener_aggregate_2<R1: Resource + Subscribable, R2: Resource + Subscribable>(
-    resource_manager: &ResourceManager,
-    on_event: impl AsyncFn((Option<SubscriptionEvent<R1>>, Option<SubscriptionEvent<R2>>)) + Send + 'static,
-) {
+macro_rules! spawn_event_listener_aggregate {
+    ($name:ident, ($($resource:tt),+)) => {
+        #[allow(non_snake_case, reason = "Re-using generic type name as variable name, because macro_rules cannot transform identifiers.")]
+        pub(super) async fn $name<
+            $(
+                $resource: Resource + Subscribable,
+            )*
+        >(
+            resource_manager: &ResourceManager,
+            on_event: impl AsyncFn((
+                $(
+                    Option<SubscriptionEvent<$resource>>,
+                )*
+            )) + Send + 'static,
+        ) {
 
-    let mut subscription1 = resource_manager.subscribe::<R1>().await;
-    let mut subscription2 = resource_manager.subscribe::<R2>().await;
+            $(
+                let $resource = resource_manager.subscribe::<$resource>().await;
+            )*
 
-    let aggregate_resource_name = format!(
-        "<{}>",
-        [
-            R1::type_name(),
-            R2::type_name(),
-        ].join(", ")
-    );
+            let aggregate_resource_name = format!(
+                "<{}>",
+                [
+                    $(
+                        $resource::type_name(),
+                    )*
+                ].join(", ")
+            );
 
+            let cancel = resource_manager.event_listener_cancel.clone();
 
-    let cancel = resource_manager.event_listener_cancel.clone();
+            tokio::task::spawn_blocking(move || {
+                tokio::runtime::Handle::current().block_on(async move {
+                    $(
+                        let mut $resource = CachedSubscription {
+                            subscription: $resource,
+                            previous: RwLock::new(None),
+                        };
+                    )*
 
+                    let on_event = async || {
+                        let notification = (
+                            $(
+                                $resource.previous.read().await.clone(),
+                            )*
+                        );
+                        on_event(notification).await;
+                    };
 
-    tokio::task::spawn_blocking(move || {
-        tokio::runtime::Handle::current().block_on(async move {
+                    loop {
+                        tokio::select! {
+                            $(
+                                result = receive(&mut $resource.subscription, &aggregate_resource_name) => {
+                                    if let Some(event) = result? {
+                                        $resource.previous.write().await.replace(event);
 
-            let mut previous1 = None;
-            let mut previous2 = None;
-
-            loop {
-                tokio::select! {
-                    result = receive(&mut subscription1, &aggregate_resource_name) => {
-                        if let Some(event) = result? {
-                            previous1.replace(event);
-
-                            let notification = (previous1.clone(), previous2.clone());
-                            on_event(notification).await;
+                                        on_event().await;
+                                    }
+                                },
+                            )*
+                            _ = cancel.cancelled() => {
+                                debug!("ResourceManager is cancelling subscription channel for {aggregate_resource_name}.");
+                                break;
+                            }
                         }
-                    },
-                    result = receive(&mut subscription2, &aggregate_resource_name) => {
-                        if let Some(event) = result? {
-                            previous2.replace(event);
-
-                            let notification = (previous1.clone(), previous2.clone());
-                            on_event(notification).await;
-                        }
-                    },
-                    _ = cancel.cancelled() => {
-                        debug!("ResourceManager is cancelling subscription channel for {aggregate_resource_name}.");
-                        break;
                     }
-                }
-            }
 
-            anyhow::Ok(())
-        })
-    });
+                    anyhow::Ok(())
+                })
+            });
+        }
+    };
+}
+
+spawn_event_listener_aggregate!(spawn_event_listener_aggregate_2, (R1, R2));
+// Can add more variants like this:
+// spawn_event_listener_aggregate!(spawn_event_listener_aggregate_3, (R1, R2, R3));
+
+
+struct CachedSubscription<R: Resource + Subscribable> {
+    subscription: Subscription<R>,
+    previous: RwLock<Option<SubscriptionEvent<R>>>,
 }
 
 
