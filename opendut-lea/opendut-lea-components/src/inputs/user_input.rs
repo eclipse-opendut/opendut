@@ -15,10 +15,15 @@ pub fn UserInput<A>(
     #[prop(into)] placeholder: Signal<String>,
     #[prop(into, default=Signal::from(None))] description: Signal<Option<String>>,
     #[prop(default=InputType::Text)] input_type: InputType,
+    #[prop(optional)] add_on: Option<ViewFn>,
 ) -> impl IntoView
 where A: UserInputValidator + Clone + 'static {
 
     let has_description = move || description.with(|description| description.is_some());
+    let has_add_on = {
+        let add_on = add_on.clone();
+        move || add_on.is_some()
+    };
 
     let value_text = move || {
         getter.with(|input| match input {
@@ -53,8 +58,8 @@ where A: UserInputValidator + Clone + 'static {
     );
 
     view! {
-        <div class="field">
-            <label class="label" class=("mb-0", has_description)>{ label }</label>
+        <label class="label" class=("mb-0", has_description)>{ label }</label>
+        <div class="field mb-0" class=("has-addons", has_add_on)>
             <Show when=has_description>
                 <p class="pb-2"> { description } </p>
             </Show>
@@ -68,7 +73,8 @@ where A: UserInputValidator + Clone + 'static {
                     on:input=move |ev| { debounced_input_handling(ev); }
                 />
             </div>
-            <p class="help has-text-danger">{ help_text }</p>
+            { add_on.map(|add_on_button| add_on_button.run()) }
         </div>
+        <p class="help has-text-danger mb-3">{ help_text }</p>
     }
 }
