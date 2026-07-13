@@ -33,7 +33,7 @@ where
                     <ReadOnlyInput label="ID" value=device_id_string />
                     <DeviceNameInput device_configuration />
                     <DeviceInterfaceInput peer_configuration device_configuration />
-                    <DeviceTagInput />
+                    <DeviceTagInput device_configuration />
                     <DeviceDescriptionInput device_configuration />
                 </div>
             </div>

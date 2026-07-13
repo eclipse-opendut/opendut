@@ -38,6 +38,7 @@ pub use toggle::{Toggle, ToggleState};
 pub use tables::multiple_selection_table::{MultipleSelectionTable, MultipleSelectionTableRow, CollapsableInfo};
 pub use tables::selection_table::{SelectionTable, SelectionTableRow};
 pub use tables::overview_table::{TableHeading, OverviewTable, OverviewTableRow, OverviewTableCell};
+pub use tag::Tag;
 
 pub mod health;
 pub mod tooltip;
@@ -55,6 +56,7 @@ mod util;
 mod icon_text;
 mod toggle;
 mod tables;
+mod tag;
 
 pub const NON_BREAKING_SPACE: &str = "\u{a0}";
 
