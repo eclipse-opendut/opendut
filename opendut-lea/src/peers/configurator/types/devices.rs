@@ -1,6 +1,6 @@
 use opendut_lea_components::UserInputValue;
 use opendut_model::cluster::ClusterDescriptor;
-use opendut_model::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName};
+use opendut_model::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag};
 use opendut_model::util::net::NetworkInterfaceId;
 
 #[derive(thiserror::Error, Clone, Debug)]
@@ -24,6 +24,7 @@ pub struct UserDeviceConfiguration {
     pub interface: Option<NetworkInterfaceId>,
     pub is_collapsed: bool,
     pub contained_in_clusters: Vec<ClusterDescriptor>,
+    pub tags: Vec<DeviceTag>,
 }
 
 impl TryFrom<UserDeviceConfiguration> for DeviceDescriptor {
@@ -39,6 +40,7 @@ impl TryFrom<UserDeviceConfiguration> for DeviceDescriptor {
             })?;
 
         let interface = configuration.interface.unwrap();
+
         let description = configuration
             .description
             .right_ok_or(DeviceMisconfigurationError::InvalidDeviceDescription)
@@ -46,12 +48,15 @@ impl TryFrom<UserDeviceConfiguration> for DeviceDescriptor {
                 DeviceDescription::try_from(description)
                     .map_err(|_| DeviceMisconfigurationError::InvalidDeviceDescription)
             })?;
+
+        let tags = configuration.tags;
+
         Ok(DeviceDescriptor {
             id: configuration.id,
             name,
             description: Some(description),
             interface,
-            tags: vec![],
+            tags,
         })
     }
 }
