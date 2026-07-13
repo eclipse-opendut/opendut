@@ -3,6 +3,7 @@ use leptos::prelude::*;
 use opendut_model::topology::{DeviceDescription, DeviceId, DeviceName, IllegalDeviceName};
 use opendut_model::util::net::NetworkInterfaceId;
 use uuid::Uuid;
+use opendut_lea_components::{SelectionOption, UserSelect};
 use crate::components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, DoorhangerButton, FontAwesomeIcon, IconButton, ReadOnlyInput, Toggled, UserInput, UserInputValue, UserTextarea};
 use crate::peers::configurator::types::devices::UserDeviceConfiguration;
 use crate::peers::configurator::types::{UserPeerConfiguration, EMPTY_DEVICE_NAME_ERROR_MESSAGE};
@@ -60,7 +61,7 @@ where
     let device_name = create_read_slice(device_configuration,
         |device_configuration| {
             match device_configuration.name {
-                UserInputValue::Left(_) => String::from(""),
+                UserInputValue::Left(_) => String::new(),
                 UserInputValue::Right(ref value) => value.to_owned(),
                 UserInputValue::Both(_, ref value) => value.to_owned()
             }
@@ -187,73 +188,71 @@ fn DeviceInterfaceInput(
     peer_configuration: RwSignal<UserPeerConfiguration>,
     device_configuration: RwSignal<UserDeviceConfiguration>,
 ) -> impl IntoView {
+    const INITIAL_OPTION: &str = "Select interface";
 
-    let peer_network_interfaces = create_read_slice(peer_configuration,
-        |peer_network_interfaces| {
-            Clone::clone(&peer_network_interfaces.network.network_interfaces)
-        }
-    );
-
-    let (device_interface_id, set_device_interface_id) = create_slice(device_configuration,
-        |device_configuration| {
-            Clone::clone(&device_configuration.interface)
+    let peer_network_interfaces = create_read_slice(
+        peer_configuration,
+        |peer_configuration| {
+            Clone::clone(&peer_configuration.network.network_interfaces)
         },
-        |device_configuration, value| {
-            device_configuration.interface = value;
-        }
     );
 
-    let dropdown_options = move || {
-        peer_network_interfaces.with(|interfaces | {
-            interfaces.iter().cloned()
-                .map(|interface| {
-                    let id = interface.get_untracked().id;
-                    let name = interface.get_untracked().name.name();
-                    let interface_type = interface.get_untracked().configuration.display_name();
+    let (getter, setter) = create_slice(
+        device_configuration,
+        |device_configuration| {
+            match device_configuration.interface.as_ref() {
+                Some(interface_id) => {
+                    UserInputValue::Right(interface_id.to_string())
+                }
+                None => {
+                    UserInputValue::Left(INITIAL_OPTION.to_owned())
+                }
+            }
+        },
+        |device_configuration, input| {
+            device_configuration.interface = match input {
+                UserInputValue::Right(value)
+                | UserInputValue::Both(_, value) => {
+                    let uuid = Uuid::parse_str(&value).expect(
+                        "Should be a valid UUID, which we passed in as option-value.",
+                    );
 
-                    if device_interface_id.get_untracked() == Some(interface.get_untracked().id) {
-                        Either::Left(view! {
-                            <option value={id.to_string()} selected>{name} " ("{interface_type}")"</option>
-                        })
-                    } else {
-                        Either::Right(view! {
-                            <option value={id.to_string()}>{name} " ("{interface_type}")"</option>
-                        })
+                    Some(NetworkInterfaceId::from(uuid))
+                }
+                UserInputValue::Left(_) => None,
+            };
+        },
+    );
+
+    let options = Signal::derive(move || {
+        peer_network_interfaces.with(|interfaces| {
+            interfaces.iter()
+                .map(|interface| {
+                    let interface = interface.get_untracked();
+
+                    SelectionOption {
+                        display_name: format!(
+                            "{} ({})",
+                            interface.name.name(),
+                            interface.configuration.display_name(),
+                        ),
+                        value: interface.id.to_string(),
                     }
                 })
-                .collect::<Vec<_>>()
+                .collect()
         })
-    };
+    });
 
-    let parse_selected_interface_id = move |selected_interface_id: String| {
-        NetworkInterfaceId::from(
-            Uuid::parse_str(&selected_interface_id)
-                .expect("Should be a valid UUID, which we passed in as option-value.")
-        )
-    };
+    let initial_option = INITIAL_OPTION.to_owned();
 
     view! {
-        <div class="field">
-            <label class="label">Interface</label>
-            <div class="control">
-                <div class="select"
-                    on:change=move |ev| {
-                        let target_value = event_target_value(&ev);
-                        if target_value == "Select interface" {
-                            set_device_interface_id.set(None);
-                        } else {
-                            set_device_interface_id.set(
-                                Some(parse_selected_interface_id(target_value))
-                            );
-                        }
-                    }>
-                    <select>
-                        <option>Select interface</option>
-                        { dropdown_options }
-                    </select>
-                </div>
-            </div>
-        </div>
+        <UserSelect
+            options
+            initial_option
+            getter
+            setter
+            label="Interface"
+        />
     }
 }
 

@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use crate::UserInputValue;
+use crate::{UserInputValue, NON_BREAKING_SPACE};
 
 #[derive(Clone, Debug)]
 pub struct SelectionOption {
@@ -24,13 +24,13 @@ pub fn UserSelect(
         })
     };
 
-    // let help_text = move || {
-    //     getter.with(|input| match input {
-    //         UserInputValue::Right(_) => String::from(NON_BREAKING_SPACE),
-    //         UserInputValue::Left(error) => error.to_owned(),
-    //         UserInputValue::Both(error, _) => error.to_owned(),
-    //     })
-    // };
+    let help_text = move || {
+        getter.with(|input| match input {
+            UserInputValue::Right(_) => String::from(NON_BREAKING_SPACE),
+            UserInputValue::Left(error) => error.to_owned(),
+            UserInputValue::Both(error, _) => error.to_owned(),
+        })
+    };
 
     let has_error = move || {
         getter.with(|input| {
@@ -71,7 +71,7 @@ pub fn UserSelect(
                         />
                     </select>
                 </div>
-                // <p class="help has-text-danger">{ help_text }</p>
+                <p class="help has-text-danger">{ help_text }</p>
             </div>
         </div>
     }

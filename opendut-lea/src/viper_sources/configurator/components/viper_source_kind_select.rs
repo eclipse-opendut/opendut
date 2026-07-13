@@ -21,14 +21,13 @@ pub fn ViperSourceKindSelect(viper_source_configuration: RwSignal<UserViperSourc
         ]
     });
 
-    let initial_option = Signal::derive(|| String::from("Select source kind"));
 
     view! {
         <UserSelect
             options
-            initial_option
-            getter=getter
-            setter=setter
+            initial_option="Select source kind"
+            getter
+            setter
             label="Source Kind"
         />
     }
