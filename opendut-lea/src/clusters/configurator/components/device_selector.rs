@@ -62,14 +62,11 @@ pub fn DeviceSelector(
                             format!("Unknown interface ({})", device.interface)
                         }
                     };
-
-                    let tags_as_string = tags.iter().map(|tag| { tag.value() }).collect::<Vec<_>>().join("* ");
-
+                    
                     let device_details = vec![
                         CollapsableInfo { label: String::from("ID"), value: device_id.to_string() },
                         CollapsableInfo { label: String::from("Peer ID"), value: peer_id.to_string() },
                         CollapsableInfo { label: String::from("Interface"), value: network_interface_text },
-                        CollapsableInfo { label: String::from("Tags"), value: tags_as_string },
                         CollapsableInfo { label: String::from("Description"), value: device_description.unwrap_or_default().to_string() },
                     ];
 
