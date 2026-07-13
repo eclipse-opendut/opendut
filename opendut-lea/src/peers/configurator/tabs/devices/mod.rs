@@ -7,6 +7,10 @@ use crate::peers::configurator::types::devices::UserDeviceConfiguration;
 use crate::peers::configurator::types::{UserPeerConfiguration, EMPTY_DEVICE_NAME_ERROR_MESSAGE};
 
 mod device_panel;
+mod name_input;
+mod interface_input;
+mod description_input;
+mod tag_input;
 
 #[component]
 pub fn DevicesTab(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl IntoView {

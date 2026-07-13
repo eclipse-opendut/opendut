@@ -1,12 +1,13 @@
 use leptos::either::Either;
 use leptos::prelude::*;
-use opendut_model::topology::{DeviceDescription, DeviceId, DeviceName, IllegalDeviceName};
-use opendut_model::util::net::NetworkInterfaceId;
-use uuid::Uuid;
-use opendut_lea_components::{SelectionOption, UserSelect};
-use crate::components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, DoorhangerButton, FontAwesomeIcon, IconButton, ReadOnlyInput, Toggled, UserInput, UserInputValue, UserTextarea};
+use opendut_model::topology::DeviceId;
+use crate::components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, DoorhangerButton, FontAwesomeIcon, IconButton, ReadOnlyInput, Toggled, UserInputValue};
+use crate::peers::configurator::tabs::devices::description_input::DeviceDescriptionInput;
+use crate::peers::configurator::tabs::devices::interface_input::DeviceInterfaceInput;
+use crate::peers::configurator::tabs::devices::name_input::DeviceNameInput;
+use crate::peers::configurator::tabs::devices::tag_input::DeviceTagInput;
 use crate::peers::configurator::types::devices::UserDeviceConfiguration;
-use crate::peers::configurator::types::{UserPeerConfiguration, EMPTY_DEVICE_NAME_ERROR_MESSAGE};
+use crate::peers::configurator::types::UserPeerConfiguration;
 use crate::routing;
 
 #[component]
@@ -32,6 +33,7 @@ where
                     <ReadOnlyInput label="ID" value=device_id_string />
                     <DeviceNameInput device_configuration />
                     <DeviceInterfaceInput peer_configuration device_configuration />
+                    <DeviceTagInput />
                     <DeviceDescriptionInput device_configuration />
                 </div>
             </div>
@@ -123,171 +125,5 @@ where
                 </div>
             </div>
         </div>
-    }
-}
-
-#[component]
-fn DeviceNameInput(
-    device_configuration: RwSignal<UserDeviceConfiguration>,
-) -> impl IntoView {
-
-    let (getter, setter) = create_slice(device_configuration,
-        |device_configuration| {
-            Clone::clone(&device_configuration.name)
-        },
-        |device_configuration, value| {
-            device_configuration.name = value;
-        }
-    );
-
-    let validator = |input: String| {
-        match DeviceName::try_from(input.clone()) {
-            Ok(_) => {
-                UserInputValue::Right(input)
-            }
-            Err(cause) => {
-                match cause {
-                    IllegalDeviceName::TooShort { expected, actual, value } => {
-                        if actual > 0 {
-                            UserInputValue::Both(format!("A device name must be at least {expected} characters long."), value)
-
-                        }
-                        else {
-                            UserInputValue::Both(String::from(EMPTY_DEVICE_NAME_ERROR_MESSAGE), value)
-                        }
-                    },
-                    IllegalDeviceName::TooLong { expected, value, .. } => {
-                        UserInputValue::Both(format!("A device name must be at most {expected} characters long."), value)
-                    },
-                    IllegalDeviceName::InvalidStartEndCharacter { value } => {
-                        UserInputValue::Both("The device name starts/ends with an invalid character. \
-                        Valid characters are a-z, A-Z and 0-9.".to_string(), value)
-                    }
-                    IllegalDeviceName::InvalidCharacter { value } => {
-                        UserInputValue::Both("The device name contains invalid characters. \
-                        Valid characters are a-z, A-Z, 0-9 and _-".to_string(), value)
-                    }
-                }
-            }
-        }
-    };
-
-    view! {
-        <UserInput
-            getter
-            setter
-            label="Name"
-            placeholder="Device_A"
-            validator
-        />
-    }
-}
-
-#[component]
-fn DeviceInterfaceInput(
-    peer_configuration: RwSignal<UserPeerConfiguration>,
-    device_configuration: RwSignal<UserDeviceConfiguration>,
-) -> impl IntoView {
-    const INITIAL_OPTION: &str = "Select interface";
-
-    let peer_network_interfaces = create_read_slice(
-        peer_configuration,
-        |peer_configuration| {
-            Clone::clone(&peer_configuration.network.network_interfaces)
-        },
-    );
-
-    let (getter, setter) = create_slice(
-        device_configuration,
-        |device_configuration| {
-            match device_configuration.interface.as_ref() {
-                Some(interface_id) => {
-                    UserInputValue::Right(interface_id.to_string())
-                }
-                None => {
-                    UserInputValue::Left(INITIAL_OPTION.to_owned())
-                }
-            }
-        },
-        |device_configuration, input| {
-            device_configuration.interface = match input {
-                UserInputValue::Right(value)
-                | UserInputValue::Both(_, value) => {
-                    let uuid = Uuid::parse_str(&value).expect(
-                        "Should be a valid UUID, which we passed in as option-value.",
-                    );
-
-                    Some(NetworkInterfaceId::from(uuid))
-                }
-                UserInputValue::Left(_) => None,
-            };
-        },
-    );
-
-    let options = Signal::derive(move || {
-        peer_network_interfaces.with(|interfaces| {
-            interfaces.iter()
-                .map(|interface| {
-                    let interface = interface.get_untracked();
-
-                    SelectionOption {
-                        display_name: format!(
-                            "{} ({})",
-                            interface.name.name(),
-                            interface.configuration.display_name(),
-                        ),
-                        value: interface.id.to_string(),
-                    }
-                })
-                .collect()
-        })
-    });
-
-    let initial_option = INITIAL_OPTION.to_owned();
-
-    view! {
-        <UserSelect
-            options
-            initial_option
-            getter
-            setter
-            label="Interface"
-        />
-    }
-}
-
-#[component]
-fn DeviceDescriptionInput(
-    device_configuration: RwSignal<UserDeviceConfiguration>
-) -> impl IntoView {
-
-    let (getter, setter) = create_slice(device_configuration,
-        |device_configuration| {
-            Clone::clone(&device_configuration.description)
-        },
-        |device_configuration, value| {
-            device_configuration.description = value;
-        }
-    );
-
-    let validator = |input: String| {
-        match DeviceDescription::try_from(Clone::clone(&input)) {
-            Err(error) => {
-                UserInputValue::Both(error.to_string(), input)
-            }
-            Ok(_) => {
-                UserInputValue::Right(input)
-            }
-        }
-    };
-
-    view! {
-        <UserTextarea
-            getter=getter
-            setter=setter
-            label="Description"
-            placeholder="Description"
-            validator
-        />
     }
 }
