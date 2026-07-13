@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use opendut_lea_components::{use_toaster, ButtonColor, ButtonState, SimpleButton, UserInput, UserInputValue, Toast, Tag};
+use opendut_lea_components::{use_toaster, ButtonColor, ButtonState, SimpleButton, UserInput, UserInputValue, Toast, Tag, NON_BREAKING_SPACE};
 use opendut_model::topology::{DeviceTag, IllegalDeviceTag};
 use crate::peers::configurator::types::devices::UserDeviceConfiguration;
 
@@ -50,6 +50,7 @@ pub fn DeviceTagInput(
             validator
             label="Tags"
             placeholder="automotive"
+            empty_help_text=Signal::derive(move || if tags_getter.get().is_empty() { String::from(NON_BREAKING_SPACE) } else { String::new() })
             add_on = ViewFn::from(move || {
                 view! {
                     <AddOnButton

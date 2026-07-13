@@ -16,6 +16,7 @@ pub fn UserInput<A>(
     #[prop(into, default=Signal::from(None))] description: Signal<Option<String>>,
     #[prop(default=InputType::Text)] input_type: InputType,
     #[prop(optional)] add_on: Option<ViewFn>,
+    #[prop(into, default=Signal::from(String::from(NON_BREAKING_SPACE)))] empty_help_text: Signal<String>,
 ) -> impl IntoView
 where A: UserInputValidator + Clone + 'static {
 
@@ -35,7 +36,7 @@ where A: UserInputValidator + Clone + 'static {
 
     let help_text = move || {
         getter.with(|input| match input {
-            UserInputValue::Right(_) => String::from(NON_BREAKING_SPACE),
+            UserInputValue::Right(_) => String::from(empty_help_text.get()),
             UserInputValue::Left(error) => error.to_owned(),
             UserInputValue::Both(error, _) => error.to_owned(),
         })
@@ -58,23 +59,25 @@ where A: UserInputValidator + Clone + 'static {
     );
 
     view! {
-        <label class="label" class=("mb-0", has_description)>{ label }</label>
-        <div class="field mb-0" class=("has-addons", has_add_on)>
-            <Show when=has_description>
-                <p class="pb-2"> { description } </p>
-            </Show>
-            <div class="control">
-                <input
-                    class="input"
-                    type=input_type.as_html_type()
-                    aria-label=move || aria_label.get()
-                    placeholder=move || placeholder.get()
-                    prop:value={ value_text }
-                    on:input=move |ev| { debounced_input_handling(ev); }
-                />
+        <div>
+            <label class="label" class=("mb-0", has_description)>{ label }</label>
+            <div class="field mb-0" class=("has-addons", has_add_on)>
+                <Show when=has_description>
+                    <p class="pb-2"> { description } </p>
+                </Show>
+                <div class="control">
+                    <input
+                        class="input"
+                        type=input_type.as_html_type()
+                        aria-label=move || aria_label.get()
+                        placeholder=move || placeholder.get()
+                        prop:value={ value_text }
+                        on:input=move |ev| { debounced_input_handling(ev); }
+                    />
+                </div>
+                { add_on.map(|add_on_button| add_on_button.run()) }
             </div>
-            { add_on.map(|add_on_button| add_on_button.run()) }
+            <p class="help has-text-danger mb-3">{ help_text }</p>
         </div>
-        <p class="help has-text-danger mb-3">{ help_text }</p>
     }
 }
