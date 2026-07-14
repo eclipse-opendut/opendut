@@ -231,7 +231,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                                     TabIdentifier::ViperSource => view! { <SourceTab viper_test_run_descriptor /> }.into_any(),
                                     TabIdentifier::Parameters => view! { <ParametersTab viper_test_run_descriptor parameter_result=parameter_result.clone() /> }.into_any(),
                                     TabIdentifier::Cluster => view! { <ClusterTab viper_test_run_descriptor /> }.into_any(),
-                                    TabIdentifier::Peer => view! { <PeerTab /> }.into_any()
+                                    TabIdentifier::Peer => view! { <PeerTab viper_test_run_descriptor /> }.into_any()
                                 }}
                             </Tabs>
                         }
