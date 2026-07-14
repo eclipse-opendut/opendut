@@ -7,6 +7,7 @@ use crate::peers::configurator::types::devices::UserDeviceConfiguration;
 pub fn DeviceTagInput(
     device_configuration: RwSignal<UserDeviceConfiguration>,
 ) -> impl IntoView {
+    let toaster = use_toaster();
 
     let (tags_getter, tags_setter) = create_slice(device_configuration,
         |device_configuration| {
@@ -20,10 +21,9 @@ pub fn DeviceTagInput(
     let (input_getter, input_setter) = signal(UserInputValue::Right(String::new()));
 
     let validator = move |input: String| {
-
         let tags = tags_getter.get();
         let already_exists = tags.iter()
-            .any(|tag| tag.value() == &input);
+            .any(|tag| tag.value() == input);
 
         if already_exists {
             return UserInputValue::Both(String::from("This tag already exists."), input);
@@ -43,6 +43,31 @@ pub fn DeviceTagInput(
         }
     };
 
+    let add_tag = Callback::new(move |_| {
+        let input = input_getter.get();
+        let toaster = toaster.clone();
+
+        if let UserInputValue::Right(input) = input && !input.trim().is_empty() {
+            let mut tags = tags_getter.get();
+            let input_tag = DeviceTag::try_from(input.clone());
+
+            match input_tag {
+                Ok(input_tag) => {
+                    tags.push(input_tag);
+                    tags_setter.set(tags);
+                    input_setter.set(UserInputValue::Right(String::new()));
+                }
+                Err(error) => {
+                    toaster.toast(
+                        Toast::builder()
+                            .simple(format!("Failed to add tag, due to error: {}", error))
+                            .error()
+                    )
+                }
+            }
+        }
+    });
+
     view! {
         <UserInput
             getter=input_getter.into()
@@ -51,13 +76,12 @@ pub fn DeviceTagInput(
             label="Tags"
             placeholder="automotive"
             empty_help_text=Signal::derive(move || if tags_getter.get().is_empty() { String::from(NON_BREAKING_SPACE) } else { String::new() })
+            on_enter=add_tag
             add_on = ViewFn::from(move || {
                 view! {
                     <AddOnButton
-                        tags_getter
-                        tags_setter
                         input_getter
-                        input_setter
+                        add_tag
                     />
                 }.into_any()
             })
@@ -86,12 +110,9 @@ pub fn DeviceTagInput(
 
 #[component]
 fn AddOnButton(
-    tags_getter: Signal<Vec<DeviceTag>>,
-    tags_setter: SignalSetter<Vec<DeviceTag>>,
     input_getter: ReadSignal<UserInputValue>,
-    input_setter: WriteSignal<UserInputValue>,
+    add_tag: Callback<()>,
 ) -> impl IntoView {
-    let toaster = use_toaster();
 
     let button_state = move || {
         if let UserInputValue::Right(input) = input_getter.get()
@@ -109,29 +130,7 @@ fn AddOnButton(
                 text="Add"
                 color=ButtonColor::Info
                 state=button_state
-                on_action=move || {
-                    let input = input_getter.get();
-
-                    if let UserInputValue::Right(input) = input {
-                        let mut tags = tags_getter.get();
-                        let input_tag = DeviceTag::try_from(input.clone());
-
-                        match input_tag {
-                            Ok(input_tag) => {
-                                tags.push(input_tag);
-                                tags_setter.set(tags);
-                                input_setter.set(UserInputValue::Right(String::new()));
-                            }
-                            Err(error) => {
-                                toaster.toast(
-                                    Toast::builder()
-                                        .simple(format!("Failed to add tag, due to error: {}", error.to_string()))
-                                        .error()
-                                )
-                            }
-                        }
-                    }
-                }
+                on_action=move || add_tag.run(())
             />
         </div>
     }

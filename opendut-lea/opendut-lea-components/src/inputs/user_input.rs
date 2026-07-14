@@ -1,5 +1,6 @@
 use leptos::prelude::*;
 use leptos::reactive::wrappers::write::SignalSetter;
+use web_sys::KeyboardEvent;
 use crate::inputs::{InputType, UserInputValidator, UserInputValue};
 
 use crate::NON_BREAKING_SPACE;
@@ -16,9 +17,10 @@ pub fn UserInput<A>(
     #[prop(into, default=Signal::from(None))] description: Signal<Option<String>>,
     #[prop(default=InputType::Text)] input_type: InputType,
     #[prop(optional)] add_on: Option<ViewFn>,
+    #[prop(optional)] on_enter: Option<Callback<()>>,
     #[prop(into, default=Signal::from(String::from(NON_BREAKING_SPACE)))] empty_help_text: Signal<String>,
 ) -> impl IntoView
-where A: UserInputValidator + Clone + 'static {
+where A: UserInputValidator + Clone + Send + Sync + 'static {
 
     let has_description = move || description.with(|description| description.is_some());
     let has_add_on = {
@@ -44,19 +46,35 @@ where A: UserInputValidator + Clone + 'static {
 
     let aria_label = Clone::clone(&label);
 
+    let validate_value = Callback::new(move |value| {
+        if let Some(validator) = &validator {
+            let validated_value = validator.validate(value);
+            setter.set(validated_value);
+        }
+        else {
+            setter.set(UserInputValue::Right(value));
+        }
+    });
+
     let debounced_input_handling = leptos_use::use_debounce_fn_with_arg(
         move |ev| {
-            if let Some(validator) = &validator {
-                let validated_value = validator.validate(event_target_value(&ev));
-                setter.set(validated_value);
-            }
-            else {
-                let target_value = event_target_value(&ev);
-                setter.set(UserInputValue::Right(target_value));
-            }
+            validate_value.run(event_target_value(&ev));
         },
         INPUT_VALIDATION_DEBOUNCE_MS,
     );
+
+    let run_on_enter = move |ev: KeyboardEvent| {
+        if ev.key() == "Enter" {
+            ev.prevent_default();
+
+            let input = event_target_value(&ev);
+            validate_value.run(input);
+
+            if let Some(on_enter) = &on_enter {
+                on_enter.run(());
+            }
+        }
+    };
 
     view! {
         <div>
@@ -73,6 +91,7 @@ where A: UserInputValidator + Clone + 'static {
                         placeholder=move || placeholder.get()
                         prop:value={ value_text }
                         on:input=move |ev| { debounced_input_handling(ev); }
+                        on:keydown=move |ev| { run_on_enter(ev); }
                     />
                 </div>
                 { add_on.map(|add_on_button| add_on_button.run()) }
