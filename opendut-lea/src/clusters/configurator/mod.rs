@@ -87,15 +87,17 @@ fn LoadedClusterConfigurator(
 ) -> impl IntoView {
     let globals = use_app_globals();
     let cluster_state = RwSignal::new(ClusterState::default());
-
+    let active_tab = use_active_tab::<TabIdentifier>();
+    
     let cluster_id = Signal::derive(move || cluster_descriptor.get().id);
 
     let breadcrumbs = Signal::derive(move || {
         let cluster_id = cluster_id.get().uuid.to_string();
+        let active_tab = active_tab.get();
         vec![
             Breadcrumb::new("Dashboard", "/"),
             Breadcrumb::new("Clusters", "clusters"),
-            Breadcrumb::new(Clone::clone(&cluster_id), cluster_id),
+            Breadcrumb::new("Configure Cluster", format!("{}/configure/{}", cluster_id, active_tab.as_str())),
         ]
     });
 
@@ -152,9 +154,7 @@ fn LoadedClusterConfigurator(
             ).with_is_error(Signal::derive(move || !cluster_descriptor.read().valid_leader_tab())),
         ]
     });
-
-    let active_tab = use_active_tab::<TabIdentifier>();
-
+    
     view! {
         <BasePageContainer
             title="Configure Cluster"

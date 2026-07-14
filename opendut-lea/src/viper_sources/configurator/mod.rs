@@ -16,10 +16,10 @@ use crate::viper_sources::configurator::types::UserViperSourceConfiguration;
 
 #[component(transparent)]
 pub fn ViperSourceConfigurator() -> impl IntoView {
-
     let globals = use_app_globals();
     let params = use_params_map();
-
+    let active_tab = use_active_tab::<TabIdentifier>();
+    
     let (viper_source_configuration, viper_source_configuration_resource, is_valid_configuration) = {
         let viper_source_id = {
             let viper_source_id = params.with_untracked(|params| {
@@ -82,10 +82,11 @@ pub fn ViperSourceConfigurator() -> impl IntoView {
 
     let breadcrumbs = Signal::derive(move || {
         let viper_source_id = viper_source_id_string.get();
+        let active_tab = active_tab.get();
         vec![
             Breadcrumb::new("Dashboard", "/"),
             Breadcrumb::new("VIPER Sources", "viper_sources"),
-            Breadcrumb::new(&viper_source_id, format!("{viper_source_id}/configure")),
+            Breadcrumb::new("Configure VIPER Source", format!("{viper_source_id}/configure/{}", active_tab.as_str())),
         ]
     });
 
@@ -105,8 +106,6 @@ pub fn ViperSourceConfigurator() -> impl IntoView {
             ).with_is_error(Signal::derive(move || !viper_source_configuration.read().is_valid())),
         ]
     });
-    
-    let active_tab = use_active_tab::<TabIdentifier>();
     
     view! {
         <BasePageContainer

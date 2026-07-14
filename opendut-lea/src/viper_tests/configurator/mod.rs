@@ -22,6 +22,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
 
     let globals = use_app_globals();
     let params = use_params_map();
+    let active_tab = use_active_tab::<TabIdentifier>();
 
     let viper_test_id = {
         let viper_test_id = params.with_untracked(|params| {
@@ -162,10 +163,11 @@ pub fn ViperTestConfigurator() -> impl IntoView {
 
     let breadcrumbs = Signal::derive(move || {
         let viper_test_id = viper_test_id_string.get();
+        let active_tab = active_tab.get();
         vec![
             Breadcrumb::new("Dashboard", "/"),
             Breadcrumb::new("VIPER Tests", "viper_tests"),
-            Breadcrumb::new(&viper_test_id, format!("{viper_test_id}/configure")),
+            Breadcrumb::new("Configure VIPER Test", format!("{viper_test_id}/configure/{}", active_tab.as_str())),
         ]
     });
 
@@ -200,9 +202,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
             ).with_is_error(Signal::derive(move || !viper_test_run_descriptor.read().valid_cluster_tab())),
         ]
     });
-
-    let active_tab = use_active_tab::<TabIdentifier>();
-
+    
     view! {
         <BasePageContainer
             title="Configure VIPER Test"

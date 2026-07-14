@@ -240,18 +240,15 @@ pub fn PeerConfigurator() -> impl IntoView {
         }
     };
 
-    let breadcrumbs = {
-        let active_tab = Clone::clone(&active_tab);
-        Signal::derive(move || {
-            let peer_id = peer_id_string.get();
-            let active_tab = active_tab.get();
-            vec![
-                Breadcrumb::new("Dashboard", "/"),
-                Breadcrumb::new("Peers", "peers"),
-                Breadcrumb::new(Clone::clone(&peer_id), format!("{}/configure/{}", peer_id, active_tab.as_str())),
-            ]
-        })
-    };
+    let breadcrumbs = Signal::derive(move || {
+        let peer_id = peer_id_string.get();
+        let active_tab = active_tab.get();
+        vec![
+            Breadcrumb::new("Dashboard", "/"),
+            Breadcrumb::new("Peers", "peers"),
+            Breadcrumb::new("Configure Peer", format!("{}/configure/{}", peer_id, active_tab.as_str())),
+        ]
+    });
 
     let subtitle = Signal::derive(move || {
         if let UserInputValue::Right(name) = peer_configuration.get().name {
