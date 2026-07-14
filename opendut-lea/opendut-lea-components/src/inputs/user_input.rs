@@ -36,7 +36,7 @@ where A: UserInputValidator + Clone + 'static {
 
     let help_text = move || {
         getter.with(|input| match input {
-            UserInputValue::Right(_) => String::from(empty_help_text.get()),
+            UserInputValue::Right(_) => empty_help_text.get(),
             UserInputValue::Left(error) => error.to_owned(),
             UserInputValue::Both(error, _) => error.to_owned(),
         })
