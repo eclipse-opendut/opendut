@@ -2,11 +2,13 @@ mod general;
 mod cluster;
 mod parameters;
 mod source;
+mod peer;
 
 pub use cluster::ClusterTab;
 pub use general::GeneralTab;
-pub use source::SourceTab;
 pub use parameters::ParametersTab;
+pub use source::SourceTab;
+pub use peer::PeerTab;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum TabIdentifier {
@@ -15,6 +17,7 @@ pub enum TabIdentifier {
     ViperSource,
     Parameters,
     Cluster,
+    Peer,
 }
 
 impl TabIdentifier {
@@ -22,6 +25,7 @@ impl TabIdentifier {
     const VIPER_SOURCE_STR: &'static str = "viper_source";
     const PARAMETERS_STR: &'static str = "parameters";
     const CLUSTER_STR: &'static str = "cluster";
+    const PEER_STR: &'static str = "peer";
 
     pub fn as_str(&self) -> &'static str {
         match self {
@@ -29,6 +33,7 @@ impl TabIdentifier {
             TabIdentifier::ViperSource => TabIdentifier::VIPER_SOURCE_STR,
             TabIdentifier::Parameters => TabIdentifier::PARAMETERS_STR,
             TabIdentifier::Cluster => TabIdentifier::CLUSTER_STR,
+            TabIdentifier::Peer => TabIdentifier::PEER_STR,
         }
     }
 }
@@ -42,6 +47,7 @@ impl TryFrom<&str> for TabIdentifier {
             TabIdentifier::VIPER_SOURCE_STR => Ok(TabIdentifier::ViperSource),
             TabIdentifier::PARAMETERS_STR => Ok(TabIdentifier::Parameters),
             TabIdentifier::CLUSTER_STR => Ok(TabIdentifier::Cluster),
+            TabIdentifier::PEER_STR => Ok(TabIdentifier::Peer),
             _ => Err(InvalidTabIdentifier { value: String::from(value) }),
         }
     }

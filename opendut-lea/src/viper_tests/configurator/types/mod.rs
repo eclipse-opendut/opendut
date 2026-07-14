@@ -12,6 +12,9 @@ pub type SourceSelection = Ior<SourceSelectionError, ViperSourceId>;
 pub type ClusterSelectionError = String;
 pub type ClusterSelection = Ior<ClusterSelectionError, ClusterId>;
 
+pub type PeerSelectionError = String;
+pub type PeerSelection = Ior<PeerSelectionError, PeerId>;
+
 pub type ViperBindingValueError = String;
 pub type ViperBindingValueInput = Ior<ViperBindingValueError, Option<ViperBindingValue>>;
 
@@ -26,6 +29,8 @@ pub enum ViperTestMisconfiguration {
     InvalidSuite,
     #[error("Invalid cluster ID")]
     InvalidClusterId,
+    #[error("Invalid peer ID")]
+    InvalidPeerId,
     #[error("Invalid viper test parameter key")]
     InvalidParameterKey,
     #[error("Invalid viper test parameter value")]
@@ -38,6 +43,7 @@ pub struct UserViperTestRunDescriptor {
     pub name: UserInputValue,
     pub viper_source: SourceSelection,
     pub cluster: ClusterSelection,
+    pub peer: PeerSelection,
     pub parameters: HashMap<ViperParameterName, ViperBindingValueInput>,
     pub is_new: bool,
 }
@@ -62,7 +68,9 @@ impl TryFrom<UserViperTestRunDescriptor> for ViperTestRunDescriptor {
             .cluster
             .right_ok_or(ViperTestMisconfiguration::InvalidClusterId)?;
 
-        let peer = PeerId::random();
+        let peer = configuration
+            .peer
+            .right_ok_or(ViperTestMisconfiguration::InvalidPeerId)?;
 
         let mut parameters = HashMap::new();
 

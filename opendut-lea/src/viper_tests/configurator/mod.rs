@@ -10,8 +10,8 @@ use crate::app::use_app_globals;
 use crate::components::use_active_tab;
 use crate::routing::{navigate_to, WellKnownRoutes};
 use crate::viper_tests::configurator::components::Controls;
-use crate::viper_tests::configurator::tabs::{ClusterTab, GeneralTab, SourceTab, ParametersTab, TabIdentifier};
-use crate::viper_tests::configurator::types::{ClusterSelection, SourceSelection, UserViperTestRunDescriptor, ViperBindingValueInput};
+use crate::viper_tests::configurator::tabs::{ClusterTab, GeneralTab, SourceTab, ParametersTab, TabIdentifier, PeerTab};
+use crate::viper_tests::configurator::types::{ClusterSelection, PeerSelection, SourceSelection, UserViperTestRunDescriptor, ViperBindingValueInput};
 
 mod tabs;
 mod types;
@@ -49,7 +49,8 @@ pub fn ViperTestConfigurator() -> impl IntoView {
             id: viper_test_id,
             name: UserInputValue::Left(UserInputError::from("Enter a valid VIPER test name.")),
             viper_source: SourceSelection::Left(String::from("Select a VIPER test source.")),
-            cluster: ClusterSelection::Left(String::from("Enter a cluster.")),
+            cluster: ClusterSelection::Left(String::from("Select a cluster.")),
+            peer: PeerSelection::Left(String::from("Select a peer")),
             parameters: HashMap::new(),
             is_new: true,
         }
@@ -62,12 +63,13 @@ pub fn ViperTestConfigurator() -> impl IntoView {
             async move {
                 if let Ok(descriptor) = carl.viper.get_viper_test_run_descriptor(viper_test_id).await {
                     viper_test_run_descriptor.update(|user_configuration| {
-                        let ViperTestRunDescriptor { id: _, name, source: viper_source, cluster, peer: _peer, parameters } = descriptor;
+                        let ViperTestRunDescriptor { id: _, name, source: viper_source, cluster, peer, parameters } = descriptor;
 
                         user_configuration.name = UserInputValue::Right(name.value().to_owned());
                         user_configuration.viper_source = SourceSelection::Right(viper_source);
                         user_configuration.cluster = ClusterSelection::Right(cluster);
-
+                        user_configuration.peer = PeerSelection::Right(peer);
+                        
                         let mut configured_parameters: HashMap<ViperParameterName, ViperBindingValueInput> = HashMap::new();
 
                         for (key, value) in parameters {
@@ -200,6 +202,11 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                 String::from("Cluster"),
                 TabIdentifier::Cluster.as_str().to_owned()
             ).with_is_error(Signal::derive(move || !viper_test_run_descriptor.read().valid_cluster_tab())),
+
+            Tab::from_title_and_href(
+                String::from("Peer"),
+                TabIdentifier::Peer.as_str().to_owned()
+            ).with_is_error(Signal::derive(move || !viper_test_run_descriptor.read().valid_cluster_tab())),
         ]
     });
     
@@ -224,6 +231,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                                     TabIdentifier::ViperSource => view! { <SourceTab viper_test_run_descriptor /> }.into_any(),
                                     TabIdentifier::Parameters => view! { <ParametersTab viper_test_run_descriptor parameter_result=parameter_result.clone() /> }.into_any(),
                                     TabIdentifier::Cluster => view! { <ClusterTab viper_test_run_descriptor /> }.into_any(),
+                                    TabIdentifier::Peer => view! { <PeerTab /> }.into_any()
                                 }}
                             </Tabs>
                         }
