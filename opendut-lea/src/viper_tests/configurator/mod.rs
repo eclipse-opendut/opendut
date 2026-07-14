@@ -62,7 +62,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
             async move {
                 if let Ok(descriptor) = carl.viper.get_viper_test_run_descriptor(viper_test_id).await {
                     viper_test_run_descriptor.update(|user_configuration| {
-                        let ViperTestRunDescriptor { id: _, name, source: viper_source, cluster, parameters } = descriptor;
+                        let ViperTestRunDescriptor { id: _, name, source: viper_source, cluster, peer: _peer, parameters } = descriptor;
 
                         user_configuration.name = UserInputValue::Right(name.value().to_owned());
                         user_configuration.viper_source = SourceSelection::Right(viper_source);

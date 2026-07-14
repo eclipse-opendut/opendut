@@ -166,6 +166,8 @@ pub(crate) mod testing {
                 let source = ViperSourceFixture::create(resource_manager.clone()).await?;
                 let cluster = ClusterFixture::create(resource_manager.clone()).await?;
 
+                let peer = cluster.peer_a;
+
                 let test_id = ViperTestId::random();
 
                 let parameters = {
@@ -182,6 +184,7 @@ pub(crate) mod testing {
                     name: ViperTestName::try_from(format!("ViperTest-{test_id}"))?,
                     source: source.id,
                     cluster: cluster.id,
+                    peer: peer.id,
                     parameters,
                 };
 

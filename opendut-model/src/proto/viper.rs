@@ -130,6 +130,7 @@ mod conversions {
                 name: Some(value.name.into()),
                 source: Some(value.source.into()),
                 cluster: Some(value.cluster.into()),
+                peer: Some(value.peer.into()),
                 parameters,
             }
         }
@@ -147,6 +148,9 @@ mod conversions {
             let cluster = extract!(value.cluster)?
                 .try_into()?;
 
+            let peer = extract!(value.peer)?
+                .try_into()?;
+
             let parameters = value.parameters.into_iter()
                 .map(|parameter| {
                     let key = opendut_viper_rt::compile::ParameterName::try_from(parameter.key)
@@ -157,7 +161,7 @@ mod conversions {
                 })
                 .collect::<Result<HashMap<_, _>, _>>()?;
 
-            Ok(Model { id, name, source, cluster, parameters })
+            Ok(Model { id, name, source, cluster, peer, parameters })
         }
     }
 

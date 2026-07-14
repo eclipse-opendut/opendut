@@ -3,6 +3,7 @@ pub mod validation;
 use std::collections::HashMap;
 use opendut_lea_components::{Ior, UserInputValue};
 use opendut_model::cluster::ClusterId;
+use opendut_model::peer::PeerId;
 use opendut_model::viper::{ViperBindingValue, ViperParameterName, ViperSourceId, ViperTestId, ViperTestName, ViperTestRunDescriptor};
 
 pub type SourceSelectionError = String;
@@ -61,6 +62,8 @@ impl TryFrom<UserViperTestRunDescriptor> for ViperTestRunDescriptor {
             .cluster
             .right_ok_or(ViperTestMisconfiguration::InvalidClusterId)?;
 
+        let peer = PeerId::random();
+
         let mut parameters = HashMap::new();
 
         for (key, value_input) in configuration.parameters {
@@ -76,6 +79,7 @@ impl TryFrom<UserViperTestRunDescriptor> for ViperTestRunDescriptor {
             name,
             source,
             cluster,
+            peer,
             parameters,
         })
     }
