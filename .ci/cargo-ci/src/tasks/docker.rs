@@ -62,7 +62,7 @@ pub fn build_docker_image(package: &Package, tag: Option<DockerTag>) -> anyhow::
 
     // https://github.com/opencontainers/image-spec/blob/main/annotations.md
     let source = format!("org.opencontainers.image.source={}", crate::core::metadata::repository_url());
-    let url = format!("org.opencontainers.image.url={}", &container_uri);
+    let url = format!("org.opencontainers.image.url={}", container_uri);
     let version = format!("org.opencontainers.image.version={}", crate::build::PKG_VERSION);
     let created = format!("org.opencontainers.image.created={now}");
     let revision = format!("org.opencontainers.image.revision={}", crate::build::COMMIT_HASH);

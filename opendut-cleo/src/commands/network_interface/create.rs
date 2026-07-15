@@ -45,7 +45,7 @@ impl CreateNetworkInterfaceCli {
         };
 
         if peer_interface_names.contains(&interface_name) {
-            Err(format!("Could not create peer network configuration with name '{}' because it already exists", &interface_name))?
+            Err(format!("Could not create peer network configuration with name '{}' because it already exists", interface_name))?
         } else {
             peer_descriptor.network.interfaces.push(
                 NetworkInterfaceDescriptor {

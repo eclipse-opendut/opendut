@@ -11,7 +11,7 @@ pub async fn download_edgar(
     State(carl_install_directory): State<CarlInstallDirectory>,
 ) -> impl IntoResponse {
 
-    let file_name = format!("{}-{}.tar.gz", &architecture.distribution_name(), crate::app_info::PKG_VERSION);
+    let file_name = format!("{}-{}.tar.gz", architecture.distribution_name(), crate::app_info::PKG_VERSION);
     let edgar_path = carl_install_directory.path.join(EDGAR_IDENTIFIER).join(&file_name);
 
     let mut response = ServeFile::new_with_mime(edgar_path, &mime::APPLICATION_OCTET_STREAM)

@@ -1,8 +1,9 @@
+#![allow(dead_code)]
+
 use std::fmt::{Debug, Display, Formatter};
 use std::str::FromStr;
 
 #[derive(Clone, Debug)]
-#[allow(dead_code)]
 pub struct Parameter {
     pub name: String,
     pub value: String,

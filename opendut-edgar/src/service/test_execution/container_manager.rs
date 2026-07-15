@@ -116,7 +116,7 @@ impl ContainerManager {
             .args(["inspect", "-f", "'{{.State.Status}}'", container_name])
             .output()
             .await
-            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} inspect", &self.config.engine.command_name()), cause })?;
+            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} inspect", self.config.engine.command_name()), cause })?;
         
         match String::from_utf8_lossy(&output.stdout).into_owned().replace('\'', "").trim() {
             "created" => Ok(ContainerState::Created),
@@ -125,7 +125,7 @@ impl ContainerManager {
             "exited" => Ok(ContainerState::Exited),
             "paused" => Ok(ContainerState::Paused),
             "dead" => Ok(ContainerState::Dead),
-            unknown_state => Err(Error::Other { message: format!("Unknown container state returned by {} inspect: '{}'", &self.config.engine.command_name(), unknown_state) } ),
+            unknown_state => Err(Error::Other { message: format!("Unknown container state returned by {} inspect: '{}'", self.config.engine.command_name(), unknown_state) } ),
         }
         
     }
@@ -173,7 +173,7 @@ impl ContainerManager {
         }
         let output = cmd.output()
             .await
-            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} run", &self.config.engine.command_name()), cause })?;
+            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} run", self.config.engine.command_name()), cause })?;
 
         if output.status.success() {
             info!("Started container {}", self.config.name);
@@ -189,7 +189,7 @@ impl ContainerManager {
             .args(["container", "inspect", name])
             .output()
             .await
-            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} inspect", &self.config.engine.command_name()), cause })?;
+            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} inspect", self.config.engine.command_name()), cause })?;
 
         Ok(output.status.success())
     }
@@ -199,7 +199,7 @@ impl ContainerManager {
             .args(["stop", container_name])
             .output()
             .await
-            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} stop", &self.config.engine.command_name()), cause })?;
+            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} stop", self.config.engine.command_name()), cause })?;
 
         match output.status.success() {
             true => Ok(()),

@@ -150,7 +150,7 @@ pub mod distribution {
 
                 let tar_file_name = bundle::out_file(Package::Cleo, arch);
 
-                let cleo_tar_file_name = tar_file_name.file_name().context(format!("Could not extract file name {}", &tar_file_name.display()))?;
+                let cleo_tar_file_name = tar_file_name.file_name().context(format!("Could not extract file name {}", tar_file_name.display()))?;
 
                 fs_extra::file::copy(
                     cleo_build_dir.join(&tar_file_name),
@@ -192,7 +192,7 @@ pub mod distribution {
 
                 let tar_file_name = bundle::out_file(Package::Edgar, arch);
 
-                let edgar_tar_file_name = tar_file_name.file_name().context(format!("Could not extract file name {}", &tar_file_name.display()))?;
+                let edgar_tar_file_name = tar_file_name.file_name().context(format!("Could not extract file name {}", tar_file_name.display()))?;
 
                 fs_extra::file::copy(
                     edgar_build_dir.join(&tar_file_name),
