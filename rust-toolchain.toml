@@ -1,5 +1,5 @@
 [toolchain]
-channel = "1.97.0"
+channel = "1.97.1"
 components = ["rustc", "rust-std", "rust-src", "clippy", "rust-analyzer"]
 targets = [
     "x86_64-unknown-linux-gnu",

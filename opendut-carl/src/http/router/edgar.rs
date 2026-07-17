@@ -50,7 +50,7 @@ mod test {
         let dir = temp.child(EDGAR_IDENTIFIER);
         fs::create_dir_all(&dir).expect("Unable to create dir.");
 
-        let file_name = format!("{}-{}.tar.gz", &EdgarArch::X86_64.distribution_name(), crate::app_info::PKG_VERSION);
+        let file_name = format!("{}-{}.tar.gz", EdgarArch::X86_64.distribution_name(), crate::app_info::PKG_VERSION);
 
         let tar_file = dir.child(&file_name);
         File::create(&tar_file)?;
