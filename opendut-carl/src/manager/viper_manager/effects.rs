@@ -1,5 +1,7 @@
 use std::collections::HashSet;
 use anyhow::Context;
+use opendut_model::peer::PeerId;
+use opendut_model::peer::state::PeerConnectionState;
 use tracing::error;
 use opendut_model::peer::configuration::{parameter, ParameterTarget, PeerConfiguration};
 use opendut_model::viper::{TestRunSourceCode, ViperRunDeployment, ViperRunId, ViperTestId};
@@ -28,21 +30,36 @@ async fn schedule_fetch_source_code_when_test_run_deployment_available(
     fetch_source_code_closure: impl (AsyncFnOnce(ViperRuntime, &Source) -> Result<SourceCode, FetchError>) + Send + Sync + Clone + 'static
 ) {
     //TODO also await peer online
-    resource_manager.spawn_event_listener::<ViperRunDeployment>({
+    resource_manager.spawn_event_listener_aggregate_2::<ViperRunDeployment, PeerConnectionState>({
         let resource_manager = resource_manager.clone();
 
         async move |event| {
             let resource_manager = resource_manager.clone();
             let fetch_source_code_closure = fetch_source_code_closure.clone();
 
-            if let SubscriptionEvent::Inserted { id: run_id, value: viper_run_deployment } = event {
+            if let (
+                Some(SubscriptionEvent::Inserted { id: run_id, value: viper_run_deployment }),
+                Some(SubscriptionEvent::Inserted { id: online_peer_id, value: PeerConnectionState::Online { remote_host } }),
+            ) = event {
                 let test_id = viper_run_deployment.test_id;
+
+                //TODO check that appropriate peer went online
+                let peer_id = resource_manager.resources(async |resources| {
+                    resources.get_peer_id_for_test(test_id)
+                }).await
+                    .unwrap()
+                    .unwrap(); //FIXME
+
+                if online_peer_id != peer_id {
+                    return;
+                }
+
 
                 let result = fetch_source_code(resource_manager.clone(), test_id, fetch_source_code_closure).await;
 
                 match result {
                     Ok(source_code) => {
-                        let result = update_peer_configuration(resource_manager, run_id, test_id, source_code).await;
+                        let result = update_peer_configuration(resource_manager, peer_id, run_id, source_code).await;
                         if let Err(error) = result {
                             error!("Error while fetching peer configuration for test <{test_id}>: \n{error}")
                         }
@@ -59,14 +76,12 @@ async fn schedule_fetch_source_code_when_test_run_deployment_available(
 
 async fn update_peer_configuration(
     resource_manager: ResourceManagerRef,
+    peer_id: PeerId,
     run_id: ViperRunId,
-    test_id: ViperTestId,
     source_code: SourceCode
 ) -> anyhow::Result<()> {
 
     resource_manager.resources_mut(async |resources| {
-        let peer_id= resources.get_peer_id_for_test(test_id)?;
-
         let mut peer_configuration = resources.get::<PeerConfiguration>(peer_id)?
             .unwrap_or_default();
 
@@ -95,7 +110,7 @@ mod test {
     use super::*;
 
     #[tokio::test]
-    async fn should_trigger_fetching_source_code_when_test_run_deployment_available() -> anyhow::Result<()> {
+    async fn should_trigger_fetching_source_code_when_test_run_deployment_available() -> anyhow::Result<()> { //FIXME spawn peer (maybe need entire PeerMessagingBroker, like in ClusterManager integration test)
         let (sender, mut receiver) = mpsc::channel(1);
         let (resource_manager, _resource_manager_cancel) = ResourceManager::new_in_memory();
 
@@ -116,7 +131,7 @@ mod test {
 
         let mut peer_configuration_subscription = resource_manager.subscribe::<PeerConfiguration>().await;
 
-        
+
         let viper_run_deployment = ViperRunDeploymentFixture::create(resource_manager.clone()).await?;
 
         let run_id = viper_run_deployment.id;
