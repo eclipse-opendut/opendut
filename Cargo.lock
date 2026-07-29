@@ -4644,6 +4644,7 @@ dependencies = [
  "opendut-netbird-client-api",
  "opendut-telemetry",
  "opendut-util",
+ "opendut-viper-rt",
  "opentelemetry",
  "opentelemetry_sdk",
  "ping-rs",

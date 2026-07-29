@@ -13,6 +13,7 @@ opendut-netbird-client-api = { workspace = true }
 opendut-model = { workspace = true }
 opendut-telemetry = { workspace = true }
 opendut-util = { workspace = true, features = ["crypto", "pem", "settings", "serde"] }
+opendut-viper-rt = { workspace = true, features = ["run"] }
 
 anyhow = { workspace = true }
 async-trait = { workspace = true }

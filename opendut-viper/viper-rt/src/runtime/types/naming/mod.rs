@@ -19,7 +19,7 @@ use crate::runtime::types::naming::error::InvalidIdentifierError;
 
 const SEPARATOR: &str = "::";
 
-pub trait Identifier : Debug + Display {
+pub trait Identifier : Debug + Display + Send + Sync {
 
     /// Extracts a string slice containing the entire identifier.
     fn as_str(&self) -> &str;

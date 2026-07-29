@@ -25,6 +25,7 @@ use crate::service::network_interface::manager::{NetworkInterfaceManager, Networ
 use crate::service::network_metrics::manager::{NetworkMetricsManager, NetworkMetricsManagerRef};
 use crate::service::peer_configuration::{ApplyPeerConfigurationParams, NetworkInterfaceManagement};
 use crate::service::test_execution::executor_manager::{ExecutorManager, ExecutorManagerRef};
+use crate::service::viper_run_manager::{ViperRunManager, ViperRunManagerRef};
 
 
 pub struct PeerMessagingClient {
@@ -32,6 +33,7 @@ pub struct PeerMessagingClient {
     network_interface_management: NetworkInterfaceManagement,
     executor_manager: ExecutorManagerRef,
     metrics_manager: NetworkMetricsManagerRef,
+    viper_run_manager: ViperRunManagerRef,
     carl_disconnect_timeout: Duration,
     tx_peer_configuration: mpsc::Sender<ApplyPeerConfigurationParams>,
 }
@@ -63,12 +65,14 @@ impl PeerMessagingClient {
 
         let metrics_manager: NetworkMetricsManagerRef = NetworkMetricsManager::load(settings)?;
 
+        let viper_run_manager: ViperRunManagerRef = ViperRunManager::create();
 
         Ok(PeerMessagingClient {
             self_id,
             network_interface_management,
             executor_manager,
             metrics_manager,
+            viper_run_manager,
             carl_disconnect_timeout,
             tx_peer_configuration,
         })
@@ -266,6 +270,7 @@ impl PeerMessagingClient {
             network_interface_management: self.network_interface_management.clone(),
             executor_manager: Arc::clone(&self.executor_manager),
             metrics_manager: Arc::clone(&self.metrics_manager),
+            viper_run_manager: Arc::clone(&self.viper_run_manager),
         };
         peer_configuration_sender.send(apply_config_params).await?;
 

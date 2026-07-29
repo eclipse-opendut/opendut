@@ -3,6 +3,7 @@ use crate::common::task::TaskAbsent;
 use crate::service::network_metrics::manager::NetworkMetricsManagerRef;
 use crate::service::peer_configuration::NetworkInterfaceManagement;
 use crate::service::tasks;
+use crate::service::viper_run_manager::ViperRunManagerRef;
 use opendut_model::peer::configuration::{ParameterVariant, PeerConfiguration};
 use std::collections::HashMap;
 use opendut_model::peer::configuration::parameter::DeviceInterface;
@@ -14,6 +15,7 @@ pub struct ServiceTaskResolver {
     peer_configuration: PeerConfiguration,
     network_interface_management: NetworkInterfaceManagement,
     metrics_manager: NetworkMetricsManagerRef,
+    viper_run_manager: ViperRunManagerRef,
 }
 
 impl ServiceTaskResolver {
@@ -21,11 +23,13 @@ impl ServiceTaskResolver {
         peer_configuration: PeerConfiguration,
         network_interface_management: NetworkInterfaceManagement,
         metrics_manager: NetworkMetricsManagerRef,
+        viper_run_manager: ViperRunManagerRef,
     ) -> Self {
         Self {
             peer_configuration,
             network_interface_management,
             metrics_manager,
+            viper_run_manager,
         }
     }
 }
@@ -65,8 +69,11 @@ impl TaskResolver for ServiceTaskResolver {
                     tasks.push(Box::new(tasks::can_local_route::CanLocalRoute { parameter: parameter.value.clone(), network_interface_manager: network_interface_manager.clone(), can_fd: false }));
                     tasks.push(Box::new(tasks::can_local_route::CanLocalRoute { parameter: parameter.value.clone(), network_interface_manager, can_fd: true }));
                 }
-                ParameterVariant::TestRunReport(_parameter) => {
-                    todo!("EDGAR does not yet have a Task for handling TestRunReport parameters.");
+                ParameterVariant::TestRunReport(parameter) => {
+                    tasks.push(Box::new(tasks::create_viper_runtime::CreateViperTestRun {
+                        parameter: parameter.value.clone(),
+                        viper_run_manager: self.viper_run_manager.clone(),
+                    }));
                 }
             };
         }
