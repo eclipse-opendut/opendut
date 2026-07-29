@@ -2,6 +2,7 @@ use leptos::prelude::*;
 use opendut_lea_components::{SelectionTable, SelectionTableRow};
 use opendut_model::peer::PeerDescriptor;
 use crate::app::use_app_globals;
+use crate::util;
 use crate::viper_tests::configurator::types::{PeerSelection, UserViperTestRunDescriptor};
 
 #[component]
@@ -9,14 +10,18 @@ pub fn PeerSelector(viper_test_run_descriptor: RwSignal<UserViperTestRunDescript
 
     let globals = use_app_globals();
 
-    let list_of_peers = {
+    let peers_and_clusters = {
         let carl = globals.client.clone();
 
         LocalResource::new(move || {
             let mut carl = carl.clone();
             async move {
-                carl.peers.list_peer_descriptors().await
-                    .expect("Failed to request the list of peers")
+                let peers = carl.peers.list_peer_descriptors().await
+                    .expect("Failed to request the list of peers");
+                let clusters = carl.cluster.list_cluster_descriptors().await
+                    .expect("Failed to request the list of clusters.");
+
+                (peers, clusters)
             }
         })
     };
@@ -31,7 +36,7 @@ pub fn PeerSelector(viper_test_run_descriptor: RwSignal<UserViperTestRunDescript
     );
 
     let peers = Signal::derive(move || {
-        if let Some(mut peers) = list_of_peers.get() {
+        if let Some((mut peers, clusters)) = peers_and_clusters.get() {
             peers
                 .sort_by(|peer_a, peer_b| {
                     peer_a.name.value().to_lowercase()
@@ -39,13 +44,25 @@ pub fn PeerSelector(viper_test_run_descriptor: RwSignal<UserViperTestRunDescript
                 });
 
             let rows = peers.iter().map(|peer_descriptor| {
-                let PeerDescriptor { id, name, location: _location, network: _network, topology: _topology, executors: _executors } = peer_descriptor;
+                let PeerDescriptor { id, name, location: _location, network: _network, topology, executors: _executors } = peer_descriptor;
                 let id = id.to_owned();
                 let name = name.value().to_owned();
 
+                let devices_in_peer = topology
+                    .devices
+                    .iter()
+                    .map(|device| device.id)
+                    .collect::<Vec<_>>();
+
+                let clusters = util::list_configured_clusters_for_peer(devices_in_peer, Clone::clone(&clusters))
+                    .iter()
+                    .map(|cluster| cluster.name.value().to_owned())
+                    .collect::<Vec<_>>()
+                    .join(", ");
+
                 SelectionTableRow {
                     id: Clone::clone(&id),
-                    cells: vec![name, id.to_string()]
+                    cells: vec![name, id.to_string(), clusters]
                 }
             }).collect::<Vec<_>>();
 
@@ -64,7 +81,8 @@ pub fn PeerSelector(viper_test_run_descriptor: RwSignal<UserViperTestRunDescript
     let header = vec![
         String::new(),
         String::from("Name"),
-        String::from("Peer ID")
+        String::from("Peer ID"),
+        String::from("Configured in Clusters"),
     ];
 
     view! {

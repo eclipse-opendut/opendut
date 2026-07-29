@@ -189,7 +189,7 @@ pub fn PeerConfigurator() -> impl IntoView {
     let peer_id_string = create_read_slice(user_peer_descriptor, |config| config.id.to_string());
     let setup_disabled = create_read_slice(user_peer_descriptor, |config| config.is_new);
 
-    let cluster_column = move || { // Todo: Deduplicate as in overview/row.rs
+    let cluster_column = move || {
         let peer = user_peer_descriptor.get();
 
         let devices_in_peer = peer.devices.into_iter()
