@@ -63,11 +63,7 @@ impl TryFrom<UserViperTestRunDescriptor> for ViperTestRunDescriptor {
         let source = configuration
             .viper_source
             .right_ok_or(ViperTestMisconfiguration::InvalidSourceId)?;
-
-        let cluster = configuration
-            .cluster
-            .right_ok_or(ViperTestMisconfiguration::InvalidClusterId)?;
-
+        
         let peer = configuration
             .peer
             .right_ok_or(ViperTestMisconfiguration::InvalidPeerId)?;
@@ -86,7 +82,6 @@ impl TryFrom<UserViperTestRunDescriptor> for ViperTestRunDescriptor {
             id: configuration.id,
             name,
             source,
-            cluster,
             peer,
             parameters,
         })

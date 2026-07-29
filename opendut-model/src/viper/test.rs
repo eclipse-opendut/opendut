@@ -5,7 +5,6 @@ use std::str::FromStr;
 use opendut_viper_rt::compile::ParameterName;
 use opendut_viper_rt::run::{BindingValue};
 use serde::{Deserialize, Serialize};
-use crate::cluster::ClusterId;
 use crate::create_id_type;
 use crate::peer::PeerId;
 use crate::viper::ViperSourceId;
@@ -17,7 +16,6 @@ pub struct ViperTestRunDescriptor {
     pub id: ViperTestId,
     pub name: ViperTestName,
     pub source: ViperSourceId,
-    pub cluster: ClusterId,
     pub peer: PeerId,
     /// Concrete values bindings to run the test with.
     pub parameters: HashMap<ParameterName, Option<BindingValue>>, //maps to `ParameterBindings` in VIPER (not including ParameterDescriptors here, because they could become out-of-date when we persist them)

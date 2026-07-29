@@ -129,7 +129,6 @@ mod conversions {
                 id: Some(value.id.into()),
                 name: Some(value.name.into()),
                 source: Some(value.source.into()),
-                cluster: Some(value.cluster.into()),
                 peer: Some(value.peer.into()),
                 parameters,
             }
@@ -145,9 +144,6 @@ mod conversions {
             let source = extract!(value.source)?
                 .try_into()?;
 
-            let cluster = extract!(value.cluster)?
-                .try_into()?;
-
             let peer = extract!(value.peer)?
                 .try_into()?;
 
@@ -161,7 +157,7 @@ mod conversions {
                 })
                 .collect::<Result<HashMap<_, _>, _>>()?;
 
-            Ok(Model { id, name, source, cluster, peer, parameters })
+            Ok(Model { id, name, source, peer, parameters })
         }
     }
 

@@ -183,7 +183,6 @@ pub(crate) mod testing {
                     id: test_id,
                     name: ViperTestName::try_from(format!("ViperTest-{test_id}"))?,
                     source: source.id,
-                    cluster: cluster.id,
                     peer: peer.id,
                     parameters,
                 };

@@ -39,7 +39,6 @@ pub fn DuplicateViperTestButton(
                 id: viper_test_id,
                 name: new_test_name,
                 source: test_run_descriptor.source,
-                cluster: test_run_descriptor.cluster,
                 peer: test_run_descriptor.peer,
                 parameters: test_run_descriptor.parameters,
             };

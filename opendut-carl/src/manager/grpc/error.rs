@@ -49,9 +49,6 @@ mod cluster_manager {
                         cause: String::from("Error when accessing persistence"),
                     }
                 }
-                #[cfg(feature="viper")]
-                cluster_manager::DeleteClusterDescriptorError::ViperTestFound { cluster_id, test_id } =>
-                    Self::ViperTestFound { cluster_id, test_id },
             }
         }
     }
