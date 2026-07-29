@@ -2,15 +2,11 @@ pub mod validation;
 
 use std::collections::HashMap;
 use opendut_lea_components::{Ior, UserInputValue};
-use opendut_model::cluster::ClusterId;
 use opendut_model::peer::PeerId;
 use opendut_model::viper::{ViperBindingValue, ViperParameterName, ViperSourceId, ViperTestId, ViperTestName, ViperTestRunDescriptor};
 
 pub type SourceSelectionError = String;
 pub type SourceSelection = Ior<SourceSelectionError, ViperSourceId>;
-
-pub type ClusterSelectionError = String;
-pub type ClusterSelection = Ior<ClusterSelectionError, ClusterId>;
 
 pub type PeerSelectionError = String;
 pub type PeerSelection = Ior<PeerSelectionError, PeerId>;
@@ -27,8 +23,6 @@ pub enum ViperTestMisconfiguration {
     InvalidSourceId,
     #[error("Invalid viper test suite")]
     InvalidSuite,
-    #[error("Invalid cluster ID")]
-    InvalidClusterId,
     #[error("Invalid peer ID")]
     InvalidPeerId,
     #[error("Invalid viper test parameter key")]
@@ -42,7 +36,6 @@ pub struct UserViperTestRunDescriptor {
     pub id: ViperTestId,
     pub name: UserInputValue,
     pub viper_source: SourceSelection,
-    pub cluster: ClusterSelection,
     pub peer: PeerSelection,
     pub parameters: HashMap<ViperParameterName, ViperBindingValueInput>,
     pub is_new: bool,
@@ -63,7 +56,7 @@ impl TryFrom<UserViperTestRunDescriptor> for ViperTestRunDescriptor {
         let source = configuration
             .viper_source
             .right_ok_or(ViperTestMisconfiguration::InvalidSourceId)?;
-        
+
         let peer = configuration
             .peer
             .right_ok_or(ViperTestMisconfiguration::InvalidPeerId)?;

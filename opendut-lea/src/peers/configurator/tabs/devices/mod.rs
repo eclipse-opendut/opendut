@@ -25,10 +25,10 @@ pub fn DevicesTab(user_peer_descriptor: RwSignal<UserPeerDescriptor>) -> impl In
 fn DevicesTable(user_peer_descriptor: RwSignal<UserPeerDescriptor>) -> impl IntoView {
 
     let (devices, devices_setter) = create_slice(user_peer_descriptor,
-                                                 |peer_configuration| {
+        |peer_configuration| {
             Clone::clone(&peer_configuration.devices)
         },
-                                                 |peer_configuration, value| {
+        |peer_configuration, value| {
             peer_configuration.devices = value
         }
     );

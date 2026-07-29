@@ -10,8 +10,8 @@ use crate::app::use_app_globals;
 use crate::components::use_active_tab;
 use crate::routing::{navigate_to, WellKnownRoutes};
 use crate::viper_tests::configurator::components::Controls;
-use crate::viper_tests::configurator::tabs::{ClusterTab, GeneralTab, SourceTab, ParametersTab, TabIdentifier, PeerTab};
-use crate::viper_tests::configurator::types::{ClusterSelection, PeerSelection, SourceSelection, UserViperTestRunDescriptor, ViperBindingValueInput};
+use crate::viper_tests::configurator::tabs::{GeneralTab, SourceTab, ParametersTab, TabIdentifier, PeerTab};
+use crate::viper_tests::configurator::types::{PeerSelection, SourceSelection, UserViperTestRunDescriptor, ViperBindingValueInput};
 
 mod tabs;
 mod types;
@@ -49,7 +49,6 @@ pub fn ViperTestConfigurator() -> impl IntoView {
             id: viper_test_id,
             name: UserInputValue::Left(UserInputError::from("Enter a valid VIPER test name.")),
             viper_source: SourceSelection::Left(String::from("Select a VIPER test source.")),
-            cluster: ClusterSelection::Left(String::from("Select a cluster.")),
             peer: PeerSelection::Left(String::from("Select a peer")),
             parameters: HashMap::new(),
             is_new: true,
@@ -198,14 +197,9 @@ pub fn ViperTestConfigurator() -> impl IntoView {
             ).with_is_error(Signal::derive(move || !viper_test_run_descriptor.read().valid_parameters_tab())),
 
             Tab::from_title_and_href(
-                String::from("Cluster"),
-                TabIdentifier::Cluster.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || !viper_test_run_descriptor.read().valid_cluster_tab())),
-
-            Tab::from_title_and_href(
                 String::from("Peer"),
                 TabIdentifier::Peer.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || !viper_test_run_descriptor.read().valid_cluster_tab())),
+            ).with_is_error(Signal::derive(move || !viper_test_run_descriptor.read().valid_peer_tab())),
         ]
     });
     
@@ -229,7 +223,6 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                                     TabIdentifier::General => view! { <GeneralTab viper_test_run_descriptor /> }.into_any(),
                                     TabIdentifier::ViperSource => view! { <SourceTab viper_test_run_descriptor /> }.into_any(),
                                     TabIdentifier::Parameters => view! { <ParametersTab viper_test_run_descriptor parameter_result=parameter_result.clone() /> }.into_any(),
-                                    TabIdentifier::Cluster => view! { <ClusterTab viper_test_run_descriptor /> }.into_any(),
                                     TabIdentifier::Peer => view! { <PeerTab viper_test_run_descriptor /> }.into_any()
                                 }}
                             </Tabs>

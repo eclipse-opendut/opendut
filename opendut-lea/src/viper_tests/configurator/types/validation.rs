@@ -5,7 +5,6 @@ impl UserViperTestRunDescriptor {
         self.valid_general_tab()
             && self.valid_viper_source_tab()
             && self.valid_parameters_tab()
-            && self.valid_cluster_tab()
             && self.valid_peer_tab()
     }
 
@@ -21,10 +20,6 @@ impl UserViperTestRunDescriptor {
         self.parameters.iter().all(|(_, parameter_value)| {
             parameter_value.is_right()
         })
-    }
-
-    pub fn valid_cluster_tab(&self) -> bool {
-        self.cluster.is_right()
     }
 
     pub fn valid_peer_tab(&self) -> bool {
