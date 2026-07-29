@@ -4,12 +4,12 @@ use leptos::prelude::*;
 use crate::components::{Toast, use_toaster, UserInputValue};
 use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceId};
 use crate::peers::configurator::types::network::UserNetworkInterface;
-use crate::peers::configurator::types::UserPeerConfiguration;
+use crate::peers::configurator::types::UserPeerDescriptor;
 
 #[component]
 pub fn NetworkInterfaceList(
     interfaces: Signal<Vec<RwSignal<UserNetworkInterface>>>,
-    peer_configuration: RwSignal<UserPeerConfiguration>
+    user_peer_descriptor: RwSignal<UserPeerDescriptor>
 ) -> impl IntoView {
 
     let interface_name_list = move || {
@@ -20,7 +20,7 @@ pub fn NetworkInterfaceList(
                     view! {
                         <Row
                             network_interface=interface
-                            peer_configuration
+                            user_peer_descriptor
                         />
                     }
                 })
@@ -55,21 +55,21 @@ pub fn NetworkInterfaceList(
 #[component]
 fn Row(
     network_interface: RwSignal<UserNetworkInterface>,
-    peer_configuration: RwSignal<UserPeerConfiguration>,
+    user_peer_descriptor: RwSignal<UserPeerDescriptor>,
 ) -> impl IntoView {
 
     let toaster = use_toaster();
 
-    let (interfaces_getter, interfaces_setter) = create_slice(peer_configuration,
-      |peer_configuration| {
-          Clone::clone(&peer_configuration.network.network_interfaces)
+    let (interfaces_getter, interfaces_setter) = create_slice(user_peer_descriptor,
+      |user_peer_descriptor| {
+          Clone::clone(&user_peer_descriptor.network.network_interfaces)
       },
-      |peer_configuration, value| {
-          peer_configuration.network.network_interfaces = value
+      |user_peer_descriptor, value| {
+          user_peer_descriptor.network.network_interfaces = value
       }
     );
 
-    let devices = create_read_slice(peer_configuration,
+    let devices = create_read_slice(user_peer_descriptor,
         |peer_configuration| {
             Clone::clone(&peer_configuration.devices)
         }

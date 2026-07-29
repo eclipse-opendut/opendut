@@ -1,12 +1,12 @@
 use leptos::prelude::*;
 use crate::components::ReadOnlyInput;
 use crate::peers::configurator::components::{PeerLocationInput, PeerNameInput};
-use crate::peers::configurator::types::UserPeerConfiguration;
+use crate::peers::configurator::types::UserPeerDescriptor;
 
 #[component]
-pub fn GeneralTab(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl IntoView {
+pub fn GeneralTab(user_peer_descriptor: RwSignal<UserPeerDescriptor>) -> impl IntoView {
 
-    let peer_id = Signal::derive(move || peer_configuration.get().id.to_string());
+    let peer_id = Signal::derive(move || user_peer_descriptor.get().id.to_string());
 
     view! {
         <div>
@@ -15,10 +15,10 @@ pub fn GeneralTab(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl I
                 value=peer_id
             />
             <PeerNameInput
-                peer_configuration=peer_configuration
+                user_peer_descriptor
             />
             <PeerLocationInput
-                peer_configuration=peer_configuration
+                user_peer_descriptor
             />
         </div>
     }

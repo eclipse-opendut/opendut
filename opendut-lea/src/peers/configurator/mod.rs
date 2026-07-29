@@ -16,7 +16,7 @@ use opendut_lea_components::tabs::{Tab, Tabs};
 use crate::peers::configurator::types::devices::UserDeviceConfiguration;
 use crate::peers::configurator::types::executor::{UserContainerEnv, UserPeerExecutor, UserPeerExecutorKind};
 use crate::peers::configurator::types::network::{UserNetworkInterface, UserPeerNetwork};
-use crate::peers::configurator::types::UserPeerConfiguration;
+use crate::peers::configurator::types::UserPeerDescriptor;
 use opendut_model::peer::state::PeerState;
 
 mod components;
@@ -31,171 +31,168 @@ pub fn PeerConfigurator() -> impl IntoView {
 
     let active_tab = use_active_tab::<TabIdentifier>();
 
-    let (peer_configuration, peer_configuration_resource, is_valid_peer_configuration, peer_state) = {
-        let peer_id = {
-            let peer_id = params.with_untracked(|params| {
-                params.get("id").and_then(|id| PeerId::try_from(id.as_str()).ok())
-            });
-            match peer_id {
-                None => {
-                    let use_navigate = use_navigate();
-                    navigate_to(WellKnownRoutes::ErrorPage {
-                        title: String::from("Invalid PeerId"),
-                        text: String::from("Could not parse the provided value as PeerId!"),
-                        details: None,
-                    }, use_navigate);
-                    PeerId::random()
-                }
-                Some(peer_id) => {
-                    peer_id
-                }
-            }
-        };
-        let peer_state = RwSignal::new(PeerState::default());
-
-        let peer_configuration = RwSignal::new(UserPeerConfiguration {
-            id: peer_id,
-            name: UserInputValue::Left(UserInputError::from("Enter a valid peer name.")),
-            location: UserInputValue::Right(String::from("")),
-            devices: Vec::new(),
-            network: UserPeerNetwork {
-                network_interfaces: Vec::new(),
-                bridge_name: UserInputValue::Right(String::from("")),
-            },
-            is_new: true,
-            executors: Vec::new(),
+    let peer_id = {
+        let peer_id = params.with_untracked(|params| {
+            params.get("id").and_then(|id| PeerId::try_from(id.as_str()).ok())
         });
+        match peer_id {
+            None => {
+                let use_navigate = use_navigate();
+                navigate_to(WellKnownRoutes::ErrorPage {
+                    title: String::from("Invalid PeerId"),
+                    text: String::from("Could not parse the provided value as PeerId!"),
+                    details: None,
+                }, use_navigate);
+                PeerId::random()
+            }
+            Some(peer_id) => {
+                peer_id
+            }
+        }
+    };
 
-        let peer_configuration_resource = LocalResource::new(move || {
-            let mut carl = globals.client.clone();
-            async move {
-                if let Ok(configuration) = carl.peers.get_peer_descriptor(peer_id).await {
-                    let clusters = carl.cluster.list_cluster_descriptors().await
-                        .unwrap_or(vec![]);
+    let peer_state = RwSignal::new(PeerState::default());
 
-                    peer_configuration.update(|user_configuration| {
-                        user_configuration.name = UserInputValue::Right(configuration.name.value().to_owned());
-                        user_configuration.is_new = false;
-                        user_configuration.location = UserInputValue::Right(configuration.location.unwrap_or_default().value());
-                        user_configuration.devices = configuration.topology.devices.into_iter().map(|device| {
-                            let mut configured_clusters = vec![];
+    let user_peer_descriptor = RwSignal::new(UserPeerDescriptor {
+        id: peer_id,
+        name: UserInputValue::Left(UserInputError::from("Enter a valid peer name.")),
+        location: UserInputValue::Right(String::from("")),
+        devices: Vec::new(),
+        network: UserPeerNetwork {
+            network_interfaces: Vec::new(),
+            bridge_name: UserInputValue::Right(String::from("")),
+        },
+        is_new: true,
+        executors: Vec::new(),
+    });
 
-                            for cluster in &clusters {
-                                for device_id in &cluster.devices {
-                                    if device.id == *device_id {
-                                        configured_clusters.push(cluster.clone());
-                                    }
+    let peer_descriptor_resource = LocalResource::new(move || {
+        let mut carl = globals.client.clone();
+        async move {
+            if let Ok(configuration) = carl.peers.get_peer_descriptor(peer_id).await {
+                let clusters = carl.cluster.list_cluster_descriptors().await
+                    .unwrap_or(vec![]);
+
+                user_peer_descriptor.update(|user_configuration| {
+                    user_configuration.name = UserInputValue::Right(configuration.name.value().to_owned());
+                    user_configuration.is_new = false;
+                    user_configuration.location = UserInputValue::Right(configuration.location.unwrap_or_default().value());
+                    user_configuration.devices = configuration.topology.devices.into_iter().map(|device| {
+                        let mut configured_clusters = vec![];
+
+                        for cluster in &clusters {
+                            for device_id in &cluster.devices {
+                                if device.id == *device_id {
+                                    configured_clusters.push(cluster.clone());
                                 }
                             }
-                            RwSignal::new(UserDeviceConfiguration {
-                                id: device.id,
-                                name: UserInputValue::Right(device.name.to_string()),
-                                interface: Some(device.interface),
-                                description: UserInputValue::Right(device.description.unwrap_or_default().to_string()),
-                                is_collapsed: true,
-                                contained_in_clusters: configured_clusters,
-                                tags: device.tags,
-                            })
-                        }).collect::<Vec<_>>();
-                        if let Some(bridge_name) = configuration.network.bridge_name {
-                            user_configuration.network.bridge_name = UserInputValue::Right(bridge_name.name());
                         }
-                        user_configuration.network.network_interfaces = configuration.network.interfaces.into_iter()
-                            .map(|interface| {
-                                RwSignal::new(UserNetworkInterface::from(interface))
-                            })
-                            .collect();
-                        for executor in configuration.executors.executors {
-                            let ExecutorDescriptor { id, kind, results_url } = executor;
+                        RwSignal::new(UserDeviceConfiguration {
+                            id: device.id,
+                            name: UserInputValue::Right(device.name.to_string()),
+                            interface: Some(device.interface),
+                            description: UserInputValue::Right(device.description.unwrap_or_default().to_string()),
+                            is_collapsed: true,
+                            contained_in_clusters: configured_clusters,
+                            tags: device.tags,
+                        })
+                    }).collect::<Vec<_>>();
+                    if let Some(bridge_name) = configuration.network.bridge_name {
+                        user_configuration.network.bridge_name = UserInputValue::Right(bridge_name.name());
+                    }
+                    user_configuration.network.network_interfaces = configuration.network.interfaces.into_iter()
+                        .map(|interface| {
+                            RwSignal::new(UserNetworkInterface::from(interface))
+                        })
+                        .collect();
+                    for executor in configuration.executors.executors {
+                        let ExecutorDescriptor { id, kind, results_url } = executor;
 
-                            let kind = match kind {
-                                ExecutorKind::Executable => todo!(),
-                                ExecutorKind::Container {
+                        let kind = match kind {
+                            ExecutorKind::Executable => todo!(),
+                            ExecutorKind::Container {
+                                engine,
+                                name,
+                                image,
+                                volumes,
+                                devices,
+                                envs,
+                                ports,
+                                command,
+                                args,
+                            } => {
+                                let volumes = volumes.into_iter()
+                                    .map(|volume| {
+                                        RwSignal::new(UserInputValue::Right(volume.to_string()))
+                                    })
+                                    .collect::<Vec<_>>();
+                                let devices = devices.into_iter()
+                                    .map(|device| {
+                                        RwSignal::new(UserInputValue::Right(device.to_string()))
+                                    })
+                                    .collect::<Vec<_>>();
+                                let envs = envs.into_iter()
+                                    .map(|env| {
+                                        let (name, value) = env.into();
+                                        RwSignal::new(UserContainerEnv {
+                                            name: UserInputValue::Right(name),
+                                            value: UserInputValue::Right(value)
+                                        })
+                                    })
+                                    .collect::<Vec<_>>();
+                                let ports = ports.into_iter()
+                                    .map(|port| {
+                                        RwSignal::new(UserInputValue::Right(port.to_string()))
+                                    })
+                                    .collect::<Vec<_>>();
+                                let args = args.into_iter()
+                                    .map(|arg| {
+                                        RwSignal::new(UserInputValue::Right(arg.to_string()))
+                                    })
+                                    .collect::<Vec<_>>();
+                                UserPeerExecutorKind::Container {
                                     engine,
-                                    name,
-                                    image,
+                                    name: UserInputValue::Right(name.into()),
+                                    image: UserInputValue::Right(image.to_string()),
                                     volumes,
                                     devices,
                                     envs,
                                     ports,
-                                    command,
+                                    command: UserInputValue::Right(command.into()),
                                     args,
-                                } => {
-                                    let volumes = volumes.into_iter()
-                                        .map(|volume| {
-                                            RwSignal::new(UserInputValue::Right(volume.to_string()))
-                                        })
-                                        .collect::<Vec<_>>();
-                                    let devices = devices.into_iter()
-                                        .map(|device| {
-                                            RwSignal::new(UserInputValue::Right(device.to_string()))
-                                        })
-                                        .collect::<Vec<_>>();
-                                    let envs = envs.into_iter()
-                                        .map(|env| {
-                                            let (name, value) = env.into();
-                                            RwSignal::new(UserContainerEnv {
-                                                name: UserInputValue::Right(name),
-                                                value: UserInputValue::Right(value)
-                                            })
-                                        })
-                                        .collect::<Vec<_>>();
-                                    let ports = ports.into_iter()
-                                        .map(|port| {
-                                            RwSignal::new(UserInputValue::Right(port.to_string()))
-                                        })
-                                        .collect::<Vec<_>>();
-                                    let args = args.into_iter()
-                                        .map(|arg| {
-                                            RwSignal::new(UserInputValue::Right(arg.to_string()))
-                                        })
-                                        .collect::<Vec<_>>();
-                                    UserPeerExecutorKind::Container {
-                                        engine,
-                                        name: UserInputValue::Right(name.into()),
-                                        image: UserInputValue::Right(image.to_string()),
-                                        volumes,
-                                        devices,
-                                        envs,
-                                        ports,
-                                        command: UserInputValue::Right(command.into()),
-                                        args,
-                                    }
                                 }
-                            };
+                            }
+                        };
 
-                            user_configuration.executors.push(
-                                RwSignal::new(UserPeerExecutor {
-                                    id,
-                                    kind,
-                                    results_url: UserInputValue::Right(results_url.map(|s| s.to_string()).unwrap_or(String::new())),
-                                    is_collapsed: true
-                                })
-                            );
-                        }
-                    });
-                    if let Ok(state) = carl.peers.get_peer_state(peer_id).await {
-                        peer_state.set(state);
+                        user_configuration.executors.push(
+                            RwSignal::new(UserPeerExecutor {
+                                id,
+                                kind,
+                                results_url: UserInputValue::Right(results_url.map(|s| s.to_string()).unwrap_or(String::new())),
+                                is_collapsed: true
+                            })
+                        );
                     }
+                });
+                if let Ok(state) = carl.peers.get_peer_state(peer_id).await {
+                    peer_state.set(state);
                 }
             }
-        });
+        }
+    });
 
-        let is_valid_peer_configuration = Memo::new(move |_| {
-            peer_configuration.with(|peer_configuration| {
-                peer_configuration.is_valid()
-            })
-        });
+    let is_valid_peer_configuration = Memo::new(move |_| {
+        user_peer_descriptor.with(|peer_configuration| {
+            peer_configuration.is_valid()
+        })
+    });
 
-        (peer_configuration, peer_configuration_resource, is_valid_peer_configuration, peer_state)
-    };
-
-    let peer_id_string = create_read_slice(peer_configuration, |config| config.id.to_string());
-    let setup_disabled = create_read_slice(peer_configuration, |config| config.is_new);
+    let peer_id_string = create_read_slice(user_peer_descriptor, |config| config.id.to_string());
+    let setup_disabled = create_read_slice(user_peer_descriptor, |config| config.is_new);
 
     let cluster_columns = move || {
-        let devices_in_peer = peer_configuration.get().devices.into_iter().map(|device| device.get().id).collect::<Vec<_>>();
-        let cluster_descriptor = peer_configuration
+        let devices_in_peer = user_peer_descriptor.get().devices.into_iter().map(|device| device.get().id).collect::<Vec<_>>();
+        let cluster_descriptor = user_peer_descriptor
             .get().devices
             .into_iter()
             .flat_map(|device| device.get().contained_in_clusters)
@@ -251,7 +248,7 @@ pub fn PeerConfigurator() -> impl IntoView {
     });
 
     let subtitle = Signal::derive(move || {
-        if let UserInputValue::Right(name) = peer_configuration.get().name {
+        if let UserInputValue::Right(name) = user_peer_descriptor.get().name {
             name
         } else {
             String::new()
@@ -264,22 +261,22 @@ pub fn PeerConfigurator() -> impl IntoView {
             Tab::from_title_and_href(
                 String::from("General"),
                 TabIdentifier::General.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || !peer_configuration.read().valid_general_tab())),
+            ).with_is_error(Signal::derive(move || !user_peer_descriptor.read().valid_general_tab())),
 
             Tab::from_title_and_href(
                 String::from("Network"),
                 TabIdentifier::Network.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || !peer_configuration.read().valid_network_tab())),
+            ).with_is_error(Signal::derive(move || !user_peer_descriptor.read().valid_network_tab())),
 
             Tab::from_title_and_href(
                 String::from("Devices"),
                 TabIdentifier::Devices.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || !peer_configuration.read().valid_devices_tab())),
+            ).with_is_error(Signal::derive(move || !user_peer_descriptor.read().valid_devices_tab())),
 
             Tab::from_title_and_href(
                 String::from("Executor"),
                 TabIdentifier::Executor.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || !peer_configuration.read().valid_executor_tab())),
+            ).with_is_error(Signal::derive(move || !user_peer_descriptor.read().valid_executor_tab())),
 
             Tab::from_title_and_href(
                 String::from("Setup"),
@@ -295,31 +292,31 @@ pub fn PeerConfigurator() -> impl IntoView {
             title="Configure Peer"
             subtitle=subtitle
             breadcrumbs=breadcrumbs
-            controls=view! { <Controls configuration=peer_configuration is_valid_peer_configuration=is_valid_peer_configuration.into() peer_state=peer_state.into() /> }
+            controls=view! { <Controls configuration=user_peer_descriptor is_valid_peer_configuration=is_valid_peer_configuration.into() peer_state=peer_state.into() /> }
         >
         <div> {cluster_columns} </div>
             <Suspense
                 fallback=LoadingSpinner // TODO: Display errors
             >
             { move || Suspend::new(async move {
-                peer_configuration_resource.await;
+                peer_descriptor_resource.await;
 
                 view! {
                     <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
                         <div class=("is-hidden", move || TabIdentifier::General != active_tab.get())>
-                            <GeneralTab peer_configuration=peer_configuration />
+                            <GeneralTab user_peer_descriptor />
                         </div>
                         <div class=("is-hidden", move || TabIdentifier::Network != active_tab.get())>
-                            <NetworkTab peer_configuration=peer_configuration />
+                            <NetworkTab user_peer_descriptor />
                         </div>
                         <div class=("is-hidden", move || TabIdentifier::Devices != active_tab.get())>
-                            <DevicesTab peer_configuration=peer_configuration />
+                            <DevicesTab user_peer_descriptor />
                         </div>
                         <div class=("is-hidden", move || TabIdentifier::Executor != active_tab.get())>
-                            <ExecutorTab peer_configuration=peer_configuration />
+                            <ExecutorTab user_peer_descriptor />
                         </div>
                         <div class=("is-hidden", move || TabIdentifier::Setup != active_tab.get())>
-                            <SetupTab peer_configuration=peer_configuration.read_only() />
+                            <SetupTab peer_configuration=user_peer_descriptor.read_only() />
                         </div>
                     </Tabs>
                 }

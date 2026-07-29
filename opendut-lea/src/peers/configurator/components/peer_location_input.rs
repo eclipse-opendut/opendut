@@ -1,12 +1,12 @@
 use crate::components::{UserInput, UserInputValue};
-use crate::peers::configurator::types::UserPeerConfiguration;
+use crate::peers::configurator::types::UserPeerDescriptor;
 use leptos::prelude::*;
 use opendut_model::peer::{IllegalLocation, PeerLocation};
 
 #[component]
-pub fn PeerLocationInput(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl IntoView {
+pub fn PeerLocationInput(user_peer_descriptor: RwSignal<UserPeerDescriptor>) -> impl IntoView {
     let (getter, setter) = create_slice(
-        peer_configuration,
+        user_peer_descriptor,
         |config| Clone::clone(&config.location),
         |config, input| {
             config.location = input;

@@ -30,7 +30,7 @@ pub enum PeerMisconfigurationError {
 }
 
 #[derive(Clone, Debug)]
-pub struct UserPeerConfiguration {
+pub struct UserPeerDescriptor {
     pub id: PeerId,
     pub name: UserInputValue,
     pub location: UserInputValue,
@@ -40,10 +40,10 @@ pub struct UserPeerConfiguration {
     pub is_new: bool,
 }
 
-impl TryFrom<UserPeerConfiguration> for PeerDescriptor {
+impl TryFrom<UserPeerDescriptor> for PeerDescriptor {
     type Error = PeerMisconfigurationError;
 
-    fn try_from(configuration: UserPeerConfiguration) -> Result<Self, Self::Error> {
+    fn try_from(configuration: UserPeerDescriptor) -> Result<Self, Self::Error> {
         let name = configuration
             .name
             .right_ok_or(PeerMisconfigurationError::InvalidPeerName)

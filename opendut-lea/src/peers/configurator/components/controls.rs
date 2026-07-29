@@ -12,13 +12,13 @@ use opendut_model::peer::state::PeerState;
 use crate::app::use_app_globals;
 use crate::components::{use_toaster, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, Toast};
 use crate::peers::components::DeletePeerButton;
-use crate::peers::configurator::types::UserPeerConfiguration;
+use crate::peers::configurator::types::UserPeerDescriptor;
 use crate::routing::{navigate_to, WellKnownRoutes};
 use crate::peers::components::PeerHealth;
 
 #[component]
 pub fn Controls(
-    configuration: RwSignal<UserPeerConfiguration>,
+    configuration: RwSignal<UserPeerDescriptor>,
     is_valid_peer_configuration: Signal<bool>,
     peer_state: Signal<PeerState>
 ) -> impl IntoView {
@@ -66,7 +66,7 @@ pub fn Controls(
 
 #[component]
 fn SavePeerButton(
-    configuration: RwSignal<UserPeerConfiguration>,
+    configuration: RwSignal<UserPeerDescriptor>,
     is_valid_peer_configuration: Signal<bool>,
 ) -> impl IntoView {
 

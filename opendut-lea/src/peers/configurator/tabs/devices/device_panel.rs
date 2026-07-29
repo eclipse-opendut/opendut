@@ -1,18 +1,19 @@
 use leptos::either::Either;
 use leptos::prelude::*;
 use opendut_model::topology::DeviceId;
+
 use crate::components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, DoorhangerButton, FontAwesomeIcon, IconButton, ReadOnlyInput, Toggled, UserInputValue};
 use crate::peers::configurator::tabs::devices::description_input::DeviceDescriptionInput;
 use crate::peers::configurator::tabs::devices::interface_input::DeviceInterfaceInput;
 use crate::peers::configurator::tabs::devices::name_input::DeviceNameInput;
 use crate::peers::configurator::tabs::devices::tag_input::DeviceTagInput;
 use crate::peers::configurator::types::devices::UserDeviceConfiguration;
-use crate::peers::configurator::types::UserPeerConfiguration;
+use crate::peers::configurator::types::UserPeerDescriptor;
 use crate::routing;
 
 #[component]
 pub fn DevicePanel<OnDeleteFn>(
-    peer_configuration: RwSignal<UserPeerConfiguration>,
+    user_peer_descriptor: RwSignal<UserPeerDescriptor>,
     device_configuration: RwSignal<UserDeviceConfiguration>,
     on_delete: OnDeleteFn
 ) -> impl IntoView
@@ -32,7 +33,8 @@ where
                 <div class="container">
                     <ReadOnlyInput label="ID" value=device_id_string />
                     <DeviceNameInput device_configuration />
-                    <DeviceInterfaceInput peer_configuration device_configuration />
+                    <DeviceInterfaceInput user_peer_descriptor device_configuration />
+                    <DeviceInterfaceInput user_peer_descriptor device_configuration />
                     <DeviceTagInput device_configuration />
                     <DeviceDescriptionInput device_configuration />
                 </div>

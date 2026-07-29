@@ -4,7 +4,7 @@ use opendut_model::topology::DeviceId;
 use crate::components::UserInputValue;
 use crate::peers::configurator::tabs::devices::device_panel::DevicePanel;
 use crate::peers::configurator::types::devices::UserDeviceConfiguration;
-use crate::peers::configurator::types::{UserPeerConfiguration, EMPTY_DEVICE_NAME_ERROR_MESSAGE};
+use crate::peers::configurator::types::{UserPeerDescriptor, EMPTY_DEVICE_NAME_ERROR_MESSAGE};
 
 mod device_panel;
 mod name_input;
@@ -13,22 +13,22 @@ mod description_input;
 mod tag_input;
 
 #[component]
-pub fn DevicesTab(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl IntoView {
+pub fn DevicesTab(user_peer_descriptor: RwSignal<UserPeerDescriptor>) -> impl IntoView {
     view! {
         <div>
-            <DevicesTable peer_configuration />
+            <DevicesTable user_peer_descriptor />
         </div>
     }
 }
 
 #[component]
-fn DevicesTable(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl IntoView {
+fn DevicesTable(user_peer_descriptor: RwSignal<UserPeerDescriptor>) -> impl IntoView {
 
-    let (devices, devices_setter) = create_slice(peer_configuration,
-        |peer_configuration| {
+    let (devices, devices_setter) = create_slice(user_peer_descriptor,
+                                                 |peer_configuration| {
             Clone::clone(&peer_configuration.devices)
         },
-        |peer_configuration, value| {
+                                                 |peer_configuration, value| {
             peer_configuration.devices = value
         }
     );
@@ -49,7 +49,7 @@ fn DevicesTable(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl Int
                 .cloned()
                 .map(|device_configuration| {
                     view! {
-                        <DevicePanel peer_configuration device_configuration on_delete=on_device_delete />
+                        <DevicePanel user_peer_descriptor device_configuration on_delete=on_device_delete />
                     }
                 })
                 .collect::<Vec<_>>()
@@ -65,7 +65,7 @@ fn DevicesTable(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl Int
                 <div
                     class="dut-panel-ghost has-text-success px-4 py-3 is-clickable is-flex is-justify-content-center"
                     on:click=move |_| {
-                        peer_configuration.update(|peer_configuration| {
+                        user_peer_descriptor.update(|peer_configuration| {
                             let device_id = DeviceId::random();
                             let user_device_configuration = RwSignal::new(
                                 UserDeviceConfiguration {

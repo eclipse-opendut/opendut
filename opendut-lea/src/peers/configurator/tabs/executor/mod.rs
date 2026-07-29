@@ -4,28 +4,28 @@ use opendut_model::peer::executor::ExecutorId;
 use crate::components::UserInputValue;
 use crate::peers::configurator::tabs::executor::executor_panel::ExecutorPanel;
 use crate::peers::configurator::types::executor::{UserPeerExecutor, UserPeerExecutorKind};
-use crate::peers::configurator::types::{UserPeerConfiguration, EMPTY_CONTAINER_IMAGE_ERROR_MESSAGE};
+use crate::peers::configurator::types::{UserPeerDescriptor, EMPTY_CONTAINER_IMAGE_ERROR_MESSAGE};
 
 mod executor_panel;
 
 #[component]
-pub fn ExecutorTab(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl IntoView {
+pub fn ExecutorTab(user_peer_descriptor: RwSignal<UserPeerDescriptor>) -> impl IntoView {
     view! {
         <div>
-            <ExecutorTable peer_configuration />
+            <ExecutorTable user_peer_descriptor />
         </div>
     }
 }
 
 #[component]
-fn ExecutorTable(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl IntoView {
+fn ExecutorTable(user_peer_descriptor: RwSignal<UserPeerDescriptor>) -> impl IntoView {
 
-    let (executors, executors_setter) = create_slice(peer_configuration,
-        |peer_configuration| {
-            Clone::clone(&peer_configuration.executors)
+    let (executors, executors_setter) = create_slice(user_peer_descriptor,
+        |user_peer_descriptor| {
+            Clone::clone(&user_peer_descriptor.executors)
         },
-        |peer_configuration, value| {
-            peer_configuration.executors = value
+        |user_peer_descriptor, value| {
+            user_peer_descriptor.executors = value
         }
     );
 
@@ -64,7 +64,7 @@ fn ExecutorTable(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl In
                 <div
                     class="dut-panel-ghost has-text-success px-4 py-3 is-clickable is-flex is-justify-content-center"
                     on:click=move |_| {
-                        peer_configuration.update(|peer_configuration| {
+                        user_peer_descriptor.update(|peer_configuration| {
                             let user_peer_executor = RwSignal::new(
                                 UserPeerExecutor {
                                     id: ExecutorId::random(),

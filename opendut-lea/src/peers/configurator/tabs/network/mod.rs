@@ -6,7 +6,7 @@ use opendut_model::util::net::NetworkInterfaceId;
 use crate::peers::configurator::tabs::network::bridge_name_input::BridgeNameInput;
 use crate::peers::configurator::tabs::network::network_interface_input::NetworkInterfaceInput;
 use crate::peers::configurator::types::network::UserNetworkInterface;
-use crate::peers::configurator::types::UserPeerConfiguration;
+use crate::peers::configurator::types::UserPeerDescriptor;
 
 mod bridge_name_input;
 mod network_interface_input;
@@ -14,18 +14,18 @@ mod network_interface_list;
 
 
 #[component]
-pub fn NetworkTab(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl IntoView {
+pub fn NetworkTab(user_peer_descriptor: RwSignal<UserPeerDescriptor>) -> impl IntoView {
 
-    let (interfaces, set_interfaces) = create_slice(peer_configuration,
-         |peer_configuration| {
-             Clone::clone(&peer_configuration.network.network_interfaces)
+    let (interfaces, set_interfaces) = create_slice(user_peer_descriptor,
+         |user_peer_descriptor| {
+             Clone::clone(&user_peer_descriptor.network.network_interfaces)
          },
-         |peer_configuration, mut value: Vec<RwSignal<UserNetworkInterface>>| {
+         |user_peer_descriptor, mut value: Vec<RwSignal<UserNetworkInterface>>| {
              value.sort_by(|user_network_interface_left, user_network_interface_right| {
                  user_network_interface_left.get().configuration.display_name()
                     .cmp(&user_network_interface_right.get().configuration.display_name())
              });
-             peer_configuration.network.network_interfaces = value;
+             user_peer_descriptor.network.network_interfaces = value;
          }
     );
 
@@ -48,10 +48,10 @@ pub fn NetworkTab(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl I
                 }
             />
             <label class="label">Configured Network Interfaces</label>
-            <NetworkInterfaceList interfaces peer_configuration />
+            <NetworkInterfaceList interfaces user_peer_descriptor />
         </div>
         <div class="box">
-            <BridgeNameInput peer_configuration />
+            <BridgeNameInput user_peer_descriptor />
         </div>
     }
 }

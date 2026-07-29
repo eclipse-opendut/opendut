@@ -1,12 +1,12 @@
 use crate::components::{UserInput, UserInputValue};
-use crate::peers::configurator::types::UserPeerConfiguration;
+use crate::peers::configurator::types::UserPeerDescriptor;
 use leptos::prelude::*;
 use opendut_model::util::net::{NetworkInterfaceName, NetworkInterfaceNameError};
 
 #[component]
-pub fn BridgeNameInput(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl IntoView {
+pub fn BridgeNameInput(user_peer_descriptor: RwSignal<UserPeerDescriptor>) -> impl IntoView {
     let (getter, setter) = create_slice(
-        peer_configuration,
+        user_peer_descriptor,
         |config| Clone::clone(&config.network.bridge_name),
         |config, input| {
             config.network.bridge_name = input;

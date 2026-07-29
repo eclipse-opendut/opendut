@@ -3,10 +3,10 @@ use leptos::prelude::*;
 
 use crate::components::WarningMessage;
 use crate::components::{GenerateSetupStringForm, GenerateSetupStringKind};
-use crate::peers::configurator::types::UserPeerConfiguration;
+use crate::peers::configurator::types::UserPeerDescriptor;
 
 #[component]
-pub fn SetupTab(peer_configuration: ReadSignal<UserPeerConfiguration>) -> impl IntoView {
+pub fn SetupTab(peer_configuration: ReadSignal<UserPeerDescriptor>) -> impl IntoView {
 
     let is_new = Signal::derive(move || peer_configuration.get().is_new);
     let kind = Signal::derive(move || GenerateSetupStringKind::Edgar(peer_configuration.get().id));

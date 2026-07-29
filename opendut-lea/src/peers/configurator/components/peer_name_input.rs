@@ -3,16 +3,16 @@ use leptos::prelude::*;
 use opendut_model::peer::{IllegalPeerName, PeerName};
 
 use crate::components::{UserInput, UserInputValue};
-use crate::peers::configurator::types::UserPeerConfiguration;
+use crate::peers::configurator::types::UserPeerDescriptor;
 
 #[component]
-pub fn PeerNameInput(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl IntoView {
+pub fn PeerNameInput(user_peer_descriptor: RwSignal<UserPeerDescriptor>) -> impl IntoView {
 
-    let (getter, setter) = create_slice(peer_configuration,
-        |config| {
+    let (getter, setter) = create_slice(user_peer_descriptor,
+                                        |config| {
             Clone::clone(&config.name)
         },
-        |config, input| {
+                                        |config, input| {
             config.name = input;
         }
     );

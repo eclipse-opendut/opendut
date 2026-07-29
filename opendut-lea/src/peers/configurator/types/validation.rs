@@ -1,8 +1,8 @@
 use leptos::prelude::*;
 use crate::peers::configurator::types::executor::{UserPeerExecutor, UserPeerExecutorKind};
-use crate::peers::configurator::types::UserPeerConfiguration;
+use crate::peers::configurator::types::UserPeerDescriptor;
 
-impl UserPeerConfiguration {
+impl UserPeerDescriptor {
     pub fn is_valid(&self) -> bool {
         self.valid_general_tab()
             && self.valid_devices_tab()
