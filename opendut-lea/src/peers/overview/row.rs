@@ -14,7 +14,7 @@ use crate::peers::components::PeerHealth;
 pub(crate) fn Row<OnDeleteFn>(
     peer_descriptor: RwSignal<PeerDescriptor>,
     peer_state: RwSignal<PeerState>,
-    cluster_descriptor: RwSignal<Vec<ClusterDescriptor>>,
+    cluster_descriptors: RwSignal<Vec<ClusterDescriptor>>,
     on_delete: OnDeleteFn,
 ) -> impl IntoView
 where
@@ -35,42 +35,21 @@ where
 
     let used_clusters_length = RwSignal::new(0);
 
-    let cluster_columns = move || {
-        let devices_in_peer = peer_descriptor
-            .get()
+    let cluster_column = move || {
+        let devices_in_peer = peer_descriptor.get()
             .topology
             .devices
-            .into_iter()
+            .iter()
             .map(|device| device.id)
             .collect::<Vec<_>>();
+        let configured_clusters_for_peer = util::list_configured_clusters_for_peer(devices_in_peer, cluster_descriptors.get());
 
-        let devices_in_cluster = {
-            let mut devices_in_cluster = cluster_descriptor
-                .get()
-                .into_iter()
-                .map(|cluster| (cluster.id, cluster.name, cluster.devices))
-                .collect::<Vec<(_, _, _)>>();
-
-            devices_in_cluster.sort_by(|(_, name_a, _), (_, name_b, _)| {
-                name_a.to_string().cmp(&name_b.to_string())
-            });
-
-            devices_in_cluster
-        };
-
-        let cluster_view_list: Vec<View<_>> = devices_in_cluster
-            .into_iter()
-            .filter(|(_, _, devices)| {
-                devices_in_peer
-                    .clone()
-                    .into_iter()
-                    .any(|device| devices.contains(&device))
-            })
-            .map(|(cluster_id, cluster_name, _)| {
-                let cluster_name = move || cluster_name.to_string();
-                let configurator_href = move || format!("/clusters/{cluster_id}/configure/general");
+        let cluster_view_list: Vec<View<_>> = configured_clusters_for_peer.into_iter()
+            .map(|ClusterDescriptor { id, name, .. }| {
+                let name = move || name.to_string();
+                let configurator_href = move || format!("/clusters/{id}/configure/general");
                 view! {
-                    <a href=configurator_href on:click=|e| e.stop_propagation() on:mousedown=|e| e.stop_propagation()> { cluster_name } </a>
+                    <a href=configurator_href on:click=|e| e.stop_propagation() on:mousedown=|e| e.stop_propagation()> { name } </a>
                 }
             })
             .collect();
@@ -91,7 +70,7 @@ where
             </OverviewTableCell>
 
             <OverviewTableCell>
-                { cluster_columns }
+                { cluster_column }
             </OverviewTableCell>
 
             <OverviewTableCell>

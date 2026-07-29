@@ -122,7 +122,7 @@ pub fn PeersOverview() -> impl IntoView {
                                         <Row
                                             peer_descriptor=RwSignal::new(peer_descriptor)
                                             peer_state=RwSignal::new(peer_state)
-                                            cluster_descriptor=RwSignal::new(configured_clusters.clone())
+                                            cluster_descriptors=RwSignal::new(configured_clusters.clone())
                                             on_delete
                                         />
                                     }

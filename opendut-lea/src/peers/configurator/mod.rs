@@ -9,7 +9,6 @@ use leptos::either::Either;
 use leptos::prelude::*;
 use opendut_model::peer::executor::{ExecutorDescriptor, ExecutorKind};
 use opendut_model::peer::PeerId;
-use std::collections::HashMap;
 use leptos_router::hooks::{use_navigate, use_params_map};
 use opendut_lea_components::LoadingSpinner;
 use opendut_lea_components::tabs::{Tab, Tabs};
@@ -190,38 +189,30 @@ pub fn PeerConfigurator() -> impl IntoView {
     let peer_id_string = create_read_slice(user_peer_descriptor, |config| config.id.to_string());
     let setup_disabled = create_read_slice(user_peer_descriptor, |config| config.is_new);
 
-    let cluster_columns = move || {
-        let devices_in_peer = user_peer_descriptor.get().devices.into_iter().map(|device| device.get().id).collect::<Vec<_>>();
+    let cluster_column = move || { // Todo: Deduplicate as in overview/row.rs
+        let peer = user_peer_descriptor.get();
+
+        let devices_in_peer = peer.devices.into_iter()
+            .map(|device| device.get().id)
+            .collect::<Vec<_>>();
+
         let cluster_descriptor = user_peer_descriptor
             .get().devices
             .into_iter()
             .flat_map(|device| device.get().contained_in_clusters)
             .collect::<Vec<_>>();
 
-        let cluster_descriptor_without_duplicates = cluster_descriptor
-            .into_iter()
-            .map(|configuration| (configuration.id, configuration))
-            .collect::<HashMap<_,_>>();
+        let configured_clusters = util::list_configured_clusters_for_peer(devices_in_peer, cluster_descriptor);
 
-        let devices_in_cluster = {
-            let mut devices_in_cluster = cluster_descriptor_without_duplicates
-                .into_iter()
-                .map(|(cluster_id,cluster_config)| (cluster_id, cluster_config.name, cluster_config.devices))
-                .collect::<Vec<(_,_,_)>>();
+        let cluster_view_list: Vec<View<_>> = configured_clusters.into_iter()
+            .map(|cluster| {
+                let href = format!("/clusters/{}/configure/general", cluster.id);
 
-            devices_in_cluster.sort_by_key(|(_, name, _)| name.to_string());
-            devices_in_cluster
-        };
-
-        let cluster_view_list: Vec<View<_>> = devices_in_cluster.into_iter()
-            .filter(|(_, _, devices)| devices_in_peer.iter().any(|device| devices.contains(device)))
-            .map(|(cluster_id, cluster_name, _)| {
-                let cluster_name = move || { cluster_name.to_string() };
-                let configurator_href = move || { format!("/clusters/{cluster_id}/configure/general") };
                 view! {
-                    <a href={ configurator_href }>{ cluster_name }</a>
+                    <a href=href>{cluster.name.to_string()}</a>
                 }
-            }).collect();
+            })
+            .collect::<Vec<_>>();
 
         let amount_clusters = cluster_view_list.len();
 
@@ -294,7 +285,7 @@ pub fn PeerConfigurator() -> impl IntoView {
             breadcrumbs=breadcrumbs
             controls=view! { <Controls configuration=user_peer_descriptor is_valid_peer_configuration=is_valid_peer_configuration.into() peer_state=peer_state.into() /> }
         >
-        <div> {cluster_columns} </div>
+        <div> {cluster_column} </div>
             <Suspense
                 fallback=LoadingSpinner // TODO: Display errors
             >
