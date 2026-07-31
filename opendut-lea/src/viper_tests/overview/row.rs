@@ -33,57 +33,87 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
         }
     );
 
-    let viper_source_descriptor = LocalResource::new(move || {
-        let mut carl = globals.client.clone();
-        let viper_source_id = viper_source_id.get();
+    let peer_id = create_read_slice(viper_test_run_descriptor,
+        |viper_test_run_descriptor| {
+            viper_test_run_descriptor.peer
+        }
+    );
 
-        async move {
-            carl.viper.get_viper_source_descriptor(viper_source_id).await
+    let viper_source_descriptor = LocalResource::new({
+        let carl = globals.client.clone();
+        move || {
+            let mut carl = carl.clone();
+            let viper_source_id = viper_source_id.get();
+
+            async move {
+                carl.viper.get_viper_source_descriptor(viper_source_id).await
                 .expect("Failed to request the viper source by id.")
+            }
+        }
+
+    });
+
+    let peer_descriptor = LocalResource::new({
+        let carl = globals.client.clone();
+        move || {
+            let mut carl = carl.clone();
+            let peer_id = peer_id.get();
+
+            async move {
+                carl.peers.get_peer_descriptor(peer_id).await
+                    .expect("Failed to request the peer by id.")
+            }
         }
     });
 
     let configurator_href = Signal::derive(move || { format!("/viper_tests/{}/configure/general", viper_test_id.get()) });
     let viper_source_configurator_href = move || { format!("/viper_sources/{}/configure/general", viper_source_id.get()) };
+    let peer_href = move || { format!("/peers/{}/configure/general", peer_id.get()) };
 
-    view! {
-        <ClickableOverviewTableRow configurator_href>
-            <OverviewTableCell>
-                <div class="is-flex is-justify-content-center">
-                    <DeployViperTestButton test_id=viper_test_id />
-                </div>
-            </OverviewTableCell>
-            <OverviewTableCell>
-                <a href=configurator_href> { viper_test_name } </a>
-            </OverviewTableCell>
-        
-            { move || Suspend::new(async move {
-                let viper_source = viper_source_descriptor.await;
-                let viper_source_name = viper_source.name.to_string();
-                view! {
-                    <OverviewTableCell>
-                        <a href=viper_source_configurator_href>
-                            { viper_source_name }
-                        </a>
-                    </OverviewTableCell>
-                }
-            })}
-        
-            <OverviewTableCell>
-                <div class="is-flex">
-                    <DuplicateViperTestButton
-                        viper_test_run_descriptor
-                        refetch_viper_tests
-                    />
-                    <div class="pl-2">
-                        <DeleteViperTestButton
-                            viper_test_id
-                            button_color=ButtonColor::TextDanger
-                            on_delete
-                        />
+    { move || Suspend::new(async move {
+        let viper_source = viper_source_descriptor.await;
+        let viper_source_name = viper_source.name.to_string();
+
+        let peer = peer_descriptor.await;
+        let peer_name = peer.name.to_string();
+
+        view! {
+            <ClickableOverviewTableRow configurator_href>
+                <OverviewTableCell>
+                    <div class="is-flex is-justify-content-center">
+                        <DeployViperTestButton test_id=viper_test_id />
                     </div>
-                </div>
-            </OverviewTableCell>
-        </ClickableOverviewTableRow>
-    }
+                </OverviewTableCell>
+                <OverviewTableCell>
+                    <a href=configurator_href> { viper_test_name } </a>
+                </OverviewTableCell>
+
+                <OverviewTableCell>
+                    <a href=viper_source_configurator_href>
+                        { viper_source_name }
+                    </a>
+                </OverviewTableCell>
+
+                <OverviewTableCell>
+                    <a href=peer_href> { peer_name } </a>
+                </OverviewTableCell>
+
+                <OverviewTableCell>
+                    <div class="is-flex">
+                        <DuplicateViperTestButton
+                            viper_test_run_descriptor
+                            refetch_viper_tests
+                        />
+                        <div class="pl-2">
+                            <DeleteViperTestButton
+                                viper_test_id
+                                button_color=ButtonColor::TextDanger
+                                on_delete
+                            />
+                        </div>
+                    </div>
+                </OverviewTableCell>
+            </ClickableOverviewTableRow>
+        }
+    })}
 }

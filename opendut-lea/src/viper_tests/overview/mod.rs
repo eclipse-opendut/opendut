@@ -44,6 +44,7 @@ pub fn ViperTestsOverview() -> impl IntoView {
         TableHeading::new(String::from("Deploy")).set_narrow(),
         TableHeading::new(String::from("Name")),
         TableHeading::new(String::from("VIPER Source")),
+        TableHeading::new(String::from("Run on Peer")),
         TableHeading::new(String::from("Action")).set_narrow(),
     ];
 
@@ -67,8 +68,8 @@ pub fn ViperTestsOverview() -> impl IntoView {
                 </div>
             }
         >
-        <OverviewTable headings=table_headings>
-            { move || Suspend::new(async move {
+            <OverviewTable headings=table_headings>
+                { move || Suspend::new(async move {
                     let viper_tests = viper_tests.await;
 
                     if viper_tests.is_empty() {
@@ -83,7 +84,6 @@ pub fn ViperTestsOverview() -> impl IntoView {
                                 each = move || viper_tests.clone()
                                 key = |viper_tests| viper_tests.id
                                 children = { move |viper_test_run_descriptor| {
-
                                     let on_delete = move || {
                                         refetch_viper_tests.notify();
                                     };
@@ -99,8 +99,7 @@ pub fn ViperTestsOverview() -> impl IntoView {
                             />
                         }.into_any()
                     }
-                })
-            }
+                })}
             </OverviewTable>
         </BasePageContainer>
     }
