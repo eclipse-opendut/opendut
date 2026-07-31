@@ -3,11 +3,11 @@ use std::sync::Arc;
 use leptos::prelude::*;
 use tracing::{debug, error};
 use opendut_carl_api::carl::ClientError;
-use opendut_carl_api::carl::cluster::StoreClusterDeploymentError;
+use opendut_carl_api::carl::cluster::{ListClusterPeerStatesResponse, StoreClusterDeploymentError};
 use opendut_lea_components::tooltip::Tooltip;
 use opendut_lea_components::{Toggle, ToggleState};
 use opendut_model::cluster::{ClusterDeployment, ClusterId};
-
+use opendut_model::peer::state::PeerMemberState;
 use crate::app::use_app_globals;
 use crate::clusters::IsDeployed;
 use crate::components::{Toast, use_toaster};
@@ -101,23 +101,88 @@ where
         }
     };
 
-    let tooltip_text = Signal::derive(move || {
-        if is_deployed.get().0 {
-            "Deployment requested".to_string()
-        } else {
-            "Undeployed".to_string()
-        }
-    });
+    let blocked_cluster_deployment_error_message = {
+        let carl = globals.client.clone();
+        let cluster_id = cluster_id.get();
 
-    view! {
-        <Tooltip text=tooltip_text>
-            <Toggle
-                is_active=Signal::derive(move || is_deployed.get().0)
-                state=ToggleState::Enabled
-                on_action=move || {
-                    if is_deployed.get().0 { on_undeploy() } else { on_deploy() }
+        LocalResource::new(move || {
+            let mut carl = carl.clone();
+            async move {
+                let state = carl.cluster.list_cluster_peer_states(cluster_id).await
+                    .expect("Failed to request the list of cluster's peer state.");
+                match state {
+                    ListClusterPeerStatesResponse::Success { peer_states } => {
+                        let invalid_peers = peer_states
+                            .iter()
+                            .filter(|(_, peer_state)| {
+                                matches!(&peer_state.member, PeerMemberState::Blocked { .. })
+                            })
+                            .map(|(peer_id, _)| peer_id.to_string())
+                            .collect::<Vec<_>>();
+
+                        if invalid_peers.is_empty() {
+                            None
+                        } else {
+                            let amount_of_used_peers = invalid_peers.len();
+                            let display_amount = if amount_of_used_peers > 1 {
+                                format!("{amount_of_used_peers} Peers are")
+                            } else {
+                                format!("{amount_of_used_peers} Peer is")
+                            };
+                            Some(format!(
+                                "Failed to store cluster deployment! \n{display_amount} already in use: {}",
+                                invalid_peers.join(", ")
+                            ))
+                        }
+                    }
+                    ListClusterPeerStatesResponse::Failure { message } => {
+                        Some(message)
+                    }
                 }
-            />
-        </Tooltip>
-    }
+            }
+        })
+    };
+
+    Suspend::new(async move {
+        let error_message = blocked_cluster_deployment_error_message.await;
+
+        let is_deployed = Signal::derive(move || is_deployed.get().0);
+        let show_error = Signal::derive({
+            let error_message = error_message.clone();
+            move || error_message.is_some() && !is_deployed.get()
+        });
+
+        let tooltip_text = Signal::derive(move || {
+            if let Some(error_message) = error_message.as_ref()
+                && show_error.get() {
+                    String::from(error_message)
+            }
+            else if is_deployed.get() {
+                String::from("Deployment requested")
+            }
+            else {
+                String::from("Undeployed".to_string())
+            }
+        });
+
+        let toggle_state = Signal::derive(move || {
+            if show_error.get() {
+                ToggleState::Disabled
+            } else {
+                ToggleState::Enabled
+            }
+        });
+
+        view! {
+            <Tooltip text=tooltip_text>
+                <Toggle
+                    is_active=is_deployed
+                    state=toggle_state
+                    on_action=move || {
+                        if is_deployed.get() { on_undeploy() } else { on_deploy() }
+                    }
+                />
+            </Tooltip>
+        }
+    })
 }
