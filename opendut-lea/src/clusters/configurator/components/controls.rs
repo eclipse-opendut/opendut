@@ -40,16 +40,15 @@ where
 
     view! {
         <div class="is-flex is-align-items-center">
-            <div class=("is-hidden", move || is_new_cluster.get())>
+            <div class="is-flex is-align-items-center">
                 <DeployToggle
                     cluster_id
+                    is_new_cluster
                     is_deployed=deployed_signal
                     on_deployment_changed
                 />
             </div>
-            <div class=("is-hidden", move || is_new_cluster.get())>
-                <div class="px-2" />
-            </div>
+            <div class="px-2" />
             <ClusterHealth state=cluster_state />
             <div class="px-2" />
             <SaveClusterButton

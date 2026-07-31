@@ -1,6 +1,8 @@
 use leptos::prelude::*;
 
+#[derive(Default)]
 pub enum TooltipDirection {
+    #[default]
     Left,
     Right,
     Up,
@@ -21,7 +23,7 @@ impl TooltipDirection {
 #[component]
 pub fn Tooltip(
     #[prop(into)] text: Signal<String>,
-    #[prop(into, default=Signal::from(TooltipDirection::Left))] direction: Signal<TooltipDirection>,
+    #[prop(into, optional)] direction: Signal<TooltipDirection>,
     #[prop(into, default=Signal::from(false))] is_hidden: Signal<bool>,
     children: Children
 ) -> impl IntoView {

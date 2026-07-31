@@ -15,6 +15,7 @@ use crate::components::{Toast, use_toaster};
 #[component]
 pub fn DeployToggle<OnDeploymentChanged>(
     #[prop(into)] cluster_id: Signal<ClusterId>,
+    #[prop(into, default=Signal::from(false))] is_new_cluster: Signal<bool>,
     #[prop(into)] is_deployed: Signal<IsDeployed>,
     on_deployment_changed: OnDeploymentChanged,
 ) -> impl IntoView
@@ -103,11 +104,17 @@ where
 
     let blocked_cluster_deployment_error_message = {
         let carl = globals.client.clone();
-        let cluster_id = cluster_id.get();
+        let cluster_id = cluster_id.get_untracked();
 
         LocalResource::new(move || {
             let mut carl = carl.clone();
+
             async move {
+
+                if is_new_cluster.get() {
+                    return None;
+                }
+
                 let state = carl.cluster.list_cluster_peer_states(cluster_id).await
                     .expect("Failed to request the list of cluster's peer state.");
                 match state {
@@ -153,7 +160,10 @@ where
         });
 
         let tooltip_text = Signal::derive(move || {
-            if let Some(error_message) = error_message.as_ref()
+            if is_new_cluster.get() {
+                String::from("Save the cluster first.")
+            }
+            else if let Some(error_message) = error_message.as_ref()
                 && show_error.get() {
                     String::from(error_message)
             }
@@ -161,12 +171,12 @@ where
                 String::from("Deployment requested")
             }
             else {
-                String::from("Undeployed".to_string())
+                String::from("Undeployed")
             }
         });
 
         let toggle_state = Signal::derive(move || {
-            if show_error.get() {
+            if show_error.get() || is_new_cluster.get() {
                 ToggleState::Disabled
             } else {
                 ToggleState::Enabled
