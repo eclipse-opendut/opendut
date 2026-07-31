@@ -108,10 +108,11 @@ where
 
         LocalResource::new(move || {
             let mut carl = carl.clone();
+            let is_new_cluster = is_new_cluster.get();
+            let _ = is_deployed.get();
 
             async move {
-
-                if is_new_cluster.get() {
+                if is_new_cluster {
                     return None;
                 }
 
@@ -150,49 +151,51 @@ where
         })
     };
 
-    Suspend::new(async move {
-        let error_message = blocked_cluster_deployment_error_message.await;
+    move || {
+        let on_deploy = on_deploy.clone();
+        let on_undeploy = on_undeploy.clone();
 
-        let is_deployed = Signal::derive(move || is_deployed.get().0);
-        let show_error = Signal::derive({
-            let error_message = error_message.clone();
-            move || error_message.is_some() && !is_deployed.get()
-        });
+        Suspend::new(async move {
+            let error_message = blocked_cluster_deployment_error_message.await;
 
-        let tooltip_text = Signal::derive(move || {
-            if is_new_cluster.get() {
-                String::from("Save the cluster first.")
-            }
-            else if let Some(error_message) = error_message.as_ref()
-                && show_error.get() {
+            let is_deployed = Signal::derive(move || is_deployed.get().0);
+            let show_error = Signal::derive({
+                let error_message = error_message.clone();
+                move || error_message.is_some() && !is_deployed.get()
+            });
+
+            let tooltip_text = Signal::derive(move || {
+                if is_new_cluster.get() {
+                    String::from("Save the cluster first.")
+                } else if let Some(error_message) = error_message.as_ref()
+                    && show_error.get() {
                     String::from(error_message)
-            }
-            else if is_deployed.get() {
-                String::from("Deployment requested")
-            }
-            else {
-                String::from("Undeployed")
-            }
-        });
+                } else if is_deployed.get() {
+                    String::from("Deployment requested")
+                } else {
+                    String::from("Undeployed")
+                }
+            });
 
-        let toggle_state = Signal::derive(move || {
-            if show_error.get() || is_new_cluster.get() {
-                ToggleState::Disabled
-            } else {
-                ToggleState::Enabled
-            }
-        });
+            let toggle_state = Signal::derive(move || {
+                if show_error.get() || is_new_cluster.get() {
+                    ToggleState::Disabled
+                } else {
+                    ToggleState::Enabled
+                }
+            });
 
-        view! {
-            <Tooltip text=tooltip_text>
-                <Toggle
-                    is_active=is_deployed
-                    state=toggle_state
-                    on_action=move || {
-                        if is_deployed.get() { on_undeploy() } else { on_deploy() }
-                    }
-                />
-            </Tooltip>
-        }
-    })
+            view! {
+                <Tooltip text=tooltip_text>
+                    <Toggle
+                        is_active=is_deployed
+                        state=toggle_state
+                        on_action=move || {
+                            if is_deployed.get() { on_undeploy() } else { on_deploy() }
+                        }
+                    />
+                </Tooltip>
+            }
+        })
+    }
 }
