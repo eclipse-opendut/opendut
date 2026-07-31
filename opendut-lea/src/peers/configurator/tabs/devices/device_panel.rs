@@ -34,7 +34,6 @@ where
                     <ReadOnlyInput label="ID" value=device_id_string />
                     <DeviceNameInput device_configuration />
                     <DeviceInterfaceInput user_peer_descriptor device_configuration />
-                    <DeviceInterfaceInput user_peer_descriptor device_configuration />
                     <DeviceTagInput device_configuration />
                     <DeviceDescriptionInput device_configuration />
                 </div>
