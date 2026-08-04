@@ -2,6 +2,7 @@ use crate::resource::manager::error::PersistenceError;
 use crate::settings::vpn::Vpn;
 use opendut_auth::registration::client::RegistrationClientRef;
 use opendut_auth::registration::resources::UserId;
+use opendut_auth::types::SCOPE_EDGE_API;
 use opendut_model::peer::{PeerDescriptor, PeerId, PeerName, PeerSetup};
 use opendut_model::util::net::{AuthConfig, Certificate};
 use opendut_model::vpn::VpnPeerConfiguration;
@@ -57,6 +58,16 @@ impl Resources<'_> {
                     .await
                     .map_err(|cause| GeneratePeerSetupError::Internal { peer_id, peer_name: Clone::clone(&peer_name), cause: cause.to_string() })?;
                 debug!("Successfully generated peer setup for peer '{peer_name}' <{peer_id}>. OIDC client_id='{}'.", client_credentials.client_id.clone().value());
+
+                // Assign edge API scope to the EDGAR client
+                let keycloak_client_uuid = registration_client.find_client_uuid(&client_credentials.client_id.clone().value())
+                    .await
+                    .map_err(|cause| GeneratePeerSetupError::Internal { peer_id, peer_name: Clone::clone(&peer_name), cause: cause.to_string() })?;
+                registration_client.assign_scope_to_client(&keycloak_client_uuid, SCOPE_EDGE_API)
+                    .await
+                    .map_err(|cause| GeneratePeerSetupError::Internal { peer_id, peer_name: Clone::clone(&peer_name), cause: cause.to_string() })?;
+                debug!("Assigned scope '{SCOPE_EDGE_API}' to EDGAR client for peer '{peer_name}' <{peer_id}>.");
+
                 AuthConfig::from_credentials(issuer_url, client_credentials)
             }
         };

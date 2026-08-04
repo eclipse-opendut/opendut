@@ -19,7 +19,11 @@ pub enum GrpcAuthenticationLayer {
 }
 
 impl GrpcAuthenticationLayer {
-    pub async fn auth_interceptor(self, mut request: tonic::Request<()>, reqwest_client: reqwest::Client) -> anyhow::Result<tonic::Request<()>, Status> {
+    /// Authenticate and authorize a gRPC request, enforcing the given `required_scope`.
+    ///
+    /// Each router group (edge vs admin) calls this with the scope it requires,
+    /// so no runtime path detection is needed.
+    pub async fn auth_interceptor(self, mut request: tonic::Request<()>, reqwest_client: reqwest::Client, required_scope: &'static str) -> anyhow::Result<tonic::Request<()>, Status> {
 
         match self {
             GrpcAuthenticationLayer::AuthDisabled => {
@@ -38,6 +42,13 @@ impl GrpcAuthenticationLayer {
 
                 match authorize_current_user(auth_header, issuer_url, issuer_remote_url, cache, reqwest_client).await {
                     Ok(user) => {
+                        if !user.claims.additional_claims().has_scope(required_scope) {
+                            debug!("Blocking request: missing required scope '{required_scope}'");
+                            return Err(Status::permission_denied(
+                                format!("CARL says, missing required scope: {required_scope}")
+                            ));
+                        }
+
                         request.extensions_mut().insert(user);
                         Ok(request)
                     }
