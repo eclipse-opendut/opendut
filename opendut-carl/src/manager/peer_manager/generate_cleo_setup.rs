@@ -1,5 +1,6 @@
 use opendut_auth::registration::client::RegistrationClientRef;
 use opendut_auth::registration::resources::UserId;
+use opendut_auth::types::SCOPE_ADMIN_API;
 use opendut_model::cleo::{CleoId, CleoSetup};
 use opendut_model::util::net::{AuthConfig, Certificate};
 use tracing::debug;
@@ -32,6 +33,16 @@ pub async fn generate_cleo_setup(params: GenerateCleoSetupParams) -> Result<Cleo
                 .await
                 .map_err(|cause| GenerateCleoSetupError::Internal { cause: cause.to_string() })?;
             debug!("Successfully generated CLEO setup with id <{cleo_id}>. OIDC client_id='{}'.", client_credentials.client_id.clone().value());
+
+            // Assign admin API scope to the CLEO client
+            let keycloak_client_uuid = registration_client.find_client_uuid(&client_credentials.client_id.clone().value())
+                .await
+                .map_err(|cause| GenerateCleoSetupError::Internal { cause: cause.to_string() })?;
+            registration_client.assign_scope_to_client(&keycloak_client_uuid, SCOPE_ADMIN_API)
+                .await
+                .map_err(|cause| GenerateCleoSetupError::Internal { cause: cause.to_string() })?;
+            debug!("Assigned scope '{SCOPE_ADMIN_API}' to CLEO client <{cleo_id}>.");
+
             AuthConfig::from_credentials(issuer_url, client_credentials)
         }
     };

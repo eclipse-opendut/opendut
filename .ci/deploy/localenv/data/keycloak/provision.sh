@@ -59,6 +59,15 @@ main() {
   create_secret_client "opendut-cleo-client" "$OPENDUT_CLEO_NETWORK_OIDC_CLIENT_SECRET" "$REALM_OPENDUT"
   create_secret_client "opendut-edgar-client" "$OPENDUT_EDGAR_NETWORK_OIDC_CLIENT_SECRET" "$REALM_OPENDUT"
 
+  # Create API access scopes for authorization
+  create_client_scope "opendut-admin-api" "none" "$REALM_OPENDUT"
+  create_client_scope "opendut-edge-api" "none" "$REALM_OPENDUT"
+
+  # Assign API scopes to clients
+  add_client_scope_to_client "opendut-lea-client" "opendut-admin-api" "$REALM_OPENDUT"
+  add_client_scope_to_client "opendut-cleo-client" "opendut-admin-api" "$REALM_OPENDUT"
+  add_client_scope_to_client "opendut-edgar-client" "opendut-edge-api" "$REALM_OPENDUT"
+
   # Create keycloak client privileges for openDuT-CARL
   create_realm_role carl-admin "$REALM_OPENDUT"
   # Add role carl-admin to client opendut-carl-client
