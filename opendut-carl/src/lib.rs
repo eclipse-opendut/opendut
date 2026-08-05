@@ -152,31 +152,26 @@ async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::
 
         let reqwest_client = reqwest_client::oidc::create_from_config(&settings)?;
 
-        // All services in one Routes builder — scope is enforced inside the interceptor
-        // by inspecting the gRPC path prefix to determine edge vs admin API.
         let mut routes_builder = Routes::builder();
         routes_builder
-            .add_service(grpc_facades.peer_messaging_broker_facade.into_grpc_service())
             .add_service(grpc_facades.cluster_manager_facade.into_grpc_service())
             .add_service(grpc_facades.metadata_provider_facade.into_grpc_service())
             .add_service(grpc_facades.peer_manager_facade.into_grpc_service())
+            .add_service(grpc_facades.peer_messaging_broker_facade.into_grpc_service())
             .add_service(grpc_facades.observer_messaging_broker_facade.into_grpc_service());
 
         #[cfg(feature = "viper")]
         routes_builder.add_service(grpc_facades.viper_manager_facade.into_grpc_service());
 
+        let reqwest_client = reqwest_client::oidc::create_from_config(&settings)?;
         routes_builder
             .routes()
             .into_axum_router()
             .layer(async_interceptor(move |request: tonic::Request<()>| {
-                // Determine required scope from the gRPC path pseudo-header:
-                //   /opendut.PeerMessagingBroker/... → edge API
-                //   everything else                  → admin API
                 let is_edge = request
-                    .metadata()
-                    .get(":path")
-                    .and_then(|v| v.to_str().ok())
-                    .map(|p| p.starts_with("/opendut.carl.services.peer_messaging_broker.PeerMessagingBroker"))
+                    .extensions()
+                    .get::<axum::extract::OriginalUri>()
+                    .map(|u| u.path().contains("PeerMessagingBroker"))
                     .unwrap_or(false);
                 let required_scope = if is_edge {
                     opendut_auth::types::SCOPE_EDGE_API
