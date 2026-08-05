@@ -317,8 +317,8 @@ impl Clients {
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Client {
-    pub id: String,           // Keycloak's internal UUID — used in admin API paths
-    pub client_id: String,    // OAuth client ID (e.g. "opendut-edgar-client")
+    pub id: String,
+    pub client_id: String,
     base_url: Option<String>,
 }
 

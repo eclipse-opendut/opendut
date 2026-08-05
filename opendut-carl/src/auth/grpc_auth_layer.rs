@@ -19,10 +19,6 @@ pub enum GrpcAuthenticationLayer {
 }
 
 impl GrpcAuthenticationLayer {
-    /// Authenticate and authorize a gRPC request, enforcing the given `required_scope`.
-    ///
-    /// Each router group (edge vs admin) calls this with the scope it requires,
-    /// so no runtime path detection is needed.
     pub async fn auth_interceptor(self, mut request: tonic::Request<()>, reqwest_client: reqwest::Client, required_scope: &'static str) -> anyhow::Result<tonic::Request<()>, Status> {
 
         match self {
