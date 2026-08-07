@@ -5,10 +5,10 @@ use crate::components::{UserInput, UserInputValue};
 use crate::viper_tests::configurator::types::UserViperTestRunDescriptor;
 
 #[component]
-pub fn ViperTestNameInput(viper_test_run_descriptor: RwSignal<UserViperTestRunDescriptor>) -> impl IntoView {
+pub fn ViperTestNameInput(user_test_run_descriptor: RwSignal<UserViperTestRunDescriptor>) -> impl IntoView {
 
     let (getter, setter) = create_slice(
-        viper_test_run_descriptor,
+        user_test_run_descriptor,
         |config| {
             Clone::clone(&config.name)
         },

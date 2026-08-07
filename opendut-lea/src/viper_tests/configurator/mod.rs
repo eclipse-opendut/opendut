@@ -44,7 +44,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
         }
     };
 
-    let viper_test_run_descriptor = RwSignal::new(
+    let user_test_run_descriptor = RwSignal::new(
         UserViperTestRunDescriptor {
             id: viper_test_id,
             name: UserInputValue::Left(UserInputError::from("Enter a valid VIPER test name.")),
@@ -61,7 +61,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
             let mut carl = carl.clone();
             async move {
                 if let Ok(descriptor) = carl.viper.get_viper_test_run_descriptor(viper_test_id).await {
-                    viper_test_run_descriptor.update(|user_configuration| {
+                    user_test_run_descriptor.update(|user_configuration| {
                         let ViperTestRunDescriptor { id: _, name, source: viper_source, peer, parameters } = descriptor;
 
                         user_configuration.name = UserInputValue::Right(name.value().to_owned());
@@ -85,7 +85,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
     };
 
     let viper_source = create_read_slice(
-        viper_test_run_descriptor,
+        user_test_run_descriptor,
         |descriptor| Clone::clone(&descriptor.viper_source),
     );
 
@@ -107,7 +107,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
 
                     match result {
                         Ok(test_suite_descriptor) => {
-                            viper_test_run_descriptor.update(|user_configuration| {
+                            user_test_run_descriptor.update(|user_configuration| {
                                 let mut new_parameters: HashMap<ViperParameterName, ViperBindingValueInput> = HashMap::new();
 
                                 for parameter in test_suite_descriptor.parameters.iter() {
@@ -155,11 +155,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
         })
     };
 
-    let is_valid_configuration = Memo::new(move |_| {
-        viper_test_run_descriptor.with(|config| config.is_valid())
-    });
-
-    let viper_test_id_string = create_read_slice(viper_test_run_descriptor, |config| config.id.to_string());
+    let viper_test_id_string = create_read_slice(user_test_run_descriptor, |config| config.id.to_string());
 
     let breadcrumbs = Signal::derive(move || {
         let viper_test_id = viper_test_id_string.get();
@@ -172,7 +168,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
     });
 
     let subtitle = Signal::derive(move || {
-        if let UserInputValue::Right(name) = viper_test_run_descriptor.get().name {
+        if let UserInputValue::Right(name) = user_test_run_descriptor.get().name {
             name
         } else {
             String::new()
@@ -184,22 +180,22 @@ pub fn ViperTestConfigurator() -> impl IntoView {
             Tab::from_title_and_href(
                 String::from("General"),
                 TabIdentifier::General.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || !viper_test_run_descriptor.read().valid_general_tab())),
+            ).with_is_error(Signal::derive(move || !user_test_run_descriptor.read().valid_general_tab())),
 
             Tab::from_title_and_href(
                 String::from("VIPER Source"),
                 TabIdentifier::ViperSource.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || !viper_test_run_descriptor.read().valid_viper_source_tab())),
+            ).with_is_error(Signal::derive(move || !user_test_run_descriptor.read().valid_viper_source_tab())),
 
             Tab::from_title_and_href(
                 String::from("Parameters"),
                 TabIdentifier::Parameters.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || !viper_test_run_descriptor.read().valid_parameters_tab())),
+            ).with_is_error(Signal::derive(move || !user_test_run_descriptor.read().valid_parameters_tab())),
 
             Tab::from_title_and_href(
                 String::from("Peer"),
                 TabIdentifier::Peer.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || !viper_test_run_descriptor.read().valid_peer_tab())),
+            ).with_is_error(Signal::derive(move || !user_test_run_descriptor.read().valid_peer_tab())),
         ]
     });
     
@@ -208,7 +204,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
             title="Configure VIPER Test"
             subtitle
             breadcrumbs
-            controls=view! { <Controls configuration=viper_test_run_descriptor is_valid_configuration /> }
+            controls=view! { <Controls user_test_run_descriptor /> }
         >
             <Suspense
                 fallback=move || view! { <LoadingSpinner /> }
@@ -220,10 +216,10 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                         view! {
                             <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
                                 { move || match active_tab.get() {
-                                    TabIdentifier::General => view! { <GeneralTab viper_test_run_descriptor /> }.into_any(),
-                                    TabIdentifier::ViperSource => view! { <SourceTab viper_test_run_descriptor /> }.into_any(),
-                                    TabIdentifier::Parameters => view! { <ParametersTab viper_test_run_descriptor parameter_result=parameter_result.clone() /> }.into_any(),
-                                    TabIdentifier::Peer => view! { <PeerTab viper_test_run_descriptor /> }.into_any()
+                                    TabIdentifier::General => view! { <GeneralTab user_test_run_descriptor /> }.into_any(),
+                                    TabIdentifier::ViperSource => view! { <SourceTab user_test_run_descriptor /> }.into_any(),
+                                    TabIdentifier::Parameters => view! { <ParametersTab user_test_run_descriptor parameter_result=parameter_result.clone() /> }.into_any(),
+                                    TabIdentifier::Peer => view! { <PeerTab user_test_run_descriptor /> }.into_any()
                                 }}
                             </Tabs>
                         }

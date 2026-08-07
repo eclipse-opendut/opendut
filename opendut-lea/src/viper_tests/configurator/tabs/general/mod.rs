@@ -6,9 +6,9 @@ use crate::viper_tests::configurator::types::UserViperTestRunDescriptor;
 pub mod name_input;
 
 #[component]
-pub fn GeneralTab(viper_test_run_descriptor: RwSignal<UserViperTestRunDescriptor>) -> impl IntoView {
+pub fn GeneralTab(user_test_run_descriptor: RwSignal<UserViperTestRunDescriptor>) -> impl IntoView {
 
-    let test_id = Signal::derive(move || viper_test_run_descriptor.get().id.to_string());
+    let test_id = Signal::derive(move || user_test_run_descriptor.get().id.to_string());
 
     view! {
         <div>
@@ -17,7 +17,7 @@ pub fn GeneralTab(viper_test_run_descriptor: RwSignal<UserViperTestRunDescriptor
                 value=test_id
             />
             <ViperTestNameInput
-                viper_test_run_descriptor
+                user_test_run_descriptor
             />
         </div>
     }

@@ -13,7 +13,7 @@ use crate::viper_tests::configurator::types::{UserViperTestRunDescriptor, ViperB
 
 #[component]
 pub fn ParametersTab(
-    viper_test_run_descriptor: RwSignal<UserViperTestRunDescriptor>,
+    user_test_run_descriptor: RwSignal<UserViperTestRunDescriptor>,
     parameter_result: Result<ViperParameterDescriptors, SourceFetchError>,
 ) -> impl IntoView {
 
@@ -25,7 +25,7 @@ pub fn ParametersTab(
                     key=|parameter_descriptor| Clone::clone(parameter_descriptor.name())
                     children=move |parameter_descriptor| {
 
-                        let (test_run_getter, test_run_setter) = viper_test_run_descriptor.split();
+                        let (test_run_getter, test_run_setter) = user_test_run_descriptor.split();
 
                         let test_run_getter = {
                             let parameter_descriptor = Clone::clone(&parameter_descriptor);

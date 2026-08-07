@@ -5,7 +5,7 @@ use crate::app::use_app_globals;
 use crate::viper_tests::configurator::types::{SourceSelection, UserViperTestRunDescriptor};
 
 #[component]
-pub fn ViperTestSourceSelector(viper_test_run_descriptor: RwSignal<UserViperTestRunDescriptor>) -> impl IntoView {
+pub fn ViperTestSourceSelector(user_test_run_descriptor: RwSignal<UserViperTestRunDescriptor>) -> impl IntoView {
 
     let globals = use_app_globals();
 
@@ -21,7 +21,7 @@ pub fn ViperTestSourceSelector(viper_test_run_descriptor: RwSignal<UserViperTest
         })
     };
 
-    let (getter, setter) = create_slice(viper_test_run_descriptor,
+    let (getter, setter) = create_slice(user_test_run_descriptor,
         |config| {
             Clone::clone(&config.viper_source)
         },

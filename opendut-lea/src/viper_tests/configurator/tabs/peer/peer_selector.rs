@@ -6,7 +6,7 @@ use crate::util;
 use crate::viper_tests::configurator::types::{PeerSelection, UserViperTestRunDescriptor};
 
 #[component]
-pub fn PeerSelector(viper_test_run_descriptor: RwSignal<UserViperTestRunDescriptor>) -> impl IntoView {
+pub fn PeerSelector(user_test_run_descriptor: RwSignal<UserViperTestRunDescriptor>) -> impl IntoView {
 
     let globals = use_app_globals();
 
@@ -26,11 +26,11 @@ pub fn PeerSelector(viper_test_run_descriptor: RwSignal<UserViperTestRunDescript
         })
     };
 
-    let (getter, setter) = create_slice(viper_test_run_descriptor,
-        |config| {
+    let (getter, setter) = create_slice(user_test_run_descriptor,
+                                        |config| {
             Clone::clone(&config.peer)
         },
-        |config, input| {
+                                        |config, input| {
             config.peer = input;
         }
     );
