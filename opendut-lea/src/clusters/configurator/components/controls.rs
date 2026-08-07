@@ -144,9 +144,15 @@ fn SaveClusterButton(
         !deployed_signal.get().0
     });
 
+    let tooltip_content = Box::new(move || {
+        view! {
+            Cluster can not be updated while it is deployed.
+        }.into_any()
+    });
+
     view! {
         <Tooltip
-            text="Cluster can not be updated while it is deployed."
+            text=tooltip_content
             direction=TooltipDirection::Right
             is_hidden=hide_tooltip
         >

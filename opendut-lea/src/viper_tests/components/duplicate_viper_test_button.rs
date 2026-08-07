@@ -63,8 +63,14 @@ pub fn DuplicateViperTestButton(
         })
     };
 
+    let tooltip_content = Box::new(move || {
+        view! {
+            Duplicate Test Run.
+        }.into_any()
+    });
+
     view! {
-        <Tooltip text="Duplicate Test Run" direction=TooltipDirection::Right>
+        <Tooltip text=tooltip_content direction=TooltipDirection::Right>
             <IconButton
                 icon=FontAwesomeIcon::Duplicate
                 color=ButtonColor::White

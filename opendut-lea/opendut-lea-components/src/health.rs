@@ -17,7 +17,7 @@ pub enum StateKind {
 #[component]
 pub fn Health(state: Signal<State>) -> impl IntoView {
 
-    let classes = move || state.with(|state| {
+    let health_class = move || state.with(|state| {
         match state.kind {
             StateKind::Unknown => "health-light",
             StateKind::Red => "health-light red",
@@ -26,14 +26,21 @@ pub fn Health(state: Signal<State>) -> impl IntoView {
         }
     });
 
-    let tool_tip_text = Signal::derive(move || state.with(|state| {
+    let tooltip_text = Signal::derive(move || state.with(|state| {
         Clone::clone(&state.text)
     }));
+    
+    let tooltip_content = Box::new(move || {
+        view! {
+            <p> { tooltip_text } </p>
+
+        }.into_any()
+    });
 
     view! {
         <div class="is-flex is-justify-content-center">
-            <Tooltip text=tool_tip_text>
-                <div class=classes />
+            <Tooltip text=tooltip_content>
+                <div class=health_class />
             </Tooltip>
         </div>
     }
