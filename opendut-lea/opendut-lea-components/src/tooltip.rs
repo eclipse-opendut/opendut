@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 
-#[derive(Default)]
+#[derive(Default, Clone, Copy)]
 pub enum TooltipDirection {
     #[default]
     Left,

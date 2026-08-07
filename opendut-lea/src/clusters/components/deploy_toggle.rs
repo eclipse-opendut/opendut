@@ -4,7 +4,7 @@ use leptos::prelude::*;
 use tracing::{debug, error};
 use opendut_carl_api::carl::ClientError;
 use opendut_carl_api::carl::cluster::{ListClusterPeerStatesResponse, StoreClusterDeploymentError};
-use opendut_lea_components::tooltip::Tooltip;
+use opendut_lea_components::tooltip::{Tooltip, TooltipDirection};
 use opendut_lea_components::{Toggle, ToggleState};
 use opendut_model::cluster::{ClusterDeployment, ClusterId};
 use opendut_model::peer::state::PeerMemberState;
@@ -18,6 +18,7 @@ pub fn DeployToggle<OnDeploymentChanged>(
     #[prop(into, default=Signal::from(false))] is_new_cluster: Signal<bool>,
     #[prop(into)] is_deployed: Signal<IsDeployed>,
     on_deployment_changed: OnDeploymentChanged,
+    #[prop(optional)] tooltip_direction: TooltipDirection,
 ) -> impl IntoView
 where
     OnDeploymentChanged: Fn() + Clone + Send + 'static,
@@ -192,7 +193,7 @@ where
             });
 
             view! {
-                <Tooltip text=tooltip_content>
+                <Tooltip text=tooltip_content direction=tooltip_direction>
                     <Toggle
                         is_active=is_deployed
                         state=toggle_state
