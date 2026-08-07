@@ -4,9 +4,9 @@ use crate::components::{UserInput, UserInputValue};
 use crate::viper_sources::configurator::types::UserViperSourceConfiguration;
 
 #[component]
-pub fn ViperSourceUrlInput(viper_source_configuration: RwSignal<UserViperSourceConfiguration>) -> impl IntoView {
+pub fn ViperSourceUrlInput(user_source_descriptor: RwSignal<UserViperSourceConfiguration>) -> impl IntoView {
 
-    let (getter, setter) = create_slice(viper_source_configuration,
+    let (getter, setter) = create_slice(user_source_descriptor,
         |config| {
             Clone::clone(&config.url)
         },

@@ -20,65 +20,53 @@ pub fn ViperSourceConfigurator() -> impl IntoView {
     let params = use_params_map();
     let active_tab = use_active_tab::<TabIdentifier>();
     
-    let (viper_source_configuration, viper_source_configuration_resource, is_valid_configuration) = {
-        let viper_source_id = {
-            let viper_source_id = params.with_untracked(|params| {
-                params.get("id").and_then(|id| ViperSourceId::try_from(id.as_str()).ok())
-            });
-            match viper_source_id {
-                None => {
-                    let use_navigate = use_navigate();
-                    navigate_to(WellKnownRoutes::ErrorPage {
-                        title: String::from("Invalid ViperSourceId"),
-                        text: String::from("Could not parse the provided value as ViperSourceId!"),
-                        details: None,
-                    }, use_navigate);
-                    ViperSourceId::random()
-                }
-                Some(viper_source_id) => {
-                    viper_source_id
-                }
-            }
-        };
-
-        let viper_source_configuration = RwSignal::new(
-            UserViperSourceConfiguration {
-                id: viper_source_id,
-                name: UserInputValue::Left(UserInputError::from("Enter a valid VIPER source name.")),
-                url: UserInputValue::Left(UserInputError::from("Enter a valid VIPER source url.")),
-                kind: UserInputValue::Left(UserInputError::from("Select source kind")),
-                is_new: true,
-            }
-        );
-
-        let viper_source_configuration_resource = LocalResource::new(move || {
-            let mut carl = globals.client.clone();
-            async move {
-                if let Ok(configuration) = carl.viper.get_viper_source_descriptor(viper_source_id).await {
-                    viper_source_configuration.update(|user_configuration| {
-                        user_configuration.name = UserInputValue::Right(configuration.name.to_string());
-                        user_configuration.url = UserInputValue::Right(configuration.url.to_string());
-                        user_configuration.kind = UserInputValue::Right(match configuration.kind {
-                            opendut_model::viper::ViperSourceKind::Git => String::from("Git"),
-                            opendut_model::viper::ViperSourceKind::Http => String::from("HTTP"),
-                        });
-                    })
-                }
-            }
+    let viper_source_id = {
+        let viper_source_id = params.with_untracked(|params| {
+            params.get("id").and_then(|id| ViperSourceId::try_from(id.as_str()).ok())
         });
-
-        let is_valid_configuration = Memo::new(move |_| {
-            viper_source_configuration.with(|source_configuration| {
-                source_configuration.name.is_right()
-                && source_configuration.url.is_right()
-                && source_configuration.kind.is_right()
-            })
-        });
-
-        (viper_source_configuration, viper_source_configuration_resource, is_valid_configuration)
+        match viper_source_id {
+            None => {
+                let use_navigate = use_navigate();
+                navigate_to(WellKnownRoutes::ErrorPage {
+                    title: String::from("Invalid ViperSourceId"),
+                    text: String::from("Could not parse the provided value as ViperSourceId!"),
+                    details: None,
+                }, use_navigate);
+                ViperSourceId::random()
+            }
+            Some(viper_source_id) => {
+                viper_source_id
+            }
+        }
     };
 
-    let viper_source_id_string = create_read_slice(viper_source_configuration, |config| config.id.to_string());
+    let user_source_descriptor = RwSignal::new(
+        UserViperSourceConfiguration {
+            id: viper_source_id,
+            name: UserInputValue::Left(UserInputError::from("Enter a valid VIPER source name.")),
+            url: UserInputValue::Left(UserInputError::from("Enter a valid VIPER source url.")),
+            kind: UserInputValue::Left(UserInputError::from("Select source kind")),
+            is_new: true,
+        }
+    );
+
+    let viper_source_descriptor_resource = LocalResource::new(move || {
+        let mut carl = globals.client.clone();
+        async move {
+            if let Ok(configuration) = carl.viper.get_viper_source_descriptor(viper_source_id).await {
+                user_source_descriptor.update(|user_configuration| {
+                    user_configuration.name = UserInputValue::Right(configuration.name.to_string());
+                    user_configuration.url = UserInputValue::Right(configuration.url.to_string());
+                    user_configuration.kind = UserInputValue::Right(match configuration.kind {
+                        opendut_model::viper::ViperSourceKind::Git => String::from("Git"),
+                        opendut_model::viper::ViperSourceKind::Http => String::from("HTTP"),
+                    });
+                })
+            }
+        }
+    });
+
+    let viper_source_id_string = create_read_slice(user_source_descriptor, |config| config.id.to_string());
 
     let breadcrumbs = Signal::derive(move || {
         let viper_source_id = viper_source_id_string.get();
@@ -91,7 +79,7 @@ pub fn ViperSourceConfigurator() -> impl IntoView {
     });
 
     let subtitle = Signal::derive(move || {
-        if let UserInputValue::Right(name) = viper_source_configuration.get().name {
+        if let UserInputValue::Right(name) = user_source_descriptor.get().name {
             name
         } else {
             String::new()
@@ -103,7 +91,7 @@ pub fn ViperSourceConfigurator() -> impl IntoView {
             Tab::from_title_and_href(
                 String::from("General"),
                 TabIdentifier::General.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || !viper_source_configuration.read().is_valid())),
+            ).with_is_error(Signal::derive(move || !user_source_descriptor.read().is_valid())),
         ]
     });
     
@@ -112,19 +100,19 @@ pub fn ViperSourceConfigurator() -> impl IntoView {
             title="Configure VIPER Source"
             subtitle=subtitle
             breadcrumbs=breadcrumbs
-            controls=view! { <Controls configuration=viper_source_configuration is_valid_configuration /> }
+            controls=view! { <Controls user_source_descriptor /> }
         >
             <Suspense
                 fallback=move || view! { <LoadingSpinner /> }
             >
                 {
                     move || Suspend::new(async move {
-                        viper_source_configuration_resource.await;
+                        viper_source_descriptor_resource.await;
 
                         view! {
                             <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
                                 { move || match active_tab.get() {
-                                    TabIdentifier::General => view! { <GeneralTab viper_source_configuration /> }
+                                    TabIdentifier::General => view! { <GeneralTab user_source_descriptor /> }
                                 }}
                             </Tabs>
                         }

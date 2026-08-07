@@ -3,6 +3,7 @@ use leptos::prelude::*;
 use leptos_router::hooks::use_navigate;
 use tracing::{debug, error};
 use opendut_lea_components::{use_toaster, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, Toast};
+use opendut_lea_components::tooltip::{Tooltip, TooltipDirection};
 use opendut_model::viper::ViperSourceDescriptor;
 use crate::app::use_app_globals;
 use crate::routing::{navigate_to, WellKnownRoutes};
@@ -11,12 +12,11 @@ use crate::viper_sources::configurator::types::UserViperSourceConfiguration;
 
 #[component]
 pub fn Controls(
-    configuration: RwSignal<UserViperSourceConfiguration>,
-    #[prop(into)] is_valid_configuration: Signal<bool>,
+    user_source_descriptor: RwSignal<UserViperSourceConfiguration>,
 ) -> impl IntoView {
 
     let viper_source_id = Signal::derive(move || {
-        configuration.get().id
+        user_source_descriptor.get().id
     });
 
     let use_navigate = use_navigate();
@@ -26,10 +26,7 @@ pub fn Controls(
 
     view! {
         <div class="is-flex">
-            <SaveViperSourceButton
-                configuration
-                is_valid_configuration
-            />
+            <SaveViperSourceButton user_source_descriptor />
             <div class="px-1" />
             <DeleteViperSourceButton
                 viper_source_id
@@ -42,26 +39,29 @@ pub fn Controls(
 
 #[component]
 fn SaveViperSourceButton(
-    configuration: RwSignal<UserViperSourceConfiguration>,
-    is_valid_configuration: Signal<bool>,
+    user_source_descriptor: RwSignal<UserViperSourceConfiguration>,
 ) -> impl IntoView {
 
     let globals = use_app_globals();
     let toaster = use_toaster();
 
     let setter = create_write_slice(
-        configuration,
-        |config, input| {
-            config.is_new = input;
+        user_source_descriptor,
+        |descriptor, input| {
+            descriptor.is_new = input;
         },
     );
+
+    let all_tabs_valid = Memo::new(move |_| {
+        user_source_descriptor.with(|descriptor| descriptor.is_valid())
+    });
 
     let pending = RwSignal::new(false);
 
     let button_state = Signal::derive(move || {
         if pending.get() {
             ButtonState::Loading
-        } else if is_valid_configuration.get() {
+        } else if all_tabs_valid.get() {
             ButtonState::Enabled
         } else {
             ButtonState::Disabled
@@ -75,7 +75,7 @@ fn SaveViperSourceButton(
         leptos::task::spawn_local(async move {
             pending.set(true);
 
-            let viper_source_descriptor = ViperSourceDescriptor::try_from(configuration.get_untracked());
+            let viper_source_descriptor = ViperSourceDescriptor::try_from(user_source_descriptor.get_untracked());
             match viper_source_descriptor {
                 Ok(viper_source_descriptor) => {
                     let viper_source_id = viper_source_descriptor.id;
@@ -105,14 +105,36 @@ fn SaveViperSourceButton(
         })
     };
 
+    let hide_tooltip = Signal::derive(move || {
+        all_tabs_valid.get()
+    });
+
+    let tooltip_content = Box::new(move || {
+        if !all_tabs_valid.get() {
+            view! {
+                VIPER Source cannot be saved while configuration errors " "
+                <span class="icon has-text-danger">
+                    <i class=FontAwesomeIcon::CircleExclamation.as_class() />
+                </span>
+                " " remain.
+            }.into_any()
+        } else { view! {}.into_any() }
+    });
+
     view! {
-        <IconButton
-            icon=FontAwesomeIcon::Save
-            color=ButtonColor::Info
-            size=ButtonSize::Normal
-            state=button_state
-            label="Save Viper Source"
-            on_action
-        />
+        <Tooltip
+            text=tooltip_content
+            direction=TooltipDirection::Right
+            is_hidden=hide_tooltip
+        >
+            <IconButton
+                icon=FontAwesomeIcon::Save
+                color=ButtonColor::Info
+                size=ButtonSize::Normal
+                state=button_state
+                label="Save Viper Source"
+                on_action
+            />
+        </Tooltip>
     }
 }

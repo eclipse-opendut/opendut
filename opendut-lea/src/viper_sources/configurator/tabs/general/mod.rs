@@ -9,9 +9,9 @@ pub mod name_input;
 pub mod url_input;
 
 #[component]
-pub fn GeneralTab(viper_source_configuration: RwSignal<UserViperSourceConfiguration>) -> impl IntoView {
+pub fn GeneralTab(user_source_descriptor: RwSignal<UserViperSourceConfiguration>) -> impl IntoView {
 
-    let source_id = Signal::derive(move || viper_source_configuration.get().id.to_string());
+    let source_id = Signal::derive(move || user_source_descriptor.get().id.to_string());
 
     view! {
         <div>
@@ -20,13 +20,13 @@ pub fn GeneralTab(viper_source_configuration: RwSignal<UserViperSourceConfigurat
                 value=source_id
             />
             <ViperSourceNameInput
-                viper_source_configuration
+                user_source_descriptor
             />
             <ViperSourceUrlInput
-                viper_source_configuration
+                user_source_descriptor
             />
             <ViperSourceKindSelect
-                viper_source_configuration
+                user_source_descriptor
             />
         </div>
     }

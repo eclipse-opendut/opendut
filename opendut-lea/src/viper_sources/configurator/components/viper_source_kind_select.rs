@@ -3,13 +3,13 @@ use opendut_lea_components::{SelectionOption, UserSelect};
 use crate::viper_sources::configurator::types::UserViperSourceConfiguration;
 
 #[component]
-pub fn ViperSourceKindSelect(viper_source_configuration: RwSignal<UserViperSourceConfiguration>) -> impl IntoView {
+pub fn ViperSourceKindSelect(user_source_descriptor: RwSignal<UserViperSourceConfiguration>) -> impl IntoView {
 
-    let (getter, setter) = create_slice(viper_source_configuration,
-        |config| {
+    let (getter, setter) = create_slice(user_source_descriptor,
+                                        |config| {
             Clone::clone(&config.kind)
         },
-        |config, input| {
+                                        |config, input| {
             config.kind = input;
         }
     );
