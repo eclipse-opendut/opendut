@@ -118,7 +118,7 @@ fn SaveViperSourceButton(
                 </span>
                 " " remain.
             }.into_any()
-        } else { view! {}.into_any() }
+        } else { ().into_any() }
     });
 
     view! {

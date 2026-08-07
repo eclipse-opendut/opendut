@@ -160,7 +160,7 @@ fn SaveClusterButton(
             view! {
                 Cluster can not be updated while it is deployed.
             }.into_any()
-        } else { view! {}.into_any() }
+        } else { ().into_any() }
     });
 
     view! {
