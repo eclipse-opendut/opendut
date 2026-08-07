@@ -69,9 +69,15 @@ where F: Fn() + Clone + Send + 'static {
         !matches!(button_state.get(), ButtonState::Disabled)
     });
 
+    let tooltip_content = Box::new(move || {
+        view! {
+            Cluster can not be deleted while it is deployed.
+        }.into_any()
+    });
+
     view! {
         <Tooltip
-            text="Cluster can not be deleted while it is deployed."
+            text=tooltip_content
             direction=TooltipDirection::Right
             is_hidden=hide_tooltip
         >

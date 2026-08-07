@@ -185,8 +185,14 @@ where
                 }
             });
 
+            let tooltip_content = Box::new(move || {
+                view! {
+                    { tooltip_text }
+                }.into_any()
+            });
+
             view! {
-                <Tooltip text=tooltip_text>
+                <Tooltip text=tooltip_content>
                     <Toggle
                         is_active=is_deployed
                         state=toggle_state

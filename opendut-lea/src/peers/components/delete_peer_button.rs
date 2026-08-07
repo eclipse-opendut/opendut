@@ -69,9 +69,15 @@ where F: Fn() + Clone + Send + 'static {
         !matches!(button_state.get(), ButtonState::Disabled)
     });
 
+    let tooltip_content = Box::new(move || {
+        view! {
+            Peer can not be deleted while it is configured in a cluster.
+        }.into_any()
+    });
+
     view! {
         <Tooltip
-            text="Peer can not be deleted while it is configured in a cluster."
+            text=tooltip_content
             direction=TooltipDirection::Right
             is_hidden=hide_tooltip
         >
