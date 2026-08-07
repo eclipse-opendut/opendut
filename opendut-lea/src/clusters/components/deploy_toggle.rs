@@ -206,8 +206,8 @@ fn DeploymentTooltipContent(
             }.into_any();
         }
 
-        if !is_deployed.get() {
-            if let Some(blocked_deployment) = blocked_deployment.as_ref() {
+        if !is_deployed.get()
+            && let Some(blocked_deployment) = blocked_deployment.as_ref() {
                 return match blocked_deployment {
                     BlockedDeployment::Peers(peers) => {
                         let amount = peers.len();
@@ -219,7 +219,7 @@ fn DeploymentTooltipContent(
                         };
 
                         let peer_links = peers
-                            .into_iter()
+                            .iter()
                             .enumerate()
                             .map(|(index, peer_id)| {
                                 let href = format!("/peers/{peer_id}/configure/general");
@@ -244,7 +244,7 @@ fn DeploymentTooltipContent(
                     }
                 };
             }
-        }
+
 
         if is_deployed.get() {
             view! { "Deployment requested" }.into_any()
