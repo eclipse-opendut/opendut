@@ -34,7 +34,7 @@ where
         user_cluster_descriptor,
         |descriptor| descriptor.is_new,
     );
-    
+
     let use_navigate = use_navigate();
     let on_delete = { move || {
             navigate_to(WellKnownRoutes::ClustersOverview, use_navigate.clone());
@@ -93,7 +93,7 @@ fn SaveClusterButton(
     });
 
     let pending = RwSignal::new(false);
-    
+
     let button_state = Signal::derive(move || {
         if deployed_signal.get().0 || !all_tabs_valid.get() {
             ButtonState::Disabled
@@ -144,7 +144,7 @@ fn SaveClusterButton(
     };
 
     let hide_tooltip = Signal::derive(move || {
-        all_tabs_valid.get() || !deployed_signal.get().0
+        all_tabs_valid.get() && !deployed_signal.get().0
     });
 
     let tooltip_content = Box::new(move || {
