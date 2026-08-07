@@ -37,6 +37,8 @@ where
             navigate_to(WellKnownRoutes::ClustersOverview, use_navigate.clone());
         }
     };
+    
+    let tooltip_direction = TooltipDirection::Right;
 
     view! {
         <div class="is-flex is-align-items-center">
@@ -46,10 +48,11 @@ where
                     is_new_cluster
                     is_deployed=deployed_signal
                     on_deployment_changed
+                    tooltip_direction
                 />
             </div>
             <div class="px-2" />
-            <ClusterHealth state=cluster_state />
+            <ClusterHealth state=cluster_state tooltip_direction />
             <div class="px-2" />
             <SaveClusterButton
                 cluster_descriptor

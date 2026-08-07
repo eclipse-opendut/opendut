@@ -1,10 +1,12 @@
 use leptos::prelude::*;
 use opendut_lea_components::health::{self, Health};
+use opendut_lea_components::tooltip::TooltipDirection;
 use opendut_model::cluster::state::ClusterState;
 
 #[component]
 pub fn ClusterHealth(
-    #[prop(into)] state: Signal<ClusterState>
+    #[prop(into)] state: Signal<ClusterState>,
+    #[prop(optional)] tooltip_direction: TooltipDirection
 ) -> impl IntoView {
     let _ = state;
 
@@ -17,6 +19,9 @@ pub fn ClusterHealth(
     });
 
     view! {
-        <Health state=health_state />
+        <Health
+            state=health_state
+            tooltip_direction
+        />
     }
 }

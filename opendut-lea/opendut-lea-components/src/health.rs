@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use crate::tooltip::Tooltip;
+use crate::tooltip::{Tooltip, TooltipDirection};
 
 pub struct State {
     pub kind: StateKind,
@@ -15,7 +15,10 @@ pub enum StateKind {
 }
 
 #[component]
-pub fn Health(state: Signal<State>) -> impl IntoView {
+pub fn Health(
+    state: Signal<State>,
+    #[prop(optional)] tooltip_direction: TooltipDirection,
+) -> impl IntoView {
 
     let health_class = move || state.with(|state| {
         match state.kind {
@@ -39,7 +42,7 @@ pub fn Health(state: Signal<State>) -> impl IntoView {
 
     view! {
         <div class="is-flex is-justify-content-center">
-            <Tooltip text=tooltip_content>
+            <Tooltip text=tooltip_content direction=tooltip_direction>
                 <div class=health_class />
             </Tooltip>
         </div>
