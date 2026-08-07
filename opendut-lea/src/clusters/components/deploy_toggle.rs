@@ -7,6 +7,7 @@ use opendut_carl_api::carl::cluster::{ListClusterPeerStatesResponse, StoreCluste
 use opendut_lea_components::tooltip::{Tooltip, TooltipDirection};
 use opendut_lea_components::{Toggle, ToggleState};
 use opendut_model::cluster::{ClusterDeployment, ClusterId};
+use opendut_model::peer::PeerId;
 use opendut_model::peer::state::PeerMemberState;
 use crate::app::use_app_globals;
 use crate::clusters::IsDeployed;
@@ -103,7 +104,7 @@ where
         }
     };
 
-    let blocked_cluster_deployment_error_message = {
+    let blocked_cluster_deployment = {
         let carl = globals.client.clone();
         let cluster_id = cluster_id.get_untracked();
 
@@ -117,35 +118,25 @@ where
                     return None;
                 }
 
-                let state = carl.cluster.list_cluster_peer_states(cluster_id).await
+                let states = carl.cluster.list_cluster_peer_states(cluster_id).await
                     .expect("Failed to request the list of cluster's peer state.");
-                match state {
+                match states {
                     ListClusterPeerStatesResponse::Success { peer_states } => {
-                        let invalid_peers = peer_states
-                            .iter()
+                        let invalid_peers = peer_states.iter()
                             .filter(|(_, peer_state)| {
                                 matches!(&peer_state.member, PeerMemberState::Blocked { .. })
                             })
-                            .map(|(peer_id, _)| peer_id.to_string())
+                            .map(|(peer_id, _)| peer_id.to_owned())
                             .collect::<Vec<_>>();
 
                         if invalid_peers.is_empty() {
                             None
                         } else {
-                            let amount_of_used_peers = invalid_peers.len();
-                            let display_amount = if amount_of_used_peers > 1 {
-                                format!("{amount_of_used_peers} Peers are")
-                            } else {
-                                format!("{amount_of_used_peers} Peer is")
-                            };
-                            Some(format!(
-                                "Failed to store cluster deployment! \n{display_amount} already in use: {}",
-                                invalid_peers.join(", ")
-                            ))
+                            Some(BlockedDeployment::Peers(invalid_peers))
                         }
                     }
                     ListClusterPeerStatesResponse::Failure { message } => {
-                        Some(message)
+                        Some(BlockedDeployment::Message(message))
                     }
                 }
             }
@@ -157,25 +148,13 @@ where
         let on_undeploy = on_undeploy.clone();
 
         Suspend::new(async move {
-            let error_message = blocked_cluster_deployment_error_message.await;
+            let blocked_deployment = blocked_cluster_deployment.await;
 
             let is_deployed = Signal::derive(move || is_deployed.get().0);
-            let show_error = Signal::derive({
-                let error_message = error_message.clone();
-                move || error_message.is_some() && !is_deployed.get()
-            });
 
-            let tooltip_text = Signal::derive(move || {
-                if is_new_cluster.get() {
-                    String::from("Save the cluster first.")
-                } else if let Some(error_message) = error_message.as_ref()
-                    && show_error.get() {
-                    String::from(error_message)
-                } else if is_deployed.get() {
-                    String::from("Deployment requested")
-                } else {
-                    String::from("Undeployed")
-                }
+            let show_error = Signal::derive({
+                let blocked_deployment = blocked_deployment.clone();
+                move || blocked_deployment.is_some() && !is_deployed.get()
             });
 
             let toggle_state = Signal::derive(move || {
@@ -188,7 +167,7 @@ where
 
             let tooltip_content = Box::new(move || {
                 view! {
-                    { tooltip_text }
+                    <DeploymentTooltipContent is_new_cluster is_deployed blocked_deployment />
                 }.into_any()
             });
 
@@ -204,5 +183,73 @@ where
                 </Tooltip>
             }
         })
+    }
+}
+
+#[derive(Clone)]
+enum BlockedDeployment {
+    Peers(Vec<PeerId>),
+    Message(String),
+}
+
+#[component]
+fn DeploymentTooltipContent(
+    is_new_cluster: Signal<bool>,
+    is_deployed: Signal<bool>,
+    blocked_deployment: Option<BlockedDeployment>,
+) -> impl IntoView {
+
+    move || {
+        if is_new_cluster.get() {
+            return view! {
+                "Save the cluster first."
+            }.into_any();
+        }
+
+        if !is_deployed.get() {
+            if let Some(blocked_deployment) = blocked_deployment.as_ref() {
+                return match blocked_deployment {
+                    BlockedDeployment::Peers(peers) => {
+                        let amount = peers.len();
+
+                        let message = if amount == 1 {
+                            "1 Peer is already in use:".to_string()
+                        } else {
+                            format!("{amount} Peers are already in use:")
+                        };
+
+                        let peer_links = peers
+                            .into_iter()
+                            .enumerate()
+                            .map(|(index, peer_id)| {
+                                let href = format!("/peers/{peer_id}/configure/general");
+
+                                view! {
+                                    <span>
+                                        {if index == 0 { "" } else { ", " }}
+                                        <a href=href>{peer_id.to_string()}</a>
+                                    </span>
+                                }
+                            })
+                            .collect_view();
+
+                        view! {
+                            <span>{message} " " {peer_links}</span>
+                        }
+                            .into_any()
+                    }
+
+                    BlockedDeployment::Message(message) => {
+                        view! { { message.to_owned() } }.into_any()
+                    }
+                };
+            }
+        }
+
+        if is_deployed.get() {
+            view! { "Deployment requested" }.into_any()
+        } else {
+            view! { "Undeployed" }.into_any()
+        }
     }
 }
