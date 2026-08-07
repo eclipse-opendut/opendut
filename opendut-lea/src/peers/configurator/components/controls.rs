@@ -5,6 +5,7 @@ use std::sync::Arc;
 use leptos::prelude::*;
 use leptos_router::hooks::use_navigate;
 use tracing::{debug, error};
+use opendut_lea_components::tooltip::{Tooltip, TooltipDirection};
 use opendut_model::cluster::ClusterId;
 use opendut_model::peer::PeerDescriptor;
 use opendut_model::peer::state::PeerState;
@@ -18,18 +19,17 @@ use crate::peers::components::PeerHealth;
 
 #[component]
 pub fn Controls(
-    configuration: RwSignal<UserPeerDescriptor>,
-    is_valid_peer_configuration: Signal<bool>,
+    user_peer_descriptor: RwSignal<UserPeerDescriptor>,
     peer_state: Signal<PeerState>
 ) -> impl IntoView {
 
     let peer_id = Signal::derive(move || {
-        configuration.get().id
+        user_peer_descriptor.get().id
     });
 
     let used_clusters_length = Signal::derive(move || {
         let mut used_clusters: HashSet<ClusterId> = HashSet::new();
-        let _ = configuration.get().devices
+        let _ = user_peer_descriptor.get().devices
             .into_iter()
             .filter(|device| device.get().contained_in_clusters.is_empty().not())
             .map(|device| for cluster_descriptor in device.get().contained_in_clusters {
@@ -49,10 +49,7 @@ pub fn Controls(
         <div class="is-flex is-align-items-center">
             <PeerHealth state=peer_state />
             <div class="px-2" />
-            <SavePeerButton
-                configuration
-                is_valid_peer_configuration
-            />
+            <SavePeerButton user_peer_descriptor />
             <div class="px-1" />
             <DeletePeerButton
                 peer_id
@@ -66,26 +63,29 @@ pub fn Controls(
 
 #[component]
 fn SavePeerButton(
-    configuration: RwSignal<UserPeerDescriptor>,
-    is_valid_peer_configuration: Signal<bool>,
+    user_peer_descriptor: RwSignal<UserPeerDescriptor>,
 ) -> impl IntoView {
 
     let globals = use_app_globals();
     let toaster = use_toaster();
 
     let setter = create_write_slice(
-        configuration,
-        |config, input| {
-            config.is_new = input;
+        user_peer_descriptor,
+        |descriptor, input| {
+            descriptor.is_new = input;
         },
     );
+
+    let all_tabs_valid = Memo::new(move |_| {
+        user_peer_descriptor.with(|descriptor| descriptor.is_valid())
+    });
 
     let pending = RwSignal::new(false);
 
     let button_state = Signal::derive(move || {
         if pending.get() {
             ButtonState::Loading
-        } else if is_valid_peer_configuration.get() {
+        } else if all_tabs_valid.get() {
             ButtonState::Enabled
         } else {
             ButtonState::Disabled
@@ -99,7 +99,7 @@ fn SavePeerButton(
         leptos::task::spawn_local(async move {
             pending.set(true);
 
-            let peer_descriptor = PeerDescriptor::try_from(configuration.get_untracked());
+            let peer_descriptor = PeerDescriptor::try_from(user_peer_descriptor.get_untracked());
             match peer_descriptor {
                 Ok(peer_descriptor) => {
                     let peer_id = peer_descriptor.id;
@@ -129,14 +129,36 @@ fn SavePeerButton(
         })
     };
 
+    let hide_tooltip = Signal::derive(move || {
+        all_tabs_valid.get()
+    });
+
+    let tooltip_content = Box::new(move || {
+        if !all_tabs_valid.get() {
+            view! {
+                Peer cannot be saved while configuration errors " "
+                <span class="icon has-text-danger">
+                    <i class=FontAwesomeIcon::CircleExclamation.as_class() />
+                </span>
+                " " remain.
+            }.into_any()
+        } else { view! {}.into_any() }
+    });
+
     view! {
-        <IconButton
-            icon=FontAwesomeIcon::Save
-            color=ButtonColor::Info
-            size=ButtonSize::Normal
-            state=button_state
-            label="Save Peer"
-            on_action
-        />
+        <Tooltip
+            text=tooltip_content
+            direction=TooltipDirection::Right
+            is_hidden=hide_tooltip
+        >
+            <IconButton
+                icon=FontAwesomeIcon::Save
+                color=ButtonColor::Info
+                size=ButtonSize::Normal
+                state=button_state
+                label="Save Peer"
+                on_action
+            />
+        </Tooltip>
     }
 }

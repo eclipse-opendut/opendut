@@ -180,12 +180,6 @@ pub fn PeerConfigurator() -> impl IntoView {
         }
     });
 
-    let is_valid_peer_configuration = Memo::new(move |_| {
-        user_peer_descriptor.with(|peer_configuration| {
-            peer_configuration.is_valid()
-        })
-    });
-
     let peer_id_string = create_read_slice(user_peer_descriptor, |config| config.id.to_string());
     let setup_disabled = create_read_slice(user_peer_descriptor, |config| config.is_new);
 
@@ -283,7 +277,7 @@ pub fn PeerConfigurator() -> impl IntoView {
             title="Configure Peer"
             subtitle=subtitle
             breadcrumbs=breadcrumbs
-            controls=view! { <Controls configuration=user_peer_descriptor is_valid_peer_configuration=is_valid_peer_configuration.into() peer_state=peer_state.into() /> }
+            controls=view! { <Controls user_peer_descriptor peer_state=peer_state.into() /> }
         >
         <div> {cluster_column} </div>
             <Suspense
