@@ -5,9 +5,9 @@ use crate::clusters::configurator::types::UserClusterDescriptor;
 use crate::components::ReadOnlyInput;
 
 #[component]
-pub fn GeneralTab(cluster_descriptor: RwSignal<UserClusterDescriptor>) -> impl IntoView {
+pub fn GeneralTab(user_cluster_descriptor: RwSignal<UserClusterDescriptor>) -> impl IntoView {
 
-    let cluster_id = Signal::derive(move || cluster_descriptor.get().id.to_string());
+    let cluster_id = Signal::derive(move || user_cluster_descriptor.get().id.to_string());
 
     view! {
         <div>
@@ -16,7 +16,7 @@ pub fn GeneralTab(cluster_descriptor: RwSignal<UserClusterDescriptor>) -> impl I
                 value=cluster_id
             />
             <ClusterNameInput
-                cluster_descriptor=cluster_descriptor
+                user_cluster_descriptor
             />
         </div>
     }

@@ -6,9 +6,9 @@ use crate::components::{UserInput, UserInputValue};
 use crate::clusters::configurator::types::UserClusterDescriptor;
 
 #[component]
-pub fn ClusterNameInput(cluster_descriptor: RwSignal<UserClusterDescriptor>) -> impl IntoView {
+pub fn ClusterNameInput(user_cluster_descriptor: RwSignal<UserClusterDescriptor>) -> impl IntoView {
 
-    let (getter, setter) = create_slice(cluster_descriptor,
+    let (getter, setter) = create_slice(user_cluster_descriptor,
         |config| {
             Clone::clone(&config.name)
         },

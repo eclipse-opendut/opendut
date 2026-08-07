@@ -12,13 +12,13 @@ pub type DeviceSelection = Ior<DeviceSelectionError, HashSet<DeviceId>>;
 
 #[component]
 pub fn DeviceSelector(
-    cluster_descriptor: RwSignal<UserClusterDescriptor>,
+    user_cluster_descriptor: RwSignal<UserClusterDescriptor>,
     peers: ReadSignal<Vec<PeerDescriptor>>,
     is_disabled: Signal<bool>,
 ) -> impl IntoView {
 
     let (getter, setter) = create_slice(
-        cluster_descriptor,
+        user_cluster_descriptor,
         |config| Clone::clone(&config.devices),
         |config, input| {
             config.devices = input;

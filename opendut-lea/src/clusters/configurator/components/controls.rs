@@ -16,7 +16,7 @@ use crate::routing::{navigate_to, WellKnownRoutes};
 
 #[component]
 pub fn Controls<OnDeploymentChanged>(
-    cluster_descriptor: RwSignal<UserClusterDescriptor>,
+    user_cluster_descriptor: RwSignal<UserClusterDescriptor>,
     deployed_signal: Signal<IsDeployed>,
     cluster_state: Signal<ClusterState>,
     on_deployment_changed: OnDeploymentChanged,
@@ -25,13 +25,16 @@ where
     OnDeploymentChanged: Fn() + Clone + Send + 'static,
 {
 
-    let cluster_id = Signal::derive(move || {
-        cluster_descriptor.get().id
-    });
-    let is_new_cluster = Signal::derive(move || {
-        cluster_descriptor.get().is_new
-    });
+    let cluster_id = create_read_slice(
+        user_cluster_descriptor,
+        |descriptor| descriptor.id,
+    );
 
+    let is_new_cluster = create_read_slice(
+        user_cluster_descriptor,
+        |descriptor| descriptor.is_new,
+    );
+    
     let use_navigate = use_navigate();
     let on_delete = { move || {
             navigate_to(WellKnownRoutes::ClustersOverview, use_navigate.clone());
@@ -55,7 +58,7 @@ where
             <ClusterHealth state=cluster_state tooltip_direction />
             <div class="px-2" />
             <SaveClusterButton
-                cluster_descriptor
+                user_cluster_descriptor
                 deployed_signal
             />
             <div class="px-1" />
@@ -71,7 +74,7 @@ where
 
 #[component]
 fn SaveClusterButton(
-    cluster_descriptor: RwSignal<UserClusterDescriptor>,
+    user_cluster_descriptor: RwSignal<UserClusterDescriptor>,
     deployed_signal: Signal<IsDeployed>
 ) -> impl IntoView {
 
@@ -79,35 +82,32 @@ fn SaveClusterButton(
     let toaster = use_toaster();
 
     let set_is_new = create_write_slice(
-        cluster_descriptor,
-        |config, is_new| {
-            config.is_new = is_new;
+        user_cluster_descriptor,
+        |descriptor, is_new| {
+            descriptor.is_new = is_new;
         },
     );
 
-    let pending = RwSignal::new(false);
+    let all_tabs_valid = Memo::new(move |_| {
+        user_cluster_descriptor.with(|descriptor| descriptor.is_valid())
+    });
 
+    let pending = RwSignal::new(false);
+    
     let button_state = Signal::derive(move || {
-        if deployed_signal.get().0 {
+        if deployed_signal.get().0 || !all_tabs_valid.get() {
             ButtonState::Disabled
         } else if pending.get() {
             ButtonState::Loading
         }
         else {
-            cluster_descriptor.with(|configuration| {
-                if configuration.is_valid() {
-                    ButtonState::Enabled
-                }
-                else {
-                    ButtonState::Disabled
-                }
-            })
+            ButtonState::Enabled
         }
     });
 
     let on_action = move || {
         let toaster = Arc::clone(&toaster);
-        let configuration = ClusterDescriptor::try_from(cluster_descriptor.get_untracked());
+        let configuration = ClusterDescriptor::try_from(user_cluster_descriptor.get_untracked());
         let mut carl = globals.client.clone();
 
         leptos::task::spawn_local(async move {
@@ -144,13 +144,23 @@ fn SaveClusterButton(
     };
 
     let hide_tooltip = Signal::derive(move || {
-        !deployed_signal.get().0
+        all_tabs_valid.get() || !deployed_signal.get().0
     });
 
     let tooltip_content = Box::new(move || {
-        view! {
-            Cluster can not be updated while it is deployed.
-        }.into_any()
+        if !all_tabs_valid.get() {
+            view! {
+                Cluster cannot be saved while configuration errors " "
+                <span class="icon has-text-danger">
+                    <i class=FontAwesomeIcon::CircleExclamation.as_class() />
+                </span>
+                " " remain.
+            }.into_any()
+        } else if deployed_signal.get().0 {
+            view! {
+                Cluster can not be updated while it is deployed.
+            }.into_any()
+        } else { view! {}.into_any() }
     });
 
     view! {

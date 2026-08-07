@@ -28,7 +28,7 @@ pub fn ClusterConfigurator() -> impl IntoView {
             .and_then(|id| ClusterId::try_from(id.as_str()).ok())
     }).unwrap_or_else(ClusterId::random));
 
-    let cluster_descriptor = RwSignal::new(
+    let user_cluster_descriptor = RwSignal::new(
         UserClusterDescriptor {
             id: cluster_id.get_untracked(),
             name: UserInputValue::Left(String::from("Enter a valid cluster name.")),
@@ -47,7 +47,7 @@ pub fn ClusterConfigurator() -> impl IntoView {
 
             async move {
                 if let Ok(configuration) = carl.cluster.get_cluster_descriptor(cluster_id).await {
-                    cluster_descriptor.set(
+                    user_cluster_descriptor.set(
                         UserClusterDescriptor {
                             id: cluster_id,
                             name: UserInputValue::Right(configuration.name.value().to_owned()),
@@ -73,7 +73,7 @@ pub fn ClusterConfigurator() -> impl IntoView {
             let peers = RwSignal::new(peer_descriptors.await).read_only();
 
             view! {
-                <LoadedClusterConfigurator cluster_descriptor peers />
+                <LoadedClusterConfigurator user_cluster_descriptor peers />
             }
         })}
         </Transition>
@@ -82,14 +82,14 @@ pub fn ClusterConfigurator() -> impl IntoView {
 
 #[component]
 fn LoadedClusterConfigurator(
-    cluster_descriptor: RwSignal<UserClusterDescriptor>,
+    user_cluster_descriptor: RwSignal<UserClusterDescriptor>,
     peers: ReadSignal<Vec<PeerDescriptor>>,
 ) -> impl IntoView {
     let globals = use_app_globals();
     let cluster_state = RwSignal::new(ClusterState::default());
     let active_tab = use_active_tab::<TabIdentifier>();
     
-    let cluster_id = Signal::derive(move || cluster_descriptor.get().id);
+    let cluster_id = Signal::derive(move || user_cluster_descriptor.get().id);
 
     let breadcrumbs = Signal::derive(move || {
         let cluster_id = cluster_id.get().uuid.to_string();
@@ -129,7 +129,7 @@ fn LoadedClusterConfigurator(
     ));
 
     let subtitle = Signal::derive(move || {
-        if let UserInputValue::Right(name) = cluster_descriptor.get().name {
+        if let UserInputValue::Right(name) = user_cluster_descriptor.get().name {
             name
         } else {
             String::new()
@@ -141,17 +141,17 @@ fn LoadedClusterConfigurator(
             Tab::from_title_and_href(
                 String::from("General"), 
                 TabIdentifier::General.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || !cluster_descriptor.read().valid_general_tab())),
-            
+            ).with_is_error(Signal::derive(move || !user_cluster_descriptor.read().valid_general_tab())),
+
             Tab::from_title_and_href(
                 String::from("Devices"),
                 TabIdentifier::Devices.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || !cluster_descriptor.read().valid_devices_tab())),
-            
+            ).with_is_error(Signal::derive(move || !user_cluster_descriptor.read().valid_devices_tab())),
+
             Tab::from_title_and_href(
                 String::from("Leader"),
                 TabIdentifier::Leader.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || !cluster_descriptor.read().valid_leader_tab())),
+            ).with_is_error(Signal::derive(move || !user_cluster_descriptor.read().valid_leader_tab())),
         ]
     });
     
@@ -163,7 +163,7 @@ fn LoadedClusterConfigurator(
             controls=move || {
                 view! {
                     <Controls
-                        cluster_descriptor
+                        user_cluster_descriptor
                         deployed_signal
                         cluster_state=cluster_state.into()
                         on_deployment_changed=move || refetch_cluster_deployments.notify()
@@ -175,19 +175,19 @@ fn LoadedClusterConfigurator(
                 <fieldset prop:disabled=move || { deployed_signal.get().0 }>
                     { move || match active_tab.get() {
                         TabIdentifier::General => view! {
-                            <GeneralTab cluster_descriptor />
+                            <GeneralTab user_cluster_descriptor />
                         }.into_any(),
 
                         TabIdentifier::Devices => view! {
                             <DevicesTab
-                                cluster_descriptor
+                                user_cluster_descriptor
                                 peers is_disabled=Signal::derive(move || deployed_signal.get().0)
                             />
                         }.into_any(),
                         
                         TabIdentifier::Leader => view! {
                             <LeaderTab
-                                cluster_descriptor
+                                user_cluster_descriptor
                                 peers
                                 is_disabled=Signal::derive(move || deployed_signal.get().0)
                             />
