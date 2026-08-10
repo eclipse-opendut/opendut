@@ -49,8 +49,8 @@ pub struct MyAdditionalClaims {
     /// Groups of the user (custom claim) may be omitted by identity provider, so we need a default value
     #[serde(default = "MyAdditionalClaims::empty_vector")]
     pub groups: Vec<String>,
-    /// OAuth scopes (space-separated string in the JWT)
-    #[serde(default)]
+    /// OAuth scopes (space-separated list transmitted as "scope" claim in JWT)
+    #[serde(default, rename = "scope")]
     pub scopes: String,
 }
 
