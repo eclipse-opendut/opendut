@@ -150,8 +150,6 @@ async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::
             }
         };
 
-        let reqwest_client = reqwest_client::oidc::create_from_config(&settings)?;
-
         let mut routes_builder = Routes::builder();
         routes_builder
             .add_service(grpc_facades.cluster_manager_facade.into_grpc_service())
@@ -171,7 +169,11 @@ async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::
                 let is_edge = request
                     .extensions()
                     .get::<axum::extract::OriginalUri>()
-                    .map(|u| u.path().contains("PeerMessagingBroker"))
+                    .map(|u| {
+                        let path = u.path();
+                        path.starts_with("/opendut.services.peer_messaging_broker.") || 
+                        path.contains("/opendut.services.peer_messaging_broker.")
+                    })
                     .unwrap_or(false);
                 let required_scope = if is_edge {
                     opendut_auth::types::SCOPE_EDGE_API

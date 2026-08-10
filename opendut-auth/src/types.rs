@@ -51,7 +51,7 @@ pub struct MyAdditionalClaims {
     pub groups: Vec<String>,
     /// OAuth scopes (space-separated string in the JWT)
     #[serde(default)]
-    pub scope: String,
+    pub scopes: String,
 }
 
 impl MyAdditionalClaims {
@@ -63,7 +63,7 @@ impl MyAdditionalClaims {
         self.roles.contains(&role.to_string())
     }
     pub fn has_scope(&self, required_scope: &str) -> bool {
-        self.scope.split_whitespace().any(|s| s == required_scope)
+        self.scopes.split_whitespace().any(|s| s == required_scope)
     }
 }
 
