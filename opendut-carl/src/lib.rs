@@ -171,16 +171,32 @@ async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::
                     .get::<axum::extract::OriginalUri>()
                     .map(|u| {
                         let path = u.path();
-                        path.starts_with("/opendut.carl.services.peer_messaging_broker.") || 
+                        path.starts_with("/opendut.carl.services.peer_messaging_broker.") ||
                         path.contains("/opendut.carl.services.peer_messaging_broker.")
                     })
                     .unwrap_or(false);
-                let required_scope = if is_edge {
-                    opendut_auth::types::SCOPE_EDGE_API
+
+                // metadata_provider serves a single Version() endpoint used by all clients
+                // (EDGAR, CLEO, LEA) on startup. EDGAR only holds opendut-edge-api while
+                // CLEO/LEA only hold opendut-admin-api, so both scopes must be accepted.
+                let is_metadata_provider = request
+                    .extensions()
+                    .get::<axum::extract::OriginalUri>()
+                    .map(|u| {
+                        let path = u.path();
+                        path.starts_with("/opendut.carl.services.metadata_provider.") ||
+                        path.contains("/opendut.carl.services.metadata_provider.")
+                    })
+                    .unwrap_or(false);
+
+                let accepted_scopes: &'static [&'static str] = if is_metadata_provider {
+                    &[opendut_auth::types::SCOPE_EDGE_API, opendut_auth::types::SCOPE_ADMIN_API]
+                } else if is_edge {
+                    &[opendut_auth::types::SCOPE_EDGE_API]
                 } else {
-                    opendut_auth::types::SCOPE_ADMIN_API
+                    &[opendut_auth::types::SCOPE_ADMIN_API]
                 };
-                Clone::clone(&grpc_auth_layer).auth_interceptor(request, reqwest_client.clone(), required_scope)
+                Clone::clone(&grpc_auth_layer).auth_interceptor(request, reqwest_client.clone(), accepted_scopes)
             }))
     };
 

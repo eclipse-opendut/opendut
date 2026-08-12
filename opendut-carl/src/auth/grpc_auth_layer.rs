@@ -19,7 +19,7 @@ pub enum GrpcAuthenticationLayer {
 }
 
 impl GrpcAuthenticationLayer {
-    pub async fn auth_interceptor(self, mut request: tonic::Request<()>, reqwest_client: reqwest::Client, required_scope: &'static str) -> anyhow::Result<tonic::Request<()>, Status> {
+    pub async fn auth_interceptor(self, mut request: tonic::Request<()>, reqwest_client: reqwest::Client, accepted_scopes: &'static [&'static str]) -> anyhow::Result<tonic::Request<()>, Status> {
 
         match self {
             GrpcAuthenticationLayer::AuthDisabled => {
@@ -38,10 +38,14 @@ impl GrpcAuthenticationLayer {
 
                 match authorize_current_user(auth_header, issuer_url, issuer_remote_url, cache, reqwest_client).await {
                     Ok(user) => {
-                        if !user.claims.additional_claims().has_scope(required_scope) {
-                            debug!("Blocking request: missing required scope '{required_scope}'");
+                        let has_required_scope = accepted_scopes
+                            .iter()
+                            .any(|scope| user.claims.additional_claims().has_scope(scope));
+
+                        if !has_required_scope {
+                            debug!("Blocking request: none of the required scopes {accepted_scopes:?} were present");
                             return Err(Status::permission_denied(
-                                format!("CARL says, missing required scope: {required_scope}")
+                                format!("CARL says, missing one of the required scopes: {}", accepted_scopes.join(", "))
                             ));
                         }
 
