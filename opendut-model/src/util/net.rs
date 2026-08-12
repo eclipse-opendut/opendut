@@ -429,13 +429,12 @@ pub enum AuthConfig {
 }
 
 impl AuthConfig {
-     pub fn from_credentials(issuer_url: Url, client_credentials: ClientCredentials) -> Self {
-
+    pub fn from_credentials(issuer_url: Url, client_credentials: ClientCredentials, scopes: Vec<OAuthScope>) -> Self {
         Self::Enabled {
             issuer_url,
             client_id: client_credentials.client_id,
             client_secret: client_credentials.client_secret,
-            scopes: vec![],
+            scopes,
         }
     }
 }
@@ -455,7 +454,7 @@ mod tests {
         let client_credentials = ClientCredentials { client_id: client_id.clone(), client_secret: client_secret.clone() };
         let expected_scopes: Vec<OAuthScope> = vec![];
         let issuer_url = Url::parse("https://some-address-idk.com").unwrap();
-        let auth_config = AuthConfig::from_credentials(issuer_url.clone(), client_credentials);
+        let auth_config = AuthConfig::from_credentials(issuer_url.clone(), client_credentials, vec![]);
 
         assert_that!(auth_config, eq(&AuthConfig::Enabled {
             issuer_url,
