@@ -30,7 +30,7 @@ pub fn instantiate(
 
         let name = key.downcast_ref::<PyStr>()
             .ok_or_else(|| PythonReflectionError::new_downcast_error(&key, "PyStr"))
-            .map_err(|cause| RunError::new_python_reflection_error(Clone::clone(suite), cause))?;
+            .map_err(|source| RunError::new_python_reflection_error(Clone::clone(suite), source))?;
 
         let Some(case) = test_cases.iter()
             .find(|case| case.identifier.name() == name.as_str())
@@ -42,13 +42,13 @@ pub fn instantiate(
 
         let ty = value.downcast_ref::<PyType>()
             .ok_or_else(|| PythonReflectionError::new_downcast_error(&value, "PyType"))
-            .map_err(|cause| RunError::new_python_reflection_error(Clone::clone(identifier), cause))?
+            .map_err(|source| RunError::new_python_reflection_error(Clone::clone(identifier), source))?
             .to_owned();
 
         let bindings = Rc::clone(&bindings);
 
         let instance = make_test_case_instance(&ty, context, bindings, vm)
-            .map_err(|cause| RunError::new_python_reflection_error(Clone::clone(identifier), cause))?;
+            .map_err(|source| RunError::new_python_reflection_error(Clone::clone(identifier), source))?;
 
         let tests = tests.iter()
             .map(|test| {

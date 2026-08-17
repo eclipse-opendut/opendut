@@ -46,8 +46,8 @@ where F: Fn() + Clone + Send + 'static {
                             .success()
                     );
                 }
-                Err(cause) => {
-                    error!("Failed to delete VIPER test <{:?}>, due to error: {cause:?}", viper_test_id);
+                Err(source) => {
+                    error!("Failed to delete VIPER test <{:?}>, due to error: {source:?}", viper_test_id);
                     toaster.toast(
                         Toast::builder()
                             .simple("Failed to delete VIPER test!")

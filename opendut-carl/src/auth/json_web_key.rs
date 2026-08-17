@@ -31,7 +31,7 @@ pub struct OidcJsonWebKeySet {
 impl OidcJsonWebKeySet {
     pub fn parse(json_web_key: &str) -> Result<BTreeMap<String, JsonWebKey>, ValidationError> {
         let json_web_key_set = serde_json::from_str::<OidcJsonWebKeySet>(json_web_key)
-            .map_err(|cause| ValidationError::Configuration(format!("Failed to parse json: {cause}")))?;
+            .map_err(|source| ValidationError::Configuration(format!("Failed to parse json: {source}")))?;
         Ok(json_web_key_set.keys.into_iter().map(|jwk| {
             (jwk.key_identifier.clone(), jwk)
         }).collect::<BTreeMap<_, _>>())

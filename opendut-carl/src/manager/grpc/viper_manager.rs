@@ -44,7 +44,7 @@ impl ViperManagerService for ViperManagerFacade {
                 .map_err(|_: PersistenceError| opendut_carl_api::carl::viper::StoreViperSourceDescriptorError::Internal {
                     source_id: source.id,
                     source_name: source.name,
-                    cause: String::from("Error when accessing persistence while storing test suite source descriptor"),
+                    source: String::from("Error when accessing persistence while storing test suite source descriptor"),
                 });
 
         let reply = match result {
@@ -73,10 +73,10 @@ impl ViperManagerService for ViperManagerFacade {
             self.resource_manager.resources_mut(async |resources|
                 resources.delete_viper_source_descriptor(source_id).await
             ).await
-            .map_err_to_inner(|cause| DeleteViperSourceDescriptorError::Persistence {
+            .map_err_to_inner(|source| DeleteViperSourceDescriptorError::Persistence {
                 source_id,
                 source_name: None,
-                cause: cause.context("Persistence error in transaction for deleting VIPER source descriptor"),
+                source: source.context("Persistence error in transaction for deleting VIPER source descriptor"),
             })
             .log_api_err()
             .map_err(opendut_carl_api::carl::viper::DeleteViperSourceDescriptorError::from);
@@ -109,7 +109,7 @@ impl ViperManagerService for ViperManagerFacade {
                 .inspect_err(|error| error!("Error while getting test suite source descriptor from gRPC API: {error}"))
                 .map_err(|_: PersistenceError| opendut_carl_api::carl::viper::GetViperSourceDescriptorError::Internal {
                     source_id,
-                    cause: String::from("Error when accessing persistence while getting test suite source descriptor"),
+                    source: String::from("Error when accessing persistence while getting test suite source descriptor"),
                 });
 
         let response = match result {
@@ -139,7 +139,7 @@ impl ViperManagerService for ViperManagerFacade {
         let result = self.resource_manager.list::<ViperSourceDescriptor>().await
             .inspect_err(|error| error!("Error while listing test suite source descriptors from gRPC API: {error}"))
             .map_err(|_: PersistenceError| opendut_carl_api::carl::viper::ListViperSourceDescriptorsError::Internal {
-                cause: String::from("Error when accessing persistence while listing test suite source descriptors"),
+                source: String::from("Error when accessing persistence while listing test suite source descriptors"),
             });
 
         let response = match result {
@@ -177,9 +177,9 @@ impl ViperManagerService for ViperManagerFacade {
             self.resource_manager.resources_mut(async |resources|
                 resources.get_viper_test_suite_parameters(source_id).await
             ).await
-            .map_err_to_inner(|cause| GetViperTestSuiteParametersError::Persistence {
+            .map_err_to_inner(|source| GetViperTestSuiteParametersError::Persistence {
                 source_id,
-                cause: cause.context("Persistence error in transaction while getting VIPER test suite descriptors"),
+                source: source.context("Persistence error in transaction while getting VIPER test suite descriptors"),
             })
             .log_api_err()
             .map_err(opendut_carl_api::carl::viper::GetViperTestSuiteParametersError::from);
@@ -222,7 +222,7 @@ impl ViperManagerService for ViperManagerFacade {
                 .log_api_err()
                 .map_err(|_: PersistenceError| opendut_carl_api::carl::viper::StoreViperTestRunDescriptorError::Internal {
                     test_id: test.id,
-                    cause: String::from("Error when accessing persistence while storing VIPER test descriptor"),
+                    source: String::from("Error when accessing persistence while storing VIPER test descriptor"),
                 });
 
         let reply = match result {
@@ -252,7 +252,7 @@ impl ViperManagerService for ViperManagerFacade {
                 .log_api_err()
                 .map_err(|_: PersistenceError| opendut_carl_api::carl::viper::DeleteViperTestRunDescriptorError::Internal {
                     test_id,
-                    cause: String::from("Error when accessing persistence while storing VIPER test descriptor"),
+                    source: String::from("Error when accessing persistence while storing VIPER test descriptor"),
                 });
 
         let response = match result {
@@ -282,7 +282,7 @@ impl ViperManagerService for ViperManagerFacade {
                 .inspect_err(|error| error!("Error while getting VIPER test descriptor from gRPC API: {error}"))
                 .map_err(|_: PersistenceError| opendut_carl_api::carl::viper::GetViperTestRunDescriptorError::Internal {
                     test_id,
-                    cause: String::from("Error when accessing persistence while getting VIPER test descriptor"),
+                    source: String::from("Error when accessing persistence while getting VIPER test descriptor"),
                 });
 
         let response = match result {
@@ -312,7 +312,7 @@ impl ViperManagerService for ViperManagerFacade {
         let result = self.resource_manager.list::<ViperTestRunDescriptor>().await
             .inspect_err(|error| error!("Error while listing VIPER test descriptors from gRPC API: {error}"))
             .map_err(|_: PersistenceError| opendut_carl_api::carl::viper::ListViperTestRunDescriptorsError::Internal {
-                cause: String::from("Error when accessing persistence while listing VIPER test descriptors"),
+                source: String::from("Error when accessing persistence while listing VIPER test descriptors"),
             });
 
         let response = match result {
@@ -352,7 +352,7 @@ impl ViperManagerService for ViperManagerFacade {
                 .log_api_err()
                 .map_err(|_: PersistenceError| opendut_carl_api::carl::viper::StoreViperRunDeploymentError::Internal {
                     run_id: run.run_id,
-                    cause: String::from("Error when accessing persistence while storing test suite run deployment"),
+                    source: String::from("Error when accessing persistence while storing test suite run deployment"),
                 });
 
         let reply = match result {
@@ -382,7 +382,7 @@ impl ViperManagerService for ViperManagerFacade {
                 .log_api_err()
                 .map_err(|_: PersistenceError| opendut_carl_api::carl::viper::DeleteViperRunDeploymentError::Internal {
                     run_id,
-                    cause: String::from("Error when accessing persistence while storing test suite run deployment"),
+                    source: String::from("Error when accessing persistence while storing test suite run deployment"),
                 });
 
         let response = match result {
@@ -412,7 +412,7 @@ impl ViperManagerService for ViperManagerFacade {
                 .inspect_err(|error| error!("Error while getting test suite run deployment from gRPC API: {error}"))
                 .map_err(|_: PersistenceError| opendut_carl_api::carl::viper::GetViperRunDeploymentError::Internal {
                     run_id,
-                    cause: String::from("Error when accessing persistence while getting test suite run deployment"),
+                    source: String::from("Error when accessing persistence while getting test suite run deployment"),
                 });
 
         let response = match result {
@@ -442,7 +442,7 @@ impl ViperManagerService for ViperManagerFacade {
         let result = self.resource_manager.list::<ViperRunDeployment>().await
             .inspect_err(|error| error!("Error while listing test suite run deployments from gRPC API: {error}"))
             .map_err(|_: PersistenceError| opendut_carl_api::carl::viper::ListViperRunDeploymentsError::Internal {
-                cause: String::from("Error when accessing persistence while listing test suite run deployments"),
+                source: String::from("Error when accessing persistence while listing test suite run deployments"),
             });
 
         let response = match result {

@@ -202,8 +202,8 @@ fn ExecutorContainerNameInput(
             Ok(_) => {
                 UserInputValue::Right(input)
             }
-            Err(cause) => {
-                UserInputValue::Both(cause.to_string(), input)
+            Err(source) => {
+                UserInputValue::Both(source.to_string(), input)
             }
         }
     };
@@ -242,8 +242,8 @@ fn ExecutorContainerImageInput(
             Ok(_) => {
                 UserInputValue::Right(input)
             }
-            Err(cause) => {
-                match cause {
+            Err(source) => {
+                match source {
                     IllegalContainerImage::TooShort { value, .. } => {
                         UserInputValue::Both(String::from(EMPTY_CONTAINER_IMAGE_ERROR_MESSAGE), value)
                     }
@@ -286,8 +286,8 @@ fn ExecutorContainerVolumesInput(
             Ok(_) => {
                 UserInputValue::Right(input)
             }
-            Err(cause) => {
-                UserInputValue::Both(cause.to_string(), input)
+            Err(source) => {
+                UserInputValue::Both(source.to_string(), input)
             }
         }
     };
@@ -341,8 +341,8 @@ fn ExecutorContainerDevicesInput(
             Ok(_) => {
                 UserInputValue::Right(input)
             }
-            Err(cause) => {
-                UserInputValue::Both(cause.to_string(), input)
+            Err(source) => {
+                UserInputValue::Both(source.to_string(), input)
             }
         }
     };
@@ -396,8 +396,8 @@ fn ExecutorContainerPortsInput(
             Ok(_) => {
                 UserInputValue::Right(input)
             }
-            Err(cause) => {
-                UserInputValue::Both(cause.to_string(), input)
+            Err(source) => {
+                UserInputValue::Both(source.to_string(), input)
             }
         }
     };
@@ -451,8 +451,8 @@ fn ExecutorContainerCommandInput(
             Ok(_) => {
                 UserInputValue::Right(input)
             }
-            Err(cause) => {
-                UserInputValue::Both(cause.to_string(), input)
+            Err(source) => {
+                UserInputValue::Both(source.to_string(), input)
             }
         }
     };
@@ -491,8 +491,8 @@ fn ExecutorContainerArgsInput(
             Ok(_) => {
                 UserInputValue::Right(input)
             }
-            Err(cause) => {
-                UserInputValue::Both(cause.to_string(), input)
+            Err(source) => {
+                UserInputValue::Both(source.to_string(), input)
             }
         }
     };
@@ -735,8 +735,8 @@ fn ExecutorContainerResultsUrlInput(
             Ok(_) => {
                 UserInputValue::Right(input)
             }
-            Err(cause) => {
-                UserInputValue::Both(cause.to_string(), input)
+            Err(source) => {
+                UserInputValue::Both(source.to_string(), input)
             }
         }
     };

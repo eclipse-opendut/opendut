@@ -4,27 +4,27 @@ use opendut_viper_rt::run::{BindParameterError, IncompleteParameterBindingsError
 #[derive(Debug)]
 pub struct ParameterTomlError {
     pub suite: String,
-    pub cause: BindParameterError,
+    pub source: BindParameterError,
 }
 
 impl std::error::Error for ParameterTomlError {}
 
 impl Display for ParameterTomlError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Failed to load parameters for suite '{}': {}", self.suite, self.cause)
+        write!(f, "Failed to load parameters for suite '{}': {}", self.suite, self.source)
     }
 }
 
 #[derive(Debug)]
 pub struct IncompleteBindingsError {
     pub suite: String,
-    pub cause: IncompleteParameterBindingsError
+    pub source: IncompleteParameterBindingsError
 }
 
 impl std::error::Error for IncompleteBindingsError {}
 
 impl Display for IncompleteBindingsError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} ({})",self.cause, self.suite)
+        write!(f, "{} ({})",self.source, self.suite)
     }
 }

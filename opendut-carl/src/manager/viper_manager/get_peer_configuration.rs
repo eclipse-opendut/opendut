@@ -7,13 +7,13 @@ use crate::resource::manager::error::PersistenceError;
 impl Resources<'_> {
     pub fn get_peer_id_for_test(&self, test_id: ViperTestId) -> Result<PeerId, GetPeerIdForTestError>{
         let test_run_descriptor = self.get::<ViperTestRunDescriptor>(test_id)
-            .map_err(|error| GetPeerIdForTestError::Persistence { test_id, cause: error })?
+            .map_err(|error| GetPeerIdForTestError::Persistence { test_id, source: error })?
             .ok_or_else(|| GetPeerIdForTestError::TestRunDescriptorNotFound { test_id })?;
 
         let cluster_id = test_run_descriptor.cluster;
 
         let cluster_descriptor = self.get::<ClusterDescriptor>(cluster_id)
-            .map_err(|error| GetPeerIdForTestError::Persistence { test_id, cause: error })?
+            .map_err(|error| GetPeerIdForTestError::Persistence { test_id, source: error })?
             .ok_or_else(|| GetPeerIdForTestError::ClusterDescriptorNotFound { cluster_id })?;
 
         let leader_id = cluster_descriptor.leader;
@@ -33,6 +33,6 @@ pub enum GetPeerIdForTestError {
     #[error("Peer id for test <{test_id}> could not be fetches, because of an error when accessing persistence!")]
     Persistence {
         test_id: ViperTestId,
-        #[source] cause: PersistenceError,
+        source: PersistenceError,
     },
 }

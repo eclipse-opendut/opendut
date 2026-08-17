@@ -7,10 +7,10 @@ use opendut_model::cluster::ClusterId;
 use opendut_model::peer::PeerId;
 
 #[derive(thiserror::Error, Debug)]
-#[error("Cannot create GroupName from '{value}':\n  {cause}")]
+#[error("Cannot create GroupName from '{value}':\n  {source}")]
 pub struct InvalidGroupNameError {
     value: String,
-    cause: Box<dyn Error>,
+    source: Box<dyn Error>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -46,12 +46,12 @@ impl TryFrom<&str> for GroupName {
         if let Some(uuid) = value.strip_prefix(GroupName::PEER_GROUP_PREFIX) {
             PeerId::try_from(uuid)
                 .map(Self::Peer)
-                .map_err(|cause| InvalidGroupNameError { value: value.to_owned(), cause: cause.into() })
+                .map_err(|source| InvalidGroupNameError { value: value.to_owned(), source: source.into() })
         }
         else if let Some(uuid) = value.strip_prefix(GroupName::CLUSTER_GROUP_PREFIX) {
             ClusterId::try_from(uuid)
                 .map(Self::Cluster)
-                .map_err(|cause| InvalidGroupNameError { value: value.to_owned(), cause: cause.into() })
+                .map_err(|source| InvalidGroupNameError { value: value.to_owned(), source: source.into() })
         }
         else {
             Ok(Self::Other(value.to_owned()))

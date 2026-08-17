@@ -65,7 +65,7 @@ impl CreateContainerExecutorCli {
         for env in self.envs.unwrap_or_default() {
             if let Some((name, value)) = env.split_once('=') {
                 let env = ContainerEnvironmentVariable::new(name, value)
-                    .map_err(|cause| cause.to_string())?;
+                    .map_err(|source| source.to_string())?;
                 environment_variables.push(env)
             }
         };

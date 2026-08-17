@@ -68,7 +68,7 @@ impl DefaultClient {
 
             if let Some(ca) = ca {
                 let certificate = Certificate::from_pem(ca)
-                    .map_err(|cause| CreateClientError::InstantiationFailure { cause: format!("Failed to parse ca certificate:\n  {cause}") })?;
+                    .map_err(|source| CreateClientError::InstantiationFailure { message: format!("Failed to parse ca certificate:\n  {source}") })?;
                 client = client.add_root_certificate(certificate);
             }
 
@@ -82,7 +82,7 @@ impl DefaultClient {
                 let netbird_username = oidc_config.username.clone();
                 let config = OidcClientConfig::ResourceOwner(oidc_config);
                 let confidential_client = ConfidentialClient::from_client_config(config, client.clone())
-                    .map_err(|cause| CreateClientError::InstantiationFailure { cause: format!("Failed to create confidential client:\n  {cause}") })?;
+                    .map_err(|source| CreateClientError::InstantiationFailure { message: format!("Failed to create confidential client:\n  {source}") })?;
                 let auth_client = ConfidentialClient::build_client_with_middleware(confidential_client.clone());
                 create_api_token(auth_client.clone(), netbird_username.as_str(), &netbird_url).await?
             }
@@ -90,7 +90,7 @@ impl DefaultClient {
                 token
             }
             NetbirdAuthenticationMethod::Disabled => {
-                return Err(CreateClientError::InstantiationFailure { cause: String::from("No authentication method specified.") });
+                return Err(CreateClientError::InstantiationFailure { message: String::from("No authentication method specified.") });
             }
         };
 
@@ -148,10 +148,10 @@ impl Client for DefaultClient {
         let request = Request::new(Method::GET, url);
 
         let response = self.requester.handle(request).await
-            .map_err(|cause| GetGroupError::RequestFailure { group_name: group_name.to_owned(), cause })?;
+            .map_err(|source| GetGroupError::RequestFailure { group_name: group_name.to_owned(), source })?;
 
         let result = response.json::<Vec<netbird::Group>>().await
-            .map_err(|cause| GetGroupError::RequestFailure { group_name: group_name.to_owned(), cause: RequestError::JsonDeserialization(cause) })?;
+            .map_err(|source| GetGroupError::RequestFailure { group_name: group_name.to_owned(), source: RequestError::JsonDeserialization(source) })?;
 
         let groups = result.into_iter()
             .filter(|group| group.name == *group_name)
@@ -300,9 +300,9 @@ impl Client for DefaultClient {
         let url = routes::policies(self.netbird_url.clone());
         let request = Request::new(Method::GET, url);
         let response = self.requester.handle(request).await
-            .map_err(|cause| GetPoliciesError::RequestFailure { policy_name: policy_name.to_owned(), cause })?;
+            .map_err(|source| GetPoliciesError::RequestFailure { policy_name: policy_name.to_owned(), source })?;
         let result = response.json::<Vec<netbird::Policy>>().await
-            .map_err(|cause| GetPoliciesError::RequestFailure { policy_name: policy_name.to_owned(), cause: RequestError::JsonDeserialization(cause) })?;
+            .map_err(|source| GetPoliciesError::RequestFailure { policy_name: policy_name.to_owned(), source: RequestError::JsonDeserialization(source) })?;
 
         let policies = result.into_iter()
             .filter(|policy| policy.name == *policy_name)
@@ -330,7 +330,7 @@ impl Client for DefaultClient {
     async fn generate_netbird_setup_key(&self, peer_id: PeerId) -> Result<netbird::SetupKey, CreateSetupKeyError> {
         let peer_group_name = netbird::GroupName::from(peer_id);
         let peer_group = self.get_netbird_group(&peer_group_name).await
-            .map_err(|cause| CreateSetupKeyError::PeerGroupNotFound { peer_id, cause })?;
+            .map_err(|source| CreateSetupKeyError::PeerGroupNotFound { peer_id, source })?;
 
         let url = routes::setup_keys(self.netbird_url.clone());
 
@@ -356,14 +356,14 @@ impl Client for DefaultClient {
         };
 
         let request = post_json_request(url, body)
-            .map_err(|cause| CreateSetupKeyError::RequestFailure { peer_id, cause })?;
+            .map_err(|source| CreateSetupKeyError::RequestFailure { peer_id, source })?;
 
         let response = self.requester.handle(request).await
-            .map_err(|cause| CreateSetupKeyError::RequestFailure { peer_id, cause })?
-            .error_for_status().map_err(|cause| CreateSetupKeyError::RequestFailure { peer_id, cause: RequestError::IllegalStatus(cause) })?;
+            .map_err(|source| CreateSetupKeyError::RequestFailure { peer_id, source })?
+            .error_for_status().map_err(|source| CreateSetupKeyError::RequestFailure { peer_id, source: RequestError::IllegalStatus(source) })?;
 
         let result = response.json().await
-            .map_err(|cause| CreateSetupKeyError::RequestFailure { peer_id, cause: RequestError::JsonDeserialization(cause) })?;
+            .map_err(|source| CreateSetupKeyError::RequestFailure { peer_id, source: RequestError::JsonDeserialization(source) })?;
 
         Ok(result)
     }

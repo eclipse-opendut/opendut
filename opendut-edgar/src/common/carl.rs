@@ -25,7 +25,7 @@ pub async fn open_stream(
         context: None,
         payload: broker::UpstreamMessagePayload::Ping,
     }).await
-        .map_err(|cause| broker::error::OpenStream { message: format!("Error while sending initial ping: {cause}") })?;
+        .map_err(|source| broker::error::OpenStream { message: format!("Error while sending initial ping: {source}") })?;
 
     info!("Peer messaging stream opened.");
     Ok((rx_inbound, tx_outbound))

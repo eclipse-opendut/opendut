@@ -38,7 +38,7 @@ pub fn coverage() -> anyhow::Result<()> {
     let files = fs::read_dir(&out_dir)?
         .filter_map(|entry| {
             entry
-                .inspect_err(|cause| warn!("Ignoring coverage file which could not be read: {cause}"))
+                .inspect_err(|source| warn!("Ignoring coverage file which could not be read: {source}"))
                 .ok()
         })
         .filter(|entry| entry.path().is_file());

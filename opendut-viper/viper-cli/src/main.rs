@@ -183,7 +183,7 @@ async fn build_and_run(params_from_file: Option<String>, test_identifier_filter:
                 Err(err) => {
                     return Err(IncompleteBindingsError {
                         suite: suite.name().to_string(),
-                        cause: err
+                        source: err
                     }.into());
                 }
             };

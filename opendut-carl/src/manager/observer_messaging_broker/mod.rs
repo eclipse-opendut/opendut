@@ -46,7 +46,7 @@ impl ObserverMessagingBroker {
             if let WaitForPeersOnlineResponseStatus::WaitForPeersOnlineSuccess = response.status {
                 let _ignore = tx_outbound.send(response.into())
                     .await
-                    .inspect_err(|cause| warn!("Failed to send response:\n  {cause}"));
+                    .inspect_err(|source| warn!("Failed to send response:\n  {source}"));
             } else {
                 loop {
                     observed_peer_connection_states.observe().await;
@@ -57,7 +57,7 @@ impl ObserverMessagingBroker {
                     let response = observed_peer_connection_states.determine_response();
                     let _ignore = tx_outbound.send(response.clone().into())
                         .await
-                        .inspect_err(|cause| warn!("Failed to send response:\n  {cause}"));
+                        .inspect_err(|source| warn!("Failed to send response:\n  {source}"));
                     if let WaitForPeersOnlineResponseStatus::WaitForPeersOnlineSuccess = response.status {
                         break;
                     }

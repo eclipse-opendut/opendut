@@ -17,7 +17,7 @@ conversion! {
 
     fn try_from(value: Proto) -> ConversionResult<Model> {
         let result = Model::try_from(value.value)
-            .map_err(|cause| ErrorBuilder::message(format!("Error while parsing TestSuiteIdentifier from Protobuf message: {cause}")))?;
+            .map_err(|source| ErrorBuilder::message(format!("Error while parsing TestSuiteIdentifier from Protobuf message: {source}")))?;
 
         Ok(result)
     }
@@ -64,7 +64,7 @@ conversion! {
             Kind::Boolean(ViperParameterDescriptorBoolean { name, info, default }) =>
                 Model::BooleanParameter {
                     name: name.try_into()
-                        .map_err(|cause| ErrorBuilder::message(format!("Error while converting ParameterName from Protobuf: {cause}")))?,
+                        .map_err(|source| ErrorBuilder::message(format!("Error while converting ParameterName from Protobuf: {source}")))?,
                     info: extract!(info)?
                         .try_into()?,
                     default,
@@ -72,7 +72,7 @@ conversion! {
             Kind::Number(ViperParameterDescriptorNumber { name, info, default, min, max }) =>
                 Model::NumberParameter {
                     name: name.try_into()
-                        .map_err(|cause| ErrorBuilder::message(format!("Error while converting ParameterName from ProtoBuf: {cause}")))?,
+                        .map_err(|source| ErrorBuilder::message(format!("Error while converting ParameterName from ProtoBuf: {source}")))?,
                     info: extract!(info)?
                         .try_into()?,
                     default,
@@ -82,7 +82,7 @@ conversion! {
             Kind::Text(ViperParameterDescriptorText { name, info, default, max_length }) =>
                 Model::TextParameter {
                     name: name.try_into()
-                        .map_err(|cause| ErrorBuilder::message(format!("Error while converting ParameterName from ProtoBuf: {cause}")))?,
+                        .map_err(|source| ErrorBuilder::message(format!("Error while converting ParameterName from ProtoBuf: {source}")))?,
                     info: extract!(info)?
                         .try_into()?,
                     default,

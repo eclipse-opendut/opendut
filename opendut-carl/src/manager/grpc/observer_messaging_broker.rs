@@ -64,7 +64,7 @@ impl ObserverMessagingBrokerService for ObserverMessagingBrokerFacade {
 
         trace!("Received request to wait for following peers to be online: {:?}", request.peer_ids);
         let rx_outbound = self.observer_messaging_broker.wait_for_peers_online(request.peer_ids, request.max_observation_duration).await
-            .map_err(|cause| Status::internal(cause.to_string()))?;
+            .map_err(|source| Status::internal(source.to_string()))?;
         let outbound_stream = ReceiverStream::new(rx_outbound)
             .map(Ok);
 

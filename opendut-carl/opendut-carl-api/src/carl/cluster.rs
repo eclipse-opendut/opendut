@@ -9,11 +9,11 @@ use opendut_model::ShortName;
 
 #[derive(thiserror::Error, Debug)]
 pub enum CreateClusterDescriptorError {
-    #[error("ClusterConfigration '{cluster_name}' <{cluster_id}> could not be created, due to internal errors:\n  {cause}")]
+    #[error("ClusterConfigration '{cluster_name}' <{cluster_id}> could not be created, due to internal errors:\n  {message}")]
     Internal {
         cluster_id: ClusterId,
         cluster_name: ClusterName,
-        cause: String
+        message: String
     }
 }
 
@@ -44,11 +44,11 @@ pub enum DeleteClusterDescriptorError {
         actual_state: ClusterState,
         required_states: Vec<ClusterState>,
     },
-    #[error("ClusterDescriptor {cluster} deleted with internal errors:\n  {cause}", cluster=ClusterDisplay::new(cluster_name, cluster_id))]
+    #[error("ClusterDescriptor {cluster} deleted with internal errors:\n  {message}", cluster=ClusterDisplay::new(cluster_name, cluster_id))]
     Internal {
         cluster_id: ClusterId,
         cluster_name: Option<ClusterName>,
-        cause: String
+        message: String
     }
 }
 
@@ -73,11 +73,11 @@ pub enum StoreClusterDeploymentError {
         cluster_name: Option<ClusterName>,
         invalid_peers: Vec<PeerId>,
     },
-    #[error("ClusterDeployment for cluster {cluster} could not be changed, due to internal errors:\n  {cause}", cluster=ClusterDisplay::new(cluster_name, cluster_id))]
+    #[error("ClusterDeployment for cluster {cluster} could not be changed, due to internal errors:\n  {message}", cluster=ClusterDisplay::new(cluster_name, cluster_id))]
     Internal {
         cluster_id: ClusterId,
         cluster_name: Option<ClusterName>,
-        cause: String
+        message: String
     }
 }
 
@@ -98,18 +98,18 @@ pub enum DeleteClusterDeploymentError {
         actual_state: ClusterState,
         required_states: Vec<ClusterState>,
     },
-    #[error("ClusterDeployment for cluster {cluster} deleted with internal errors:\n  {cause}", cluster=ClusterDisplay::new(cluster_name, cluster_id))]
+    #[error("ClusterDeployment for cluster {cluster} deleted with internal errors:\n  {message}", cluster=ClusterDisplay::new(cluster_name, cluster_id))]
     Internal {
         cluster_id: ClusterId,
         cluster_name: Option<ClusterName>,
-        cause: String
+        message: String
     },
 }
 
 #[derive(thiserror::Error, Debug)]
 pub enum GetClusterDeploymentError {
-    #[error("ClusterDeployment for cluster <{cluster_id}> could not be retrieved, due to internal errors:\n  {cause}")]
-    Internal { cluster_id: ClusterId, cause: String },
+    #[error("ClusterDeployment for cluster <{cluster_id}> could not be retrieved, due to internal errors:\n  {message}")]
+    Internal { cluster_id: ClusterId, message: String },
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -326,21 +326,21 @@ mod client {
             match self.inner.get_cluster_deployment(request).await {
                 Ok(response) => {
                     let result = response.into_inner().result
-                        .ok_or(GetClusterDeploymentError::Internal { cluster_id, cause: String::from("Response contains no result!") })?;
+                        .ok_or(GetClusterDeploymentError::Internal { cluster_id, message: String::from("Response contains no result!") })?;
                     match result {
                         cluster_manager::get_cluster_deployment_response::Result::Failure(_) => {
-                            Err(GetClusterDeploymentError::Internal { cluster_id, cause: String::from("Failed to get cluster deployment!") })
+                            Err(GetClusterDeploymentError::Internal { cluster_id, message: String::from("Failed to get cluster deployment!") })
                         }
                         cluster_manager::get_cluster_deployment_response::Result::Success(cluster_manager::GetClusterDeploymentSuccess { deployment }) => {
                             let deployment = deployment
-                                .ok_or(GetClusterDeploymentError::Internal { cluster_id, cause: String::from("Response contains no cluster deployment!") })?;
+                                .ok_or(GetClusterDeploymentError::Internal { cluster_id, message: String::from("Response contains no cluster deployment!") })?;
                             ClusterDeployment::try_from(deployment)
-                                .map_err(|_| GetClusterDeploymentError::Internal { cluster_id, cause: String::from("Conversion failed for cluster deployment!") })
+                                .map_err(|_| GetClusterDeploymentError::Internal { cluster_id, message: String::from("Conversion failed for cluster deployment!") })
                         }
                     }
                 },
                 Err(status) => {
-                    Err(GetClusterDeploymentError::Internal { cluster_id, cause: format!("gRPC failure: {status}") })
+                    Err(GetClusterDeploymentError::Internal { cluster_id, message: format!("gRPC failure: {status}") })
                 }
             }
         }

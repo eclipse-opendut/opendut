@@ -22,7 +22,7 @@ pub struct WaitPeersInClusterOnline {
 impl WaitPeersInClusterOnline {
     pub async fn execute(self, carl: &mut CarlClient) -> crate::Result<()> {
         let response = carl.cluster.list_cluster_peer_states(self.id).await
-            .map_err(|cause| cause.to_string())?;
+            .map_err(|source| source.to_string())?;
 
         let max_observation_duration = Duration::from_secs(self.timeout);
         match response {

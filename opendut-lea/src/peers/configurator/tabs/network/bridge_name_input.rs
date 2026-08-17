@@ -18,8 +18,8 @@ pub fn BridgeNameInput(peer_configuration: RwSignal<UserPeerConfiguration>) -> i
             Ok(_) => {
                 UserInputValue::Right(input)
             }
-            Err(cause) => {
-                match cause {
+            Err(source) => {
+                match source {
                     NetworkInterfaceNameError::Empty => {
                         UserInputValue::Right(String::new())
                     }

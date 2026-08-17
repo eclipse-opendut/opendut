@@ -143,7 +143,7 @@ impl PeerManagerService for PeerManagerFacade {
                 .inspect_err(|error| error!("Error while getting peer descriptor from gRPC API: {error}"))
                 .map_err(|_: PersistenceError| opendut_carl_api::carl::peer::GetPeerDescriptorError::Internal {
                     peer_id,
-                    cause: String::from("Error when accessing persistence while getting peer descriptor"),
+                    source: String::from("Error when accessing persistence while getting peer descriptor"),
                 });
 
         let response = match result {
@@ -173,7 +173,7 @@ impl PeerManagerService for PeerManagerFacade {
         let result = self.resource_manager.list::<PeerDescriptor>().await
             .inspect_err(|error| error!("Error while listing peer descriptors from gRPC API: {error}"))
             .map_err(|_: PersistenceError| opendut_carl_api::carl::peer::ListPeerDescriptorsError::Internal {
-                cause: String::from("Error when accessing persistence while listing peer descriptors"),
+                source: String::from("Error when accessing persistence while listing peer descriptors"),
             });
 
         let response = match result {

@@ -106,7 +106,7 @@ impl ParameterEdgeDetectedStateKind {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ParameterDetectedStateError {
     pub kind: ParameterDetectedStateErrorKind,
-    pub cause: ParameterDetectedStateErrorCause,
+    pub source: ParameterDetectedStateErrorCause,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

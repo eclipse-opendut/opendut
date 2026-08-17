@@ -160,7 +160,7 @@ impl DockerCommand {
         let command_status = self
             .command
             .status()
-            .map_err(|cause| TheoError::DockerCommandFailed(format!("{error_message}. Cause: {cause}")))?;
+            .map_err(|source| TheoError::DockerCommandFailed(format!("{error_message}. Cause: {source}")))?;
 
         if command_status.success() {
             Ok(command_status.code().unwrap_or(1))

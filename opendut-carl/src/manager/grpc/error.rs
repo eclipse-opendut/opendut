@@ -26,7 +26,7 @@ mod cluster_manager {
                     Self::Internal {
                         cluster_id,
                         cluster_name,
-                        cause: String::from("Error when accessing persistence"),
+                        source: String::from("Error when accessing persistence"),
                     }
                 }
             }
@@ -46,7 +46,7 @@ mod cluster_manager {
                     Self::Internal {
                         cluster_id,
                         cluster_name,
-                        cause: String::from("Error when accessing persistence"),
+                        source: String::from("Error when accessing persistence"),
                     }
                 }
                 #[cfg(feature="viper")]
@@ -65,14 +65,14 @@ mod cluster_manager {
                     Self::Internal {
                         cluster_id,
                         cluster_name: None,
-                        cause: String::from("Error when listing cluster peer states"),
+                        source: String::from("Error when listing cluster peer states"),
                     }
                 }
                 cluster_manager::error::StoreClusterDeploymentError::Persistence { cluster_id, cluster_name, source: _ } => {
                     Self::Internal {
                         cluster_id,
                         cluster_name,
-                        cause: String::from("Error when accessing persistence"),
+                        source: String::from("Error when accessing persistence"),
                     }
                 }
             }
@@ -90,14 +90,14 @@ mod cluster_manager {
                     Self::Internal {
                         cluster_id,
                         cluster_name,
-                        cause: String::from("Error when accessing persistence while deleting cluster deployment"),
+                        source: String::from("Error when accessing persistence while deleting cluster deployment"),
                     }
                 }
                 cluster_manager::DeleteClusterDeploymentError::VpnClient { cluster_id, cluster_name, source: _ } =>
                     Self::Internal {
                         cluster_id,
                         cluster_name: Some(cluster_name),
-                        cause: String::from("Error when tearing down VPN while deleting cluster deployment"),
+                        source: String::from("Error when tearing down VPN while deleting cluster deployment"),
                     }
             }
         }
@@ -117,13 +117,13 @@ mod peer_manager {
                     Self::Internal {
                         peer_id,
                         peer_name,
-                        cause: String::from("Error when accessing persistence while storing peer descriptor"),
+                        source: String::from("Error when accessing persistence while storing peer descriptor"),
                     },
                 peer_manager::store_peer_descriptor::StorePeerDescriptorError::VpnClient { peer_id, peer_name, source: _ } =>
                     Self::Internal {
                         peer_id,
                         peer_name,
-                        cause: String::from("Error when creating peer in VPN management while storing peer descriptor"),
+                        source: String::from("Error when creating peer in VPN management while storing peer descriptor"),
                     }
             }
         }
@@ -142,19 +142,19 @@ mod peer_manager {
                     Self::Internal {
                         peer_id,
                         peer_name,
-                        cause: String::from("Error when accessing persistence while deleting peer descriptor"),
+                        source: String::from("Error when accessing persistence while deleting peer descriptor"),
                     },
                 peer_manager::delete_peer_descriptor::DeletePeerDescriptorError::AuthRegistration { peer_id, peer_name, source: _ } =>
                     Self::Internal {
                         peer_id,
                         peer_name: Some(peer_name),
-                        cause: String::from("Error when removing registration while deleting peer descriptor"),
+                        source: String::from("Error when removing registration while deleting peer descriptor"),
                     },
                 peer_manager::delete_peer_descriptor::DeletePeerDescriptorError::VpnClient { peer_id, peer_name, source: _ } =>
                     Self::Internal {
                         peer_id,
                         peer_name: Some(peer_name),
-                        cause: String::from("Error when removing peer in VPN management while deleting peer descriptor"),
+                        source: String::from("Error when removing peer in VPN management while deleting peer descriptor"),
                     },
             }
         }
@@ -168,7 +168,7 @@ mod peer_manager {
                 peer_manager::get_peer_state::GetPeerStateError::Persistence { peer_id, source: _ } =>
                     Self::Internal {
                         peer_id,
-                        cause: String::from("Error when accessing persistence while getting peer state"),
+                        source: String::from("Error when accessing persistence while getting peer state"),
                     }
             }
         }
@@ -179,7 +179,7 @@ mod peer_manager {
             match value {
                 peer_manager::list_peer_states::ListPeerStatesError::Persistence { source: _ } =>
                     Self::Internal {
-                        cause: String::from("Error when accessing persistence while listing peer state"),
+                        source: String::from("Error when accessing persistence while listing peer state"),
                     }
             }
         }
@@ -198,11 +198,11 @@ mod viper_manager {
                     Self::SourceNotFound { source_id },
                 viper_manager::delete_viper_source_descriptor::DeleteViperSourceDescriptorError::TestExists { source_id, test_id } =>
                     Self::TestExists { source_id, test_id },
-                viper_manager::delete_viper_source_descriptor::DeleteViperSourceDescriptorError::Persistence { source_id, source_name, cause: _ } =>
+                viper_manager::delete_viper_source_descriptor::DeleteViperSourceDescriptorError::Persistence { source_id, source_name, source: _ } =>
                     Self::Internal {
                         source_id,
                         source_name,
-                        cause: String::from("Error when accessing persistence while deleting VIPER source descriptor"),
+                        source: String::from("Error when accessing persistence while deleting VIPER source descriptor"),
                     },
             }
         }
@@ -215,10 +215,10 @@ mod viper_manager {
                     Self::TestNotFound { test_id },
                 viper_manager::delete_viper_test_descriptor::DeleteViperTestDescriptorError::ViperRunDeploymentExists { test_id, run_id } =>
                     Self::ViperRunDeploymentExists { test_id, run_id },
-                viper_manager::delete_viper_test_descriptor::DeleteViperTestDescriptorError::Persistence { test_id, cause: _ } =>
+                viper_manager::delete_viper_test_descriptor::DeleteViperTestDescriptorError::Persistence { test_id, source: _ } =>
                     Self::Internal {
                         test_id,
-                        cause: String::from("Error when accessing persistence while deleting VIPER test descriptor"),
+                        source: String::from("Error when accessing persistence while deleting VIPER test descriptor"),
                     }
             }
         }
@@ -230,17 +230,17 @@ mod viper_manager {
             match value {
                 viper_manager::get_viper_test_suite_parameters::GetViperTestSuiteParametersError::Compilation { source_id, source_name } =>
                     Self::Compilation { source_id, source_name },
-                viper_manager::get_viper_test_suite_parameters::GetViperTestSuiteParametersError::TaskJoin { source_id, when, cause: _ } =>
+                viper_manager::get_viper_test_suite_parameters::GetViperTestSuiteParametersError::TaskJoin { source_id, when, source: _ } =>
                     Self::Internal {
                         source_id,
-                        cause: format!("Internal error when {when} to completion while retrieving VIPER test suite descriptor"),
+                        source: format!("Internal error when {when} to completion while retrieving VIPER test suite descriptor"),
                     },
                 viper_manager::get_viper_test_suite_parameters::GetViperTestSuiteParametersError::ViperRuntime { source_id, source_name } =>
                     Self::ViperRuntime { source_id, source_name },
-                viper_manager::get_viper_test_suite_parameters::GetViperTestSuiteParametersError::Persistence { source_id, cause: _ } =>
+                viper_manager::get_viper_test_suite_parameters::GetViperTestSuiteParametersError::Persistence { source_id, source: _ } =>
                     Self::Internal {
                         source_id,
-                        cause: String::from("Error when accessing persistence while getting VIPER test suite descriptor"),
+                        source: String::from("Error when accessing persistence while getting VIPER test suite descriptor"),
                     },
             }
         }

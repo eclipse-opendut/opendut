@@ -13,7 +13,7 @@ impl Resources<'_> {
     pub async fn get_viper_test_suite_parameters(&self, source_id: ViperSourceId) -> Result<Option<ViperTestSuiteParameters>, GetViperTestSuiteParametersError> {
 
         let source = self.get::<ViperSourceDescriptor>(source_id)
-            .map_err(|cause| GetViperTestSuiteParametersError::Persistence { source_id, cause })?;
+            .map_err(|source| GetViperTestSuiteParametersError::Persistence { source_id, source })?;
 
         match source {
             Some(source) => discover_suite(source).await,
@@ -49,7 +49,7 @@ async fn discover_suite(source: ViperSourceDescriptor) -> Result<Option<ViperTes
     debug!("VIPER compilation completed.");
 
     let (identifier, parameters) = handle.await
-        .map_err(|cause| GetViperTestSuiteParametersError::TaskJoin { source_id, when: "compiling VIPER source", cause })??;
+        .map_err(|source| GetViperTestSuiteParametersError::TaskJoin { source_id, when: "compiling VIPER source", source })??;
 
     Ok(Some(ViperTestSuiteParameters {
         id: identifier,
@@ -69,7 +69,7 @@ pub enum GetViperTestSuiteParametersError {
     TaskJoin {
         source_id: ViperSourceId,
         when: &'static str,
-        #[source] cause: tokio::task::JoinError,
+        source: tokio::task::JoinError,
     },
     #[error("Error while initializing VIPER runtime for VIPER test source {source_name} with ID <{source_id}>.")]
     ViperRuntime {
@@ -79,6 +79,6 @@ pub enum GetViperTestSuiteParametersError {
     #[error("Error when accessing persistence while getting VIPER test suite descriptor for source <{source_id}>")]
     Persistence {
         source_id: ViperSourceId,
-        #[source] cause: PersistenceError,
+        source: PersistenceError,
     },
 }

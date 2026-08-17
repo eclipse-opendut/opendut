@@ -45,9 +45,9 @@ where
                                 .success()
                         );
                     }
-                    Err(cause) => {
-                        error!("Failed to store cluster deployment <{}>, due to error: {:?}", cluster_id, cause);
-                        match cause {
+                    Err(source) => {
+                        error!("Failed to store cluster deployment <{}>, due to error: {:?}", cluster_id, source);
+                        match source {
                             ClientError::UsageError(StoreClusterDeploymentError::IllegalPeerState { invalid_peers, .. }) => {
                                 toaster.toast(
                                     Toast::builder()

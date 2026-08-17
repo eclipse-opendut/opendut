@@ -93,9 +93,9 @@ fn read_pem_from_config_key(config_key: &str, config: &Config) -> anyhow::Result
     fn try_load_pem_from_file_path(config_value: &str, config_key: &str) -> anyhow::Result<Vec<Pem>> {
         let path = project::make_path_absolute(config_value)?;
         read_pem_from_file_path(&path)
-            .inspect_err(|cause| {
-                let mut error_message = cause.to_string();
-                for error in cause.chain() {
+            .inspect_err(|source| {
+                let mut error_message = source.to_string();
+                for error in source.chain() {
                     error_message.push_str("\n    Caused by: ");
                     error_message.push_str(&error.to_string())
                 }
@@ -112,9 +112,9 @@ fn read_pem_from_config_key(config_key: &str, config: &Config) -> anyhow::Result
                     debug!("Using PEM loaded from text value of configuration key: {config_key}, number of PEM object(s): {}", pems.len());
                     Ok(pems)
                 }
-                Err(cause) => {
+                Err(source) => {
                     if config_value.starts_with("-----BEGIN") { //very likely that user wanted to specify PEM, so return error directly
-                        Err(cause)
+                        Err(source)
                             .context("Failed to load text value as PEM, which was configured in configuration key.")
                     }
                     else if let Ok(pem) = try_load_pem_from_file_path(&config_value, config_key) {

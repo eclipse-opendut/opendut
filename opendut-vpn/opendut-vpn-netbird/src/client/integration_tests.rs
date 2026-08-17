@@ -53,10 +53,10 @@ async fn test_netbird_vpn_client() -> anyhow::Result<()> {
     let Fixture { management_url, authentication_method, ca, timeout, retries, setup_key_expiration } = Fixture::default();
     let management_ca = {
         let mut file = File::open(ca)
-            .map_err(|cause| CreateClientError::InstantiationFailure { cause: format!("Failed to open ca certificate:\n  {cause}") })?;
+            .map_err(|source| CreateClientError::InstantiationFailure { message: format!("Failed to open ca certificate:\n  {source}") })?;
         let mut buffer = Vec::new();
         file.read_to_end(&mut buffer)
-            .map_err(|cause| CreateClientError::InstantiationFailure { cause: format!("Failed to read ca certificate:\n  {cause}") })?;
+            .map_err(|source| CreateClientError::InstantiationFailure { message: format!("Failed to read ca certificate:\n  {source}") })?;
         buffer
     };
 
@@ -101,10 +101,10 @@ async fn test_netbird_vpn_client_list_keys() -> anyhow::Result<()> {
     let Fixture { management_url, authentication_method, ca, timeout, retries, setup_key_expiration } = Fixture::default();
     let management_ca = {
         let mut file = File::open(ca.clone())
-            .map_err(|cause| CreateClientError::InstantiationFailure { cause: format!("Failed to open ca certificate:\n  {cause}") })?;
+            .map_err(|source| CreateClientError::InstantiationFailure { message: format!("Failed to open ca certificate:\n  {source}") })?;
         let mut buffer = Vec::new();
         file.read_to_end(&mut buffer)
-            .map_err(|cause| CreateClientError::InstantiationFailure { cause: format!("Failed to read ca certificate:\n  {cause}") })?;
+            .map_err(|source| CreateClientError::InstantiationFailure { message: format!("Failed to read ca certificate:\n  {source}") })?;
         buffer
     };
     let netbird_management_client = NetbirdManagementClient::create_client_and_delete_default_policy(

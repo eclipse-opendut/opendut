@@ -123,8 +123,8 @@ fn SaveClusterButton(
                             );
                             set_is_new.set(false);
                         }
-                        Err(cause) => {
-                            error!("Failed to store cluster <{}>, due to error: {:?}", "id", cause);
+                        Err(source) => {
+                            error!("Failed to store cluster <{}>, due to error: {:?}", "id", source);
                             toaster.toast(Toast::builder()
                                 .simple("Failed to store cluster descriptor!")
                                 .error()

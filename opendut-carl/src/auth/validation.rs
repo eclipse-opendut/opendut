@@ -85,7 +85,7 @@ pub async fn authorize_user(issuer_url: Url, issuer_remote_url: Url, access_toke
 
 async fn fetch_and_cache_jwk_from_idp(issuer_url: &Url, key_id: String, jwk_requester: impl JwkRequester, mut cache: CustomInMemoryCache<String, JwkCacheValue>) -> Result<JsonWebKey, ValidationError> {
     let issuer_jwk_url = issuer_url.join(GIVEN_ISSUER_JWK_URL)
-        .map_err(|cause| ValidationError::Configuration(format!("Issuer JWK error: {cause}")))?;
+        .map_err(|source| ValidationError::Configuration(format!("Issuer JWK error: {source}")))?;
 
     let jwk_map = fetch_jwk_custom(issuer_jwk_url, jwk_requester).await?;
 
@@ -142,9 +142,9 @@ impl JwkRequester for Jwk {
         let response = self.0.get(issuer_jwk_url.clone())
             .send()
             .await
-            .map_err(|cause| ValidationError::Configuration(format!("Failed to fetch IDP jwk URL from '{issuer_jwk_url}': {cause}")))?;
+            .map_err(|source| ValidationError::Configuration(format!("Failed to fetch IDP jwk URL from '{issuer_jwk_url}': {source}")))?;
         let result = response.text().await
-            .map_err(|cause| ValidationError::Configuration(format!("Failed to read IDP configuration URL from '{issuer_jwk_url}': {cause}")))?;
+            .map_err(|source| ValidationError::Configuration(format!("Failed to read IDP configuration URL from '{issuer_jwk_url}': {source}")))?;
         Ok(result)
     }
 }

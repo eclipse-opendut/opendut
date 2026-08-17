@@ -23,7 +23,7 @@ pub async fn exponential_backoff_launch_rperf_server(
         .await;
 
     backoff_result
-        .map_err(|cause| RperfServerError { message: "Could not run rperf server".to_string(), cause })
+        .map_err(|source| RperfServerError { message: "Could not run rperf server".to_string(), source })
 }
 
 pub async fn launch_rperf_server(spawner: Spawner) -> Result<(), RperfError> {
@@ -64,7 +64,7 @@ pub async fn launch_rperf_server(spawner: Spawner) -> Result<(), RperfError> {
         }
         Err(error) => {
             error!("The rperf server could not be started: {}", error);
-            Err(RperfError::Start { message: "The rperf server could not be started".to_string(), cause: error })
+            Err(RperfError::Start { message: "The rperf server could not be started".to_string(), source: error })
         }
     }
 }

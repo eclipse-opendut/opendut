@@ -58,13 +58,13 @@ impl opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_br
 
 
         let (tx_inbound, rx_outbound) = self.peer_messaging_broker.open(peer_id, remote_host, extra_headers).await
-            .map_err(|cause| {
-                error!("Error while opening stream from newly connected peer <{peer_id}>:\n  {cause}");
-                match cause {
-                    OpenError::PeerAlreadyConnected { .. } => Status::aborted(cause.to_string()),
-                    OpenError::SendApplyPeerConfiguration { .. } => Status::unavailable(cause.to_string()),
-                    OpenError::Persistence { .. } => Status::internal(cause.to_string()),
-                    OpenError::PeerNotFound(_) => Status::internal(cause.to_string()),
+            .map_err(|source| {
+                error!("Error while opening stream from newly connected peer <{peer_id}>:\n  {source}");
+                match source {
+                    OpenError::PeerAlreadyConnected { .. } => Status::aborted(source.to_string()),
+                    OpenError::SendApplyPeerConfiguration { .. } => Status::unavailable(source.to_string()),
+                    OpenError::Persistence { .. } => Status::internal(source.to_string()),
+                    OpenError::PeerNotFound(_) => Status::internal(source.to_string()),
                 }
             })?;
 
@@ -74,9 +74,9 @@ impl opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_br
                 match result {
                     Ok(upstream) => {
                         let upstream_conversion_result = UpstreamMessage::try_from(upstream)
-                            .map_err(|cause| {
-                                error!("Error while converting upstream message from client <{}>: {cause}", peer_id);
-                                Status::invalid_argument(cause.to_string())
+                            .map_err(|source| {
+                                error!("Error while converting upstream message from client <{}>: {source}", peer_id);
+                                Status::invalid_argument(source.to_string())
                             });
                         
                         match upstream_conversion_result {

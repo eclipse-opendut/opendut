@@ -53,13 +53,13 @@ impl NetbirdManagementClient {
     async fn create(configuration: NetbirdManagementClientConfiguration) -> Result<Self, CreateClientError> {
         let management_url = configuration.management_url;
         let management_ca_path = configuration.ca
-            .ok_or_else(|| CreateClientError::InstantiationFailure { cause: String::from("No ca certificate provided.") })?;
+            .ok_or_else(|| CreateClientError::InstantiationFailure { message: String::from("No ca certificate provided.") })?;
         let management_ca = {
             let mut file = File::open(management_ca_path)
-                .map_err(|cause| CreateClientError::InstantiationFailure { cause: format!("Failed to open ca certificate:\n  {cause}") })?;
+                .map_err(|source| CreateClientError::InstantiationFailure { message: format!("Failed to open ca certificate:\n  {source}") })?;
             let mut buffer = Vec::new();
             file.read_to_end(&mut buffer)
-                .map_err(|cause| CreateClientError::InstantiationFailure { cause: format!("Failed to read ca certificate:\n  {cause}") })?;
+                .map_err(|source| CreateClientError::InstantiationFailure { message: format!("Failed to read ca certificate:\n  {source}") })?;
             buffer
         };
         let inner = Box::new(DefaultClient::create(
@@ -102,7 +102,7 @@ impl VpnManagementClient for NetbirdManagementClient {
 
         match self.delete_cluster(cluster_id).await {
             Ok(_) => debug!("Deleted a previous cluster with ID <{cluster_id}> before creating the new cluster."),
-            Err(cause) => match cause {
+            Err(source) => match source {
                 DeleteClusterError::NotFound { cluster_id, message } => trace!("Did not need to delete a previous cluster with ID <{cluster_id}> before creating the new cluster. ({message})"),
                 DeleteClusterError::DeletionFailure { cluster_id, error } => {
                     return Err(CreateClusterError::CreationFailure { cluster_id, error: anyhow!("Failure while deleting a previous cluster with ID <{cluster_id}> before creating the new cluster: {error}").into() });
@@ -138,7 +138,7 @@ impl VpnManagementClient for NetbirdManagementClient {
             Ok(policy) => {
                 match self.inner.delete_netbird_policy(&policy.id).await {
                     Ok(_) => debug!("Deleted NetBird policy with name '{}' and NetBird Policy ID '{}'.", policy.name, policy.id.0),
-                    Err(cause) => return match cause {
+                    Err(source) => return match source {
                         RequestError::IllegalStatus(error) => {
                             if let Some(http::StatusCode::NOT_FOUND) = error.status() {
                                 Err(DeleteClusterError::NotFound { cluster_id, message: format!("Received '404 Not Found' when deleting policy for cluster <{cluster_id}> with NetBird policy ID <{netbird_policy}>.", netbird_policy = policy.id.0) })
@@ -159,8 +159,8 @@ impl VpnManagementClient for NetbirdManagementClient {
             Err(GetPoliciesError::PolicyNotFound { .. }) => {
                 // No policy found, so no need to delete it.
             }
-            Err(cause) => {
-                return Err(DeleteClusterError::DeletionFailure { cluster_id, error: anyhow!("Failed to get cluster policy '{policy_name}' to be deleted.\n {cause}").into() });
+            Err(source) => {
+                return Err(DeleteClusterError::DeletionFailure { cluster_id, error: anyhow!("Failed to get cluster policy '{policy_name}' to be deleted.\n {source}").into() });
             }
         };
 
@@ -172,7 +172,7 @@ impl VpnManagementClient for NetbirdManagementClient {
                         debug!("Deleted NetBird group with name '{}' and NetBird Group ID '{}'.", group.name, group.id.0) ;
                         Ok(())
                     },
-                    Err(cause) => match cause {
+                    Err(source) => match source {
                         RequestError::IllegalStatus(error) => {
                             if let Some(http::StatusCode::NOT_FOUND) = error.status() {
                                 Err(DeleteClusterError::NotFound { cluster_id, message: format!("Received '404 Not Found' when deleting group for cluster <{cluster_id}> with NetBird group ID <{netbird_group}>.", netbird_group = group.id.0) })
@@ -188,8 +188,8 @@ impl VpnManagementClient for NetbirdManagementClient {
                 // No group found, so no need to delete it.
                 Ok(())
             }
-            Err(cause) => {
-                Err(DeleteClusterError::DeletionFailure { cluster_id, error: anyhow!("Failed to get cluster group '{group_name}' to be deleted.\n {cause}").into() })
+            Err(source) => {
+                Err(DeleteClusterError::DeletionFailure { cluster_id, error: anyhow!("Failed to get cluster group '{group_name}' to be deleted.\n {source}").into() })
             }
         }
     }
@@ -249,7 +249,7 @@ impl VpnManagementClient for NetbirdManagementClient {
         if let Some(group) = group {
             for netbird_peer in &group.peers {
                 self.inner.delete_netbird_peer(&netbird_peer.id).await //Delete NetBird peer to log it out. This means that during EDGAR Setup, it will be logged back in, which allows adjusting the MTU.
-                    .map_err(|cause| CreateVpnPeerConfigurationError::CreationFailure { peer_id, error: Box::new(cause) })?;
+                    .map_err(|source| CreateVpnPeerConfigurationError::CreationFailure { peer_id, error: Box::new(source) })?;
                 debug!("Deleted Peer <{peer_id}> from NetBird with NetBird-Peer-Id <{}>.", netbird_peer.id.0);
             }
         }
@@ -267,7 +267,7 @@ impl VpnManagementClient for NetbirdManagementClient {
 
         let setup_key = self.inner.generate_netbird_setup_key(peer_id).await
             .map_err(|error| match error {
-                CreateSetupKeyError::PeerGroupNotFound { cause: error, .. } => {
+                CreateSetupKeyError::PeerGroupNotFound { source: error, .. } => {
                     error!("Failed to generate vpn configuration for peer <{peer_id}>, because the peer's self group could not be found!");
                     CreateVpnPeerConfigurationError::CreationFailure { peer_id, error: error.into() }
                 }

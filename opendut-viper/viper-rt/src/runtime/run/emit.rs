@@ -10,7 +10,7 @@ pub async fn initialized(
 ) -> RunResult<()> {
     let suite = Clone::clone(&state.identifier);
     emitter.emit(RunEvent::Initialized(state))
-        .map_err(|error| Box::new(RunError::new_failed_event_emission_error(suite, format!("Failed to emit `Initialized` event: {}", error.cause))))
+        .map_err(|error| Box::new(RunError::new_failed_event_emission_error(suite, format!("Failed to emit `Initialized` event: {}", error.source))))
         .await
 }
 

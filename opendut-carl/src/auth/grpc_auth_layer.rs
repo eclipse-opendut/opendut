@@ -41,8 +41,8 @@ impl GrpcAuthenticationLayer {
                         request.extensions_mut().insert(user);
                         Ok(request)
                     }
-                    Err(cause) => {
-                        debug!("Blocking authentication attempt due to error while validating credentials: {cause}");
+                    Err(source) => {
+                        debug!("Blocking authentication attempt due to error while validating credentials: {source}");
                         Err(Status::unauthenticated("CARL says, invalid credentials!"))
                     }
                 }

@@ -323,7 +323,7 @@ conversion! {
                 peer_configuration_parameter_state_kind_error::Kind::WaitingForDependencies(PeerConfigurationParameterStateKindErrorWaitingForDependencies {})
             }
         };
-        let error_cause = match value.cause {
+        let error_source = match value.source {
             crate::peer::configuration::api::ParameterDetectedStateErrorCause::Unclassified(message) => {
                 peer_configuration_parameter_state_kind_error::Cause::Unclassified(UnclassifiedError { message })
             }
@@ -333,7 +333,7 @@ conversion! {
                 )
             }
         };
-        PeerConfigurationParameterStateKindError { kind: Some(error_kind), cause: Some(error_cause)}
+        PeerConfigurationParameterStateKindError { kind: Some(error_kind), cause: Some(error_source)}
     }
 
     fn try_from(value: Proto) -> ConversionResult<Model> {
@@ -344,7 +344,7 @@ conversion! {
             peer_configuration_parameter_state_kind_error::Kind::CheckAbsentFailed(_) => crate::peer::configuration::api::ParameterDetectedStateErrorKind::CheckAbsentFailed,
             peer_configuration_parameter_state_kind_error::Kind::WaitingForDependencies(_) => crate::peer::configuration::api::ParameterDetectedStateErrorKind::CheckAbsentFailed,
         };
-        let error_cause = match extract!(value.cause)? {
+        let error_source = match extract!(value.cause)? {
             peer_configuration_parameter_state_kind_error::Cause::Unclassified(details) => {
                 crate::peer::configuration::api::ParameterDetectedStateErrorCause::Unclassified(details.message)
             }
@@ -357,7 +357,7 @@ conversion! {
         };
         Ok(crate::peer::configuration::api::ParameterDetectedStateError {
             kind: error_kind,
-            cause: error_cause,
+            source: error_source,
         })
     }
 }

@@ -27,7 +27,7 @@ impl Task for ClaimFileOwnership {
             for path_result in walkdir::WalkDir::new(dir) {
                 match path_result {
                     Ok(path) => chown(&self.service_user, path.path())?,
-                    Err(cause) => bail!("Error while setting ownership for a sub-path in directory '{dir}': {cause}"),
+                    Err(source) => bail!("Error while setting ownership for a sub-path in directory '{dir}': {source}"),
                 }
             }
         }

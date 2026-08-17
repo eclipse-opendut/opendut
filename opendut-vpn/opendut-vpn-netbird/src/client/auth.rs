@@ -52,23 +52,23 @@ async fn get_netbird_user_id(client: ClientWithMiddleware, username: &str, netbi
         .get(url)
         .send()
         .await
-        .map_err(|cause| CreateClientError::InstantiationFailure { cause: format!("Failed to request NetBird users: {}", cause) })?;
+        .map_err(|source| CreateClientError::InstantiationFailure { message: format!("Failed to request NetBird users: {}", source) })?;
 
     if response.status() != StatusCode::OK {
-        return Err(CreateClientError::InstantiationFailure { cause: String::from("Unauthorized to access NetBird users. Check your token.") })
+        return Err(CreateClientError::InstantiationFailure { message: String::from("Unauthorized to access NetBird users. Check your token.") })
     }
     
     let users = response
         .json::<Vec<NetbirdUser>>()
         .await
-        .map_err(|cause| CreateClientError::InstantiationFailure { cause: format!("Failed to parse NetBird users response: {cause}")})?
+        .map_err(|source| CreateClientError::InstantiationFailure { message: format!("Failed to parse NetBird users response: {source}")})?
         .into_iter()
         .filter(|user| user.name.eq(username))
         .collect::<Vec<_>>();
 
     match users.first() {
         Some(user) => Ok(user.id.clone()),
-        None => Err(CreateClientError::InstantiationFailure { cause: String::from("No NetBird users found.") }),
+        None => Err(CreateClientError::InstantiationFailure { message: String::from("No NetBird users found.") }),
     }
 }
 
@@ -89,20 +89,20 @@ async fn create_netbird_api_token_for_user_id(client: ClientWithMiddleware, netb
     };
 
     let request = post_json_request(url, body)
-        .map_err(|cause| CreateClientError::InstantiationFailure { cause: format!("Failed to create NetBird create API token request: {}", cause) })?;
+        .map_err(|source| CreateClientError::InstantiationFailure { message: format!("Failed to create NetBird create API token request: {}", source) })?;
 
     let response = client
         .execute(request)
         .await
-        .map_err(|cause| CreateClientError::InstantiationFailure { cause: format!("Failed to request NetBird create API token: {}", cause) })?;
+        .map_err(|source| CreateClientError::InstantiationFailure { message: format!("Failed to request NetBird create API token: {}", source) })?;
 
     if response.status() != StatusCode::OK {
-        return Err(CreateClientError::InstantiationFailure { cause: format!("Failed to create NetBird API token. Status: {}", response.status()) })
+        return Err(CreateClientError::InstantiationFailure { message: format!("Failed to create NetBird API token. Status: {}", response.status()) })
     }
     let token_response = response
         .json::<CreateApiTokenResponse>()
         .await
-        .map_err(|cause| CreateClientError::InstantiationFailure { cause: format!("Failed to parse NetBird create API token response: {}", cause) })?;
+        .map_err(|source| CreateClientError::InstantiationFailure { message: format!("Failed to parse NetBird create API token response: {}", source) })?;
 
     Ok(token_response)
 }

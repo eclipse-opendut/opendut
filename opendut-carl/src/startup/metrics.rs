@@ -20,7 +20,7 @@ pub fn initialize_metrics_collection(
 
                 match result {
                     Ok(deployed_clusters) => observer.observe(deployed_clusters.len() as u64, &[]),
-                    Err(cause) => trace!("Error while loading metrics information from ResourceManager:\n  {cause}")
+                    Err(source) => trace!("Error while loading metrics information from ResourceManager:\n  {source}")
                 }
             })
             .build();
@@ -36,7 +36,7 @@ pub fn initialize_metrics_collection(
 
                 match result {
                     Ok(configured_clusters) => observer.observe(configured_clusters.len() as u64, &[]),
-                    Err(cause) => trace!("Error while loading metrics information from ResourceManager:\n  {cause}")
+                    Err(source) => trace!("Error while loading metrics information from ResourceManager:\n  {source}")
                 }
             })
             .build();
@@ -52,7 +52,7 @@ pub fn initialize_metrics_collection(
 
                 match result {
                     Ok(registered_peers) => observer.observe(registered_peers.len() as u64, &[]),
-                    Err(cause) => trace!("Error while loading metrics information from ResourceManager:\n  {cause}")
+                    Err(source) => trace!("Error while loading metrics information from ResourceManager:\n  {source}")
                 }
             })
             .build();
@@ -74,7 +74,7 @@ pub fn initialize_metrics_collection(
 
                         observer.observe(online_peers.len() as u64, &[]);
                     }
-                    Err(cause) => trace!("Error while loading metrics information from ResourceManager:\n  {cause}")
+                    Err(source) => trace!("Error while loading metrics information from ResourceManager:\n  {source}")
                 }
             })
             .build();

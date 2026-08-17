@@ -7,16 +7,16 @@ use std::path::{Path, PathBuf};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("Failure while checking for loaded module: {cause}")]
-    CheckModuleLoaded { cause: io::Error },
-    #[error("Failure while checking module <{module}> parameter <{parameter}>: {cause}")]
-    CheckModuleParameters { module: String, parameter: String, cause: io::Error },
-    #[error("Invalid parameters for module <{module}> with parameter <{parameter}>: {cause}")]
-    InvalidModuleParameters { module: String, parameter: String, cause: String },
-    #[error("Failure while loading module: {cause}")]
-    LoadModule { cause: io::Error },
-    #[error("Failure while loading module: {cause}")]
-    LoadModuleExecution { cause: String },
+    #[error("Failure while checking for loaded module: {source}")]
+    CheckModuleLoaded { source: io::Error },
+    #[error("Failure while checking module <{module}> parameter <{parameter}>: {source}")]
+    CheckModuleParameters { module: String, parameter: String, source: io::Error },
+    #[error("Invalid parameters for module <{module}> with parameter <{parameter}>: {message}")]
+    InvalidModuleParameters { module: String, parameter: String, message: String },
+    #[error("Failure while loading module: {source}")]
+    LoadModule { source: io::Error },
+    #[error("Failure while loading module: {message}")]
+    LoadModuleExecution { message: String },
 }
 
 pub struct KernelModule {
@@ -39,7 +39,7 @@ impl KernelParameterFile {
 impl KernelModule {
     pub fn is_loaded(&self, loaded_module_file: &Path, builtin_module_dir: &Path) -> Result<bool, Error> {
         let file = File::open(loaded_module_file)
-            .map_err(|cause| Error::CheckModuleLoaded { cause })?;
+            .map_err(|source| Error::CheckModuleLoaded { source })?;
         let reader = BufReader::new(file);
 
         for mod_line in reader.lines() {
@@ -54,7 +54,7 @@ impl KernelModule {
                         None => continue
                     }
                 }
-                Err(why) => return Err(Error::CheckModuleLoaded { cause: why }),
+                Err(why) => return Err(Error::CheckModuleLoaded { source: why }),
             }
         }
         self.check_module_parameters(builtin_module_dir)?;
@@ -72,12 +72,12 @@ impl KernelModule {
         for (parameter, value) in &self.params {
             let param_file = KernelParameterFile::new(module_dir, &module, parameter);
             let mut file = File::open(param_file.value())
-                .map_err(|cause| Error::CheckModuleParameters { module: module.clone(), parameter: parameter.clone(), cause })?;
+                .map_err(|source| Error::CheckModuleParameters { module: module.clone(), parameter: parameter.clone(), source })?;
             let mut contents = String::new();
             file.read_to_string(&mut contents)
-                .map_err(|cause| Error::CheckModuleParameters { module: module.clone(), parameter: parameter.clone(), cause })?;
+                .map_err(|source| Error::CheckModuleParameters { module: module.clone(), parameter: parameter.clone(), source })?;
             if contents.trim() != value.as_str() {
-                return Err(Error::InvalidModuleParameters { module, parameter: parameter.clone(), cause: contents.trim().to_string() });
+                return Err(Error::InvalidModuleParameters { module, parameter: parameter.clone(), message: contents.trim().to_string() });
             }
         }
         Ok(())
@@ -100,10 +100,10 @@ impl KernelModule {
             cmd.arg(format!("{key}={value}"));
         }
 
-        let output = cmd.output().map_err(|cause| Error::LoadModule { cause })?;
+        let output = cmd.output().map_err(|source| Error::LoadModule { source })?;
 
         if ! output.status.success() {
-            return Err(Error::LoadModuleExecution { cause: format!("{:?}", String::from_utf8_lossy(&output.stderr).trim()) });
+            return Err(Error::LoadModuleExecution { message: format!("{:?}", String::from_utf8_lossy(&output.stderr).trim()) });
         }
         Ok(())
     }

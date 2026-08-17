@@ -67,8 +67,8 @@ async fn remove_absent_peer_configuration_parameters_that_are_absent(resource_ma
                         PersistenceResult::Ok(())
                     }
                 }).await
-                    .inspect_err(|cause| {
-                        error!("Failed to remove absent peer configuration parameters for peer <{id}>: {cause}");
+                    .inspect_err(|source| {
+                        error!("Failed to remove absent peer configuration parameters for peer <{id}>: {source}");
                     });
             }
         }

@@ -20,16 +20,16 @@ pub fn ViperSourceNameInput(viper_source_configuration: RwSignal<UserViperSource
             Ok(_) => {
                 UserInputValue::Right(input)
             }
-            Err(cause) => {
-                match cause.kind {
+            Err(source) => {
+                match source.kind {
                     InvalidViperTestSuiteIdentifierErrorKind::Empty => {
-                        UserInputValue::Both("Enter a VIPER source name.".to_string(), cause.value)
+                        UserInputValue::Both("Enter a VIPER source name.".to_string(), source.value)
                     }
                     InvalidViperTestSuiteIdentifierErrorKind::IllegalTestSuiteIdentifierCharacter { character } => {
-                        UserInputValue::Both(format!("The VIPER source name contains an invalid character: '{character}'"), cause.value)
+                        UserInputValue::Both(format!("The VIPER source name contains an invalid character: '{character}'"), source.value)
                     }
                     _ => {
-                        UserInputValue::Both("The VIPER source name is invalid.".to_string(), cause.value)
+                        UserInputValue::Both("The VIPER source name is invalid.".to_string(), source.value)
                     }
                 }
             }

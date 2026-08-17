@@ -74,21 +74,21 @@ impl CarlClient {
         };
 
         let endpoint = tonic::transport::Channel::from_shared(address.clone())
-            .map_err(|cause| InitializationError::InvalidUri { uri: address.clone(), cause })?
+            .map_err(|source| InitializationError::InvalidUri { uri: address.clone(), source })?
             .tls_config(tls_config)
-            .map_err(|cause| InitializationError::TlsConfiguration { message: String::from("Failed to initialize secure channel with specified TLS configuration"), cause: cause.into() })?;
+            .map_err(|source| InitializationError::TlsConfiguration { message: String::from("Failed to initialize secure channel with specified TLS configuration"), source: source.into() })?;
 
         let oidc_client = ConfidentialClient::from_settings(settings).await
-            .map_err(|cause| InitializationError::OidcConfiguration { message: String::from("Failed to initialize OIDC authentication manager"), cause: cause.into() })?;
+            .map_err(|source| InitializationError::OidcConfiguration { message: String::from("Failed to initialize OIDC authentication manager"), source: source.into() })?;
 
         if let Some(oidc_client) = &oidc_client {
             oidc_client.check_login().await
-                .map_err(|cause| InitializationError::ConnectError { address: address.clone(), cause: cause.into() })?;
+                .map_err(|source| InitializationError::ConnectError { address: address.clone(), source: source.into() })?;
         }
         debug!("Set up endpoint for connection to CARL at '{address}'.");
 
         let channel = endpoint.connect().await
-            .map_err(|cause| InitializationError::ConnectError { address: address.clone(), cause: cause.into() })?;
+            .map_err(|source| InitializationError::ConnectError { address: address.clone(), source: source.into() })?;
         info!("Connected to CARL at '{address}'.");
 
         let auth_service = ServiceBuilder::new()

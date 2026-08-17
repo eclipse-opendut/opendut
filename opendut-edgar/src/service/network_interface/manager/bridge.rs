@@ -19,12 +19,12 @@ impl NetworkInterfaceManager {
                     .filter_interfaces_joined_to(interface.index)
                     .execute()
                     .try_collect::<Vec<_>>().await
-                    .map_err(|cause| Error::ListInterfaces { cause: cause.into() })?
+                    .map_err(|source| Error::ListInterfaces { source: source.into() })?
                     .into_iter()
                     .filter_map(|link_message| {
                         let index = link_message.header.index;
                         Interface::try_from(link_message)
-                            .inspect_err(|cause| warn!("Could not determine attributes of interface with index '{index}': {cause}"))
+                            .inspect_err(|source| warn!("Could not determine attributes of interface with index '{index}': {source}"))
                             .ok()
                     })
                     .collect::<Vec<_>>();
@@ -43,10 +43,10 @@ impl NetworkInterfaceManager {
                     .build()
             )
             .execute().await
-            .map_err(|cause| Error::JoinInterfaceToBridge {
+            .map_err(|source| Error::JoinInterfaceToBridge {
                 interface: Box::new(interface.clone()),
                 bridge: Box::new(bridge.clone()),
-                cause: cause.into()
+                source: source.into()
             })?;
         Ok(())
     }
@@ -61,7 +61,7 @@ impl NetworkInterfaceManager {
                     .build()
             )
             .execute().await
-            .map_err(|cause| Error::ModificationFailure { name: interface.name.clone(), cause: format!("Failed to remove controller from interface. {cause}") })?;
+            .map_err(|source| Error::ModificationFailure { name: interface.name.clone(), source: format!("Failed to remove controller from interface. {source}") })?;
         Ok(())
     }
 }

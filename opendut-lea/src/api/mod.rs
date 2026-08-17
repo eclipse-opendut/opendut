@@ -52,15 +52,15 @@ mod licenses {
             let licenses_index = http::Request::get("/api/licenses")
                 .send()
                 .await
-                .map_err(|cause| ApiError::HttpError {
+                .map_err(|source| ApiError::HttpError {
                     message: format!(
-                        "Failed to request the licenses index file due to: {cause}"
+                        "Failed to request the licenses index file due to: {source}"
                     ),
                 })?
                 .json::<LicensesIndexJson>()
                 .await
-                .map_err(|cause| ApiError::JsonParseError {
-                    message: format!("Failed to parse the licenses index file due to: {cause}"),
+                .map_err(|source| ApiError::JsonParseError {
+                    message: format!("Failed to parse the licenses index file due to: {source}"),
                 })?;
 
             [
@@ -76,13 +76,13 @@ mod licenses {
             let licenses = http::Request::get(&path)
                 .send()
                 .await
-                .map_err(|cause| ApiError::HttpError {
-                    message: format!("Failed to request the licenses file due to: {cause}"),
+                .map_err(|source| ApiError::HttpError {
+                    message: format!("Failed to request the licenses file due to: {source}"),
                 })?
                 .json::<BTreeMap<String, LicenseJsonEntry>>()
                 .await
-                .map_err(|cause| ApiError::HttpError {
-                    message: format!("Failed to parse the licenses file due to: {cause}"),
+                .map_err(|source| ApiError::HttpError {
+                    message: format!("Failed to parse the licenses file due to: {source}"),
                 })?;
 
             let dependencies = licenses

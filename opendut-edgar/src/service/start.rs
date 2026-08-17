@@ -154,7 +154,7 @@ pub async fn connect_and_start(config: &ConnectAndStart<'_>, settings: &LoadedCo
                     return Ok(());
                 }
             }
-            Err(cause) => {
+            Err(source) => {
                 if connect_cancel.is_cancelled() {
                     info!("Connection to CARL was explicitly cancelled. Terminating EDGAR.");
                     break;
@@ -163,14 +163,14 @@ pub async fn connect_and_start(config: &ConnectAndStart<'_>, settings: &LoadedCo
                     let mut backoff = backoff.lock().await;
 
                     if let Some(delay) = backoff.next() {
-                        error!("Error in connection to CARL. Reconnecting in {delay:?}. Error was: {cause:?}");
+                        error!("Error in connection to CARL. Reconnecting in {delay:?}. Error was: {source:?}");
 
                         tokio::select! {
                             _ = tokio::time::sleep(delay) => {}
                             _ = connect_cancel.cancelled() => return Ok(()),
                         }
                     } else {
-                        error!("Error in connection to CARL. No retries left. Terminating EDGAR. Error was: {cause:?}");
+                        error!("Error in connection to CARL. No retries left. Terminating EDGAR. Error was: {source:?}");
                         break;
                     }
                 }

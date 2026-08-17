@@ -230,7 +230,7 @@ impl ClusterManager {
 
 
         let member_interface_mapping = determine_member_interface_mapping(cluster_config.devices, all_peers, cluster_config.leader)
-            .map_err(|cause| match cause {
+            .map_err(|source| match source {
                 DetermineMemberInterfaceMappingError::PeerForDeviceNotFound { device_id } => RolloutClusterError::PeerForDeviceNotFound { device_id, cluster_id, cluster_name },
             })?;
 
@@ -238,10 +238,10 @@ impl ClusterManager {
 
         if let Vpn::Enabled { vpn_client } = &self.vpn {
             vpn_client.create_cluster(cluster_id, &member_ids).await
-                .map_err(|cause| {
+                .map_err(|source| {
                     let message = format!("Failure while creating cluster <{cluster_id}> in VPN service.");
-                    error!("{}\n  {cause}", message);
-                    RolloutClusterError::Internal { cluster_id, cause: message }
+                    error!("{}\n  {source}", message);
+                    RolloutClusterError::Internal { cluster_id, source: message }
                 })?;
 
             let peers_string = member_ids.iter().map(ToString::to_string).collect::<Vec<_>>().join(",");
@@ -264,16 +264,16 @@ impl ClusterManager {
                                         Ok(remote_host)
                                     }
                                     Some(PeerConnectionState::Offline) => {
-                                        Err(RolloutClusterError::Internal { cluster_id, cause: format!("Peer <{peer_id}> which is used in a cluster, should have a PeerConnectionState of 'Online'.") })
+                                        Err(RolloutClusterError::Internal { cluster_id, source: format!("Peer <{peer_id}> which is used in a cluster, should have a PeerConnectionState of 'Online'.") })
                                     }
                                     None => {
-                                        Err(RolloutClusterError::Internal { cluster_id, cause: format!("Peer <{peer_id}> which is used in a cluster, should have a PeerConnectionState associated.") })
+                                        Err(RolloutClusterError::Internal { cluster_id, source: format!("Peer <{peer_id}> which is used in a cluster, should have a PeerConnectionState associated.") })
                                     }
                                 }
-                                Err(cause) => {
+                                Err(source) => {
                                     let message = format!("Error while accessing persistence to read PeerConnectionState of peer <{peer_id}>");
-                                    error!("{message}:\n  {cause}");
-                                    Err(RolloutClusterError::Internal { cluster_id, cause: message })
+                                    error!("{message}:\n  {source}");
+                                    Err(RolloutClusterError::Internal { cluster_id, source: message })
                                 }
                             };
 
@@ -306,10 +306,10 @@ impl ClusterManager {
                     device_interfaces,
                     options: assign_cluster_options.clone(),
                 }).await
-                .map_err(|cause| {
-                    let message = format!("Failure while assigning cluster <{cluster_id}> to peer <{member_id}>. Cause: {cause}"); // TODO
-                    error!("{}\n  {cause}", message);
-                    RolloutClusterError::Internal { cluster_id, cause: message }
+                .map_err(|source| {
+                    let message = format!("Failure while assigning cluster <{cluster_id}> to peer <{member_id}>. Cause: {source}"); // TODO
+                    error!("{}\n  {source}", message);
+                    RolloutClusterError::Internal { cluster_id, source: message }
                 })?;
             }
             Ok(())
@@ -321,12 +321,12 @@ impl ClusterManager {
 
     fn determine_can_server_ports(&mut self, member_interface_mapping: &[PeerId], cluster_id: ClusterId) -> Result<Vec<Port>, RolloutClusterError> {
         let n_peers = u16::try_from(member_interface_mapping.len())
-            .map_err(|cause| RolloutClusterError::DetermineCanServerPort { cluster_id, cause: cause.to_string() })?;
+            .map_err(|source| RolloutClusterError::DetermineCanServerPort { cluster_id, source: source.to_string() })?;
 
         if self.options.can_server_port_range_start + n_peers >= self.options.can_server_port_range_end {
             return Err(RolloutClusterError::DetermineCanServerPort {
                 cluster_id,
-                cause: format!(
+                source: format!(
                     "Failure while creating cluster <{}>. Port range [{}, {}) specified by 'can_server_port_range_start' \
                     and 'can_server_port_range_start' is too narrow for the configured number of peers ({})",
                     cluster_id,
@@ -338,7 +338,7 @@ impl ClusterManager {
         } else if self.options.can_server_port_range_start + n_peers * 2 >= self.options.can_server_port_range_end {
             warn!(
                 "Port range [{}, {}) specified by 'can_server_port_range_start' \
-                and 'can_server_port_range_start' is very narrow for the configured number of peers ({}). This may cause errors on EDGAR.",
+                and 'can_server_port_range_start' is very narrow for the configured number of peers ({}). This may source errors on EDGAR.",
                 self.options.can_server_port_range_start,
                 self.options.can_server_port_range_end,
                 n_peers
@@ -414,10 +414,10 @@ impl ClusterManagerOptions {
 
         let field = "peer.ethernet.bridge.name.default";
         let bridge_name_default = config.get_string(field)
-            .map_err(|cause| opendut_util::settings::LoadError::ReadField { field, source: cause.into() })?;
+            .map_err(|source| opendut_util::settings::LoadError::ReadField { field, source: source.into() })?;
 
         let bridge_name_default = NetworkInterfaceName::try_from(bridge_name_default.clone())
-            .map_err(|cause| opendut_util::settings::LoadError::ParseValue { field, value: bridge_name_default, source: cause.into() })?;
+            .map_err(|source| opendut_util::settings::LoadError::ParseValue { field, value: bridge_name_default, source: source.into() })?;
 
         Ok(ClusterManagerOptions {
             can_server_port_range_start,
@@ -440,7 +440,7 @@ pub mod error {
     #[error("ClusterDescriptor <{cluster_id}> could not be retrieved")]
     pub struct GetClusterDescriptorError {
         pub cluster_id: ClusterId,
-        #[source] pub source: PersistenceError,
+        pub source: PersistenceError,
     }
 
     #[derive(thiserror::Error, Debug)]
@@ -458,8 +458,8 @@ pub mod error {
             cluster_name: Option<ClusterName>,
             invalid_peers: Vec<PeerId>,
         },
-        ListClusterPeerStates { cluster_id: ClusterId, #[source] source: ListClusterPeerStatesError },
-        Persistence { cluster_id: ClusterId, cluster_name: Option<ClusterName>, #[source] source: PersistenceError },
+        ListClusterPeerStates { cluster_id: ClusterId, source: ListClusterPeerStatesError },
+        Persistence { cluster_id: ClusterId, cluster_name: Option<ClusterName>, source: PersistenceError },
     }
 
     #[derive(thiserror::Error, Debug)]
@@ -467,14 +467,14 @@ pub mod error {
         #[error("Error when accessing persistence while retrieving cluster deployment for cluster <{cluster_id}>")]
         Persistence {
             cluster_id: ClusterId,
-            #[source] source: PersistenceError,
+            source: PersistenceError,
         },
     }
 
     #[derive(thiserror::Error, Debug)]
     #[error("Error while listing cluster deployments")]
     pub struct ListClusterDeploymentsError {
-        #[source] pub source: PersistenceError,
+        pub source: PersistenceError,
     }
 
     #[derive(thiserror::Error, Debug)]
@@ -490,22 +490,22 @@ pub mod error {
         #[error("Error when listing cluster peer states while rolling out cluster <{cluster_id}>")]
         ListClusterPeerStates {
             cluster_id: ClusterId,
-            #[source] source: ListClusterPeerStatesError,
+            source: ListClusterPeerStatesError,
         },
         #[error("Error when accessing persistence while rolling out cluster <{cluster_id}>")]
         Persistence {
             cluster_id: ClusterId,
-            #[source] source: PersistenceError,
+            source: PersistenceError,
         },
         #[error("Error when determining CAN server port while rolling out cluster <{cluster_id}>")]
         DetermineCanServerPort {
             cluster_id: ClusterId,
-            cause: String,
+            message: String,
         },
-        #[error("Internal error while rolling out cluster <{cluster_id}>:\n  {cause}")]
+        #[error("Internal error while rolling out cluster <{cluster_id}>:\n  {message}")]
         Internal {
             cluster_id: ClusterId,
-            cause: String,
+            message: String,
         },
     }
 }

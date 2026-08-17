@@ -118,12 +118,12 @@ mod client {
             let response = self.inner
                 .wait_for_peers_online(proto_request)
                 .await
-                .map_err(|cause| error::OpenStream { message: format!("Error while opening stream: {cause}") })?;
+                .map_err(|source| error::OpenStream { message: format!("Error while opening stream: {source}") })?;
 
             let inbound = response.into_inner()
                 .map(|result| result.and_then(|element| {
                     WaitForPeersOnlineResponse::try_from(element)
-                        .map_err(|cause| tonic::Status::invalid_argument(format!("Error while converting stream message in wait_peers_online: {cause}")))
+                        .map_err(|source| tonic::Status::invalid_argument(format!("Error while converting stream message in wait_peers_online: {source}")))
                 }));
 
             Ok(GrpcDownstream::from(inbound))

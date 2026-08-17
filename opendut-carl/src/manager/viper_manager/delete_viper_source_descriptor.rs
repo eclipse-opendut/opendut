@@ -10,14 +10,14 @@ impl Resources<'_> {
 
         debug!("Fetching list of VIPER tests that might be using VIPER source <{source_id}>.");
         let tests = self.list::<ViperTestRunDescriptor>()
-            .map_err(|cause| DeleteViperSourceDescriptorError::Persistence { source_id, source_name: None, cause })?;
+            .map_err(|source| DeleteViperSourceDescriptorError::Persistence { source_id, source_name: None, source })?;
 
         match tests.values().find(|test| test.source == source_id) {
             None => {
                 debug!("No tests are using VIPER source <{source_id}>. Continuing with deletion of source.");
                 let result = self.remove::<ViperSourceDescriptor>(source_id)
-                    .map_err(|cause: PersistenceError|
-                        DeleteViperSourceDescriptorError::Persistence { source_id, source_name: None, cause }
+                    .map_err(|source: PersistenceError|
+                        DeleteViperSourceDescriptorError::Persistence { source_id, source_name: None, source }
                     )?
                     .ok_or_else(|| DeleteViperSourceDescriptorError::SourceNotFound { source_id })?;
 
@@ -47,7 +47,7 @@ pub enum DeleteViperSourceDescriptorError {
     Persistence {
         source_id: ViperSourceId,
         source_name: Option<ViperTestSuiteIdentifier>,
-        #[source] cause: PersistenceError,
+        source: PersistenceError,
     },
 }
 

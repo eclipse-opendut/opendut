@@ -45,7 +45,7 @@ impl YamlSpecificationDocument {
     /// ```
     pub fn try_from_yaml_str(s: &str) -> Result<Self, ParseSpecificationError> {
         serde_yaml::from_str::<YamlSpecificationDocument>(s)
-            .map_err(|cause| ParseSpecificationError::IllegalYamlSpecification { cause })
+            .map_err(|source| ParseSpecificationError::IllegalYamlSpecification { source })
     }
 }
 
@@ -86,7 +86,7 @@ fn parse_spec(kind: ResourceKind, version: SpecificationVersion, spec: Value) ->
     match (kind, version) {
         (ResourceKind::ClusterDescriptor, SpecificationVersion::V1) => {
             let spec = serde_yaml::from_value::<cluster::ClusterDescriptorSpecificationV1>(spec)
-                .map_err(|cause| ParseSpecificationError::IllegalYamlSpecification { cause } )?;
+                .map_err(|source| ParseSpecificationError::IllegalYamlSpecification { source } )?;
             Ok(Specification::ClusterDescriptorSpecification(cluster::ClusterDescriptorSpecification::V1(spec)))
         }
         (ResourceKind::ClusterDescriptor, _) => {
@@ -94,7 +94,7 @@ fn parse_spec(kind: ResourceKind, version: SpecificationVersion, spec: Value) ->
         }
         (ResourceKind::PeerDescriptor, SpecificationVersion::V1) => {
             let spec = serde_yaml::from_value::<peer::PeerDescriptorSpecificationV1>(spec)
-                .map_err(|cause| ParseSpecificationError::IllegalYamlSpecification { cause } )?;
+                .map_err(|source| ParseSpecificationError::IllegalYamlSpecification { source } )?;
             Ok(Specification::PeerDescriptorSpecification(peer::PeerDescriptorSpecification::V1(spec)))
         }
         (ResourceKind::PeerDescriptor, _) => {

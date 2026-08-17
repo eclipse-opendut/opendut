@@ -1,15 +1,15 @@
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("{message}: {cause}")]
-    Transport { message: String, cause: tonic::transport::Error },
-    #[error("Request error: {cause}")]
-    Request { #[from] cause: tonic::Status }
+    #[error("{message}: {source}")]
+    Transport { message: String, source: tonic::transport::Error },
+    #[error("Request error: {source}")]
+    Request { #[from] source: tonic::Status }
 }
 impl Error {
-    pub fn transport(cause: tonic::transport::Error, message: impl Into<String>) -> Self {
+    pub fn transport(source: tonic::transport::Error, message: impl Into<String>) -> Self {
         Error::Transport {
             message: message.into(),
-            cause,
+            source,
         }
     }
 }

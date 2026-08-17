@@ -13,18 +13,18 @@ pub enum InspectionError {
 impl InspectionError {
 
     pub(crate) fn new_invalid_metadata_error(
-        cause: MetadataError
+        source: MetadataError
     ) -> Self {
-        Self::Metadata(cause)
+        Self::Metadata(source)
     }
 
     pub(crate) fn new_invalid_parameter_error(
-        cause: ParameterError
+        source: ParameterError
     ) -> Self {
-        Self::Parameter(cause)
+        Self::Parameter(source)
     }
 
     pub(crate) fn new_invalid_filter_error(
-        cause: FilterError
-    ) -> Self { Self::Filter(cause) }
+        source: FilterError
+    ) -> Self { Self::Filter(source) }
 }

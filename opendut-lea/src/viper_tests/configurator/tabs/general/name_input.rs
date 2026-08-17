@@ -22,8 +22,8 @@ pub fn ViperTestNameInput(viper_test_run_descriptor: RwSignal<UserViperTestRunDe
             Ok(_) => {
                 UserInputValue::Right(input)
             }
-            Err(cause) => {
-                match cause {
+            Err(source) => {
+                match source {
                     IllegalViperTestName::TooShort { expected, actual, value } => {
                         if actual > 0 {
                             UserInputValue::Both(format!("A VIPER test name must be at least {expected} characters long."), value)

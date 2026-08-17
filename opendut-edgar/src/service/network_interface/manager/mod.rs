@@ -30,7 +30,7 @@ pub struct NetworkInterfaceManager {
 impl NetworkInterfaceManager {
     pub fn create() -> Result<NetworkInterfaceManagerRef, Error> {
         let (connection, handle, _) = rtnetlink::new_connection()
-            .map_err(|cause| Error::Connecting { cause })?;
+            .map_err(|source| Error::Connecting { source })?;
         tokio::spawn(connection);
 
         Ok(Arc::new(Self { handle }))
@@ -42,12 +42,12 @@ impl NetworkInterfaceManager {
             .get()
             .execute()
             .try_collect::<Vec<_>>().await
-            .map_err(|cause| Error::ListInterfaces { cause: cause.into() })?
+            .map_err(|source| Error::ListInterfaces { source: source.into() })?
             .into_iter()
             .filter_map(|link_message| {
                 let index = link_message.header.index;
                 Interface::try_from(link_message)
-                    .inspect_err(|cause| warn!("Could not determine attributes of interface with index '{index}': {cause}"))
+                    .inspect_err(|source| warn!("Could not determine attributes of interface with index '{index}': {source}"))
                     .ok()
             })
             .collect::<Vec<_>>();
@@ -72,7 +72,7 @@ impl NetworkInterfaceManager {
                     .build()
             )
             .execute().await
-            .map_err(|cause| Error::BridgeCreation { name: name.clone(), cause: cause.into() })?;
+            .map_err(|source| Error::BridgeCreation { name: name.clone(), source: source.into() })?;
 
         let interface = self.try_find_interface(name).await?;
         Ok(interface)
@@ -89,7 +89,7 @@ impl NetworkInterfaceManager {
                     .build()
             )
             .execute().await
-            .map_err(|cause| Error::GretapCreation { name: name.clone(), cause: cause.into() })?;
+            .map_err(|source| Error::GretapCreation { name: name.clone(), source: source.into() })?;
         let interface = self.try_find_interface(name).await?;
         Ok(interface)
     }
@@ -104,7 +104,7 @@ impl NetworkInterfaceManager {
                     .build()
             )
             .execute().await
-            .map_err(|cause| Error::SetInterfaceUp { interface: Box::new(interface.clone()), cause: cause.into() })?;
+            .map_err(|source| Error::SetInterfaceUp { interface: Box::new(interface.clone()), source: source.into() })?;
         Ok(())
     }
 
@@ -118,7 +118,7 @@ impl NetworkInterfaceManager {
                     .build()
             )
             .execute().await
-            .map_err(|cause| Error::SetInterfaceDown { interface: Box::new(interface.clone()), cause: cause.into() })?;
+            .map_err(|source| Error::SetInterfaceDown { interface: Box::new(interface.clone()), source: source.into() })?;
         Ok(())
     }
 
@@ -158,10 +158,10 @@ impl NetworkInterfaceManager {
         let output = ip_link_command
             .output()
             .await
-            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{ip_link_command:?}"), cause })?;
+            .map_err(|source| Error::CommandLineProgramExecution { command: format!("{ip_link_command:?}"), source })?;
 
         if !output.status.success() {
-            return Err(Error::CanInterfaceUpdate { name: interface_name.clone(), cause: format!("{:?}", String::from_utf8_lossy(&output.stderr).trim()) });
+            return Err(Error::CanInterfaceUpdate { name: interface_name.clone(), source: format!("{:?}", String::from_utf8_lossy(&output.stderr).trim()) });
         }
 
         Ok(())
@@ -172,7 +172,7 @@ impl NetworkInterfaceManager {
             .link()
             .del(interface.index)
             .execute().await
-            .map_err(|cause| Error::DeleteInterface { interface: Box::new(interface.clone()), cause: cause.into() })?;
+            .map_err(|source| Error::DeleteInterface { interface: Box::new(interface.clone()), source: source.into() })?;
         Ok(())
     }
 
@@ -186,7 +186,7 @@ impl NetworkInterfaceManager {
             )
             .execute()
             .await
-            .map_err(|error| Error::VcanInterfaceCreation { name: name.clone(), cause: error.to_string() })?;
+            .map_err(|error| Error::VcanInterfaceCreation { name: name.clone(), source: error.to_string() })?;
         let interface = self.try_find_interface(name).await?;
         Ok(interface)
     }
@@ -201,7 +201,7 @@ impl NetworkInterfaceManager {
             )
             .execute()
             .await
-            .map_err(|error| Error::ModificationFailure { name: name.clone(), cause: error.to_string() })?;
+            .map_err(|error| Error::ModificationFailure { name: name.clone(), source: error.to_string() })?;
 
         let interface = self.try_find_interface(name).await?;
         Ok(interface)
@@ -210,32 +210,32 @@ impl NetworkInterfaceManager {
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("Failure while creating bridge '{name}': {cause}")]
-    BridgeCreation { name: NetworkInterfaceName, cause: Box<rtnetlink::Error> },
-    #[error("Failed to establish connection to netlink: {cause}")]
-    Connecting { cause: io::Error },
-    #[error("Failure while deleting interface {interface}: {cause}")]
-    DeleteInterface { interface: Box<Interface>, cause: Box<rtnetlink::Error> },
-    #[error("Failure while creating gretap interface '{name}': {cause}")]
-    GretapCreation { name: NetworkInterfaceName, cause: Box<rtnetlink::Error> },
+    #[error("Failure while creating bridge '{name}': {source}")]
+    BridgeCreation { name: NetworkInterfaceName, source: Box<rtnetlink::Error> },
+    #[error("Failed to establish connection to netlink: {source}")]
+    Connecting { source: io::Error },
+    #[error("Failure while deleting interface {interface}: {source}")]
+    DeleteInterface { interface: Box<Interface>, source: Box<rtnetlink::Error> },
+    #[error("Failure while creating gretap interface '{name}': {source}")]
+    GretapCreation { name: NetworkInterfaceName, source: Box<rtnetlink::Error> },
     #[error("Interface with name '{name}' not found.")]
     InterfaceNotFound { name: NetworkInterfaceName },
-    #[error("Failure while listing interfaces: {cause}")]
-    ListInterfaces { cause: Box<rtnetlink::Error> },
-    #[error("Failure while setting interface {interface} to state 'up': {cause}")]
-    SetInterfaceUp { interface: Box<Interface>, cause: Box<rtnetlink::Error> },
-    #[error("Failure while setting interface {interface} to state 'down': {cause}")]
-    SetInterfaceDown { interface: Box<Interface>, cause: Box<rtnetlink::Error> },
-    #[error("Failure while joining interface {interface} to bridge {bridge}: {cause}")]
-    JoinInterfaceToBridge { interface: Box<Interface>, bridge: Box<Interface>, cause: Box<rtnetlink::Error> },
-    #[error("Failure while creating virtual CAN interface '{name}': {cause}")]
-    VcanInterfaceCreation { name: NetworkInterfaceName, cause: String },
-    #[error("Failed to modify interface '{name}': {cause}")]
-    ModificationFailure { name: NetworkInterfaceName, cause: String},
-    #[error("Failure during updating CAN interface '{name}': {cause}")]
-    CanInterfaceUpdate { name: NetworkInterfaceName, cause: String},
-    #[error("Failure while invoking command line program '{command}': {cause}")]
-    CommandLineProgramExecution { command: String, cause: std::io::Error },
+    #[error("Failure while listing interfaces: {source}")]
+    ListInterfaces { source: Box<rtnetlink::Error> },
+    #[error("Failure while setting interface {interface} to state 'up': {source}")]
+    SetInterfaceUp { interface: Box<Interface>, source: Box<rtnetlink::Error> },
+    #[error("Failure while setting interface {interface} to state 'down': {source}")]
+    SetInterfaceDown { interface: Box<Interface>, source: Box<rtnetlink::Error> },
+    #[error("Failure while joining interface {interface} to bridge {bridge}: {source}")]
+    JoinInterfaceToBridge { interface: Box<Interface>, bridge: Box<Interface>, source: Box<rtnetlink::Error> },
+    #[error("Failure while creating virtual CAN interface '{name}': {message}")]
+    VcanInterfaceCreation { name: NetworkInterfaceName, message: String },
+    #[error("Failed to modify interface '{name}': {message}")]
+    ModificationFailure { name: NetworkInterfaceName, message: String},
+    #[error("Failure during updating CAN interface '{name}': {message}")]
+    CanInterfaceUpdate { name: NetworkInterfaceName, message: String},
+    #[error("Failure while invoking command line program '{command}': {source}")]
+    CommandLineProgramExecution { command: String, source: std::io::Error },
 }
 
 

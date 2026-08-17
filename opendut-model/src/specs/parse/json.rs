@@ -43,7 +43,7 @@ impl JsonSpecificationDocument {
     /// ```
     pub fn try_from_json_str(input: &str) -> Result<Self, ParseSpecificationError> {
         serde_json::from_str::<Self>(input)
-            .map_err(|cause| ParseSpecificationError::IllegalJsonSpecification { cause })
+            .map_err(|source| ParseSpecificationError::IllegalJsonSpecification { source })
     }
 }
 
@@ -76,7 +76,7 @@ fn parse_spec(kind: ResourceKind, version: SpecificationVersion, spec: Value) ->
     match (kind, version) {
         (ResourceKind::ClusterDescriptor, SpecificationVersion::V1) => {
             let spec = serde_json::from_value::<specs::cluster::ClusterDescriptorSpecificationV1>(spec)
-                .map_err(|cause| ParseSpecificationError::IllegalJsonSpecification { cause } )?;
+                .map_err(|source| ParseSpecificationError::IllegalJsonSpecification { source } )?;
             Ok(Specification::ClusterDescriptorSpecification(specs::cluster::ClusterDescriptorSpecification::V1(spec)))
         }
         (ResourceKind::ClusterDescriptor, _) => {
@@ -84,7 +84,7 @@ fn parse_spec(kind: ResourceKind, version: SpecificationVersion, spec: Value) ->
         }
         (ResourceKind::PeerDescriptor, SpecificationVersion::V1) => {
             let spec = serde_json::from_value::<specs::peer::PeerDescriptorSpecificationV1>(spec)
-                .map_err(|cause| ParseSpecificationError::IllegalJsonSpecification { cause } )?;
+                .map_err(|source| ParseSpecificationError::IllegalJsonSpecification { source } )?;
             Ok(Specification::PeerDescriptorSpecification(specs::peer::PeerDescriptorSpecification::V1(spec)))
         }
         (ResourceKind::PeerDescriptor, _) => {

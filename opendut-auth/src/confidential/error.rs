@@ -21,12 +21,12 @@ pub enum OidcClientError {
 
 #[derive(thiserror::Error, Debug)]
 pub enum ConfidentialClientError {
-    #[error("Failed to load OIDC configuration: '{message}'. Cause: '{cause}'")]
-    Configuration { message: String, cause: Box<dyn std::error::Error + Send + Sync> },
-    #[error("{message}\n  {cause}")]
-    KeycloakConnection { message: String, cause: reqwest::Error },
-    #[error("{message}\n  {cause}")]
-    UrlParse { message: String, cause: url::ParseError },
+    #[error("Failed to load OIDC configuration: '{message}'. Cause: '{source}'")]
+    Configuration { message: String, source: Box<dyn std::error::Error + Send + Sync> },
+    #[error("{message}\n  {source}")]
+    KeycloakConnection { message: String, source: reqwest::Error },
+    #[error("{message}\n  {source}")]
+    UrlParse { message: String, source: url::ParseError },
     #[error("OIDC configuration error: '{message}'.")]
     Other { message: String },
 }

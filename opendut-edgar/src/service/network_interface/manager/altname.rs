@@ -12,7 +12,7 @@ impl NetworkInterfaceManager {
             .property_add(interface.index)
             .alt_ifname(&alt_names).execute()
             .await
-            .map_err(|cause| Error::BridgeCreation { name: interface.name.clone(), cause: cause.into() })?;
+            .map_err(|source| Error::BridgeCreation { name: interface.name.clone(), source: source.into() })?;
         let interface = self.try_find_interface(&interface.name).await?;
         Ok(interface)
     }

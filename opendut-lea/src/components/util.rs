@@ -11,7 +11,7 @@ pub fn use_active_tab<
     Signal::derive(move || params.with(|params| {
         let tab = params.get("tab")
             .ok_or(String::from("No tab identifier given in URL!"))
-            .and_then(|value| T::try_from(value.as_str()).map_err(|cause| cause.to_string()));
+            .and_then(|value| T::try_from(value.as_str()).map_err(|source| source.to_string()));
         match tab {
             Err(details) => {
                 let use_navigate = use_navigate();

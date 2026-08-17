@@ -71,7 +71,7 @@ impl NetworkMetricsManager {
 
                 if project::is_running_in_development().not() {
                     let _ = super::rperf::server::exponential_backoff_launch_rperf_server(spawner.clone(), rperf_backoff_max_elapsed_time).await //ignore errors during startup of rperf server, as we do not want to crash EDGAR for this
-                        .inspect_err(|cause| error!("Failed to start rperf server:\n  {cause}"));
+                        .inspect_err(|source| error!("Failed to start rperf server:\n  {source}"));
 
                     super::rperf::client::launch_rperf_clients(remote_peers, spawner.clone(), target_bandwidth_kbit_per_second, rperf_backoff_max_elapsed_time).await;
                 }

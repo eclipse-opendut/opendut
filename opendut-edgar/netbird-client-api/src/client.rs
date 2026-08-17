@@ -33,8 +33,8 @@ impl Client {
                     .without_max_times() //continue retrying indefinitely
                     .with_max_delay(Duration::from_secs(60))
             )
-            .notify(|cause: &tonic::transport::Error, sleep_duration: Duration| {
-                debug!("Trying to connect to NetBird client after waiting {sleep_duration:?}. Had failed to connect due to: {cause}");
+            .notify(|source: &tonic::transport::Error, sleep_duration: Duration| {
+                debug!("Trying to connect to NetBird client after waiting {sleep_duration:?}. Had failed to connect due to: {source}");
             })
             .await;
 
@@ -43,9 +43,9 @@ impl Client {
                 info!("Connected to NetBird Client process via Unix domain socket at '{path}'.");
                 Ok(Self { inner: client })
             }
-            Err(cause) => {
-                error!("Error while connecting to NetBird Client process via Unix domain socket at '{path}': {cause}");
-                Err(Error::transport(cause, format!("Failed to connect to NetBird Unix domain socket at '{path}'")))
+            Err(source) => {
+                error!("Error while connecting to NetBird Client process via Unix domain socket at '{path}': {source}");
+                Err(Error::transport(source, format!("Failed to connect to NetBird Unix domain socket at '{path}'")))
             }
         }
     }

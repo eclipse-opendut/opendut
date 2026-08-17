@@ -19,15 +19,15 @@ pub struct CleoSetup {
 
 impl CleoSetup {
     pub fn encode(&self) -> Result<String, CleoSetupEncodeError> {
-        let json = serde_json::to_string(self).map_err(|cause| CleoSetupEncodeError {
-            details: format!("Serialization failed due to: {cause}"),
+        let json = serde_json::to_string(self).map_err(|source| CleoSetupEncodeError {
+            details: format!("Serialization failed due to: {source}"),
         })?;
 
         let compressed = {
             let mut buffer = Vec::new();
             crate::util::brotli::compress(&mut buffer, json.as_bytes())
-                .map_err(|cause| CleoSetupEncodeError {
-                    details: format!("Compression failed due to: {cause}"),
+                .map_err(|source| CleoSetupEncodeError {
+                    details: format!("Compression failed due to: {source}"),
                 })?;
             buffer
         };
@@ -40,21 +40,21 @@ impl CleoSetup {
     pub fn decode(encoded: &str) -> Result<Self, CleoSetupDecodeError> {
         let compressed = BASE64_URL_SAFE
             .decode(encoded.as_bytes())
-            .map_err(|cause| CleoSetupDecodeError {
-                details: format!("Base64 decoding failed due to: {cause}"),
+            .map_err(|source| CleoSetupDecodeError {
+                details: format!("Base64 decoding failed due to: {source}"),
             })?;
 
         let json = {
             let mut buffer = Vec::new();
             crate::util::brotli::decompress(&mut buffer, compressed.as_slice())
-                .map_err(|cause| CleoSetupDecodeError {
-                    details: format!("Decompression failed due to: {cause}"),
+                .map_err(|source| CleoSetupDecodeError {
+                    details: format!("Decompression failed due to: {source}"),
                 })?;
             buffer
         };
 
-        let decoded = serde_json::from_slice(&json).map_err(|cause| CleoSetupDecodeError {
-            details: format!("Deserialization failed due to: {cause}"),
+        let decoded = serde_json::from_slice(&json).map_err(|source| CleoSetupDecodeError {
+            details: format!("Deserialization failed due to: {source}"),
         })?;
 
         Ok(decoded)

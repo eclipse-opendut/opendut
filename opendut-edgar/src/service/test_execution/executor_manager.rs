@@ -76,8 +76,8 @@ impl ExecutorManager {
     pub fn terminate_executors(&mut self) {
         debug!("Terminating executors.");
         for tx_termination_channel in &self.tx_termination_channels {
-            if let Err(cause) = tx_termination_channel.send(true) {
-                warn!("Failed to send termination signal to executor, perhaps it already terminated? Cause: {cause}");
+            if let Err(source) = tx_termination_channel.send(true) {
+                warn!("Failed to send termination signal to executor, perhaps it already terminated? Cause: {source}");
             }
         }
         self.tx_termination_channels.clear();

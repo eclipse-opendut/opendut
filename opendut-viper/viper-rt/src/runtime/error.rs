@@ -42,18 +42,18 @@ impl Display for CompilationError {
             CompilationErrorKind::FailedEventEmission { message } => {
                 write!(f, "Compilation failed, due to an event emission error: {message}")
             }
-            CompilationErrorKind::FailedLoading { source_location, cause } => {
+            CompilationErrorKind::FailedLoading { source_location, source } => {
                 match source_location {
                     SourceLocation::Embedded(_) => {
                         panic!("This should never happen because embedded sources must not be loaded.")
                     }
                     SourceLocation::Url(url) => {
-                        write!(f, "Compilation failed because source '{source_name}' could not be loaded from '{url}': '{cause}'")
+                        write!(f, "Compilation failed because source '{source_name}' could not be loaded from '{url}': '{source}'")
                     }
                 }
             }
-            CompilationErrorKind::InvalidSource { cause } => {
-                write!(f, "Compilation failed, due to an invalid source '{source_name}': {cause}")
+            CompilationErrorKind::InvalidSource { source } => {
+                write!(f, "Compilation failed, due to an invalid source '{source_name}': {source}")
             }
             CompilationErrorKind::NoSuitableSourceLoader { source_location } => {
                 match source_location {
@@ -65,17 +65,17 @@ impl Display for CompilationError {
                     }
                 }
             }
-            CompilationErrorKind::FailedInspection { cause } => {
-                write!(f, "Compilation failed during inspection of source '{source_name}': {cause}")
+            CompilationErrorKind::FailedInspection { source } => {
+                write!(f, "Compilation failed during inspection of source '{source_name}': {source}")
             }
             CompilationErrorKind::PythonCompilationError { details } => {
                 write!(f, "Compilation failed, due to a Python compilation error in source '{source_name}': {details}")
             }
-            CompilationErrorKind::PythonReflectionError { cause } => {
-                write!(f, "Compilation failed, due to a Python reflection error in source '{source_name}': {cause}")
+            CompilationErrorKind::PythonReflectionError { source } => {
+                write!(f, "Compilation failed, due to a Python reflection error in source '{source_name}': {source}")
             }
-            CompilationErrorKind::PythonRuntimeError { cause } => {
-                write!(f, "Compilation failed, due to a Python runtime error in source '{source_name}': {cause}")
+            CompilationErrorKind::PythonRuntimeError { source } => {
+                write!(f, "Compilation failed, due to a Python runtime error in source '{source_name}': {source}")
             }
         }
     }
@@ -130,9 +130,9 @@ impl Display for InvalidNumberParameterValueError {
 impl Display for InspectionError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            InspectionError::Metadata(cause) => write!(f, "{cause}"),
-            InspectionError::Parameter(cause) => write!(f, "{cause}"),
-            InspectionError::Filter(cause) => write!(f, "{cause}"),
+            InspectionError::Metadata(source) => write!(f, "{source}"),
+            InspectionError::Parameter(source) => write!(f, "{source}"),
+            InspectionError::Filter(source) => write!(f, "{source}"),
         }
     }
 }
@@ -214,14 +214,14 @@ impl Display for FilterError {
 impl Display for ParameterError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            ParameterError::IllegalParameterName(cause) => {
-                write!(f, "{cause}")
+            ParameterError::IllegalParameterName(source) => {
+                write!(f, "{source}")
             }
-            ParameterError::IllegalTextParameterValue(cause) => {
-                write!(f, "{cause}")
+            ParameterError::IllegalTextParameterValue(source) => {
+                write!(f, "{source}")
             }
-            ParameterError::IllegalNumberParameterValue(cause) => {
-                write!(f, "{cause}")
+            ParameterError::IllegalNumberParameterValue(source) => {
+                write!(f, "{source}")
             }
         }
     }
@@ -250,8 +250,8 @@ impl Display for RunError {
             RunErrorKind::FailedEventEmission { message } => {
                 write!(f, "Run failed for '{identifier}', due to an event-emitting error: {message}")
             }
-            RunErrorKind::PythonReflectionError { cause } => {
-                write!(f, "Run failed for '{identifier}', due to a Python reflection error: {cause}")
+            RunErrorKind::PythonReflectionError { source } => {
+                write!(f, "Run failed for '{identifier}', due to a Python reflection error: {source}")
             }
         }
     }

@@ -12,7 +12,7 @@ impl NetworkInterfaceManager {
         self.handle.address().add(interface.index, address, prefix_len)
             .execute()
             .await
-            .map_err(|error| Error::ModificationFailure { name: interface.name.clone(), cause: format!("Failed to add ip address. {}", error) })?;
+            .map_err(|error| Error::ModificationFailure { name: interface.name.clone(), source: format!("Failed to add ip address. {}", error) })?;
         Ok(interface)
     }
 
@@ -33,7 +33,7 @@ impl NetworkInterfaceManager {
 
         self.handle.address().del(address_message.clone()).execute()
             .await
-            .map_err(|error| Error::ModificationFailure { name: interface.name.clone(), cause: format!("Failed to delete ip address. {}", error) })?;
+            .map_err(|error| Error::ModificationFailure { name: interface.name.clone(), source: format!("Failed to delete ip address. {}", error) })?;
         let interface = self.try_find_interface(&interface.name).await?;
 
         Ok(interface)
@@ -44,7 +44,7 @@ impl NetworkInterfaceManager {
         let link = self.handle
             .link().get().match_name(name.name()).execute()
             .try_next().await
-            .map_err(|cause| Error::ListInterfaces { cause: cause.into() })?
+            .map_err(|source| Error::ListInterfaces { source: source.into() })?
             .ok_or(Error::InterfaceNotFound { name: name.clone() })?;
 
         let addresses = self.handle
@@ -53,10 +53,10 @@ impl NetworkInterfaceManager {
             .set_link_index_filter(link.header.index)
             .execute()
             .try_collect::<Vec<AddressMessage>>().await
-            .map_err(|cause| Error::ListAddresses { cause: cause.into() } )?;
+            .map_err(|source| Error::ListAddresses { source: source.into() } )?;
         for address in addresses {
             self.handle.address().del(address).execute().await
-                .map_err(|cause| Error::DeleteAddress { name: name.clone(), cause: cause.into() })?;
+                .map_err(|source| Error::DeleteAddress { name: name.clone(), source: source.into() })?;
         }
 
         Ok(())
@@ -69,7 +69,7 @@ impl NetworkInterfaceManager {
             .execute()
             .try_collect::<Vec<_>>()
             .await
-            .map_err(|cause| Error::ListInterfaces { cause: cause.into() })?;
+            .map_err(|source| Error::ListInterfaces { source: source.into() })?;
 
         for link in links {
             let mut address_messages = self.handle
@@ -79,7 +79,7 @@ impl NetworkInterfaceManager {
                 .execute()
                 .try_collect::<Vec<_>>()
                 .await
-                .map_err(|cause| Error::ListInterfaces { cause: cause.into() })?;
+                .map_err(|source| Error::ListInterfaces { source: source.into() })?;
             for address_message in address_messages.iter_mut() {
                 let ips = address_message.attributes.iter().filter_map(|attribute| {
                     if let AddressAttribute::Address(ip) = attribute {
@@ -125,7 +125,7 @@ mod tests {
         let interface = manager.create_dummy_ipv4_interface(&dummy).await?;
         let interface = manager.add_address(&interface, address, 24).await?;
         let interface = manager.delete_address(&interface, address, 24)
-            .await.inspect_err(|cause| println!("Failed to delete address: {cause}"))?;
+            .await.inspect_err(|source| println!("Failed to delete address: {source}"))?;
 
         manager.delete_interface(&interface).await?;
 

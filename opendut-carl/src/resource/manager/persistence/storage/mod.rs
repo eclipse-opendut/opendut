@@ -108,8 +108,8 @@ impl ResourceStorage {
                 db_transaction.commit()?;
                 memory_transaction.commit()?;
             }
-            Err(cause) => {
-                debug!("Not committing changes to the database due to error:\n  {cause}");
+            Err(source) => {
+                debug!("Not committing changes to the database due to error:\n  {source}");
             }
         }
 
@@ -215,7 +215,7 @@ impl PersistenceOptions {
             let file = {
                 let field = "persistence.database.file";
                 let value = config.get_string(field)
-                    .map_err(|cause| LoadError::ReadField { field, source: Box::new(cause) })?;
+                    .map_err(|source| LoadError::ReadField { field, source: Box::new(source) })?;
 
                 if value.is_empty() {
                     return Err(LoadError::ParseValue { field, value, source: anyhow!("Path to the database file has to be specified!").into() });
