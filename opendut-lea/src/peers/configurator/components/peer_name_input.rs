@@ -22,8 +22,8 @@ pub fn PeerNameInput(peer_configuration: RwSignal<UserPeerConfiguration>) -> imp
             Ok(_) => {
                 UserInputValue::Right(input)
             }
-            Err(cause) => {
-                match cause {
+            Err(source) => {
+                match source {
                     IllegalPeerName::TooShort { expected, actual, value } => {
                         if actual > 0 {
                             UserInputValue::Both(format!("A peer name must be at least {expected} characters long."), value)

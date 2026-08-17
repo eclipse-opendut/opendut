@@ -238,15 +238,15 @@ pub struct PeerSetup {
 
 impl PeerSetup {
     pub fn encode(&self) -> Result<String, PeerSetupEncodeError> {
-        let json = serde_json::to_string(self).map_err(|cause| PeerSetupEncodeError {
-            details: format!("Serialization failed due to: {cause}"),
+        let json = serde_json::to_string(self).map_err(|source| PeerSetupEncodeError {
+            details: format!("Serialization failed due to: {source}"),
         })?;
 
         let compressed = {
             let mut buffer = Vec::new();
             crate::util::brotli::compress(&mut buffer, json.as_bytes())
-                .map_err(|cause| PeerSetupEncodeError {
-                    details: format!("Compression failed due to: {cause}"),
+                .map_err(|source| PeerSetupEncodeError {
+                    details: format!("Compression failed due to: {source}"),
                 })?;
             buffer
         };
@@ -259,21 +259,21 @@ impl PeerSetup {
     pub fn decode(encoded: &str) -> Result<Self, PeerSetupDecodeError> {
         let compressed = BASE64_URL_SAFE
             .decode(encoded.as_bytes())
-            .map_err(|cause| PeerSetupDecodeError {
-                details: format!("Base64 decoding failed due to: {cause}"),
+            .map_err(|source| PeerSetupDecodeError {
+                details: format!("Base64 decoding failed due to: {source}"),
             })?;
 
         let json = {
             let mut buffer = Vec::new();
             crate::util::brotli::decompress(&mut buffer, compressed.as_slice())
-                .map_err(|cause| PeerSetupDecodeError {
-                    details: format!("Decompression failed due to: {cause}"),
+                .map_err(|source| PeerSetupDecodeError {
+                    details: format!("Decompression failed due to: {source}"),
                 })?;
             buffer
         };
 
-        let decoded = serde_json::from_slice(&json).map_err(|cause| PeerSetupDecodeError {
-            details: format!("Deserialization failed due to: {cause}"),
+        let decoded = serde_json::from_slice(&json).map_err(|source| PeerSetupDecodeError {
+            details: format!("Deserialization failed due to: {source}"),
         })?;
 
         Ok(decoded)

@@ -16,11 +16,11 @@ pub enum ParseSpecificationError {
     #[error("Failed to parse specification. Unknown version '{version}' for resource specification '{kind}'")]
     UnknownVersion { kind: ResourceKind, version: SpecificationVersion },
     #[cfg(feature = "yaml-specs")]
-    #[error("Failed to parse yaml specification, due to: {cause}")]
-    IllegalYamlSpecification { cause: serde_yaml::Error },
+    #[error("Failed to parse yaml specification, due to: {source}")]
+    IllegalYamlSpecification { source: serde_yaml::Error },
     #[cfg(feature = "json-specs")]
-    #[error("Failed to parse json specification, due to: {cause}")]
-    IllegalJsonSpecification { cause: serde_json::Error },
+    #[error("Failed to parse json specification, due to: {source}")]
+    IllegalJsonSpecification { source: serde_json::Error },
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Display)]

@@ -136,14 +136,14 @@ pub fn ParametersTab(
                                 </p>
                             }.into_any()
                         },
-                        GetViperTestSuiteParametersError::Internal { source_id, cause } => {
+                        GetViperTestSuiteParametersError::Internal { source_id, source } => {
                             let source_href = create_source_href(&source_id);
                             view! {
                                 <p class="help has-text-danger">
                                     "An internal error occurred while fetching the VIPER test suite descriptor for the "
                                     <a href=source_href> selected source </a>:
                                     <br />
-                                    {cause}
+                                    {source}
                                 </p>
                             }.into_any()
                         },

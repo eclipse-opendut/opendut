@@ -44,8 +44,8 @@ where A: Fn(NetworkInterfaceName, UserNetworkInterfaceConfiguration) + 'static {
                     UserInputValue::Right(input)
                 }
             }
-            Err(cause) => {
-                match cause {
+            Err(source) => {
+                match source {
                     NetworkInterfaceNameError::TooLong { value, max } => {
                         UserInputValue::Both(format!("A network interface name must be at most {max} characters long."), value)
                     },
@@ -272,7 +272,7 @@ fn bitrate_validator(input: String) -> UserInputValue {
         Ok(_bitrate) => {
             UserInputValue::Right(input)
         }
-        Err(_cause) => {
+        Err(_source) => {
             UserInputValue::Both("Could not parse String into u32.".to_string(), input)
         }
     }
@@ -287,7 +287,7 @@ fn sample_points_validator(input: String) -> UserInputValue {
                     Ok(_can_sample_point) => {
                         UserInputValue::Right(input)
                     }
-                    Err(_cause) => {
+                    Err(_source) => {
                         UserInputValue::Both("Not a valid sample point.".to_string(), input)
                     }
                 }
@@ -295,7 +295,7 @@ fn sample_points_validator(input: String) -> UserInputValue {
                 UserInputValue::Both("Range must be between 0.000 and 0.999.".to_string(), input)
             }
         }
-        Err(_cause) => {
+        Err(_source) => {
             UserInputValue::Both("Range must be between 0.000 and 0.999.".to_string(), input)
         }
     }

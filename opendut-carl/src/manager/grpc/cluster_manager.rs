@@ -113,7 +113,7 @@ impl ClusterManagerService for ClusterManagerFacade {
 
         let configuration = self.cluster_manager.lock().await.get_cluster_descriptor(cluster_id).await
             .log_api_err()
-            .map_err(|cause| Status::internal(cause.to_string()))?;
+            .map_err(|source| Status::internal(source.to_string()))?;
 
         let result = match configuration {
             Some(configuration) => get_cluster_descriptor_response::Result::Success(
@@ -136,7 +136,7 @@ impl ClusterManagerService for ClusterManagerFacade {
 
         let configurations = self.cluster_manager.lock().await.list_cluster_descriptor().await
             .log_api_err()
-            .map_err(|cause| Status::internal(cause.to_string()))?;
+            .map_err(|source| Status::internal(source.to_string()))?;
 
         Ok(Response::new(ListClusterDescriptorsResponse {
             result: Some(list_cluster_descriptors_response::Result::Success(
@@ -156,7 +156,7 @@ impl ClusterManagerService for ClusterManagerFacade {
         trace!("Received request to store cluster deployment: {cluster_deployment:?}");
 
         let result = self.cluster_manager.lock().await.store_cluster_deployment(cluster_deployment).await
-            .inspect_err(|cause| error!("{cause}"))
+            .inspect_err(|source| error!("{source}"))
             .map_err(opendut_carl_api::carl::cluster::StoreClusterDeploymentError::from);
 
         let reply = match result {
@@ -217,7 +217,7 @@ impl ClusterManagerService for ClusterManagerFacade {
 
         let deployment = self.cluster_manager.lock().await.get_cluster_deployment(cluster_id).await
             .log_api_err()
-            .map_err(|cause| Status::internal(cause.to_string()))?;
+            .map_err(|source| Status::internal(source.to_string()))?;
 
         match deployment {
             Some(configuration) => Ok(Response::new(GetClusterDeploymentResponse {
@@ -241,7 +241,7 @@ impl ClusterManagerService for ClusterManagerFacade {
 
         let deployments = self.cluster_manager.lock().await.list_cluster_deployment().await
             .log_api_err()
-            .map_err(|cause| Status::internal(cause.to_string()))?;
+            .map_err(|source| Status::internal(source.to_string()))?;
 
         Ok(Response::new(ListClusterDeploymentsResponse {
             result: Some(list_cluster_deployments_response::Result::Success(
@@ -259,8 +259,8 @@ impl ClusterManagerService for ClusterManagerFacade {
         let result: ClusterPeerStates = self.resource_manager.resources_mut(async |resources| {
             resources.list_cluster_peer_states(cluster_id).await
         }).await
-            .map_err(|cause| Status::internal(cause.to_string()))?
-            .map_err(|cause| Status::internal(cause.to_string()))?;
+            .map_err(|source| Status::internal(source.to_string()))?
+            .map_err(|source| Status::internal(source.to_string()))?;
         
         let peer_states = result.peer_states.iter().map(|(peer_id, peer_state)| (peer_id.uuid.to_string(), peer_state.clone())).collect::<HashMap<_, _>>();
         

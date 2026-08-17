@@ -18,8 +18,8 @@ pub fn PeerLocationInput(peer_configuration: RwSignal<UserPeerConfiguration>) ->
             Ok(_) => {
                 UserInputValue::Right(input)
             }
-            Err(cause) => {
-                match cause {
+            Err(source) => {
+                match source {
                     IllegalLocation::TooLong { expected, value, .. } => {
                         UserInputValue::Both(format!("A peer location must be at most {expected} characters long."), value)
                     },

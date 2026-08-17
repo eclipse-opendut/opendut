@@ -26,9 +26,9 @@ impl Db<'_> {
 
         match open_result { //The ReadTransaction does not automatically create the table and rather returns a TableDoesNotExist error
             Ok(table) => Ok(Some(table)),
-            Err(cause) => match cause {
+            Err(source) => match source {
                 TableError::TableDoesNotExist(_) => Ok(None),
-                _ => Err(redb::Error::from(cause))?,
+                _ => Err(redb::Error::from(source))?,
             }
         }
     }

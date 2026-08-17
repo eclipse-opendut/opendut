@@ -36,7 +36,7 @@ impl Resources<'_> {
         let vpn_config = if let Vpn::Enabled { vpn_client } = &params.vpn {
             debug!("Retrieving VPN configuration for peer <{peer_id}>.");
             let vpn_config = vpn_client.generate_vpn_peer_configuration(params.peer).await
-                .map_err(|cause| GeneratePeerSetupError::Internal { peer_id, peer_name: Clone::clone(&peer_name), cause: cause.to_string() })?;
+                .map_err(|source| GeneratePeerSetupError::Internal { peer_id, peer_name: Clone::clone(&peer_name), source: source.to_string() })?;
             info!("Successfully retrieved vpn configuration for peer <{peer_id}>.");
             vpn_config
         }
@@ -55,7 +55,7 @@ impl Resources<'_> {
                 let issuer_url = registration_client.config.issuer_remote_url.value().clone();
                 let client_credentials = registration_client.register_new_client_for_user(resource_id, params.user_id)
                     .await
-                    .map_err(|cause| GeneratePeerSetupError::Internal { peer_id, peer_name: Clone::clone(&peer_name), cause: cause.to_string() })?;
+                    .map_err(|source| GeneratePeerSetupError::Internal { peer_id, peer_name: Clone::clone(&peer_name), source: source.to_string() })?;
                 debug!("Successfully generated peer setup for peer '{peer_name}' <{peer_id}>. OIDC client_id='{}'.", client_credentials.client_id.clone().value());
                 AuthConfig::from_credentials(issuer_url, client_credentials)
             }
@@ -76,11 +76,11 @@ pub enum GeneratePeerSetupError {
     #[error("A PeerSetup for peer <{0}> could not be created, because a peer with that ID does not exist!")]
     PeerNotFound(PeerId),
     #[error("An error occurred while accessing persistence for creating a PeerSetup for peer <{peer_id}>")]
-    Persistence { peer_id: PeerId, #[source] source: PersistenceError },
-    #[error("An internal error occurred while creating a PeerSetup for peer '{peer_name}' <{peer_id}>:\n  {cause}")]
+    Persistence { peer_id: PeerId, source: PersistenceError },
+    #[error("An internal error occurred while creating a PeerSetup for peer '{peer_name}' <{peer_id}>:\n  {message}")]
     Internal {
         peer_id: PeerId,
         peer_name: PeerName,
-        cause: String
+        message: String
     }
 }

@@ -230,7 +230,7 @@ impl PeerMessagingClient {
                         };
                         let _ignore_error =
                             tx_outbound.send(message).await
-                                .inspect_err(|cause| debug!("Failed to send ping to CARL: {cause:?}"));
+                                .inspect_err(|source| debug!("Failed to send ping to CARL: {source:?}"));
                     }
                     _ = connect_cancel.cancelled() => {
                         debug!("Responding with Pong message cancelled.");

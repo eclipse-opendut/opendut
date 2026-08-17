@@ -40,22 +40,22 @@ pub enum CompilationErrorKind {
     },
     FailedLoading {
         source_location: SourceLocation,
-        cause: SourceLoaderError,
+        source: SourceLoaderError,
     },
     InvalidSource {
-        cause: InvalidSourceError,
+        source: InvalidSourceError,
     },
     FailedInspection {
-        cause: InspectionError,
+        source: InspectionError,
     },
     PythonCompilationError {
         details: String,
     },
     PythonReflectionError {
-        cause: PythonReflectionError,
+        source: PythonReflectionError,
     },
     PythonRuntimeError {
-        cause: PythonRuntimeError,
+        source: PythonRuntimeError,
     }
 }
 
@@ -80,37 +80,37 @@ impl CompilationError {
 
     pub(crate) fn new_source_loading_failure_error(
         source: &Source,
-        cause: SourceLoaderError,
+        error: SourceLoaderError,
     ) -> Self {
         Self::new(
             Clone::clone(&source.identifier),
             CompilationErrorKind::FailedLoading {
                 source_location: Clone::clone(&source.location),
-                cause
+                source: error
             }
         )
     }
 
     pub(crate) fn new_invalid_source_error(
         source: &Source,
-        cause: InvalidSourceError
+        error: InvalidSourceError
     ) -> Self {
         Self::new(
             Clone::clone(&source.identifier),
             CompilationErrorKind::InvalidSource {
-                cause
+                source: error
             }
         )
     }
 
     pub(crate) fn new_inspection_failure_error(
         source: &Source,
-        cause: InspectionError
+        error: InspectionError
     ) -> Self {
         Self::new(
             Clone::clone(&source.identifier),
             CompilationErrorKind::FailedInspection {
-                cause
+                source: error
             }
         )
     }
@@ -140,24 +140,24 @@ impl CompilationError {
 
     pub(crate) fn new_python_runtime_error(
         identifier: TestSuiteIdentifier,
-        cause: PythonRuntimeError
+        source: PythonRuntimeError
     ) -> Self {
         Self::new(
             identifier,
             CompilationErrorKind::PythonRuntimeError {
-                cause,
+                source,
             }
         )
     }
 
     pub(crate) fn new_python_reflection_error(
         identifier: TestSuiteIdentifier,
-        cause: PythonReflectionError
+        source: PythonReflectionError
     ) -> Self {
         Self::new(
             identifier,
             CompilationErrorKind::PythonReflectionError {
-                cause,
+                source,
             }
         )
     }

@@ -59,7 +59,7 @@ conversion! {
 impl From<CreateClusterDescriptorError> for CreateClusterDescriptorFailure {
     fn from(error: CreateClusterDescriptorError) -> Self {
         let proto_error = match error {
-            CreateClusterDescriptorError::Internal { cluster_id, cluster_name, cause } => {
+            CreateClusterDescriptorError::Internal { cluster_id, cluster_name, message } => {
                 create_cluster_descriptor_failure::Error::Internal(CreateClusterDescriptorFailureInternal {
                     cluster_id: Some(cluster_id.into()),
                     cluster_name: Some(cluster_name.into()),
@@ -98,7 +98,7 @@ impl TryFrom<CreateClusterDescriptorFailureInternal> for CreateClusterDescriptor
         let cluster_name: ClusterName = failure.cluster_name
             .ok_or_else(|| ErrorBuilder::field_not_set("cluster_name"))?
             .try_into()?;
-        Ok(CreateClusterDescriptorError::Internal { cluster_id, cluster_name, cause: failure.cause })
+        Ok(CreateClusterDescriptorError::Internal { cluster_id, cluster_name, message: failure.cause })
     }
 }
 
@@ -118,7 +118,7 @@ impl From<DeleteClusterDescriptorError> for DeleteClusterDescriptorFailure {
                     required_states: required_states.into_iter().map(Into::into).collect(),
                 })
             }
-            DeleteClusterDescriptorError::Internal { cluster_id, cluster_name, cause } => {
+            DeleteClusterDescriptorError::Internal { cluster_id, cluster_name, message } => {
                 delete_cluster_descriptor_failure::Error::Internal(DeleteClusterDescriptorFailureInternal {
                     cluster_id: Some(cluster_id.into()),
                     cluster_name: cluster_name.map(Into::into),
@@ -247,14 +247,14 @@ impl TryFrom<DeleteClusterDescriptorFailureInternal> for DeleteClusterDescriptor
         let cluster_name: Option<ClusterName> = failure.cluster_name
             .map(TryInto::try_into)
             .transpose()?;
-        Ok(DeleteClusterDescriptorError::Internal { cluster_id, cluster_name, cause: failure.cause })
+        Ok(DeleteClusterDescriptorError::Internal { cluster_id, cluster_name, message: failure.cause })
     }
 }
 
 impl From<StoreClusterDeploymentError> for StoreClusterDeploymentFailure {
     fn from(error: StoreClusterDeploymentError) -> Self {
         let proto_error = match error {
-            StoreClusterDeploymentError::Internal { cluster_id, cluster_name, cause } => {
+            StoreClusterDeploymentError::Internal { cluster_id, cluster_name, message } => {
                 store_cluster_deployment_failure::Error::Internal(StoreClusterDeploymentFailureInternal {
                     cluster_id: Some(cluster_id.into()),
                     cluster_name: cluster_name.map(|name| name.into()),
@@ -303,7 +303,7 @@ impl TryFrom<StoreClusterDeploymentFailureInternal> for StoreClusterDeploymentEr
         let cluster_name: Option<ClusterName> = failure.cluster_name
             .map(TryInto::try_into)
             .transpose()?;
-        Ok(StoreClusterDeploymentError::Internal { cluster_id, cluster_name, cause: failure.cause })
+        Ok(StoreClusterDeploymentError::Internal { cluster_id, cluster_name, message: failure.cause })
     }
 }
 
@@ -340,7 +340,7 @@ impl From<DeleteClusterDeploymentError> for DeleteClusterDeploymentFailure {
                     required_states: required_states.into_iter().map(Into::into).collect(),
                 })
             }
-            DeleteClusterDeploymentError::Internal { cluster_id, cluster_name, cause } => {
+            DeleteClusterDeploymentError::Internal { cluster_id, cluster_name, message } => {
                 delete_cluster_deployment_failure::Error::Internal(DeleteClusterDeploymentFailureInternal {
                     cluster_id: Some(cluster_id.into()),
                     cluster_name: cluster_name.map(Into::into),
@@ -416,6 +416,6 @@ impl TryFrom<DeleteClusterDeploymentFailureInternal> for DeleteClusterDeployment
         let cluster_name: Option<ClusterName> = failure.cluster_name
             .map(TryInto::try_into)
             .transpose()?;
-        Ok(DeleteClusterDeploymentError::Internal { cluster_id, cluster_name, cause: failure.cause })
+        Ok(DeleteClusterDeploymentError::Internal { cluster_id, cluster_name, message: failure.cause })
     }
 }

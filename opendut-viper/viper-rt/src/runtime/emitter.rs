@@ -32,7 +32,7 @@ where
 #[derive(Debug)]
 #[non_exhaustive]
 pub struct EventEmissionError {
-    pub cause: String,
+    pub source: String,
 }
 
 struct SinkEventEmitter<S, E>
@@ -64,7 +64,7 @@ where
 {
     async fn emit(&mut self, event: I) -> Result<(), EventEmissionError> {
         self.sink.send(event).await
-            .map_err(|e| EventEmissionError { cause: format!("{e:?}") } )
+            .map_err(|e| EventEmissionError { source: format!("{e:?}") } )
     }
 }
 
@@ -110,6 +110,6 @@ where
     E: Send + Sync,
 {
     async fn emit(&mut self, _event: E) -> Result<(), EventEmissionError> {
-        Err(EventEmissionError { cause: String::from("failed") })
+        Err(EventEmissionError { source: String::from("failed") })
     }
 }

@@ -106,7 +106,7 @@ fn load_current_settings_from_file_and_env(path: &Path) -> Option<toml_edit::Doc
         Config::builder()
     )
     .build()
-    .inspect_err(|cause| error!("Failed to read existing configuration file at {path:?}. Continuing as if no configuration existed.\n  {cause}"))
+    .inspect_err(|source| error!("Failed to read existing configuration file at {path:?}. Continuing as if no configuration existed.\n  {source}"))
     .ok()?;
 
     let current_settings = config.try_deserialize::<toml::Table>()
@@ -114,8 +114,8 @@ fn load_current_settings_from_file_and_env(path: &Path) -> Option<toml_edit::Doc
 
     match toml_edit::DocumentMut::from_str(&current_settings.to_string()) {
         Ok(current_settings) => Some(current_settings),
-        Err(cause) => {
-            error!("Failed to parse existing configuration as TOML.\n  {cause}");
+        Err(source) => {
+            error!("Failed to parse existing configuration as TOML.\n  {source}");
             None
         }
     }
@@ -130,8 +130,8 @@ fn needs_writing_to_config_file(new_settings: &str, config_file: &Path) -> anyho
 
     let current_settings = match fs::read_to_string(config_file) { //read anew from config file, because we do not want ENVs to be included here
         Ok(content) => content,
-        Err(cause) => {
-            error!("Failed to read existing configuration file at {config_file:?}. Will assume, it needs to be written.\n  {cause}");
+        Err(source) => {
+            error!("Failed to read existing configuration file at {config_file:?}. Will assume, it needs to be written.\n  {source}");
             return Ok(true);
         }
     };

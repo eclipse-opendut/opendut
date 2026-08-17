@@ -51,17 +51,17 @@ impl ApplyCli {
                         
                         Ok(())
                     }
-                    Err(cause) => {
-                        Err(format!("Failed to parse specification: {cause}"))
+                    Err(source) => {
+                        Err(format!("Failed to parse specification: {source}"))
                     }
                 }
             }
             Source::Inline(InlineSource::Json(json)) => {
                 let json_document = JsonSpecificationDocument::try_from_json_str(json.as_str())
-                    .map_err(|cause| format!("Error while parsing JSON:\n  {cause}"))?;
+                    .map_err(|source| format!("Error while parsing JSON:\n  {source}"))?;
 
                 let document = SpecificationDocument::try_from(json_document)
-                    .map_err(|cause| format!("Error while converting JSON document to specification model:\n  {cause}"))?;
+                    .map_err(|source| format!("Error while converting JSON document to specification model:\n  {source}"))?;
 
                 let model = convert_document_to_model(document)?;
 

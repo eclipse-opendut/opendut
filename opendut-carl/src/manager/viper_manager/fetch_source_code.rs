@@ -17,7 +17,7 @@ pub async fn fetch_source_code(
     let viper_source = resource_manager.resources(async |resources| {
         resources.get_viper_source_descriptor(test_id)
     }).await
-        .map_err(|error| FetchError::Persistence { test_id, cause: error })??;
+        .map_err(|error| FetchError::Persistence { test_id, source: error })??;
 
     let test_suite_identifier = viper_source.name;
     let url = viper_source.url;
@@ -41,13 +41,13 @@ impl Resources<'_> {
         test_id: ViperTestId,
     ) -> Result<ViperSourceDescriptor, FetchError> {
         let viper_test = self.get::<ViperTestRunDescriptor>(test_id)
-            .map_err(|error| FetchError::Persistence { test_id, cause: error })?
+            .map_err(|error| FetchError::Persistence { test_id, source: error })?
             .ok_or_else(|| FetchError::ViperTestRunDescriptorNotFound { test_id })?;
 
         let viper_source_id = viper_test.source;
 
         let viper_source = self.get::<ViperSourceDescriptor>(viper_source_id)
-            .map_err(|error| FetchError::Persistence { test_id, cause: error })?
+            .map_err(|error| FetchError::Persistence { test_id, source: error })?
             .ok_or_else(|| FetchError::ViperSourceDescriptorNotFound { test_id, source_id: viper_source_id })?;
 
         Ok(viper_source)
@@ -95,13 +95,13 @@ pub enum FetchError {
     #[error("Source code for test <{test_id}> could not be fetched, because of an error when accessing persistence!")]
     Persistence {
         test_id: ViperTestId,
-        #[source] cause: PersistenceError,
+        source: PersistenceError,
     },
 
     #[error("Compilation failed while getting the source code for test suite <{test_suite_identifier}> with the location ({location:?})!")]
     Compilation {
         test_suite_identifier: TestSuiteIdentifier,
         location: SourceLocation,
-        #[source] cause: Box<CompilationError>,
+        source: Box<CompilationError>,
     },
 }

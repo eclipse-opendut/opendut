@@ -77,13 +77,13 @@ pub type ConfidentialClientRef = Arc<ConfidentialClient>;
 impl ConfidentialClient {
     pub async fn from_settings(settings: &Config) -> Result<Option<ConfidentialClientRef>, ConfidentialClientError> {
         let config_enabled = OidcConfigEnabled::from_settings(settings)
-            .map_err(|cause| ConfidentialClientError::Configuration { message: String::from("Failed to load OIDC configuration"), cause: cause.into() })?;
+            .map_err(|source| ConfidentialClientError::Configuration { message: String::from("Failed to load OIDC configuration"), source: source.into() })?;
 
         match config_enabled {
             OidcConfigEnabled::Yes(config) => {
                 trace!("OIDC configuration loaded: client_id='{}', issuer_url='{}'", config.get_client_id().as_str(), config.get_issuer().value().as_str());
                 let reqwest_client = reqwest_client::oidc::create_from_config(settings)
-                    .map_err(|cause| ConfidentialClientError::Configuration { message: String::from("Failed to create reqwest client."), cause: cause.into() })?;
+                    .map_err(|source| ConfidentialClientError::Configuration { message: String::from("Failed to create reqwest client."), source: source.into() })?;
 
                 let client = ConfidentialClient::from_client_config(*config.clone(), reqwest_client)?;
                 match client.check_connection().await {
@@ -116,7 +116,7 @@ impl ConfidentialClient {
     async fn check_connection(&self) -> Result<(), ConfidentialClientError> {
 
         let token_endpoint = self.issuer_url.value().join("protocol/openid-connect/token")
-            .map_err(|error| ConfidentialClientError::UrlParse { message: String::from("Failed to derive token url from issuer url: "), cause: error })?;
+            .map_err(|error| ConfidentialClientError::UrlParse { message: String::from("Failed to derive token url from issuer url: "), source: error })?;
 
         let operation = move || {
             let client = self.reqwest_client.clone();
@@ -148,7 +148,7 @@ impl ConfidentialClient {
         match backoff_result {
             Ok(_) => Ok(()),
             Err(error) => {
-                Err(ConfidentialClientError::KeycloakConnection { message: String::from("Could not connect to Keycloak"), cause: error })
+                Err(ConfidentialClientError::KeycloakConnection { message: String::from("Could not connect to Keycloak"), source: error })
             }
         }
     }
@@ -277,18 +277,18 @@ pub async fn async_http_client(
         request_builder = request_builder.header(name.as_str(), value.as_bytes());
     }
     let request = request_builder.build()
-        .map_err(|cause| {
-            OidcClientError::AuthReqwest { message: cause.to_string(), status: cause.status().unwrap_or_default().to_string(), inner: cause }
+        .map_err(|source| {
+            OidcClientError::AuthReqwest { message: source.to_string(), status: source.status().unwrap_or_default().to_string(), inner: source }
         })?;
     let response = client.execute(request).await
-        .map_err(|cause: reqwest::Error| {
-            OidcClientError::AuthReqwest { message: cause.to_string(), status: cause.status().unwrap_or_default().to_string(), inner: cause }
+        .map_err(|source: reqwest::Error| {
+            OidcClientError::AuthReqwest { message: source.to_string(), status: source.status().unwrap_or_default().to_string(), inner: source }
         })?;
     let status_code = response.status();
     let headers = response.headers().to_owned();
     let data = response.bytes().await
-        .map_err(|cause| {
-            OidcClientError::AuthReqwest { message: cause.to_string(), status: cause.status().unwrap_or_default().to_string(), inner: cause }
+        .map_err(|source| {
+            OidcClientError::AuthReqwest { message: source.to_string(), status: source.status().unwrap_or_default().to_string(), inner: source }
         })?;
 
     let returned_response = {
@@ -299,8 +299,8 @@ pub async fn async_http_client(
         }
         returned_response
             .body(data.to_vec())
-            .map_err(|cause| {
-                OidcClientError::Other(format!("Failed to build response body: {cause}"))
+            .map_err(|source| {
+                OidcClientError::Other(format!("Failed to build response body: {source}"))
             })?
     };
 

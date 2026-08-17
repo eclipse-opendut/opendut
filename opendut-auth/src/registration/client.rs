@@ -37,16 +37,16 @@ pub enum RegistrationClientError {
     #[error("Failed request: {error}")]
     RequestError {
         error: String,
-        #[source] cause: Box<dyn std::error::Error + Send + Sync>,
+        source: Box<dyn std::error::Error + Send + Sync>,
     },
     #[error("Failed to register new client: {message}")]
     ClientParameter {
         message: String,
-        #[source] cause: Box<dyn std::error::Error + Send + Sync>,
+        source: Box<dyn std::error::Error + Send + Sync>,
     },
     #[error("Failed to register new client")]
     Registration {
-        #[source] cause: WrappedClientRegistrationError,
+        source: WrappedClientRegistrationError,
     },
     #[error("Client could not be found")]
     ClientNotFound,
@@ -88,7 +88,7 @@ impl RegistrationClient {
             }
             None => {
                 let access_token = self.inner.get_token().await
-                    .map_err(|error| RegistrationClientError::RequestError { error: error.to_string(), cause: Box::new(error) })?;
+                    .map_err(|error| RegistrationClientError::RequestError { error: error.to_string(), source: Box::new(error) })?;
                 let additional_metadata = EmptyAdditionalClientMetadata {};
                 let redirect_uris = vec![self.config.device_redirect_url.clone()];
                 let grant_types = vec![CoreGrantType::ClientCredentials];
@@ -104,12 +104,12 @@ impl RegistrationClient {
                 let resource_uri = self.config.client_home_base_url.resource_url(resource_id, user_id)
                     .map_err(|error| RegistrationClientError::ClientParameter {
                         message: format!("Failed to create resource url for client: {error:?}"),
-                        cause: Box::new(error),
+                        source: Box::new(error),
                     })?;
                 let client_home_uri = ClientUrl::new(String::from(resource_uri))
                     .map_err(|error| RegistrationClientError::ClientParameter {
                         message: format!("Failed to create client home url: {error:?}"),
-                        cause: Box::new(error),
+                        source: Box::new(error),
                     })?;
                 let response = ExplicitSendFutureWrapper::from(
                     request
@@ -140,7 +140,7 @@ impl RegistrationClient {
                         })
                     }
                     Err(error) => {
-                        Err(RegistrationClientError::Registration { cause: WrappedClientRegistrationError(error) })
+                        Err(RegistrationClientError::Registration { source: WrappedClientRegistrationError(error) })
                     }
                 }
             }
@@ -149,21 +149,21 @@ impl RegistrationClient {
     
     pub async fn list_clients(&self) -> Result<Clients, RegistrationClientError> {
         let enumerate_clients_uri = self.config.issuer_admin_url.value().join("clients/")
-            .map_err(|cause| RegistrationClientError::InvalidConfiguration { error: format!("Invalid admin api endpoint for issuer. {cause}") })?;
+            .map_err(|source| RegistrationClientError::InvalidConfiguration { error: format!("Invalid admin api endpoint for issuer. {source}") })?;
         let request = self.create_http_request_with_auth_token(&enumerate_clients_uri, http::Method::GET).await?;
 
         let response = async_http_client(&self.inner.reqwest_client, request).await;
         match response {
             Ok(response) => {
                  let clients: Clients = serde_json::from_slice(response.body())
-                     .map_err(|cause| {
-                         error!("Could not deserialize client list from keycloak: {:?}\nBody:\n{}", cause, String::from_utf8_lossy(response.body()));
-                         RegistrationClientError::InvalidConfiguration { error: format!("Could not deserialize response body. {cause}") }
+                     .map_err(|source| {
+                         error!("Could not deserialize client list from keycloak: {:?}\nBody:\n{}", source, String::from_utf8_lossy(response.body()));
+                         RegistrationClientError::InvalidConfiguration { error: format!("Could not deserialize response body. {source}") }
                      })?;
                  Ok(clients)
             }
             Err(error) => {
-                 Err(RegistrationClientError::RequestError { error: "OIDC client list request failed!".to_string(), cause: Box::new(error) })
+                 Err(RegistrationClientError::RequestError { error: "OIDC client list request failed!".to_string(), source: Box::new(error) })
             }
         }
     }
@@ -195,17 +195,17 @@ impl RegistrationClient {
     pub async fn delete_client(&self, client_id: &String) -> Result<HttpResponse, RegistrationClientError> {
         let client_uri = format!("clients/{client_id}");
         let delete_client_url = self.config.issuer_admin_url.value().join(&client_uri)
-            .map_err(|cause| RegistrationClientError::InvalidConfiguration { error: format!("Invalid admin api endpoint for issuer. {cause}") })?;
+            .map_err(|source| RegistrationClientError::InvalidConfiguration { error: format!("Invalid admin api endpoint for issuer. {source}") })?;
 
         let request = self.create_http_request_with_auth_token(&delete_client_url, http::Method::DELETE).await?;
 
         async_http_client(&self.inner.reqwest_client, request).await
-            .map_err(|error| RegistrationClientError::RequestError { error: error.to_string(), cause: error.into() })
+            .map_err(|error| RegistrationClientError::RequestError { error: error.to_string(), source: error.into() })
     }
 
     async fn create_http_request_with_auth_token(&self, issuer_remote_url: &Url, http_method: http::Method) -> Result<HttpRequest, RegistrationClientError> {
         let access_token = self.inner.get_token().await
-            .map_err(|error| RegistrationClientError::RequestError { error: error.to_string(), cause: error.into() })?;
+            .map_err(|error| RegistrationClientError::RequestError { error: error.to_string(), source: error.into() })?;
         let bearer_header = format!("Bearer {access_token}");
         let access_token_value = HeaderValue::from_str(&bearer_header)
             .map_err(|error| RegistrationClientError::InvalidConfiguration { error: error.to_string() })?;
@@ -218,7 +218,7 @@ impl RegistrationClient {
             .uri(issuer_remote_url)
             .header(http::header::AUTHORIZATION, access_token_value)
             .body(vec![])
-            .map_err(|error| RegistrationClientError::RequestError { error: error.to_string(), cause: error.into() })?;
+            .map_err(|error| RegistrationClientError::RequestError { error: error.to_string(), source: error.into() })?;
 
         Ok(request)
     }

@@ -45,12 +45,12 @@ pub enum Error {
     EndpointConfigurationMissing,
     #[error("Failed to get token from AuthenticationManager")]
     FailedToGetTokenFromAuthenticationManager { #[from] source: AuthError },
-    #[error("Failed to create LoggingConfig: {cause}")]
-    LoggingConfigError { #[from] cause: LoggingConfigError },
-    #[error("Failed to create OpenTelemetryConfig: {cause}")]
-    OpenTelemetryConfigError { #[from] cause: OpentelemetryConfigError },
-    #[error("Failed to create ConfidentialClient: {cause}")]
-    ConfidentialClientError { #[from] cause: ConfidentialClientError },
+    #[error("Failed to create LoggingConfig: {source}")]
+    LoggingConfigError { #[from] source: LoggingConfigError },
+    #[error("Failed to create OpenTelemetryConfig: {source}")]
+    OpenTelemetryConfigError { #[from] source: OpentelemetryConfigError },
+    #[error("Failed to create ConfidentialClient: {source}")]
+    ConfidentialClientError { #[from] source: ConfidentialClientError },
 }
 
 #[tracing::instrument(name="opentelemetry_initialize", skip_all)]
@@ -103,7 +103,7 @@ pub async fn initialize_with_config(
                     .append(true)
                     .create(true)
                     .open(&log_file)
-                    .unwrap_or_else(|cause| panic!("Failed to open log file at '{}': {cause}", log_file.display()));
+                    .unwrap_or_else(|source| panic!("Failed to open log file at '{}': {source}", log_file.display()));
 
                 tracing_subscriber::fmt::layer()
                     .with_writer(log_file)

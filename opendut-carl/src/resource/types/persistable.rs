@@ -23,7 +23,7 @@ impl Persistable for ClusterDescriptor {
 impl Persistable for PeerConfiguration {
     type Proto = opendut_model::proto::peer::configuration::api::PeerConfiguration;
     const TABLE: &'static str = "peer_configuration";
-    /// Not persisted at the moment. A restart will cause a reconfiguration of all peers.
+    /// Not persisted at the moment. A restart will source a reconfiguration of all peers.
     /// The `assign_cluster()` method in the `ClusterManager` evaluates the current peer descriptors of the cluster and sends new peer configurations to the peers.
     /// It is called by the `ClusterManager` when a cluster deployment is created or when all peers of a cluster deployment are available.
     /// -> subscription triggers following chain: `schedule_redeploying_clusters_when_all_peers_become_available()` -> `rollout_all_clusters_containing_newly_available_peer()` -> `rollout_cluster_if_all_peers_available()`

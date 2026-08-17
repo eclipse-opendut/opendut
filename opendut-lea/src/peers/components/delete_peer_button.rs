@@ -51,8 +51,8 @@ where F: Fn() + Clone + Send + 'static {
                             .success()
                     );
                 }
-                Err(cause) => {
-                    error!("Failed to delete peer <{:?}>, due to error: {cause:?}", peer_id);
+                Err(source) => {
+                    error!("Failed to delete peer <{:?}>, due to error: {source:?}", peer_id);
                     toaster.toast(
                         Toast::builder()
                             .simple("Failed to delete peer!")

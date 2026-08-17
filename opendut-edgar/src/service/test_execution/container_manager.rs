@@ -60,7 +60,7 @@ impl ContainerManager {
     pub async fn start(&mut self) {
         match self.run().await {
             Ok(_) => (),
-            Err(cause) => error!("{}", cause.to_string()),
+            Err(source) => error!("{}", source.to_string()),
         }
     }
 
@@ -116,7 +116,7 @@ impl ContainerManager {
             .args(["inspect", "-f", "'{{.State.Status}}'", container_name])
             .output()
             .await
-            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} inspect", self.config.engine.command_name()), cause })?;
+            .map_err(|source| Error::CommandLineProgramExecution { command: format!("{} inspect", self.config.engine.command_name()), source })?;
         
         match String::from_utf8_lossy(&output.stdout).into_owned().replace('\'', "").trim() {
             "created" => Ok(ContainerState::Created),
@@ -173,7 +173,7 @@ impl ContainerManager {
         }
         let output = cmd.output()
             .await
-            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} run", self.config.engine.command_name()), cause })?;
+            .map_err(|source| Error::CommandLineProgramExecution { command: format!("{} run", self.config.engine.command_name()), source })?;
 
         if output.status.success() {
             info!("Started container {}", self.config.name);
@@ -189,7 +189,7 @@ impl ContainerManager {
             .args(["container", "inspect", name])
             .output()
             .await
-            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} inspect", self.config.engine.command_name()), cause })?;
+            .map_err(|source| Error::CommandLineProgramExecution { command: format!("{} inspect", self.config.engine.command_name()), source })?;
 
         Ok(output.status.success())
     }
@@ -199,7 +199,7 @@ impl ContainerManager {
             .args(["stop", container_name])
             .output()
             .await
-            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} stop", self.config.engine.command_name()), cause })?;
+            .map_err(|source| Error::CommandLineProgramExecution { command: format!("{} stop", self.config.engine.command_name()), source })?;
 
         match output.status.success() {
             true => Ok(()),
@@ -233,19 +233,19 @@ impl ContainerManager {
         let mut zipped_data = Vec::new();
         // https://github.com/zip-rs/zip2/issues/195 large_file(true) produces invalid zip file with crate version 2.1.3
         let zip_options = SimpleFileOptions::default().compression_method(CompressionMethod::BZIP2).large_file(false);
-        create_zip_from_directory(&mut zipped_data, &self.results_dir, zip_options).await.map_err(|cause| Error::ResultZipping { path: self.results_dir.clone(), cause })?;
+        create_zip_from_directory(&mut zipped_data, &self.results_dir, zip_options).await.map_err(|source| Error::ResultZipping { path: self.results_dir.clone(), source })?;
 
         self.webdav_client.create_collection_path(results_url.clone())
             .await
-            .map_err(|cause| Error::ResultUploadingInternal { url: results_url.clone(), cause })?;
+            .map_err(|source| Error::ResultUploadingInternal { url: results_url.clone(), source })?;
 
         let results_file_url = results_url.join(
             format!("{}_{}.zip", chrono::offset::Local::now().format("%Y-%m-%d_%H-%M-%S"), self.config.name).as_str()
-        ).map_err(|cause| Error::Other { message: format!("Failed to construct URL for results directory: {cause}") })?;
+        ).map_err(|source| Error::Other { message: format!("Failed to construct URL for results directory: {source}") })?;
 
         let response = self.webdav_client.put(zipped_data, results_file_url.clone())
             .await
-            .map_err(|cause| Error::ResultUploadingInternal { url: results_file_url.clone(), cause })?;
+            .map_err(|source| Error::ResultUploadingInternal { url: results_file_url.clone(), source })?;
 
         match response.status().is_success() {
             true => {
@@ -260,14 +260,14 @@ impl ContainerManager {
     async fn create_results_dir(&mut self) -> Result<(), Error>{
         fs::create_dir_all(&self.results_dir)
             .await
-            .map_err(|cause| Error::Other { message: format!("Failed to create results directory '{}': {}", self.results_dir.to_string_lossy(), cause) })?;
+            .map_err(|source| Error::Other { message: format!("Failed to create results directory '{}': {}", self.results_dir.to_string_lossy(), source) })?;
         Ok(())
     }
 
     async fn cleanup_results_dir(&self) -> Result<(), Error> {
         fs::remove_dir_all(&self.results_dir)
             .await
-            .map_err(|cause| Error::Other { message: format!("Failed to remove results directory '{}': {}", self.results_dir.to_string_lossy(), cause) })?;
+            .map_err(|source| Error::Other { message: format!("Failed to remove results directory '{}': {}", self.results_dir.to_string_lossy(), source) })?;
         Ok(())
     }
 
@@ -309,12 +309,12 @@ async fn create_zip_from_directory<T>(data: &mut Vec<u8>, directory: &PathBuf, f
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("Failure while invoking command line program '{command}': {cause}")]
-    CommandLineProgramExecution { command: String, cause: std::io::Error },
-    #[error("Failure while creating a ZIP archive of the test results at '{path}' : {cause}")]
-    ResultZipping { path: PathBuf, cause: anyhow::Error },
-    #[error("Failure while uploading test results to '{url}': {cause}")]
-    ResultUploadingInternal { url: Url, cause: webdav_client::Error },
+    #[error("Failure while invoking command line program '{command}': {source}")]
+    CommandLineProgramExecution { command: String, source: std::io::Error },
+    #[error("Failure while creating a ZIP archive of the test results at '{path}' : {source}")]
+    ResultZipping { path: PathBuf, source: anyhow::Error },
+    #[error("Failure while uploading test results to '{url}': {source}")]
+    ResultUploadingInternal { url: Url, source: webdav_client::Error },
     #[error("Failure while uploading test results for '{container_name}' to '{url}' (HTTP status {status})")]
     ResultUploadingServer { container_name: ContainerName, url: Url, status: reqwest::StatusCode },
     #[error("{message}")]
@@ -336,7 +336,7 @@ impl ContainerLogReader {
         cmd.kill_on_drop(true);
 
         let mut child = cmd.spawn()
-            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{engine} logs"), cause })?;
+            .map_err(|source| Error::CommandLineProgramExecution { command: format!("{engine} logs"), source })?;
 
         let stdout = child.stdout.take().ok_or(Error::Other { message: format!("Failed to get stdout of '{engine} logs' process")})?;
 

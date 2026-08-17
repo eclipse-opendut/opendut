@@ -8,10 +8,10 @@ use opendut_model::cluster::ClusterId;
 use crate::netbird::group::GroupId;
 
 #[derive(thiserror::Error, Debug)]
-#[error("Cannot create PolicyName from '{value}':\n  {cause}")]
+#[error("Cannot create PolicyName from '{value}':\n  {source}")]
 pub struct InvalidPolicyNameError {
     value: String,
-    cause: Box<dyn Error>,
+    source: Box<dyn Error>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -45,7 +45,7 @@ impl TryFrom<&str> for PolicyName {
         if let Some(uuid) = value.strip_prefix(PolicyName::CLUSTER_POLICY_PREFIX) {
             ClusterId::try_from(uuid)
                 .map(Self::Cluster)
-                .map_err(|cause| InvalidPolicyNameError { value: value.to_owned(), cause: cause.into() })
+                .map_err(|source| InvalidPolicyNameError { value: value.to_owned(), source: source.into() })
         }
         else {
             Ok(Self::Other(value.to_owned()))

@@ -17,7 +17,7 @@ impl LocalPeerStateExtension for LocalPeerState {
             .ok_or(LocalIpParseError { message: format!("Iterator.split() should always return a first element. Did not do so when stripping CIDR mask off of local IP '{local_ip}'.") })?;
 
         let local_ip = Ipv4Addr::from_str(local_ip)
-            .map_err(|cause| LocalIpParseError { message: format!("Local IP returned by NetBird '{local_ip}' could not be parsed: {cause}") })?;
+            .map_err(|source| LocalIpParseError { message: format!("Local IP returned by NetBird '{local_ip}' could not be parsed: {source}") })?;
 
         Ok(local_ip)
     }

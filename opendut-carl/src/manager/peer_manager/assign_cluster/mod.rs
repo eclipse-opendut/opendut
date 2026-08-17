@@ -29,11 +29,11 @@ pub enum AssignClusterError {
     #[error("Assigning cluster for peer <{0}> failed, because a peer with that ID does not exist!")]
     PeerNotFound(PeerId),
     #[error("Could not assign interface name.")]
-    InterfaceName { #[source] source: NetworkInterfaceNameError },
-    #[error("Sending PeerConfiguration with ClusterAssignment to peer <{peer_id}> failed: {cause}")]
-    SendingToPeerFailed { peer_id: PeerId, cause: String },
+    InterfaceName { source: NetworkInterfaceNameError },
+    #[error("Sending PeerConfiguration with ClusterAssignment to peer <{peer_id}> failed: {message}")]
+    SendingToPeerFailed { peer_id: PeerId, message: String },
     #[error("Error while persisting ClusterAssignment for peer <{peer_id}>.")]
-    Persistence { peer_id: PeerId, #[source] source: PersistenceError },
+    Persistence { peer_id: PeerId, source: PersistenceError },
     #[error("IPv6 not supported for GRE interface configuration.")]
     Ipv6NotSupported,
 }

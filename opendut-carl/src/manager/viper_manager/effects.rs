@@ -15,7 +15,7 @@ pub(crate) async fn register(resource_manager: ResourceManagerRef) {
         let Source { identifier: test_suite_identifier, location, .. } = source.clone();
 
         let source_code = viper_runtime.fetch_source_code(source).await
-            .map_err(|error| FetchError::Compilation { test_suite_identifier, location, cause: error })?;
+            .map_err(|error| FetchError::Compilation { test_suite_identifier, location, source: error })?;
         Ok(source_code)
     };
 

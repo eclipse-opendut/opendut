@@ -58,9 +58,9 @@ pub fn LoadingApp() -> impl IntoView {
             let config = {
                 let LeaConfig { carl_url, idp_config, footer_available } = http::Request::get("/api/lea/config")
                     .send().await
-                    .map_err(|cause| AppGlobalsError { message: format!("Could not fetch configuration:\n  {cause}")})?
+                    .map_err(|source| AppGlobalsError { message: format!("Could not fetch configuration:\n  {source}")})?
                     .json::<LeaConfig>().await
-                    .map_err(|cause| AppGlobalsError { message: format!("Could not parse configuration:\n  {cause}")})?;
+                    .map_err(|source| AppGlobalsError { message: format!("Could not parse configuration:\n  {source}")})?;
 
 
                 let footer = if footer_available {
@@ -70,11 +70,11 @@ pub fn LoadingApp() -> impl IntoView {
                     match footer {
                         Ok(footer) => {
                             footer.text().await
-                                .inspect_err(|cause| warn!("Failed to parse footer as text: {cause}"))
+                                .inspect_err(|source| warn!("Failed to parse footer as text: {source}"))
                                 .ok()
                         }
-                        Err(cause) => {
-                            warn!("Failed to fetch footer: {cause}");
+                        Err(source) => {
+                            warn!("Failed to fetch footer: {source}");
                             None
                         }
                     }

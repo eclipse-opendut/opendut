@@ -46,11 +46,11 @@ where F: Fn() + Clone + Send + 'static {
                             .success()
                     );
                 }
-                Err(cause) => {
-                    error!("Failed to delete viper source <{}>, due to error: {cause}", viper_source_id.get_untracked());
+                Err(source) => {
+                    error!("Failed to delete viper source <{}>, due to error: {source}", viper_source_id.get_untracked());
                     toaster.toast(
                         Toast::builder()
-                            .simple(cause.to_string())
+                            .simple(source.to_string())
                             .error()
                     );
                 }

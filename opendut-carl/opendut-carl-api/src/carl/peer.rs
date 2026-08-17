@@ -22,11 +22,11 @@ pub enum StorePeerDescriptorError {
         peer_name: PeerName,
         error: IllegalDevicesError
     },
-    #[error("Peer '{peer_name}' <{peer_id}> could not be created, due to internal errors:\n  {cause}")]
+    #[error("Peer '{peer_name}' <{peer_id}> could not be created, due to internal errors:\n  {message}")]
     Internal {
         peer_id: PeerId,
         peer_name: PeerName,
-        cause: String
+        message: String
     }
 }
 
@@ -52,11 +52,11 @@ pub enum DeletePeerDescriptorError {
         actual_state: PeerState,
         required_states: Vec<PeerState>,
     },
-    #[error("Peer {peer} deleted with internal errors:\n  {cause}", peer=format_id_with_optional_name(peer_id, peer_name))]
+    #[error("Peer {peer} deleted with internal errors:\n  {message}", peer=format_id_with_optional_name(peer_id, peer_name))]
     Internal {
         peer_id: PeerId,
         peer_name: Option<PeerName>,
-        cause: String,
+        message: String,
     }
 }
 
@@ -66,18 +66,18 @@ pub enum GetPeerDescriptorError {
     PeerNotFound {
         peer_id: PeerId
     },
-    #[error("An internal error occurred searching for a peer with id <{peer_id}>:\n  {cause}")]
+    #[error("An internal error occurred searching for a peer with id <{peer_id}>:\n  {message}")]
     Internal {
         peer_id: PeerId,
-        cause: String
+        message: String
     }
 }
 
 #[derive(thiserror::Error, Debug)]
 pub enum ListPeerDescriptorsError {
-    #[error("An internal error occurred computing the list of peers:\n  {cause}")]
+    #[error("An internal error occurred computing the list of peers:\n  {message}")]
     Internal {
-        cause: String
+        message: String
     }
 }
 
@@ -87,26 +87,26 @@ pub enum GetPeerStateError {
     PeerNotFound {
         peer_id: PeerId
     },
-    #[error("An internal error occurred searching for the state of a peer with id <{peer_id}>:\n  {cause}")]
+    #[error("An internal error occurred searching for the state of a peer with id <{peer_id}>:\n  {message}")]
     Internal {
         peer_id: PeerId,
-        cause: String
+        message: String
     }
 }
 
 #[derive(thiserror::Error, Debug, PartialEq, Eq)]
 pub enum ListPeerStatesError {
-    #[error("An internal error occurred while listing peer states:\n  {cause}")]
+    #[error("An internal error occurred while listing peer states:\n  {message}")]
     Internal {
-        cause: String
+        message: String
     }
 }
 
 #[derive(thiserror::Error, Debug)]
 pub enum ListDevicesError {
-    #[error("An internal error occurred computing the list of devices:\n  {cause}")]
+    #[error("An internal error occurred computing the list of devices:\n  {message}")]
     Internal {
-        cause: String
+        message: String
     }
 }
 
@@ -327,7 +327,7 @@ mod client {
                             setup
                                 .ok_or(CreateSetupError { message: format!("Failed to create setup-string for peer <{peer_id}>! Got no PeerSetup!") })
                                 .and_then(|setup| PeerSetup::try_from(setup)
-                                    .map_err(|cause| CreateSetupError { message: cause.to_string() })
+                                    .map_err(|source| CreateSetupError { message: source.to_string() })
                                 )
                         }
                         _ => {
@@ -357,7 +357,7 @@ mod client {
                             setup
                                 .ok_or(CreateSetupError { message: "Failed to create setup-string for CLEO! Got no CleoSetup!".to_owned() })
                                 .and_then(|setup| CleoSetup::try_from(setup)
-                                    .map_err(|cause| CreateSetupError { message: cause.to_string() })
+                                    .map_err(|source| CreateSetupError { message: source.to_string() })
                                 )
                         }
                         _ => {
@@ -382,10 +382,10 @@ mod client {
                         .into_iter()
                         .map(DeviceDescriptor::try_from)
                         .collect::<Result<_, _>>()
-                        .map_err(|cause| ListDevicesError::Internal { cause: cause.to_string() })
+                        .map_err(|source| ListDevicesError::Internal { message: source.to_string() })
                 },
                 Err(status) => {
-                    Err(ListDevicesError::Internal { cause: format!("gRPC failure: {status}") })
+                    Err(ListDevicesError::Internal { message: format!("gRPC failure: {status}") })
                 },
             }
         }

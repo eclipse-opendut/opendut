@@ -34,10 +34,10 @@ impl Display for CanRouteOperation {
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("Failure while invoking command line program '{command}': {cause}")]
-    CommandLineProgramExecution { command: String, cause: std::io::Error },
-    #[error("Failed to {operation} CAN route '{src}' -> '{dst}': {cause}")]
-    CanRouteCreation { src: NetworkInterfaceName, dst: NetworkInterfaceName, operation: CanRouteOperation, cause: String },
+    #[error("Failure while invoking command line program '{command}': {source}")]
+    CommandLineProgramExecution { command: String, source: std::io::Error },
+    #[error("Failed to {operation} CAN route '{src}' -> '{dst}': {message}")]
+    CanRouteCreation { src: NetworkInterfaceName, dst: NetworkInterfaceName, operation: CanRouteOperation, message: String },
 }
 
 
@@ -127,7 +127,7 @@ async fn check_can_route_exists(src: &NetworkInterfaceName, dst: &NetworkInterfa
         .arg("-L")
         .output()
         .await
-        .map_err(|cause| Error::CommandLineProgramExecution { command: "cangw".to_string(), cause })?;
+        .map_err(|source| Error::CommandLineProgramExecution { command: "cangw".to_string(), source })?;
 
     // cangw -L returns non-zero exit code despite succeeding, so we don't check it here
 
@@ -173,7 +173,7 @@ async fn modify_can_route(src: &NetworkInterfaceName, dst: &NetworkInterfaceName
 
     trace!("{operation:?} CAN route, executing command: {cmd:?}");
     let output = cmd.output().await
-        .map_err(|cause| Error::CommandLineProgramExecution { command: "cangw".to_string(), cause })?;
+        .map_err(|source| Error::CommandLineProgramExecution { command: "cangw".to_string(), source })?;
 
     if output.status.success() {
         Ok(())
@@ -182,7 +182,7 @@ async fn modify_can_route(src: &NetworkInterfaceName, dst: &NetworkInterfaceName
             src: src.clone(),
             dst: dst.clone(),
             operation,
-            cause: format!("{:?}", String::from_utf8_lossy(&output.stderr).trim())
+            source: format!("{:?}", String::from_utf8_lossy(&output.stderr).trim())
         }))
     }
 }

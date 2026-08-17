@@ -48,7 +48,7 @@ impl Resources<'_> {
                 let result = vpn_client.delete_peer(peer_id).await;
                 match result {
                     Ok(()) => info!("Successfully deleted previously created VPN peer <{peer_id}>."),
-                    Err(cause) => error!("Failed to delete previously created VPN peer <{peer_id}>: {cause}\n  Cannot recover automatically. Please remove the peer from the VPN management server manually."),
+                    Err(source) => error!("Failed to delete previously created VPN peer <{peer_id}>: {source}\n  Cannot recover automatically. Please remove the peer from the VPN management server manually."),
                 }
             }
         }
@@ -76,13 +76,13 @@ pub enum StorePeerDescriptorError {
     Persistence {
         peer_id: PeerId,
         peer_name: PeerName,
-        #[source] source: PersistenceError,
+        source: PersistenceError,
     },
     #[error("Error when creating peer in VPN management while storing peer descriptor for peer '{peer_name}' <{peer_id}>")]
     VpnClient {
         peer_id: PeerId,
         peer_name: PeerName,
-        #[source] source: opendut_vpn::CreatePeerError,
+        source: opendut_vpn::CreatePeerError,
     },
 }
 

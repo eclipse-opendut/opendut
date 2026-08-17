@@ -74,7 +74,7 @@ pub enum OidcConfigEnabled {
 impl OidcConfigEnabled {
     pub fn from_settings(settings: &Config) -> Result<Self, ConfidentialClientError> {
         let oidc_enabled = settings.get_bool(CONFIG_KEY_OIDC_ENABLED)
-            .map_err(|cause| ConfidentialClientError::Configuration { message: format!("No configuration found for {CONFIG_KEY_OIDC_ENABLED}."), cause: cause.into() })?;
+            .map_err(|source| ConfidentialClientError::Configuration { message: format!("No configuration found for {CONFIG_KEY_OIDC_ENABLED}."), source: source.into() })?;
         if oidc_enabled {
             Ok(Self::Yes(Box::new(OidcClientConfig::Confidential(OidcConfidentialClientConfig::from_settings(settings)?))))
         } else {
@@ -143,9 +143,9 @@ impl OidcConfidentialClientConfig {
 
     pub fn get_client(&self) -> Result<ConfiguredClient, ConfidentialClientError> {
         let auth_endpoint = self.issuer_url.value().join("protocol/openid-connect/auth")
-            .map_err(|cause| ConfidentialClientError::Configuration { message: String::from("Failed to derive authorization url from issuer url."), cause: cause.into() })?;
+            .map_err(|source| ConfidentialClientError::Configuration { message: String::from("Failed to derive authorization url from issuer url."), source: source.into() })?;
         let token_endpoint = self.issuer_url.value().join("protocol/openid-connect/token")
-            .map_err(|cause| ConfidentialClientError::Configuration { message: String::from("Failed to derive token url from issuer url."), cause: cause.into() })?;
+            .map_err(|source| ConfidentialClientError::Configuration { message: String::from("Failed to derive token url from issuer url."), source: source.into() })?;
 
         let client = BasicClient::new(self.client_id.clone())
             .set_client_secret(self.client_secret.clone())
@@ -159,16 +159,16 @@ impl OidcConfidentialClientConfig {
 impl OidcConfidentialClientConfig {
     pub fn from_settings(settings: &Config) -> Result<Self, ConfidentialClientError> {
         let client_id = settings.get_string(OidcConfidentialClientConfig::CLIENT_ID)
-            .map_err(|error| ConfidentialClientError::Configuration { message: format!("Failed to find configuration for `{}`.", OidcConfidentialClientConfig::CLIENT_ID), cause: error.into() })?;
+            .map_err(|error| ConfidentialClientError::Configuration { message: format!("Failed to find configuration for `{}`.", OidcConfidentialClientConfig::CLIENT_ID), source: error.into() })?;
         let client_secret = settings.get_string(OidcConfidentialClientConfig::CLIENT_SECRET)
-            .map_err(|error| ConfidentialClientError::Configuration { message: format!("Failed to find configuration for `{}`.", OidcConfidentialClientConfig::CLIENT_SECRET), cause: error.into() })?;
+            .map_err(|error| ConfidentialClientError::Configuration { message: format!("Failed to find configuration for `{}`.", OidcConfidentialClientConfig::CLIENT_SECRET), source: error.into() })?;
         let issuer = settings.get_string(OidcConfidentialClientConfig::ISSUER_URL)
-            .map_err(|error| ConfidentialClientError::Configuration { message: format!("Failed to find configuration for `{}`.", OidcConfidentialClientConfig::ISSUER_URL), cause: error.into() })?;
+            .map_err(|error| ConfidentialClientError::Configuration { message: format!("Failed to find configuration for `{}`.", OidcConfidentialClientConfig::ISSUER_URL), source: error.into() })?;
 
         let issuer_url = IssuerUrl::try_from(&issuer)
-            .map_err(|error| ConfidentialClientError::Configuration { message: format!("Failed to parse issuer URL: `{issuer}`."), cause: error.into() })?;
+            .map_err(|error| ConfidentialClientError::Configuration { message: format!("Failed to parse issuer URL: `{issuer}`."), source: error.into() })?;
         let raw_scopes = settings.get_string(OidcConfidentialClientConfig::SCOPES)
-            .map_err(|error| ConfidentialClientError::Configuration { message: format!("Failed to find configuration for `{}`.", OidcConfidentialClientConfig::SCOPES), cause: error.into() })?;
+            .map_err(|error| ConfidentialClientError::Configuration { message: format!("Failed to find configuration for `{}`.", OidcConfidentialClientConfig::SCOPES), source: error.into() })?;
         let scopes = OidcConfidentialClientConfig::parse_scopes(&client_id, raw_scopes);
 
         Ok(Self {

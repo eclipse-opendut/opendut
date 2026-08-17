@@ -30,7 +30,7 @@ pub async fn generate_cleo_setup(params: GenerateCleoSetupParams) -> Result<Cleo
             let issuer_url = registration_client.config.issuer_remote_url.value().clone();
             let client_credentials = registration_client.register_new_client_for_user(resource_id, params.user_id)
                 .await
-                .map_err(|cause| GenerateCleoSetupError::Internal { cause: cause.to_string() })?;
+                .map_err(|source| GenerateCleoSetupError::Internal { source: source.to_string() })?;
             debug!("Successfully generated CLEO setup with id <{cleo_id}>. OIDC client_id='{}'.", client_credentials.client_id.clone().value());
             AuthConfig::from_credentials(issuer_url, client_credentials)
         }
@@ -46,9 +46,9 @@ pub async fn generate_cleo_setup(params: GenerateCleoSetupParams) -> Result<Cleo
 
 #[derive(thiserror::Error, Debug)]
 pub enum GenerateCleoSetupError {
-    #[error("An internal error occurred while creating a CleoSetup:\n  {cause}")]
+    #[error("An internal error occurred while creating a CleoSetup:\n  {message}")]
     Internal {
-        cause: String,
+        message: String,
     }
 }
 

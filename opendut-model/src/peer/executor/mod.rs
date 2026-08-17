@@ -63,8 +63,8 @@ impl ResultsUrl {
 
 #[derive(thiserror::Error, Clone, Debug)]
 pub enum IllegalResultsUrl{
-    #[error("Failed to parse results URL: {cause}")]
-    ParseFailure {cause: url::ParseError},
+    #[error("Failed to parse results URL: {source}")]
+    ParseFailure {source: url::ParseError},
 }
 
 impl TryFrom<&str> for ResultsUrl {
@@ -73,7 +73,7 @@ impl TryFrom<&str> for ResultsUrl {
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         match Url::parse(value) {
             Ok(url) => Ok(Self(url)),
-            Err(cause) => Err(IllegalResultsUrl::ParseFailure { cause}),
+            Err(source) => Err(IllegalResultsUrl::ParseFailure { source}),
         }
     }
 }

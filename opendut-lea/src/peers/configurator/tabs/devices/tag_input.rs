@@ -33,8 +33,8 @@ pub fn DeviceTagInput(
             Ok(_) => {
                 UserInputValue::Right(input)
             }
-            Err(cause) => {
-                match cause {
+            Err(source) => {
+                match source {
                     IllegalDeviceTag::TooLong { expected, value, .. } => {
                         UserInputValue::Both(format!("A tag must be at most {expected} characters long."), value)
                     }

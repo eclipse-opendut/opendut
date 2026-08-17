@@ -46,25 +46,25 @@ impl <A> From<ConversionError> for ClientError<A>
 where
     A: Display
 {
-    fn from(cause: ConversionError) -> Self {
-        Self::InvalidResponse(cause.to_string())
+    fn from(source: ConversionError) -> Self {
+        Self::InvalidResponse(source.to_string())
     }
 }
 
 #[derive(thiserror::Error, Debug)]
 pub enum InitializationError {
-    #[error("Invalid URI '{uri}': {cause}")]
-    InvalidUri { uri: String, cause: InvalidUri },
+    #[error("Invalid URI '{uri}': {source}")]
+    InvalidUri { uri: String, source: InvalidUri },
     #[error("Expected https scheme. Given scheme: '{given_scheme}'")]
     ExpectedHttpsScheme { given_scheme: String },
-    #[error("{message}: {cause}")]
-    OidcConfiguration { message: String, cause: Box<dyn std::error::Error + Send + Sync> },
-    #[error("{message}: {cause}")]
-    TlsConfiguration { message: String, cause: Box<dyn std::error::Error + Send + Sync> },
+    #[error("{message}: {source}")]
+    OidcConfiguration { message: String, source: Box<dyn std::error::Error + Send + Sync> },
+    #[error("{message}: {source}")]
+    TlsConfiguration { message: String, source: Box<dyn std::error::Error + Send + Sync> },
     #[error("{message}")]
     TlsClientConfiguration { message: String },
-    #[error("Error while connecting to CARL at '{address}': {cause}")]
-    ConnectError { address: String, cause: Box<dyn std::error::Error + Send + Sync> },
+    #[error("Error while connecting to CARL at '{address}': {source}")]
+    ConnectError { address: String, source: Box<dyn std::error::Error + Send + Sync> },
 }
 
 pub trait ExtractOrClientError<A, B, E>
@@ -87,7 +87,7 @@ where
             .ok_or_else(|| ClientError::InvalidResponse(format!("Field '{}' not set", Clone::clone(&field).into())))
             .and_then(|value| {
                 B::try_from(value)
-                    .map_err(|cause| ClientError::InvalidResponse(format!("Field '{}' is not valid: {}", field.into(), cause)))
+                    .map_err(|source| ClientError::InvalidResponse(format!("Field '{}' is not valid: {}", field.into(), source)))
             })
     }
 }

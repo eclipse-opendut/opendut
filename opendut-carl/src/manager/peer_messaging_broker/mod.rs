@@ -162,8 +162,8 @@ impl PeerMessagingBroker {
                             info!("Peer <{peer_id}> disconnected! Closing inbound channel.");
                             break;
                         }
-                        Err(cause) => {
-                            error!("No message from peer <{peer_id}> within {} ms:\n  {cause}. Closing connection.", timeout_duration.as_millis());
+                        Err(source) => {
+                            error!("No message from peer <{peer_id}> within {} ms:\n  {source}. Closing connection.", timeout_duration.as_millis());
                             rx_inbound.close();
                         }
                     }
@@ -187,7 +187,7 @@ impl PeerMessagingBroker {
                 }
 
                 Self::remove_peer_impl(peer_id, resource_manager, peers).await
-                    .unwrap_or_else(|cause| error!("Error while removing peer after its stream ended:\n  {cause}"));
+                    .unwrap_or_else(|source| error!("Error while removing peer after its stream ended:\n  {source}"));
             });
         }
 
@@ -211,7 +211,7 @@ impl PeerMessagingBroker {
                 configuration: peer_configuration,
             })
         )).await
-            .map_err(|cause| OpenError::SendApplyPeerConfiguration { peer_id, cause: cause.to_string() })?;
+            .map_err(|source| OpenError::SendApplyPeerConfiguration { peer_id, source: source.to_string() })?;
         Ok(())
     }
 
@@ -297,14 +297,14 @@ async fn handle_stream_message(
         UpstreamMessagePayload::EdgePeerConfigurationState(state) => {
             info!("Received PeerConfigurationState from peer <{peer_id}>:\n  {}", state.to_debug_json());
             let _ignore_result = resource_manager.insert(peer_id, state).await
-                .inspect_err(|cause| {
-                    warn!("Failed to insert PeerConfigurationState for peer <{peer_id}>:\n  {cause}");
+                .inspect_err(|source| {
+                    warn!("Failed to insert PeerConfigurationState for peer <{peer_id}>:\n  {source}");
                 });
         }
         UpstreamMessagePayload::Ping => {
             let _ignore_result =
                 tx_outbound.send(DownstreamMessage { payload: DownstreamMessagePayload::Pong, context }).await
-                    .inspect_err(|cause| warn!("Failed to send ping to peer <{peer_id}>:\n  {cause}"));
+                    .inspect_err(|source| warn!("Failed to send ping to peer <{peer_id}>:\n  {source}"));
         }
     }
 }
@@ -328,11 +328,11 @@ pub enum OpenError {
     #[error("Peer not found. Unknown peer id: <{0}>")]
     PeerNotFound(PeerId),
 
-    #[error("Error while sending peer configuration to peer:\n  {cause}")]
-    SendApplyPeerConfiguration { peer_id: PeerId, cause: String },
+    #[error("Error while sending peer configuration to peer:\n  {message}")]
+    SendApplyPeerConfiguration { peer_id: PeerId, message: String },
 
     #[error("Error while accessing persistence after Peer <{peer_id}> opened stream.")]
-    Persistence { peer_id: PeerId, #[source] source: PersistenceError },
+    Persistence { peer_id: PeerId, source: PersistenceError },
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -340,7 +340,7 @@ pub enum RemovePeerError {
     #[error("PeerNotFound Error while removing peer: {0}")]
     PeerNotFound(PeerId),
     #[error("Error while accessing persistence when removing Peer <{peer_id}>.")]
-    Persistence { peer_id: PeerId, #[source] source: PersistenceError },
+    Persistence { peer_id: PeerId, source: PersistenceError },
 }
 
 #[derive(Clone)]

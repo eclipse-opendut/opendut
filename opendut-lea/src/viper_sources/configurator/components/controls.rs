@@ -90,8 +90,8 @@ fn SaveViperSourceButton(
                             );
                             setter.set(false);
                         }
-                        Err(cause) => {
-                            error!("Failed to create viper source <{viper_source_id}>, due to error: {cause:?}");
+                        Err(source) => {
+                            error!("Failed to create viper source <{viper_source_id}>, due to error: {source:?}");
                             toaster.toast(Toast::builder().simple("Failed to store viper source!").error());
                         }
                     }

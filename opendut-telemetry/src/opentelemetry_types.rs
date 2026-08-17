@@ -58,9 +58,9 @@ impl Opentelemetry {
     pub async fn load(config: &config::Config, service_metadata: ServiceMetadata) -> Result<Self, OpentelemetryConfigError> {
         let field = String::from("opentelemetry.enabled");
         let opentelemetry_enabled = config.get_bool("opentelemetry.enabled")
-            .map_err(|cause| OpentelemetryConfigError::ValueParseError {
+            .map_err(|source| OpentelemetryConfigError::ValueParseError {
                 field: field.clone(),
-                cause: format!("{cause:?}")
+                message: format!("{source:?}")
             })?;
 
         startup_message!("Loading configuration. OpenTelemetry enabled: {opentelemetry_enabled}.");
@@ -68,14 +68,14 @@ impl Opentelemetry {
             let collector_endpoint = {
                 let field = String::from("opentelemetry.collector.endpoint");
                 let url = config.get_string(&field)
-                    .map_err(|cause| OpentelemetryConfigError::ValueParseError {
+                    .map_err(|source| OpentelemetryConfigError::ValueParseError {
                         field: field.clone(),
-                        cause: format!("{cause:?}")
+                        message: format!("{source:?}")
                     })?;
                 let url = Url::parse_without_quotes(&url)
-                    .map_err(|cause| OpentelemetryConfigError::InvalidValueError {
+                    .map_err(|source| OpentelemetryConfigError::InvalidValueError {
                         field,
-                        message: format!("Failed to parse url from given string: '{url}'. Error: {cause:?}")
+                        message: format!("Failed to parse url from given string: '{url}'. Error: {source:?}")
                     })?;
                 Endpoint { url }
             };
@@ -83,9 +83,9 @@ impl Opentelemetry {
             let service_name = {
                 let field = String::from("opentelemetry.service.name");
                 config.get_string(&field)
-                    .map_err(|cause| OpentelemetryConfigError::ValueParseError {
+                    .map_err(|source| OpentelemetryConfigError::ValueParseError {
                         field: field.clone(),
-                        cause: format!("{cause:?}")
+                        message: format!("{source:?}")
                     })?
             };
 
@@ -93,15 +93,15 @@ impl Opentelemetry {
                 let field = String::from("opentelemetry.metrics.interval.ms");
 
                 let interval_i64 = config.get_int(&field)
-                    .map_err(|cause| OpentelemetryConfigError::ValueParseError {
+                    .map_err(|source| OpentelemetryConfigError::ValueParseError {
                         field: field.clone(),
-                        cause: format!("{cause:?}")
+                        message: format!("{source:?}")
                     })?;
 
                 let interval_u64 = u64::try_from(interval_i64)
-                    .map_err(|cause| OpentelemetryConfigError::ValueParseError {
+                    .map_err(|source| OpentelemetryConfigError::ValueParseError {
                         field: field.clone(),
-                        cause: format!("{cause:?}")
+                        message: format!("{source:?}")
                     })?;
 
                 Duration::from_millis(interval_u64)
@@ -111,15 +111,15 @@ impl Opentelemetry {
                 let field = String::from("opentelemetry.metrics.cpu.collection.interval.ms");
 
                 let interval_i64 = config.get_int(&field)
-                    .map_err(|cause| OpentelemetryConfigError::ValueParseError {
+                    .map_err(|source| OpentelemetryConfigError::ValueParseError {
                         field: field.clone(),
-                        cause: format!("{cause:?}")
+                        message: format!("{source:?}")
                     })?;
 
                 let interval_u64 = u64::try_from(interval_i64)
-                    .map_err(|cause| OpentelemetryConfigError::ValueParseError {
+                    .map_err(|source| OpentelemetryConfigError::ValueParseError {
                         field: field.clone(),
-                        cause: format!("{cause:?}")
+                        message: format!("{source:?}")
                     })?;
                 let interval = Duration::from_millis(interval_u64);
 
@@ -136,9 +136,9 @@ impl Opentelemetry {
             };
 
             let confidential_client = ConfidentialClient::from_settings(config).await
-                .map_err(|cause| OpentelemetryConfigError::ConfidentialClientError {
+                .map_err(|source| OpentelemetryConfigError::ConfidentialClientError {
                     message: String::from("Could not create AuthenticationManager"),
-                    cause
+                    source
                 })?;
 
 
@@ -149,9 +149,9 @@ impl Opentelemetry {
 
                 let load_pem = |config_key, fallback_config_key| {
                     Pem::read_from_configured_path_or_content(config_key, Some(fallback_config_key), config)
-                        .map_err(|cause| OpentelemetryConfigError::ValueParseError {
+                        .map_err(|source| OpentelemetryConfigError::ValueParseError {
                             field: [config_key, fallback_config_key].join(" | "), //somewhat hacky way to display both config fields
-                            cause: format!("{cause:?}")
+                            message: format!("{source:?}")
                         })
                 };
 
@@ -165,9 +165,9 @@ impl Opentelemetry {
                 }
 
                 let client_auth = ClientAuth::load_from_config(pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH, Some(pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH), config)
-                    .map_err(|cause| OpentelemetryConfigError::ValueParseError {
+                    .map_err(|source| OpentelemetryConfigError::ValueParseError {
                         field: [pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH.prefix, pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH.prefix].join(" | "),
-                        cause: format!("Failed to read mTLS client auth configuration: {cause}"),
+                        message: format!("Failed to read mTLS client auth configuration: {source}"),
                     })?;
 
                 match client_auth {
@@ -219,25 +219,25 @@ impl UrlWithoutQuotes for Url {
 
 #[derive(Debug, thiserror::Error)]
 pub enum OpentelemetryConfigError {
-    #[error("Failed to parse configuration from field: '{field}'. Cause: {cause}")]
+    #[error("Failed to parse configuration from field: '{field}'. Cause: {message}")]
     ValueParseError {
         field: String,
-        cause: String
+        message: String
     },
     #[error("'{message}': '{field}'")]
     InvalidValueError {
         field: String,
         message: String,
     },
-    #[error("'{message}': '{cause}'")]
+    #[error("'{message}': '{source}'")]
     ConfidentialClientError {
         message: String,
-        cause: ConfidentialClientError,
+        source: ConfidentialClientError,
     },
-    #[error("{message}, cause: '{cause}")]
+    #[error("{message}, caused by: '{details}")]
     ClientAuthentication {
         message: String,
-        cause: String,
+        details: String,
     }
 }
 

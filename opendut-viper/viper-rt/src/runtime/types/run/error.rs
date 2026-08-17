@@ -32,7 +32,7 @@ pub enum RunErrorKind {
         message: String,
     },
     PythonReflectionError {
-        cause: PythonReflectionError,
+        source: PythonReflectionError,
     },
 }
 
@@ -63,12 +63,12 @@ impl RunError {
 
     pub(crate) fn new_python_reflection_error(
         identifier: impl Identifier + 'static,
-        cause: PythonReflectionError
+        source: PythonReflectionError
     ) -> Self {
         Self::new(
             identifier,
             RunErrorKind::PythonReflectionError {
-                cause,
+                source,
             }
         )
     }

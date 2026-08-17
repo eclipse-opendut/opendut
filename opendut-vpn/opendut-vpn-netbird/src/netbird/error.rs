@@ -14,10 +14,10 @@ pub enum GetGroupError {
     GroupNotFound { group_name: GroupName },
     #[error("Multiple groups with name '{group_name}' exist!")]
     MultipleGroupsFound { group_name: GroupName },
-    #[error("Could not request group '{group_name}':\n  {cause}")]
+    #[error("Could not request group '{group_name}':\n  {source}")]
     RequestFailure {
         group_name: GroupName,
-        cause: RequestError
+        source: RequestError
     }
 }
 
@@ -27,21 +27,21 @@ pub enum GetPoliciesError {
     PolicyNotFound { policy_name: PolicyName },
     #[error("Multiple policies with name '{policy_name}' exist!")]
     MultiplePoliciesFound { policy_name: PolicyName },
-    #[error("Could not request policy '{policy_name}:\n  {cause}")]
+    #[error("Could not request policy '{policy_name}:\n  {source}")]
     RequestFailure {
         policy_name: PolicyName,
-        cause: RequestError
+        source: RequestError
     }
 }
 
 #[derive(thiserror::Error, Debug)]
 pub enum CreateSetupKeyError {
-    #[error("Auto-assign group for peer <{peer_id}> not found for setup-key creation:\n  {cause}!")]
-    PeerGroupNotFound { peer_id: PeerId, cause: GetGroupError },
-    #[error("Could not request setup-key creation for peer <{peer_id}>:\n  {cause}")]
+    #[error("Auto-assign group for peer <{peer_id}> not found for setup-key creation:\n  {source}!")]
+    PeerGroupNotFound { peer_id: PeerId, source: GetGroupError },
+    #[error("Could not request setup-key creation for peer <{peer_id}>:\n  {source}")]
     RequestFailure {
         peer_id: PeerId,
-        cause: RequestError
+        source: RequestError
     }
 }
 
@@ -63,9 +63,9 @@ pub enum RequestError {
 pub enum CreateClientError {
     #[error("Invalid header: {0}")]
     InvalidHeader(InvalidHeaderValue),
-    #[error("Failed to instantiated client, due to an error: {cause}")]
+    #[error("Failed to instantiated client, due to an error: {message}")]
     InstantiationFailure {
-        cause: String
+        message: String
     },
     #[error("Failed to delete default policy.")]
     DeleteDefaultPolicy(#[source] RequestError),

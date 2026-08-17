@@ -9,7 +9,7 @@ impl FromStr for ParseableClusterId {
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         let inner = ClusterId::try_from(value)
-            .map_err(|cause| ParseError::new::<Self>(value, cause.to_string()))?;
+            .map_err(|source| ParseError::new::<Self>(value, source.to_string()))?;
         Ok(Self(inner))
     }
 }
@@ -21,7 +21,7 @@ impl FromStr for ParseableClusterName {
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         let inner = ClusterName::try_from(value)
-            .map_err(|cause| ParseError::new::<Self>(value, cause.to_string()))?;
+            .map_err(|source| ParseError::new::<Self>(value, source.to_string()))?;
         Ok(Self(inner))
     }
 }

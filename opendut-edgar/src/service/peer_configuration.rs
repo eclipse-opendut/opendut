@@ -92,7 +92,7 @@ async fn spawn_peer_configuration_handler_loop(
             error!("Some unknown parameters were reported in the state: {}", unknown.to_debug_json());
         }
         let _ = tx_peer_configuration_state.send(state).await
-            .inspect_err(|cause| error!("Failed to send peer configuration state to CARL: {cause}"));
+            .inspect_err(|source| error!("Failed to send peer configuration state to CARL: {source}"));
     }
 }
 

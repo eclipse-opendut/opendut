@@ -12,26 +12,26 @@ pub enum PersistenceErrorKind {
         resource_name: &'static str,
         operation: PersistenceOperation,
         identifier: Option<String>,
-        #[source] source: Option<Cause>,
+        source: Option<Cause>,
     },
     ProtobufDecode(#[source] prost::DecodeError),
     ProtobufConversion(#[source] opendut_util::proto::ConversionError),
     KeyValueStore(#[source] redb::Error),
 }
 impl PersistenceError {
-    pub fn insert<R>(identifier: impl Debug, cause: impl Into<Cause>) -> Self {
-        Self::new::<R>(Some(identifier), PersistenceOperation::Insert, Some(cause))
+    pub fn insert<R>(identifier: impl Debug, source: impl Into<Cause>) -> Self {
+        Self::new::<R>(Some(identifier), PersistenceOperation::Insert, Some(source))
     }
-    pub fn remove<R>(identifier: impl Debug, cause: impl Into<Cause>) -> Self {
-        Self::new::<R>(Some(identifier), PersistenceOperation::Remove, Some(cause))
+    pub fn remove<R>(identifier: impl Debug, source: impl Into<Cause>) -> Self {
+        Self::new::<R>(Some(identifier), PersistenceOperation::Remove, Some(source))
     }
-    pub fn get<R>(identifier: impl Debug, cause: impl Into<Cause>) -> Self {
-        Self::new::<R>(Some(identifier), PersistenceOperation::Get, Some(cause))
+    pub fn get<R>(identifier: impl Debug, source: impl Into<Cause>) -> Self {
+        Self::new::<R>(Some(identifier), PersistenceOperation::Get, Some(source))
     }
-    pub fn list<R>(cause: impl Into<Cause>) -> Self {
-        Self::new::<R>(Option::<Uuid>::None, PersistenceOperation::List, Some(cause))
+    pub fn list<R>(source: impl Into<Cause>) -> Self {
+        Self::new::<R>(Option::<Uuid>::None, PersistenceOperation::List, Some(source))
     }
-    pub fn new<R>(identifier: Option<impl Debug>, operation: PersistenceOperation, cause: Option<impl Into<Cause>>) -> Self {
+    pub fn new<R>(identifier: Option<impl Debug>, operation: PersistenceOperation, source: Option<impl Into<Cause>>) -> Self {
         let identifier = identifier.map(|identifier| format!("{identifier:?}"));
         Self {
             context_messages: Vec::new(),
@@ -39,7 +39,7 @@ impl PersistenceError {
                 resource_name: std::any::type_name::<R>(),
                 operation,
                 identifier,
-                source: cause.map(Into::into),
+                source: source.map(Into::into),
             })
         }
     }
@@ -115,8 +115,8 @@ pub trait MapErrToInner<T, E> {
 }
 impl<T, E> MapErrToInner<T, E> for PersistenceResult<Result<T, E>> {
     fn map_err_to_inner(self, function: impl FnOnce(PersistenceError) -> E) -> Result<T, E> {
-        self.unwrap_or_else(|cause|
-            Err(function(cause))
+        self.unwrap_or_else(|source|
+            Err(function(source))
         )
     }
 }

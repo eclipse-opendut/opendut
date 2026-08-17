@@ -43,7 +43,7 @@ pub async fn launch_rperf_clients(
                     megabits_second_send_mutex,
                     megabits_second_receive_mutex
                 ).await
-                    .inspect_err(|cause| error!("Failed to start rperf client for peer {peer_id}: {cause}"));
+                    .inspect_err(|source| error!("Failed to start rperf client for peer {peer_id}: {source}"));
             });
     }
 }
@@ -66,7 +66,7 @@ async fn exponential_backoff_launch_rperf_client(
         .await;
 
     backoff_result
-        .map_err(|cause| RperfClientError { message: "Could not run rperf client".to_string(), cause })
+        .map_err(|source| RperfClientError { message: "Could not run rperf client".to_string(), source })
 }
 
 async fn launch_rperf_client(
@@ -109,9 +109,9 @@ async fn launch_rperf_client(
                                                 .record(value, &[KeyValue::new("peer_ip_address", vpn_address.to_string())]);
                                             debug!("Sending to {} in megabits/second: {}", vpn_address.to_string(), value);
                                         },
-                                        Err(cause) => {
-                                            error!("Failed to parse rperf bandwidth: {}", cause);
-                                            return Err(RperfError::BandwidthParse { message: "Failed to parse rperf bandwidth".to_string(), cause });
+                                        Err(source) => {
+                                            error!("Failed to parse rperf bandwidth: {}", source);
+                                            return Err(RperfError::BandwidthParse { message: "Failed to parse rperf bandwidth".to_string(), source });
                                         }
                                     },
                                     RperfOperation::Receive => match number_str.parse::<f64>() {
@@ -120,9 +120,9 @@ async fn launch_rperf_client(
                                                 .record(value, &[KeyValue::new("peer_ip_address", vpn_address.to_string())]);
                                             debug!("Receiving from {} in megabits/second: {}", vpn_address.to_string(), value);
                                         },
-                                        Err(cause) => {
-                                            error!("Failed to parse rperf bandwidth: {}", cause);
-                                            return Err(RperfError::BandwidthParse { message: "Failed to parse rperf bandwidth".to_string(), cause });
+                                        Err(source) => {
+                                            error!("Failed to parse rperf bandwidth: {}", source);
+                                            return Err(RperfError::BandwidthParse { message: "Failed to parse rperf bandwidth".to_string(), source });
                                         }
                                     },
                                     RperfOperation::Default => {} //do nothing
@@ -167,7 +167,7 @@ async fn launch_rperf_client(
         }
         Err(error) => {
             error!("The rperf client could not be started: {}", error);
-            Err(RperfError::Start { message: "The rperf client could not be started".to_string(), cause: error })
+            Err(RperfError::Start { message: "The rperf client could not be started".to_string(), source: error })
         }
     }
 }

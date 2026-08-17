@@ -33,8 +33,8 @@ where
         self
             .ok_or_else(|| tonic::Status::invalid_argument(format!("Field '{}' not set", Clone::clone(&field).into())))
             .and_then(|value| {
-                B::try_from(value).map_err(|cause| {
-                    tonic::Status::invalid_argument(format!("Field '{}' is not valid: {}", field.into(), cause))
+                B::try_from(value).map_err(|source| {
+                    tonic::Status::invalid_argument(format!("Field '{}' is not valid: {}", field.into(), source))
                 })
             })
     }

@@ -25,7 +25,7 @@ impl From<StorePeerDescriptorError> for StorePeerDescriptorFailure {
                     error: Some(error.into()),
                 })
             }
-            StorePeerDescriptorError::Internal { peer_id, peer_name, cause } => {
+            StorePeerDescriptorError::Internal { peer_id, peer_name, message } => {
                 store_peer_descriptor_failure::Error::Internal(StorePeerDescriptorFailureInternal {
                     peer_id: Some(peer_id.into()),
                     peer_name: Some(peer_name.into()),
@@ -107,7 +107,7 @@ impl TryFrom<StorePeerDescriptorFailureInternal> for StorePeerDescriptorError {
         let peer_name: PeerName = failure.peer_name
             .ok_or_else(|| ErrorBuilder::field_not_set("peer_name"))?
             .try_into()?;
-        Ok(StorePeerDescriptorError::Internal { peer_id, peer_name, cause: failure.cause })
+        Ok(StorePeerDescriptorError::Internal { peer_id, peer_name, message: failure.cause })
     }
 }
 
@@ -131,7 +131,7 @@ conversion! {
                     required_states: required_states.into_iter().map(Into::into).collect(),
                 })
             }
-            DeletePeerDescriptorError::Internal { peer_id, peer_name, cause } => {
+            DeletePeerDescriptorError::Internal { peer_id, peer_name, message } => {
                 delete_peer_descriptor_failure::Error::Internal(DeletePeerDescriptorFailureInternal {
                     peer_id: Some(peer_id.into()),
                     peer_name: peer_name.map(Into::into),
@@ -181,7 +181,7 @@ conversion! {
                 Ok(Model::Internal {
                     peer_id,
                     peer_name,
-                    cause,
+                    message,
                 })
             }
             delete_peer_descriptor_failure::Error::DeploymentExists(error) => {
@@ -245,7 +245,7 @@ impl From<GetPeerDescriptorError> for GetPeerDescriptorFailure {
                     peer_id: Some(peer_id.into()),
                 })
             }
-            GetPeerDescriptorError::Internal { peer_id, cause } => {
+            GetPeerDescriptorError::Internal { peer_id, message } => {
                 get_peer_descriptor_failure::Error::Internal(GetPeerDescriptorFailureInternal {
                     peer_id: Some(peer_id.into()),
                     cause
@@ -294,14 +294,14 @@ impl TryFrom<GetPeerDescriptorFailureInternal> for GetPeerDescriptorError {
         let peer_id: PeerId = failure.peer_id
             .ok_or_else(|| ErrorBuilder::field_not_set("peer_id"))?
             .try_into()?;
-        Ok(GetPeerDescriptorError::Internal{ peer_id, cause: failure.cause})
+        Ok(GetPeerDescriptorError::Internal{ peer_id, message: failure.cause})
     }
 }
 
 impl From<ListPeerDescriptorsError> for ListPeerDescriptorsFailure {
     fn from(error: ListPeerDescriptorsError) -> Self {
         let proto_error = match error {
-            ListPeerDescriptorsError::Internal { cause } => {
+            ListPeerDescriptorsError::Internal { message } => {
                 list_peer_descriptors_failure::Error::Internal(ListPeerDescriptorsFailureInternal {
                     cause
                 })
@@ -332,7 +332,7 @@ impl TryFrom<ListPeerDescriptorsFailureInternal> for ListPeerDescriptorsError {
     type Error = ConversionError;
     fn try_from(failure: ListPeerDescriptorsFailureInternal) -> Result<Self, Self::Error> {
         // type ErrorBuilder = ConversionErrorBuilder<ListPeersFailureInternal, ListPeersError>;
-        Ok(ListPeerDescriptorsError::Internal{ cause: failure.cause})
+        Ok(ListPeerDescriptorsError::Internal{ message: failure.cause})
     }
 }
 
@@ -344,7 +344,7 @@ impl From<GetPeerStateError> for GetPeerStateFailure {
                     peer_id: Some(peer_id.into()),
                 })
             }
-            GetPeerStateError::Internal { peer_id, cause } => {
+            GetPeerStateError::Internal { peer_id, message } => {
                 get_peer_state_failure::Error::Internal(GetPeerStateFailureInternal {
                     peer_id: Some(peer_id.into()),
                     cause
@@ -375,7 +375,7 @@ impl TryFrom<GetPeerStateFailureInternal> for GetPeerStateError {
         let peer_id: PeerId = failure.peer_id
             .ok_or_else(|| ErrorBuilder::field_not_set("peer_id"))?
             .try_into()?;
-        Ok(GetPeerStateError::Internal{ peer_id, cause: failure.cause})
+        Ok(GetPeerStateError::Internal{ peer_id, message: failure.cause})
     }
 }
 
@@ -400,7 +400,7 @@ impl TryFrom<GetPeerStateFailure> for GetPeerStateError {
 impl From<ListPeerStatesError> for ListPeerStatesFailure {
     fn from(error: ListPeerStatesError) -> Self {
         let proto_error = match error {
-            ListPeerStatesError::Internal { cause } => {
+            ListPeerStatesError::Internal { message } => {
                 list_peer_states_failure::Error::Internal(ListPeerStatesFailureInternal {
                     cause
                 })
@@ -430,6 +430,6 @@ impl TryFrom<ListPeerStatesFailure> for ListPeerStatesError {
 impl TryFrom<ListPeerStatesFailureInternal> for ListPeerStatesError {
     type Error = ConversionError;
     fn try_from(failure: ListPeerStatesFailureInternal) -> Result<Self, Self::Error> {
-        Ok(ListPeerStatesError::Internal{ cause: failure.cause})
+        Ok(ListPeerStatesError::Internal{ message: failure.cause})
     }
 }

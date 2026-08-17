@@ -39,14 +39,14 @@ impl WebdavClient {
             .body(body)
             .send()
             .await
-            .map_err(|cause| Error::Request { method: String::from("PUT"), cause } )
+            .map_err(|source| Error::Request { method: String::from("PUT"), source } )
     }
 
     pub async fn mkcol(&self, path: Url) -> Result<Response, Error> {
         self.start_request(Method::from_bytes(b"MKCOL").unwrap(), path)
             .send()
             .await
-            .map_err(|cause| Error::Request { method: String::from("MKCOL"), cause } )
+            .map_err(|source| Error::Request { method: String::from("MKCOL"), source } )
     }
 
     pub async fn create_collection_path(&self, path: Url) -> Result<(), Error>{
@@ -61,7 +61,7 @@ impl WebdavClient {
             
             // The '/' in the beginning of the accumulated path causes the existing path in the URL to be dropped
             let partial_url = path.join(&accumulated_path)
-                .map_err(|cause| Error::Other { message: format!("Failed to join partial path '{accumulated_path}' to base URL: {cause}") } )?;
+                .map_err(|source| Error::Other { message: format!("Failed to join partial path '{accumulated_path}' to base URL: {source}") } )?;
 
             let response = self.mkcol(partial_url.clone())
                 .await?;
@@ -79,8 +79,8 @@ impl WebdavClient {
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("Failure while sending WebDAV '{method}' request: {cause}")]
-    Request { method: String, cause: reqwest::Error },
+    #[error("Failure while sending WebDAV '{method}' request: {source}")]
+    Request { method: String, source: reqwest::Error },
     #[error("{message}")]
     Other { message: String },
 }

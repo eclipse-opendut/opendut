@@ -10,15 +10,15 @@ impl Resources<'_> {
 
         debug!("Fetching list of VIPER run deployments that might be using VIPER test <{test_id}>.");
         let runs = self.list::<ViperRunDeployment>()
-            .map_err(|cause| DeleteViperTestDescriptorError::Persistence { test_id, cause })?;
+            .map_err(|source| DeleteViperTestDescriptorError::Persistence { test_id, source })?;
 
         match runs.values().find(|run| run.test_id == test_id) {
             None => {
                 debug!("No run deployments are using VIPER test <{test_id}>. Continuing with deletion of test descriptor.");
                 let result = self
                     .remove::<ViperTestRunDescriptor>(test_id)
-                    .map_err(|cause: PersistenceError| {
-                        DeleteViperTestDescriptorError::Persistence { test_id, cause }
+                    .map_err(|source: PersistenceError| {
+                        DeleteViperTestDescriptorError::Persistence { test_id, source }
                     })?
                     .ok_or_else(|| DeleteViperTestDescriptorError::TestNotFound { test_id })?;
 
@@ -51,8 +51,7 @@ pub enum DeleteViperTestDescriptorError {
     #[error("Error when accessing persistence while deleting VIPER test descriptor for test <{test_id}>.")]
     Persistence {
         test_id: ViperTestId,
-        #[source]
-        cause: PersistenceError,
+                source: PersistenceError,
     },
 }
 

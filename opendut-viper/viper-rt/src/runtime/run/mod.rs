@@ -152,7 +152,7 @@ async fn run_test(
                 let owner = instance.str(vm).expect("Invoke `__str__` on object");
                 PythonReflectionError::new_attribute_not_writable_error(owner.to_string(), "report")
             })
-            .map_err(|cause| RunError::new_python_reflection_error(Clone::clone(&identifier), cause))?;
+            .map_err(|source| RunError::new_python_reflection_error(Clone::clone(&identifier), source))?;
 
         if let Some(setup_fn) = setup_fn
         && let Err(err) = setup_fn.call((Clone::clone(&instance), ), vm) { // TODO: Decide, what should happen when a setup function fails.
@@ -161,13 +161,13 @@ async fn run_test(
 
         vm.sys_module.set_attr("stdout", stdout, vm)
             .map_err(|_| PythonReflectionError::new_attribute_not_writable_error("sys", "stdout"))
-            .map_err(|cause| RunError::new_python_reflection_error(Clone::clone(&identifier), cause))?;
+            .map_err(|source| RunError::new_python_reflection_error(Clone::clone(&identifier), source))?;
         vm.sys_module.set_attr("stderr", stderr, vm)
             .map_err(|_| PythonReflectionError::new_attribute_not_writable_error("sys", "stderr"))
-            .map_err(|cause| RunError::new_python_reflection_error(Clone::clone(&identifier), cause))?;
+            .map_err(|source| RunError::new_python_reflection_error(Clone::clone(&identifier), source))?;
         vm.builtins.set_attr("open", vm.new_function("open", open_fn), vm)
             .map_err(|_| PythonReflectionError::new_attribute_not_writable_error("builtins", "open"))
-            .map_err(|cause| RunError::new_python_reflection_error(Clone::clone(&identifier), cause))?;
+            .map_err(|source| RunError::new_python_reflection_error(Clone::clone(&identifier), source))?;
 
         let py_result = test_fn.call((Clone::clone(&instance), ), vm);
 

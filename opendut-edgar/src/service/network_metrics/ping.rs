@@ -38,8 +38,8 @@ pub async fn spawn_cluster_ping(peers: HashMap<PeerId, IpAddr>, ping_interval_ms
                         last_ping_was_successful = true;
                     }
                 },
-                Err(cause) => {
-                    error!("Error while pinging peer {peer_id} with IP {peer_ip}: {cause:?}", peer_ip=remote_address);
+                Err(source) => {
+                    error!("Error while pinging peer {peer_id} with IP {peer_ip}: {source:?}", peer_ip=remote_address);
                     last_ping_was_successful = false;
                 }
             }

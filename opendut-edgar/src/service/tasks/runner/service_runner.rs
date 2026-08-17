@@ -40,11 +40,11 @@ impl From<CollectedResult> for EdgePeerConfigurationState {
             }
         }).collect::<HashSet<_>>();
 
-        fn make_error(kind: ParameterDetectedStateErrorKind, cause: impl ToString) -> ParameterEdgeDetectedStateKind {
+        fn make_error(kind: ParameterDetectedStateErrorKind, source: impl ToString) -> ParameterEdgeDetectedStateKind {
             ParameterEdgeDetectedStateKind::Error(
                 ParameterDetectedStateError {
                     kind,
-                    cause: ParameterDetectedStateErrorCause::Unclassified(cause.to_string()),
+                    source: ParameterDetectedStateErrorCause::Unclassified(source.to_string()),
                 }
             )
         }
@@ -106,7 +106,7 @@ impl From<CollectedResult> for EdgePeerConfigurationState {
             let state = ParameterEdgeDetectedStateKind::Error(
                 ParameterDetectedStateError {
                     kind: ParameterDetectedStateErrorKind::WaitingForDependenciesFailed,
-                    cause: ParameterDetectedStateErrorCause::MissingDependencies(missing_dependencies)
+                    source: ParameterDetectedStateErrorCause::MissingDependencies(missing_dependencies)
                 }
             );
 

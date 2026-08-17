@@ -23,8 +23,8 @@ pub fn DeviceNameInput(
             Ok(_) => {
                 UserInputValue::Right(input)
             }
-            Err(cause) => {
-                match cause {
+            Err(source) => {
+                match source {
                     IllegalDeviceName::TooShort { expected, actual, value } => {
                         if actual > 0 {
                             UserInputValue::Both(format!("A device name must be at least {expected} characters long."), value)

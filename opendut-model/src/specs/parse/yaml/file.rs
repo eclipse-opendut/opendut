@@ -53,7 +53,7 @@ impl YamlSpecificationFile {
                     .and_then(serde_yaml::from_value::<YamlSpecificationDocument>)
             })
             .collect::<Result<Vec<_>, _>>()
-            .map_err(|cause| ParseSpecificationError::IllegalYamlSpecification { cause })?;
+            .map_err(|source| ParseSpecificationError::IllegalYamlSpecification { source })?;
         Ok(Self { documents })
     }
 }

@@ -34,7 +34,7 @@ impl LoggingConfig {
         let pipe_logging_enabled = {
             let field = String::from("logging.pipe.enabled");
             config.get_bool(&field)
-                .map_err(|_cause| LoggingConfigError::ValueParseError {
+                .map_err(|_source| LoggingConfigError::ValueParseError {
                     field,
                 })?
         };
@@ -44,7 +44,7 @@ impl LoggingConfig {
                 let stream = {
                     let field = String::from("logging.pipe.stream");
                     config.get::<PipeLoggingStream>(&field)
-                        .map_err(|_cause| LoggingConfigError::ValueParseError {
+                        .map_err(|_source| LoggingConfigError::ValueParseError {
                             field,
                         })?
                 };

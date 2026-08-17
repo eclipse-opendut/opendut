@@ -55,8 +55,8 @@ pub fn DuplicateViperTestButton(
                             .success(),
                     );
                 }
-                Err(cause) => {
-                    error!("Failed to create viper test <{viper_test_id}>, due to error: {cause:?}");
+                Err(source) => {
+                    error!("Failed to create viper test <{viper_test_id}>, due to error: {source:?}");
                     toaster.toast(Toast::builder().simple("Failed to store viper test!").error());
                 }
             }

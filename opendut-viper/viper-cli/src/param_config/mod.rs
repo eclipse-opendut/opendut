@@ -69,7 +69,7 @@ impl ParameterToml {
 
         }).map_err(|err| ParameterTomlError {
             suite: suite_name.to_owned(),
-            cause: err,
+            source: err,
         })
     }
 

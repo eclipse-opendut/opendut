@@ -141,13 +141,13 @@ mod client {
                     self.inner.open(request)
                 )
                     .await
-                    .map_err(|cause| error::OpenStream { message: format!("Error while opening stream: {cause}") })?
+                    .map_err(|source| error::OpenStream { message: format!("Error while opening stream: {source}") })?
             };
 
             let inbound = response.into_inner()
                 .map(|result| result.and_then(|message| {
                     DownstreamMessage::try_from(message)
-                        .map_err(|cause| tonic::Status::invalid_argument(format!("Error while converting stream message in open_stream: {cause}")))
+                        .map_err(|source| tonic::Status::invalid_argument(format!("Error while converting stream message in open_stream: {source}")))
                 }));
 
             Ok((GrpcDownstream::from(inbound), GrpcUpstream::from(tx)))
