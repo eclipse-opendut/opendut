@@ -3,9 +3,12 @@ use std::path::Path;
 use anyhow::Context;
 use tracing::info;
 use cicero::distribution::build::Target;
+use cicero::distribution::filter::DistributionFilter;
 use crate::core::types::parsing::package::PackageSelection;
 use crate::packages::carl::distribution::copy_license_json::copy_license_json;
 use crate::Package;
+use crate::tasks::distribution::bundle;
+
 
 const SELF_PACKAGE: &Package = &workspace::package::opendut_carl;
 
@@ -120,18 +123,14 @@ pub mod distribution {
     }
 
     mod cleo {
-        use cicero::distribution::filter::DistributionFilter;
-
-        use crate::tasks::distribution::bundle;
-
         use super::*;
 
         #[tracing::instrument(skip_all)]
         pub fn get_cleo(out_dir: &Path, release_build: bool) -> anyhow::Result<()> {
             let package = workspace::package::opendut_cleo;
 
-            let cleo_out_dir = out_dir.join(package.name);
-            fs::create_dir_all(&cleo_out_dir)?;
+            let out_dir = out_dir.join(package.name);
+            fs::create_dir_all(&out_dir)?;
 
             let targets = if release_build {
                 crate::packages::cleo::SUPPORTED_TARGETS.to_vec()
@@ -140,7 +139,7 @@ pub mod distribution {
             };
 
             for target in targets {
-                let out_file = cleo_out_dir.join(bundle::out_file_name(&package, target));
+                let out_file = out_dir.join(bundle::out_file_name(&package, target));
                 crate::packages::cleo::distribution::cleo_distribution(target, &out_file, release_build, DistributionFilter::Disabled)?;
             }
 
@@ -149,40 +148,25 @@ pub mod distribution {
     }
 
     mod edgar {
-        use anyhow::Context;
-
-        use crate::tasks::distribution::bundle;
-
         use super::*;
 
         #[tracing::instrument(skip_all)]
         pub fn get_edgar(out_dir: &Path, release_build: bool) -> anyhow::Result<()> {
+            let package = workspace::package::opendut_edgar;
 
-            let edgar_out_dir = out_dir.join(workspace::package::opendut_edgar.name);
-            fs::create_dir_all(&edgar_out_dir)?;
+            let out_dir = out_dir.join(package.name);
+            fs::create_dir_all(&out_dir)?;
 
-            let architectures = if release_build {
+            let targets = if release_build {
                 crate::packages::edgar::SUPPORTED_TARGETS.to_vec()
             } else {
                 vec![Target::default()]
             };
 
-            for arch in architectures {
-                crate::packages::edgar::distribution::edgar_distribution(arch.to_owned(), release_build)?;
-                let edgar_build_dir = crate::tasks::distribution::out_arch_dir(arch.to_owned());
-
-                let tar_file_name = bundle::out_file(&workspace::package::opendut_edgar, arch);
-
-                let edgar_tar_file_name = tar_file_name.file_name().context(format!("Could not extract file name {tar_file_name:?}"))?;
-
-                fs_extra::file::copy(
-                    edgar_build_dir.join(&tar_file_name),
-                    edgar_out_dir.join(edgar_tar_file_name),
-                    &fs_extra::file::CopyOptions::default()
-                        .overwrite(true)
-                )?;
+            for target in targets {
+                let out_file = out_dir.join(bundle::out_file_name(&package, target));
+                crate::packages::edgar::distribution::edgar_distribution(target, &out_file, release_build, DistributionFilter::Disabled)?;
             }
-
             Ok(())
         }
     }

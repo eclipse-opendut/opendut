@@ -1,5 +1,5 @@
 use crate::{fs, workspace};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, bail, Context};
 use cicero::distribution::build::{target, Target};
@@ -24,31 +24,9 @@ pub struct EdgarCli {
 
 #[derive(clap::Subcommand)]
 pub enum TaskCli {
-    Distribution(crate::tasks::distribution::DistributionCli),
+    Distribution(crate::tasks::distribution::DistributionCliWithFilter),
     Licenses(crate::tasks::licenses::LicensesCli),
     Run(crate::tasks::run::RunCli),
-
-    DistributionBuild(crate::tasks::build::DistributionBuildCli),
-    #[command(hide=true)]
-    /// Download the NetBird Client artifact, as it normally happens when building a distribution.
-    /// Intended for parallelization in CI/CD.
-    DistributionNetbirdClient {
-        #[arg(long, default_value_t)]
-        target: Target,
-    },
-    #[command(hide=true)]
-    DistributionRperf {
-        #[arg(long, default_value_t)]
-        target: Target,
-    },
-    #[command(hide=true)]
-    DistributionPluginsDir {
-        #[arg(long, default_value_t)]
-        target: Target,
-    },
-    DistributionCopyLicenseJson(crate::tasks::distribution::copy_license_json::DistributionCopyLicenseJsonCli),
-    DistributionBundleFiles(crate::tasks::distribution::bundle::DistributionBundleFilesCli),
-    DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli),
     Docker(crate::tasks::docker::DockerCli),
 }
 
@@ -56,29 +34,23 @@ impl EdgarCli {
     #[tracing::instrument(name="edgar", skip_all)]
     pub fn run(self) -> anyhow::Result<()> {
         match self.task {
-            TaskCli::DistributionBuild(crate::tasks::build::DistributionBuildCli { target, release_build }) => {
-                build::build_release(target, release_build)?;
-            }
-            TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target, release_build }) => {
-                distribution::edgar_distribution(target, release_build)?;
+            TaskCli::Distribution(crate::tasks::distribution::DistributionCliWithFilter { target, release_build, filter, output_dir }) => {
+                let filter = if filter.is_empty() {
+                    cicero::distribution::filter::DistributionFilter::Disabled
+                } else {
+                    cicero::distribution::filter::DistributionFilter::Enabled(filter)
+                };
+
+                let out_file = match output_dir {
+                    Some(output_dir) => output_dir.join(crate::tasks::distribution::bundle::out_file_name(SELF_PACKAGE, target)),
+                    None => crate::tasks::distribution::bundle::out_file(SELF_PACKAGE, target),
+                };
+
+                distribution::edgar_distribution(target, &out_file, release_build, filter)?;
             }
             TaskCli::Licenses(cli) => cli.run(PackageSelection::Single(SELF_PACKAGE.clone()))?,
             TaskCli::Run(cli) => cli.run(SELF_PACKAGE)?,
 
-            TaskCli::DistributionNetbirdClient { target } => {
-                distribution::netbird::netbird_client_distribution(target)?;
-            }
-            TaskCli::DistributionRperf { target } => {
-                distribution::rperf::rperf_distribution(target)?;
-            }
-            TaskCli::DistributionPluginsDir { target } => {
-                distribution::plugins::empty_plugins_dir(target)?
-            }
-            TaskCli::DistributionCopyLicenseJson(cli) => cli.run(SELF_PACKAGE)?,
-            TaskCli::DistributionBundleFiles(cli) => cli.run(SELF_PACKAGE)?,
-            TaskCli::DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli { target }) => {
-                distribution::validate::validate_contents(target)?;
-            }
             TaskCli::Docker(implementation) => {
                 implementation.run(SELF_PACKAGE)?;
             }
@@ -97,42 +69,49 @@ pub mod build {
 }
 
 pub mod distribution {
-    use crate::tasks::distribution::copy_license_json::SkipGenerate;
+    use cicero::distribution::{Distribution, DistributionOptions, bundle::tar::TarBundler, filter::DistributionFilter};
 
     use super::*;
 
     #[tracing::instrument]
-    pub fn edgar_distribution(target: Target, release_build: bool) -> anyhow::Result<()> {
-        use crate::tasks::distribution;
-
+    pub fn edgar_distribution(target: Target, out_file: &Path, release_build: bool, filter: DistributionFilter) -> anyhow::Result<()> {
         let _ = netbird::map_target(target)?; //check target supported
 
-        crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)?;
+        let distribution = Distribution::new_with_options(
+            "opendut-edgar",
+            DistributionOptions { filter: filter.clone() },
+        )?;
 
-        cicero::cache::Output::from(
-            distribution::bundle::out_file(SELF_PACKAGE, target)
-        ).rebuild_on_change(
-            [crate::tasks::build::out_file(SELF_PACKAGE, target)],
-            || {
+        distribution.add_file("opendut-edgar", |out_file| {
+            crate::tasks::build::distribution_build_with_out_path(SELF_PACKAGE, target, out_file, release_build)
+        })?;
 
-                distribution::clean(SELF_PACKAGE, target)?;
+        distribution
+            .dir("install")?
+            .add_file("netbird.tar.gz", |file| netbird::netbird_client_distribution(target, file))?
+            .add_file("rperf", |file| rperf::rperf_distribution(target, file))?;
 
-                distribution::collect_executables(SELF_PACKAGE, target)?;
-
-                netbird::netbird_client_distribution(target)?; //TODO rebuild cache when this changes (we currently accept the risk of this being false, since the NetBird code does not change often)
-
-                rperf::rperf_distribution(target)?; //TODO rebuild cache when this changes (we currently accept the risk of this being false, since the Rperf code does not change often)
-
-                plugins::empty_plugins_dir(target)?;
-
-                distribution::copy_license_json::copy_license_json(SELF_PACKAGE, target, SkipGenerate::No)?;
-
-                distribution::bundle::bundle_files(SELF_PACKAGE, target, release_build)?;
-
-                validate::validate_contents(target)?;
-
+        distribution
+            .dir("plugins")?
+            .add_file("plugins.txt", |file| {
+                fs::File::create(file)
+                    .context("Error when creating empty plugins.txt.")?;
                 Ok(())
             })?;
+
+        distribution.dir("licenses")?
+            .add_file("opendut-edgar.licenses.json", |out_file| crate::tasks::licenses::json::export_json_with_out_path(SELF_PACKAGE, out_file))?;
+
+
+        if let DistributionFilter::Disabled = filter {
+            let distribution_path = distribution.bundle(TarBundler::default())?;
+            validate::validate_contents_of(&distribution_path)?;
+
+            if let Some(parent_dir) = out_file.parent() {
+                fs::create_dir_all(parent_dir)?;
+            }
+            fs::rename(distribution_path, out_file)?;
+        };
 
         Ok(())
     }
@@ -142,7 +121,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument(skip_all)]
-        pub fn netbird_client_distribution(target: Target) -> anyhow::Result<()> {
+        pub fn netbird_client_distribution(target: Target, out_file: &Path) -> anyhow::Result<()> {
             //Modelled after documentation here: https://docs.netbird.io/how-to/getting-started#binary-install
 
             let metadata = crate::metadata::cargo();
@@ -175,10 +154,9 @@ pub mod distribution {
             }
             assert!(netbird_artifact.exists());
 
-            let out_file = out_file(SELF_PACKAGE, target);
             fs::create_dir_all(out_file.parent().unwrap())?;
 
-            fs::copy(&netbird_artifact, &out_file)
+            fs::copy(&netbird_artifact, out_file)
                 .context(format!("Error while copying from {netbird_artifact:?} to {out_file:?}"))?;
             debug!("Placed NetBird distribution into: {out_file:?}");
 
@@ -203,11 +181,8 @@ pub mod distribution {
         fn download_dir() -> PathBuf {
             crate::constants::target_dir().join("netbird")
         }
-
-        pub fn out_file(package: &Package, target: Target) -> PathBuf {
-            crate::tasks::distribution::out_package_dir(package, target).join("install").join("netbird.tar.gz")
-        }
     }
+
     pub mod rperf {
         use crate::fs::File;
         use std::path::Path;
@@ -217,7 +192,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument(skip_all)]
-        pub fn rperf_distribution(target: Target) -> anyhow::Result<()> {
+        pub fn rperf_distribution(target: Target, out_file: &Path) -> anyhow::Result<()> {
             let metadata = crate::metadata::cargo();
             let version = metadata.workspace_metadata["ci"]["rperf"]["version"].as_str()
                 .ok_or(anyhow!("Rperf version not defined."))?;
@@ -236,13 +211,10 @@ pub mod distribution {
             let temp_dir_subpath = unpack_rperf_repository(&rperf_archive, &temp_dir_path, version)?;
 
             let rperf_binary = build_rperf(&temp_dir_path, &temp_dir_subpath, target)?;
-
-            let out_file = out_file(SELF_PACKAGE, target);
-
             assert!(&rperf_binary.exists());
 
             fs::create_dir_all(out_file.parent().unwrap())?;
-            fs::copy(&rperf_binary, &out_file)
+            fs::copy(&rperf_binary, out_file)
                 .context(format!("Error while copying from {rperf_binary:?} to {out_file:?}"))?;
             debug!("Placed rperf distribution into: {out_file:?}");
 
@@ -291,10 +263,6 @@ pub mod distribution {
         fn download_dir() -> PathBuf {
             crate::constants::target_dir().join("rperf")
         }
-
-        pub fn out_file(package: &Package, target: Target) -> PathBuf {
-            crate::tasks::distribution::out_package_dir(package, target).join("install").join("rperf")
-        }
     }
 
     pub mod plugins {
@@ -314,24 +282,20 @@ pub mod distribution {
     }
 
     pub mod validate {
-        use crate::fs::File;
-
         use assert_fs::prelude::*;
         use flate2::read::GzDecoder;
         use predicates::path;
 
         use crate::core::util::file::ChildPathExt;
-        use crate::tasks::distribution::bundle;
 
         use super::*;
 
         #[tracing::instrument(skip_all)]
-        pub fn validate_contents(target: Target) -> anyhow::Result<()> {
+        pub fn validate_contents_of(path: &Path) -> anyhow::Result<()> {
 
             let unpack_dir = {
                 let unpack_dir = assert_fs::TempDir::new()?;
-                let archive = bundle::out_file(SELF_PACKAGE, target);
-                let mut archive = tar::Archive::new(GzDecoder::new(File::open(archive)?));
+                let mut archive = tar::Archive::new(GzDecoder::new(fs::File::open(path)?));
                 archive.set_preserve_permissions(true);
                 archive.unpack(&unpack_dir)?;
                 unpack_dir
