@@ -5,7 +5,6 @@ use tracing::info;
 use cicero::distribution::build::Target;
 use cicero::distribution::filter::DistributionFilter;
 use crate::core::types::parsing::package::PackageSelection;
-use crate::packages::carl::distribution::copy_license_json::copy_license_json;
 use crate::Package;
 use crate::tasks::distribution::bundle;
 
@@ -22,15 +21,10 @@ pub struct CarlCli {
 
 #[derive(clap::Subcommand)]
 pub enum TaskCli {
-    Distribution(crate::tasks::distribution::DistributionCli),
+    Distribution(crate::tasks::distribution::DistributionCliWithFilter),
     Docker(crate::tasks::docker::DockerCli),
     Licenses(crate::tasks::licenses::LicensesCli),
     Run(crate::tasks::run::RunCli),
-
-    DistributionBuild(crate::tasks::build::DistributionBuildCli),
-    DistributionCopyLicenseJson(crate::tasks::distribution::copy_license_json::DistributionCopyLicenseJsonCli),
-    DistributionBundleFiles(crate::tasks::distribution::bundle::DistributionBundleFilesCli),
-    DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli),
 
     /// Upload sample data to simplify debugging LEA and CLEO. Run CARL with `cargo carl` beforehand.
     PushSamples,
@@ -40,11 +34,19 @@ impl CarlCli {
     #[tracing::instrument(name="carl", skip(self))]
     pub fn run(self) -> anyhow::Result<()> {
         match self.task {
-            TaskCli::DistributionBuild(crate::tasks::build::DistributionBuildCli { target, release_build }) => {
-                build::build_release(target, release_build)?;
-            }
-            TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target, release_build }) => {
-                distribution::carl_distribution(target, release_build)?;
+            TaskCli::Distribution(crate::tasks::distribution::DistributionCliWithFilter { target, release_build, filter, output_dir }) => {
+                let filter = if filter.is_empty() {
+                    cicero::distribution::filter::DistributionFilter::Disabled
+                } else {
+                    cicero::distribution::filter::DistributionFilter::Enabled(filter)
+                };
+
+                let out_file = match output_dir {
+                    Some(output_dir) => output_dir.join(crate::tasks::distribution::bundle::out_file_name(SELF_PACKAGE, target)),
+                    None => crate::tasks::distribution::bundle::out_file(SELF_PACKAGE, target),
+                };
+
+                distribution::carl_distribution(target, &out_file, release_build, filter)?;
             }
             TaskCli::Licenses(cli) => cli.run(PackageSelection::Single(SELF_PACKAGE.clone()))?,
             TaskCli::Run(cli) => {
@@ -66,15 +68,6 @@ impl CarlCli {
                 cli.run(SELF_PACKAGE)?
             }
 
-            TaskCli::DistributionCopyLicenseJson(cli) => {
-                copy_license_json(cli.target, cli.skip_generate.into())?;
-            }
-            TaskCli::DistributionBundleFiles(cli) => {
-                cli.run(SELF_PACKAGE)?;
-            }
-            TaskCli::DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli { target }) => {
-                distribution::validate::validate_contents(target)?;
-            }
             TaskCli::Docker(cli) => {
                 cli.run(SELF_PACKAGE)?;
             }
@@ -94,30 +87,69 @@ pub mod build {
 }
 
 pub mod distribution {
-    use crate::tasks::distribution::copy_license_json::SkipGenerate;
+    use cicero::distribution::{Distribution, DistributionOptions, bundle::tar::TarBundler};
+    use serde_json::json;
 
     use super::*;
 
     #[tracing::instrument]
-    pub fn carl_distribution(target: Target, release_build: bool) -> anyhow::Result<()> {
-        use crate::tasks::distribution;
+    pub fn carl_distribution(target: Target, out_file: &Path, release_build: bool, filter: DistributionFilter) -> anyhow::Result<()> {
 
-        let distribution_out_dir = distribution::out_package_dir(SELF_PACKAGE, target);
+        let distribution = Distribution::new_with_options(
+            "opendut-carl",
+            DistributionOptions { filter: filter.clone() },
+        )?;
 
-        distribution::clean(SELF_PACKAGE, target)?;
+        distribution.add_file("opendut-carl", |out_file| {
+            crate::tasks::build::distribution_build_with_out_path(SELF_PACKAGE, target, out_file, release_build)
+        })?;
 
-        crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)?;
+        distribution.dir(workspace::package::opendut_cleo.to_string())?
+            .add_all(|dir| cleo::get_cleo(dir, release_build))?;
 
-        distribution::collect_executables(SELF_PACKAGE, target)?;
+        distribution.dir(workspace::package::opendut_edgar.to_string())?
+            .add_all(|dir| edgar::get_edgar(dir, release_build))?;
 
-        cleo::get_cleo(&distribution_out_dir, release_build)?;
-        edgar::get_edgar(&distribution_out_dir, release_build)?;
-        lea::get_lea(&distribution_out_dir, release_build)?;
-        copy_license_json::copy_license_json(target, SkipGenerate::No)?;
+        distribution.dir(workspace::package::opendut_lea.to_string())?
+            .add_all(|dir| lea::get_lea(dir, release_build))?;
 
-        distribution::bundle::bundle_files(SELF_PACKAGE, target, release_build)?;
 
-        validate::validate_contents(target)?;
+        let licenses_dir = distribution.dir("licenses")?;
+
+        {
+            use workspace::package::*;
+
+            for package in [SELF_PACKAGE, &opendut_cleo, &opendut_edgar, &opendut_lea] {
+                licenses_dir
+                    .add_file(
+                        format!("{}.licenses.json", package.name),
+                        |out_file| crate::tasks::licenses::json::export_json_with_out_path(package, out_file)
+                    )?;
+            }
+
+            licenses_dir.add_file("index.json", |file| {
+                fs::write(
+                    file,
+                    json!({
+                        "carl": "opendut-carl.licenses.json",
+                        "edgar": "opendut-edgar.licenses.json",
+                        "cleo": "opendut-cleo.licenses.json",
+                        "lea": "opendut-lea.licenses.json",
+                    }).to_string(),
+                )?;
+                Ok(())
+            })?;
+        }
+
+        if let DistributionFilter::Disabled = filter {
+            let distribution_path = distribution.bundle(TarBundler::default())?;
+            validate::validate_contents_of(&distribution_path)?;
+
+            if let Some(parent_dir) = out_file.parent() {
+                fs::create_dir_all(parent_dir)?;
+            }
+            fs::rename(distribution_path, out_file)?;
+        };
 
         Ok(())
     }
@@ -196,58 +228,6 @@ pub mod distribution {
         }
     }
 
-    pub mod copy_license_json {
-        use serde_json::json;
-        use tracing::info;
-
-        use crate::tasks::distribution::copy_license_json::SkipGenerate;
-
-        use super::*;
-
-        #[tracing::instrument(skip_all)]
-        pub fn copy_license_json(target: Target, skip_generate: SkipGenerate) -> anyhow::Result<()> {
-
-            match skip_generate {
-                SkipGenerate::Yes => info!("Skipping generation of licenses, as requested. Directly attempting to copy to target location."),
-                SkipGenerate::No => {
-                    use workspace::package::*;
-                    for package in [SELF_PACKAGE, &opendut_lea, &opendut_edgar, &opendut_cleo] {
-                        crate::tasks::licenses::json::export_json(package)?;
-                    }
-                }
-            };
-
-            let carl_in_file = crate::tasks::licenses::json::out_file(SELF_PACKAGE);
-            let carl_out_file = crate::tasks::distribution::copy_license_json::out_file(SELF_PACKAGE, target);
-            let out_dir = carl_out_file.parent().unwrap();
-
-            let cleo_in_file = crate::tasks::licenses::json::out_file(&workspace::package::opendut_cleo);
-            let cleo_out_file = out_dir.join(crate::tasks::licenses::json::out_file_name(&workspace::package::opendut_cleo));
-            let lea_in_file = crate::tasks::licenses::json::out_file(&workspace::package::opendut_lea);
-            let lea_out_file = out_dir.join(crate::tasks::licenses::json::out_file_name(&workspace::package::opendut_lea));
-            let edgar_in_file = crate::tasks::licenses::json::out_file(&workspace::package::opendut_edgar);
-            let edgar_out_file = out_dir.join(crate::tasks::licenses::json::out_file_name(&workspace::package::opendut_edgar));
-
-            fs::create_dir_all(out_dir)?;
-            fs::copy(carl_in_file, &carl_out_file)?;
-            fs::copy(cleo_in_file, &cleo_out_file)?;
-            fs::copy(lea_in_file, &lea_out_file)?;
-            fs::copy(edgar_in_file, &edgar_out_file)?;
-
-            fs::write(
-                out_dir.join("index.json"),
-                json!({
-                    "carl": carl_out_file.file_name().unwrap().to_str(),
-                    "edgar": edgar_out_file.file_name().unwrap().to_str(),
-                    "cleo": cleo_out_file.file_name().unwrap().to_str(),
-                    "lea": lea_out_file.file_name().unwrap().to_str(),
-                }).to_string(),
-            )?;
-
-            Ok(())
-        }
-    }
-
     pub mod validate {
         use crate::fs::File;
 
@@ -256,17 +236,15 @@ pub mod distribution {
         use predicates::path;
 
         use crate::core::util::file::ChildPathExt;
-        use crate::tasks::distribution::bundle;
 
         use super::*;
 
         #[tracing::instrument(skip_all)]
-        pub fn validate_contents(target: Target) -> anyhow::Result<()> {
+        pub fn validate_contents_of(path: &Path) -> anyhow::Result<()> {
 
             let unpack_dir = {
                 let unpack_dir = assert_fs::TempDir::new()?;
-                let archive = bundle::out_file(SELF_PACKAGE, target);
-                let mut archive = tar::Archive::new(GzDecoder::new(File::open(archive)?));
+                let mut archive = tar::Archive::new(GzDecoder::new(File::open(path)?));
                 archive.set_preserve_permissions(true);
                 archive.unpack(&unpack_dir)?;
                 unpack_dir

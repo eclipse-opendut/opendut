@@ -19,7 +19,7 @@ cicero::workspace!();
 enum Cli {
     Check(tasks::check::CheckCli),
     Coverage(tasks::coverage::CoverageCli),
-    Distribution(tasks::distribution::DistributionCli),
+    Distribution(tasks::distribution::DistributionCliWithFilter),
     Doc(tasks::doc::DocCli),
     Licenses(tasks::licenses::LicensesCli),
     Test(tasks::test::TestCli),
@@ -43,8 +43,9 @@ fn main() -> anyhow::Result<()> {
     match Cli::parse() {
         Cli::Check(cli) => cli.run(),
         Cli::Coverage(cli) => cli.run(),
-        Cli::Distribution(tasks::distribution::DistributionCli { target, release_build }) => {
-            packages::carl::distribution::carl_distribution(target, release_build)
+        Cli::Distribution(cli) => {
+            use packages::carl::*;
+            CarlCli { task: TaskCli::Distribution(cli) }.run()
         }
         Cli::Doc(cli) => cli.run(),
         Cli::Licenses(cli) => cli.run(PackageSelection::Applications),

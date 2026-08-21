@@ -44,55 +44,49 @@ jobs:
         uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935
         with:
           name: "${{ matrix.package.name }}-${{ matrix.package.target }}-${{ github.sha }}"
-          path: "./target/ci/distribution/${{ matrix.package.target }}/${{ matrix.package.name }}/"
+          path: "./target/cicero/.internal/distribution/"
       - name: Download opendut-cleo
         uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935
         with:
           pattern: "opendut-cleo-*-${{ github.sha }}.tar.gz"
-          path: "./target/ci/distribution/${{ matrix.package.target }}/${{ matrix.package.name }}/opendut-cleo"
-      - name: Move cleo tarballs and remove parent directory
-        run: |
-          TARGET_DIR="./target/ci/distribution/${{ matrix.package.target }}/${{ matrix.package.name }}/opendut-cleo"
-          for subdir in $( echo $TARGET_DIR/* )
-          do
-              mv $subdir/* $TARGET_DIR
-              rm -r $subdir
-          done
+          path: "./target/cicero/.internal/distribution/"
+      # - name: Move CLEO tarballs and remove parent directory
+      #   run: |
+      #     TARGET_DIR="./target/cicero/.internal/distribution/opendut-cleo"
+      #     for subdir in $( echo $TARGET_DIR/* )
+      #     do
+      #         mv $subdir/* $TARGET_DIR
+      #         rm -r $subdir
+      #     done
       - name: Download opendut-edgar
         uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935
         with:
           pattern: "opendut-edgar-*-${{ github.sha }}.tar.gz"
-          path: "./target/ci/distribution/${{ matrix.package.target }}/${{ matrix.package.name }}/opendut-edgar"
-      - name: Remove SHA-1 hash from end of file name for EDGAR artifacts
-        run: |
-          TARGET_DIR="./target/ci/distribution/${{ matrix.package.target }}/${{ matrix.package.name }}/opendut-edgar"
-          for subdir in $( echo $TARGET_DIR/* )
-          do
-              mv $subdir/* $TARGET_DIR
-              rm -r $subdir
-          done
+          path: "./target/cicero/.internal/distribution/"
+      # - name: Move EDGAR tarballs and remove parent directory
+      #   run: |
+      #     TARGET_DIR="./target/cicero/.internal/distribution/opendut-edgar"
+      #     for subdir in $( echo $TARGET_DIR/* )
+      #     do
+      #         mv $subdir/* $TARGET_DIR
+      #         rm -r $subdir
+      #     done
       - name: Download opendut-lea
         uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935
         with:
           name: "opendut-lea-${{ github.sha }}"
-          path: "./target/ci/distribution/${{ matrix.package.target }}/${{ matrix.package.name }}/opendut-lea"
+          path: "./target/cicero/.internal/distribution/"
       - name: Download licenses
         uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935
         with:
           name: "licenses-${{ github.sha }}"
-          path: "./target/ci/licenses"
-      - name: Prepare Licenses
-        run: cargo ci opendut-carl distribution-copy-license-json --skip-generate --target=${{ matrix.package.target }}
-      - name: Prepare Executables
-        run: chmod +x ./target/ci/distribution/${{ matrix.package.target }}/${{ matrix.package.name }}/${{ matrix.package.name }}
-      - name: Bundle
-        run: cargo ci opendut-carl distribution-bundle-files --target=${{ matrix.package.target }}
-      - name: Validate distribution contents
-        run: cargo ci opendut-carl distribution-validate-contents --target=${{ matrix.package.target }}
+          path: "./target/cicero/.internal/distribution/staging/${{ matrix.package.name }}-${{ matrix.package.target }}/licenses"
+      - name: Bundle distribution
+        run: cargo ci opendut-carl distribution --release --target=${{ matrix.package.target }} --output-dir="./target/cicero/distribution/${{ matrix.package.target }}/"
       - name: "Upload CARL bundle artifact ${{ matrix.package.name }}-${{ matrix.package.target }}"
         uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8
         with:
           name: "${{ matrix.package.name }}-${{ matrix.package.target }}-${{ github.sha }}.tar.gz"
-          path: "./target/ci/distribution/${{ matrix.package.target }}/"
+          path: "./target/cicero/distribution/${{ matrix.package.target }}/"
           if-no-files-found: error
           retention-days: 1
