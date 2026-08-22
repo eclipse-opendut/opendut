@@ -36,14 +36,20 @@ jobs:
           name: "${{ matrix.package.name }}-${{ matrix.package.target }}-${{ github.sha }}"
           path: "./target/cicero/.internal/distribution/"
 
+      - run: tree ./target/cicero/.internal/distribution/
+
       - name: Download licenses
         uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935
         with:
           name: "licenses-${{ github.sha }}"
           path: "./target/cicero/.internal/distribution/staging/${{ matrix.package.name }}-${{ matrix.package.target }}/licenses"
 
+      - run: tree ./target/cicero/.internal/distribution/
+
       - name: Bundle distribution
         run: cargo ci opendut-cleo distribution --target=${{ matrix.package.target }} --output-dir="./target/cicero/distribution/${{ matrix.package.target }}/"
+
+      - run: tree ./target/cicero/.internal/distribution/
 
       - name: "Upload CLEO bundle artifact ${{ matrix.package.name }}-${{ matrix.package.target }}.tar.gz"
         uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8
