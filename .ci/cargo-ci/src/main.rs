@@ -5,6 +5,7 @@ use tracing_subscriber::EnvFilter;
 pub(crate) use core::constants;
 pub(crate) use core::metadata;
 pub(crate) use core::types::Package;
+use std::time::SystemTime;
 use crate::core::types::parsing::package::PackageSelection;
 
 mod core;
@@ -39,6 +40,17 @@ fn main() -> anyhow::Result<()> {
                 .parse("info,opendut=trace,cicero=trace")?
         )
         .init();
+
+    // Workaround for Cicero invalidating the build cache
+    // when it is copied into a different CI step,
+    // which we do for building the distribution in parts.
+    if option_env!("CI").is_some() {
+        let executable = std::env::current_exe()?;
+        if executable.exists() {
+            fs::File::open(executable)?
+                .set_modified(SystemTime::UNIX_EPOCH)?; //Cicero checks lastmodified of CI executable to invalidate the cache when the build script changes.
+        }
+    }
 
     match Cli::parse() {
         Cli::Check(cli) => cli.run(),
