@@ -1,4 +1,4 @@
-use crate::fs;
+use crate::{fs, tasks::build::BuildArgs};
 use std::path::PathBuf;
 use cicero::distribution::build::Target;
 use flate2::Compression;
@@ -14,9 +14,8 @@ pub struct DistributionCli {
     #[arg(long, default_value_t)]
     pub target: Target,
 
-    /// Build artifacts in release mode, with optimizations
-    #[arg(short='r', long="release")]
-    pub release_build: bool,
+    #[clap(flatten)]
+    pub build_args: BuildArgs,
 }
 
 #[tracing::instrument(skip_all)]

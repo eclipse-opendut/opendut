@@ -12,16 +12,27 @@ use crate::core::commands::CROSS;
 #[derive(Debug, clap::Parser)]
 #[command(hide=true)]
 pub struct DistributionBuildCli {
+    /// The operating system and CPU architecture to build for
     #[arg(long, default_value_t)]
     pub target: Target,
 
+    #[clap(flatten)]
+    pub build_args: BuildArgs,
+}
+
+#[derive(Debug, clap::Args)]
+pub struct BuildArgs {
     /// Build artifacts in release mode, with optimizations
     #[arg(short='r', long="release")]
     pub release_build: bool,
+
+    /// Additional arguments to pass through to the build command
+    #[arg(raw = true)]
+    pub passthrough: Vec<String>
 }
 
 #[tracing::instrument(skip_all)]
-pub fn distribution_build(package: &Package, target: Target, release_build: bool) -> anyhow::Result<()> {
+pub fn distribution_build(package: &Package, target: Target, build_args: &BuildArgs) -> anyhow::Result<()> {
     let mut command = CROSS.command();
 
     command
@@ -31,11 +42,13 @@ pub fn distribution_build(package: &Package, target: Target, release_build: bool
         .arg("--target").arg(target.to_string())
         .arg("--release");
 
-    if release_build.not() {
+    if build_args.release_build.not() {
         command.env("CARGO_SUPPRESS_SHADOW_REBUILD", "true"); //environment variables need to be prefixed with "CARGO_" to be passed through: https://github.com/cross-rs/cross/wiki/Configuration#environment-variable-passthrough
     }
 
-    command.status_exit_ok()?;
+    command
+        .args(&build_args.passthrough)
+        .status_exit_ok()?;
     Ok(())
 }
 

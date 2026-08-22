@@ -8,6 +8,7 @@ use tracing::debug;
 
 use crate::Package;
 use crate::core::types::parsing::package::PackageSelection;
+use crate::tasks::build::BuildArgs;
 
 pub const SUPPORTED_TARGETS: [Target; 3] = [target::x86_64_unknown_linux_gnu, target::armv7_unknown_linux_gnueabihf, target::aarch64_unknown_linux_gnu];
 
@@ -56,11 +57,11 @@ impl EdgarCli {
     #[tracing::instrument(name="edgar", skip_all)]
     pub fn run(self) -> anyhow::Result<()> {
         match self.task {
-            TaskCli::DistributionBuild(crate::tasks::build::DistributionBuildCli { target, release_build }) => {
-                build::build_release(target, release_build)?;
+            TaskCli::DistributionBuild(crate::tasks::build::DistributionBuildCli { target, build_args }) => {
+                build::build_release(target, &build_args)?;
             }
-            TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target, release_build }) => {
-                distribution::edgar_distribution(target, release_build)?;
+            TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target, build_args }) => {
+                distribution::edgar_distribution(target, &build_args)?;
             }
             TaskCli::Licenses(cli) => cli.run(PackageSelection::Single(SELF_PACKAGE.clone()))?,
             TaskCli::Run(cli) => cli.run(SELF_PACKAGE)?,
@@ -91,8 +92,8 @@ impl EdgarCli {
 pub mod build {
     use super::*;
 
-    pub fn build_release(target: Target, release_build: bool) -> anyhow::Result<()> {
-        crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)
+    pub fn build_release(target: Target, build_args: &BuildArgs) -> anyhow::Result<()> {
+        crate::tasks::build::distribution_build(SELF_PACKAGE, target, build_args)
     }
 }
 
@@ -102,12 +103,12 @@ pub mod distribution {
     use super::*;
 
     #[tracing::instrument]
-    pub fn edgar_distribution(target: Target, release_build: bool) -> anyhow::Result<()> {
+    pub fn edgar_distribution(target: Target, build_args: &BuildArgs) -> anyhow::Result<()> {
         use crate::tasks::distribution;
 
         let _ = netbird::map_target(target)?; //check target supported
 
-        crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)?;
+        crate::tasks::build::distribution_build(SELF_PACKAGE, target, build_args)?;
 
         cicero::cache::Output::from(
             distribution::bundle::out_file(SELF_PACKAGE, target)
@@ -127,7 +128,7 @@ pub mod distribution {
 
                 distribution::copy_license_json::copy_license_json(SELF_PACKAGE, target, SkipGenerate::No)?;
 
-                distribution::bundle::bundle_files(SELF_PACKAGE, target, release_build)?;
+                distribution::bundle::bundle_files(SELF_PACKAGE, target, build_args.release_build)?;
 
                 validate::validate_contents(target)?;
 

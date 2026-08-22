@@ -43,8 +43,8 @@ fn main() -> anyhow::Result<()> {
     match Cli::parse() {
         Cli::Check(cli) => cli.run(),
         Cli::Coverage(cli) => cli.run(),
-        Cli::Distribution(tasks::distribution::DistributionCli { target, release_build }) => {
-            packages::carl::distribution::carl_distribution(target, release_build)
+        Cli::Distribution(tasks::distribution::DistributionCli { target, build_args }) => {
+            packages::carl::distribution::carl_distribution(target, &build_args)
         }
         Cli::Doc(cli) => cli.run(),
         Cli::Licenses(cli) => cli.run(PackageSelection::Applications),

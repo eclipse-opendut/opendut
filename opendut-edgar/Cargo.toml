@@ -74,6 +74,7 @@ shadow-rs = { workspace = true, default-features = true }
 
 [features]
 integration_testing = []
+viper = []
 
 [lints]
 workspace = true

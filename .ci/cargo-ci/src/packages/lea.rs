@@ -8,6 +8,7 @@ use crate::{fs, workspace};
 
 use crate::core::types::parsing::package::PackageSelection;
 use crate::Package;
+use crate::tasks::build::BuildArgs;
 
 use cicero::command_exit_ok::CommandExitOk;
 
@@ -46,8 +47,11 @@ impl LeaCli {
     pub fn run(self) -> anyhow::Result<()> {
         match self.task {
             TaskCli::Build(BuildCli { passthrough }) => {
-                let release_build = false;
-                build::build(release_build, passthrough)?
+                let build_args = BuildArgs {
+                    release_build: false,
+                    passthrough,
+                };
+                build::build(&build_args)?
             },
             TaskCli::Run(BuildCli { passthrough }) => run::run(passthrough)?,
             TaskCli::Licenses(cli) => cli.run(PackageSelection::Single(SELF_PACKAGE.clone()))?,
@@ -63,8 +67,8 @@ pub mod build {
     use super::*;
 
     #[tracing::instrument]
-    pub fn build(release_build: bool, passthrough: Vec<String>) -> anyhow::Result<()> {
-        build_impl(release_build, passthrough, out_dir())
+    pub fn build(build_args: &BuildArgs) -> anyhow::Result<()> {
+        build_impl(build_args, out_dir())
     }
 
     pub fn out_dir() -> PathBuf {
@@ -77,8 +81,11 @@ pub mod distribution_build {
 
     #[tracing::instrument]
     pub fn distribution_build(passthrough: Vec<String>) -> anyhow::Result<()> {
-        let release = true;
-        build_impl(release, passthrough, out_dir())
+        let build_args = BuildArgs {
+            release_build: true,
+            passthrough,
+        };
+        build_impl(&build_args, out_dir())
     }
 
     pub fn out_dir() -> PathBuf {
@@ -106,7 +113,9 @@ pub fn self_dir() -> PathBuf {
     repo_path!("opendut-lea/")
 }
 
-fn build_impl(release: bool, passthrough: Vec<String>, out_dir: PathBuf) -> anyhow::Result<()> {
+fn build_impl(build_args: &BuildArgs, out_dir: PathBuf) -> anyhow::Result<()> {
+    let BuildArgs { release_build, passthrough } = build_args;
+
     let working_dir = self_dir();
 
     fs::create_dir_all(&out_dir)?;
@@ -114,7 +123,7 @@ fn build_impl(release: bool, passthrough: Vec<String>, out_dir: PathBuf) -> anyh
     let mut command = TRUNK.command();
     command.arg("build");
 
-    if release {
+    if *release_build {
         command
             .arg("--release")
             .arg("--cargo-profile=wasm-release");

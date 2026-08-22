@@ -6,6 +6,7 @@ use cicero::distribution::build::Target;
 use crate::core::types::parsing::package::PackageSelection;
 use crate::packages::carl::distribution::copy_license_json::copy_license_json;
 use crate::Package;
+use crate::tasks::build::BuildArgs;
 
 const SELF_PACKAGE: &Package = &workspace::package::opendut_carl;
 
@@ -37,11 +38,11 @@ impl CarlCli {
     #[tracing::instrument(name="carl", skip(self))]
     pub fn run(self) -> anyhow::Result<()> {
         match self.task {
-            TaskCli::DistributionBuild(crate::tasks::build::DistributionBuildCli { target, release_build }) => {
-                build::build_release(target, release_build)?;
+            TaskCli::DistributionBuild(crate::tasks::build::DistributionBuildCli { target, build_args }) => {
+                build::build_release(target, &build_args)?;
             }
-            TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target, release_build }) => {
-                distribution::carl_distribution(target, release_build)?;
+            TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target, build_args }) => {
+                distribution::carl_distribution(target, &build_args)?;
             }
             TaskCli::Licenses(cli) => cli.run(PackageSelection::Single(SELF_PACKAGE.clone()))?,
             TaskCli::Run(cli) => {
@@ -54,8 +55,11 @@ impl CarlCli {
                             vec![]
                         };
 
-                    let release_build = false;
-                    crate::packages::lea::build::build(release_build, passthrough)
+                    let build_args = BuildArgs {
+                        release_build: false,
+                        passthrough,
+                    };
+                    crate::packages::lea::build::build(&build_args)
                         .context("Error while building LEA for CARL distribution") //ensure the LEA distribution exists and is up-to-date
                 })?;
 
@@ -85,34 +89,34 @@ impl CarlCli {
 pub mod build {
     use super::*;
 
-    pub fn build_release(target: Target, release_build: bool) -> anyhow::Result<()> {
-        crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)
+    pub fn build_release(target: Target, build_args: &BuildArgs) -> anyhow::Result<()> {
+        crate::tasks::build::distribution_build(SELF_PACKAGE, target, build_args)
     }
 }
 
 pub mod distribution {
-    use crate::tasks::distribution::copy_license_json::SkipGenerate;
+    use crate::tasks::{build::BuildArgs, distribution::copy_license_json::SkipGenerate};
 
     use super::*;
 
     #[tracing::instrument]
-    pub fn carl_distribution(target: Target, release_build: bool) -> anyhow::Result<()> {
+    pub fn carl_distribution(target: Target, build_args: &BuildArgs) -> anyhow::Result<()> {
         use crate::tasks::distribution;
 
         let distribution_out_dir = distribution::out_package_dir(SELF_PACKAGE, target);
 
         distribution::clean(SELF_PACKAGE, target)?;
 
-        crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)?;
+        crate::tasks::build::distribution_build(SELF_PACKAGE, target, build_args)?;
 
         distribution::collect_executables(SELF_PACKAGE, target)?;
 
-        cleo::get_cleo(&distribution_out_dir, release_build)?;
-        edgar::get_edgar(&distribution_out_dir, release_build)?;
-        lea::get_lea(&distribution_out_dir, release_build)?;
+        cleo::get_cleo(&distribution_out_dir, build_args)?;
+        edgar::get_edgar(&distribution_out_dir, build_args)?;
+        lea::get_lea(&distribution_out_dir, build_args)?;
         copy_license_json::copy_license_json(target, SkipGenerate::No)?;
 
-        distribution::bundle::bundle_files(SELF_PACKAGE, target, release_build)?;
+        distribution::bundle::bundle_files(SELF_PACKAGE, target, build_args.release_build)?;
 
         validate::validate_contents(target)?;
 
@@ -127,19 +131,19 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument(skip_all)]
-        pub fn get_cleo(out_dir: &Path, release_build: bool) -> anyhow::Result<()> {
+        pub fn get_cleo(out_dir: &Path, build_args: &BuildArgs) -> anyhow::Result<()> {
 
             let cleo_out_dir = out_dir.join(workspace::package::opendut_cleo.name);
             fs::create_dir_all(&cleo_out_dir)?;
 
-            let architectures = if release_build {
+            let architectures = if build_args.release_build {
                 crate::packages::cleo::SUPPORTED_TARGETS.to_vec()
             } else {
                 vec![Target::default()]
             };
 
             for arch in architectures {
-                crate::packages::cleo::distribution::cleo_distribution(arch.to_owned(), release_build)?;
+                crate::packages::cleo::distribution::cleo_distribution(arch.to_owned(), build_args)?;
                 let cleo_build_dir = crate::tasks::distribution::out_arch_dir(arch.to_owned());
 
                 let tar_file_name = bundle::out_file(&workspace::package::opendut_cleo, arch);
@@ -166,19 +170,19 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument(skip_all)]
-        pub fn get_edgar(out_dir: &Path, release_build: bool) -> anyhow::Result<()> {
+        pub fn get_edgar(out_dir: &Path, build_args: &BuildArgs) -> anyhow::Result<()> {
 
             let edgar_out_dir = out_dir.join(workspace::package::opendut_edgar.name);
             fs::create_dir_all(&edgar_out_dir)?;
 
-            let architectures = if release_build {
+            let architectures = if build_args.release_build {
                 crate::packages::edgar::SUPPORTED_TARGETS.to_vec()
             } else {
                 vec![Target::default()]
             };
 
             for arch in architectures {
-                crate::packages::edgar::distribution::edgar_distribution(arch.to_owned(), release_build)?;
+                crate::packages::edgar::distribution::edgar_distribution(arch.to_owned(), build_args)?;
                 let edgar_build_dir = crate::tasks::distribution::out_arch_dir(arch.to_owned());
 
                 let tar_file_name = bundle::out_file(&workspace::package::opendut_edgar, arch);
@@ -201,10 +205,9 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument(skip_all)]
-        pub fn get_lea(out_dir: &Path, release_build: bool) -> anyhow::Result<()> {
+        pub fn get_lea(out_dir: &Path, build_args: &BuildArgs) -> anyhow::Result<()> {
 
-            let passthrough = vec![];
-            crate::packages::lea::build::build(release_build, passthrough)?;
+            crate::packages::lea::build::build(build_args)?;
             let lea_build_dir = crate::packages::lea::build::out_dir();
 
             let lea_out_dir = out_dir.join(workspace::package::opendut_lea.name);

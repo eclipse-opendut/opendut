@@ -2,6 +2,7 @@ use cicero::distribution::build::Target;
 
 use crate::{Package, workspace};
 use crate::core::types::parsing::package::PackageSelection;
+use crate::tasks::build::BuildArgs;
 
 const SELF_PACKAGE: &Package = &workspace::package::opendut_theo;
 
@@ -30,11 +31,11 @@ impl TheoCli {
     #[tracing::instrument(name="theo", skip(self))]
     pub fn run(self) -> anyhow::Result<()> {
         match self.task {
-            TaskCli::DistributionBuild(crate::tasks::build::DistributionBuildCli { target, release_build }) => {
-                build::build_release(target, release_build)?;
+            TaskCli::DistributionBuild(crate::tasks::build::DistributionBuildCli { target, build_args }) => {
+                build::build_release(target, &build_args)?;
             }
-            TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target, release_build }) => {
-                distribution::theo_distribution(target, release_build)?;
+            TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target, build_args }) => {
+                distribution::theo_distribution(target, &build_args)?;
             }
             TaskCli::Licenses(cli) => cli.run(PackageSelection::Single(SELF_PACKAGE.clone()))?,
             TaskCli::Run(cli) => cli.run(SELF_PACKAGE)?,
@@ -52,8 +53,8 @@ impl TheoCli {
 pub mod build {
     use super::*;
 
-    pub fn build_release(target: Target, release_build: bool) -> anyhow::Result<()> {
-        crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)
+    pub fn build_release(target: Target, build_args: &BuildArgs) -> anyhow::Result<()> {
+        crate::tasks::build::distribution_build(SELF_PACKAGE, target, build_args)
     }
 }
 
@@ -63,18 +64,18 @@ pub mod distribution {
     use super::*;
 
     #[tracing::instrument(skip_all)]
-    pub fn theo_distribution(target: Target, release_build: bool) -> anyhow::Result<()> {
+    pub fn theo_distribution(target: Target, build_args: &BuildArgs) -> anyhow::Result<()> {
         use crate::tasks::distribution;
 
         distribution::clean(SELF_PACKAGE, target)?;
 
-        crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)?;
+        crate::tasks::build::distribution_build(SELF_PACKAGE, target, build_args)?;
 
         distribution::collect_executables(SELF_PACKAGE, target)?;
 
         distribution::copy_license_json::copy_license_json(SELF_PACKAGE, target, SkipGenerate::No)?;
 
-        distribution::bundle::bundle_files(SELF_PACKAGE, target, release_build)?;
+        distribution::bundle::bundle_files(SELF_PACKAGE, target, build_args.release_build)?;
 
         validate::validate_contents(target)?;
 

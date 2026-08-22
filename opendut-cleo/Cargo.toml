@@ -40,5 +40,8 @@ googletest = { workspace = true }
 [build-dependencies]
 shadow-rs = { workspace = true, default-features = true }
 
+[features]
+viper = []
+
 [lints]
 workspace = true
