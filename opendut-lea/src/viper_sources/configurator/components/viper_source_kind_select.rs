@@ -6,10 +6,10 @@ use crate::viper_sources::configurator::types::UserViperSourceConfiguration;
 pub fn ViperSourceKindSelect(user_source_descriptor: RwSignal<UserViperSourceConfiguration>) -> impl IntoView {
 
     let (getter, setter) = create_slice(user_source_descriptor,
-                                        |config| {
+        |config| {
             Clone::clone(&config.kind)
         },
-                                        |config, input| {
+        |config, input| {
             config.kind = input;
         }
     );

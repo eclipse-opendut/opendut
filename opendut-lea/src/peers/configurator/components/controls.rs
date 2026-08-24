@@ -136,11 +136,11 @@ fn SavePeerButton(
     let tooltip_content = Box::new(move || {
         if !all_tabs_valid.get() {
             view! {
-                Peer cannot be saved while configuration errors " "
+                "Peer cannot be saved while configuration errors "
                 <span class="icon has-text-danger">
                     <i class=FontAwesomeIcon::CircleExclamation.as_class() />
                 </span>
-                " " remain.
+                " remain."
             }.into_any()
         } else { ().into_any() }
     });

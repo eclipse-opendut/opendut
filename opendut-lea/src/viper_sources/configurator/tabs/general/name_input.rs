@@ -7,10 +7,10 @@ use crate::viper_sources::configurator::types::UserViperSourceConfiguration;
 pub fn ViperSourceNameInput(user_source_descriptor: RwSignal<UserViperSourceConfiguration>) -> impl IntoView {
 
     let (getter, setter) = create_slice(user_source_descriptor,
-                                        |config| {
+        |config| {
             Clone::clone(&config.name)
         },
-                                        |config, input| {
+        |config, input| {
             config.name = input;
         }
     );

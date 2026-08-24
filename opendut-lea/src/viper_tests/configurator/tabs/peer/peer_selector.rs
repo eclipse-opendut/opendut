@@ -27,10 +27,10 @@ pub fn PeerSelector(user_test_run_descriptor: RwSignal<UserViperTestRunDescripto
     };
 
     let (getter, setter) = create_slice(user_test_run_descriptor,
-                                        |config| {
+        |config| {
             Clone::clone(&config.peer)
         },
-                                        |config, input| {
+        |config, input| {
             config.peer = input;
         }
     );
