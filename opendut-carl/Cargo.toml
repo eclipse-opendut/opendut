@@ -9,8 +9,7 @@ repository.workspace = true
 [features]
 viper = [
     "opendut-carl-api/viper",
-    "opendut-viper-rt/compile",
-    "opendut-viper-rt/http-source",
+    "dep:opendut-viper-rt",
 ]
 
 [dependencies]
@@ -20,7 +19,7 @@ opendut-vpn-netbird = { workspace = true }
 opendut-model = { workspace = true }
 opendut-telemetry = { workspace = true }
 opendut-util = { workspace = true, features = ["crypto", "pem", "reqwest", "settings"] }
-opendut-viper-rt = { workspace = true, optional = true }
+opendut-viper-rt = { workspace = true, features = ["compile", "http-source"], optional = true }
 opendut-vpn = { workspace = true }
 
 anyhow = { workspace = true }

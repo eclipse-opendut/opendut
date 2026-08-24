@@ -4,6 +4,8 @@ pub mod peer_messaging_client;
 pub mod process_manager;
 pub mod start;
 pub mod vpn;
+
+#[cfg(feature = "viper")]
 pub mod viper_run_manager;
 
 mod can;

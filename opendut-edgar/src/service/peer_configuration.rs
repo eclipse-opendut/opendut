@@ -1,7 +1,6 @@
 use crate::service::can::can_manager::CanManagerRef;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use crate::service::test_execution::executor_manager::ExecutorManagerRef;
-use crate::service::viper_run_manager::ViperRunManagerRef;
 use opendut_model::peer::configuration::{EdgePeerConfigurationParameterState, EdgePeerConfigurationState, ParameterVariant, PeerConfiguration};
 
 use std::fmt::Formatter;
@@ -22,7 +21,8 @@ pub struct ApplyPeerConfigurationParams {
     pub network_interface_management: NetworkInterfaceManagement,
     pub executor_manager: ExecutorManagerRef,
     pub metrics_manager: NetworkMetricsManagerRef,
-    pub viper_run_manager: ViperRunManagerRef,
+    #[cfg(feature = "viper")]
+    pub viper_run_manager: crate::service::viper_run_manager::ViperRunManagerRef,
 }
 #[derive(Clone)]
 pub enum NetworkInterfaceManagement {
@@ -106,6 +106,7 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> Colle
         network_interface_management, 
         executor_manager,
         metrics_manager,
+        #[cfg(feature = "viper")]
         viper_run_manager,
     } = params;
 
@@ -113,6 +114,7 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> Colle
         peer_configuration.clone(),
         network_interface_management.clone(),
         Arc::clone(&metrics_manager),
+        #[cfg(feature = "viper")]
         Arc::clone(&viper_run_manager),
     );
     let result = runner::service_runner::run_tasks(peer_configuration.clone(), resolver).await;

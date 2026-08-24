@@ -13,7 +13,7 @@ opendut-netbird-client-api = { workspace = true }
 opendut-model = { workspace = true }
 opendut-telemetry = { workspace = true }
 opendut-util = { workspace = true, features = ["crypto", "pem", "settings", "serde"] }
-opendut-viper-rt = { workspace = true, features = ["run"] }
+opendut-viper-rt = { workspace = true, features = ["run"], optional = true }
 
 anyhow = { workspace = true }
 async-trait = { workspace = true }
@@ -75,7 +75,9 @@ shadow-rs = { workspace = true, default-features = true }
 
 [features]
 integration_testing = []
-viper = []
+viper = [
+    "dep:opendut-viper-rt",
+]
 
 [lints]
 workspace = true

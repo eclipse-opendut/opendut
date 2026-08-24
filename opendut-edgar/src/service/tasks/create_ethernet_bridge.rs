@@ -104,11 +104,9 @@ mod tests {
     use crate::service::network_metrics::manager::{NetworkMetricsManager, NetworkMetricsOptions};
     use crate::service::peer_configuration::NetworkInterfaceManagement;
     use crate::service::tasks::runner::service_runner;
-    use crate::service::viper_run_manager::ViperRunManager;
     use opendut_model::peer::configuration::{parameter, ParameterTarget, PeerConfiguration};
     use opendut_model::util::net::NetworkInterfaceName;
     use std::sync::Arc;
-    use crate::service::tasks::runner;
     use crate::service::tasks::runner::task_resolver::ServiceTaskResolver;
     use crate::service::tasks::testing::NetworkInterfaceNameExt;
 
@@ -202,11 +200,15 @@ mod tests {
                 can_manager
             };
             let metrics_manager = NetworkMetricsManager::new(NetworkMetricsOptions::default());
-            let viper_run_manager = ViperRunManager::create();
-            let service_task_resolver = runner::task_resolver::ServiceTaskResolver::new(
+
+            #[cfg(feature = "viper")]
+            let viper_run_manager = crate::service::viper_run_manager::ViperRunManager::create();
+
+            let service_task_resolver = ServiceTaskResolver::new(
                 peer_configuration.clone(),
                 network_interface_management.clone(),
                 Arc::clone(&metrics_manager),
+                #[cfg(feature = "viper")]
                 Arc::clone(&viper_run_manager),
             );
 
