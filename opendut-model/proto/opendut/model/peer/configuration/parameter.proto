@@ -6,6 +6,7 @@ import "opendut/model/util/net.proto";
 import "opendut/model/peer/executor/executor.proto";
 import "opendut/model/peer/peer.proto";
 import "opendut/model/viper/run.proto";
+import "opendut/model/viper/test.proto";
 import "opendut/viper/rt/test_suite.proto";
 
 message DeviceInterface {
@@ -64,4 +65,5 @@ message CanLocalRoute {
 message TestRunReport {
   opendut.model.viper.ViperRunId run_id = 1;
   opendut.viper.rt.test_suite.ViperSourceCode source_code = 2;
+  opendut.model.viper.ViperTestParameters parameters = 3;
 }

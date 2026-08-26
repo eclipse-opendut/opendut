@@ -4,7 +4,7 @@ use crate::compile::{ParameterDescriptor, ParameterDescriptors};
 use crate::runtime::types::compile::parameters::ParameterName;
 use std::fmt::{Debug, Display, Formatter};
 use std::vec::IntoIter;
-
+use serde::Serialize;
 pub use error::{
     BindParameterError,
     IncompleteParameterBindingsError
@@ -243,7 +243,7 @@ impl ParameterBinding {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize)]
 pub enum BindingValue {
     BooleanValue(bool),
     NumberValue(i64),

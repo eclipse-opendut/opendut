@@ -219,6 +219,7 @@ conversion! {
         Proto {
             run_id: Some(value.run_id.into()),
             source_code: Some(value.source_code.inner.into()),
+            parameters: Some(value.parameters.into()),
         }
     }
 
@@ -227,10 +228,12 @@ conversion! {
         let source_code = TestRunSourceCode {
             inner: extract!(value.source_code)?.try_into()?,
         };
+        let parameters = extract!(value.parameters)?.try_into()?;
 
         Ok(Model {
             run_id,
             source_code,
+            parameters,
         })
     }
 }

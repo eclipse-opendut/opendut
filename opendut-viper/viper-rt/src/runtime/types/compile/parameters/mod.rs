@@ -2,6 +2,7 @@ use std::fmt::{Display, Formatter};
 use std::ops::Not;
 use std::slice::Iter;
 use std::vec::IntoIter;
+use serde::Serialize;
 
 mod error;
 
@@ -100,7 +101,7 @@ impl From<Vec<ParameterDescriptor>> for ParameterDescriptors {
 ///
 /// [`ALLOWED_CHARACTERS`]: ParameterName::ALLOWED_CHARACTERS
 ///
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize)]
 pub struct ParameterName {
     value: String
 }

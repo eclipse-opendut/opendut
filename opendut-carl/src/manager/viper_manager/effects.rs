@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use anyhow::Context;
 use tracing::error;
 use opendut_model::peer::configuration::{parameter, ParameterTarget, PeerConfiguration};
-use opendut_model::viper::{TestRunSourceCode, ViperRunDeployment, ViperRunId, ViperTestId};
+use opendut_model::viper::{TestRunSourceCode, ViperRunDeployment, ViperRunId, ViperTestId, ViperTestRunDescriptor};
 use opendut_viper_rt::compile::SourceCode;
 use opendut_viper_rt::source::Source;
 use opendut_viper_rt::ViperRuntime;
@@ -61,7 +61,7 @@ async fn update_peer_configuration(
     resource_manager: ResourceManagerRef,
     run_id: ViperRunId,
     test_id: ViperTestId,
-    source_code: SourceCode
+    source_code: SourceCode,
 ) -> anyhow::Result<()> {
 
     resource_manager.resources_mut(async |resources| {
@@ -70,9 +70,13 @@ async fn update_peer_configuration(
         let mut peer_configuration = resources.get::<PeerConfiguration>(peer_id)?
             .unwrap_or_default();
 
+        let test_run_descriptor = resources.get::<ViperTestRunDescriptor>(test_id)?
+            .unwrap(); // todo: don't unwrap!
+
         let test_run_report = parameter::TestRunReport {
             run_id,
             source_code: TestRunSourceCode { inner: source_code },
+            parameters: test_run_descriptor.parameters,
         };
 
         peer_configuration.test_run_reports.set(test_run_report, ParameterTarget::Present, HashSet::new()); //Todo: Clean up completed test runs
@@ -90,6 +94,8 @@ async fn update_peer_configuration(
 mod test {
     use std::time::Duration;
     use tokio::sync::mpsc;
+    use opendut_viper_rt::compile::ParameterName;
+    use opendut_viper_rt::run::BindingValue::BooleanValue;
     use crate::manager::testing::{SourceCodeFixture, ViperRunDeploymentFixture};
     use crate::resource::manager::ResourceManager;
     use super::*;
@@ -147,7 +153,13 @@ mod test {
             .next()
             .map(|value| Clone::clone(&value.value));
 
-        let expected_test_run_report = Some(parameter::TestRunReport { run_id, source_code: TestRunSourceCode { inner: source_code }});
+        let expected_test_run_report = Some(
+            parameter::TestRunReport {
+                run_id,
+                source_code: TestRunSourceCode { inner: source_code },
+                parameters: vec![(ParameterName::try_from("parameter-key")?, Some(BooleanValue(true)))]
+            }
+        );
         assert_eq!(test_run_report, expected_test_run_report);
 
         Ok(())
