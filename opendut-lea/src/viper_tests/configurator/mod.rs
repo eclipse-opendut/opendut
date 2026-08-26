@@ -67,7 +67,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                         user_configuration.name = UserInputValue::Right(name.value().to_owned());
                         user_configuration.viper_source = SourceSelection::Right(viper_source);
                         user_configuration.peer = PeerSelection::Right(peer);
-                        
+
                         let mut configured_parameters: HashMap<ViperParameterName, ViperBindingValueInput> = HashMap::new();
 
                         for (key, value) in parameters {
@@ -78,7 +78,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                         }
 
                         user_configuration.parameters = configured_parameters;
-                    })
+                    });
                 }
             }
         })
@@ -108,7 +108,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                     match result {
                         Ok(test_suite_descriptor) => {
                             user_test_run_descriptor.update(|user_configuration| {
-                                let mut new_parameters: HashMap<ViperParameterName, ViperBindingValueInput> = HashMap::new();
+                                let mut new_parameters = HashMap::new();
 
                                 for parameter in test_suite_descriptor.parameters.iter() {
                                     let parameter_name = parameter.name().clone();

@@ -130,7 +130,6 @@ pub(crate) mod testing {
         use super::*;
         use opendut_model::viper::{ViperRunDeployment, ViperRunId, ViperSourceDescriptor, ViperSourceId, ViperSourceKind, ViperTestSuiteIdentifier, ViperTestRunDescriptor, ViperTestId, ViperTestName, ViperParameterName, ViperBindingValue};
         use url::Url;
-        use std::collections::HashMap;
         use opendut_viper_rt::common::TestSuiteIdentifier;
         use opendut_viper_rt::compile::{ApiVersion, SourceCode};
 
@@ -170,14 +169,10 @@ pub(crate) mod testing {
 
                 let test_id = ViperTestId::random();
 
-                let parameters = {
-                    let mut parameters: HashMap<ViperParameterName, Option<ViperBindingValue>> = HashMap::new();
-                    parameters.insert(
-                        ViperParameterName::try_from("parameter-key")?,
-                        Some(ViperBindingValue::BooleanValue(true)),
-                    );
-                    parameters
-                };
+                let parameters = vec![(
+                    ViperParameterName::try_from("parameter-key")?,
+                    Some(ViperBindingValue::BooleanValue(true))
+                )];
 
                 let test_descriptor = ViperTestRunDescriptor {
                     id: test_id,

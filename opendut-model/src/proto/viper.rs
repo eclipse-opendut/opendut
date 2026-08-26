@@ -4,7 +4,6 @@ opendut_util::include_proto!("opendut.model.viper");
 #[cfg(feature="viper")] //only exclude the conversions, because we want to include the `ViperTestId` unconditionally
 mod conversions {
     use super::*;
-    use std::collections::HashMap;
     use opendut_util::conversion;
     use opendut_util::proto::ConversionResult;
 
@@ -130,7 +129,7 @@ mod conversions {
                 name: Some(value.name.into()),
                 source: Some(value.source.into()),
                 peer: Some(value.peer.into()),
-                parameters,
+                parameters: Some(ViperTestParameters { parameters }),
             }
         }
 
@@ -147,7 +146,9 @@ mod conversions {
             let peer = extract!(value.peer)?
                 .try_into()?;
 
-            let parameters = value.parameters.into_iter()
+            let parameters = extract!(value.parameters)?
+                .parameters
+                .into_iter()
                 .map(|parameter| {
                     let key = opendut_viper_rt::compile::ParameterName::try_from(parameter.key)
                         .map_err(|cause| ErrorBuilder::message(cause.to_string()))?;
@@ -155,7 +156,7 @@ mod conversions {
 
                     Ok((key, value))
                 })
-                .collect::<Result<HashMap<_, _>, _>>()?;
+                .collect::<Result<crate::viper::ViperTestParameters, _>>()?;
 
             Ok(Model { id, name, source, peer, parameters })
         }

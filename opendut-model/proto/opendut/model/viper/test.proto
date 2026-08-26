@@ -13,11 +13,15 @@ message ViperTestRunDescriptor {
   ViperTestName name = 2;
   opendut.model.viper.ViperSourceId source = 3;
   opendut.model.peer.PeerId peer = 6;
-  repeated ViperTestParameter parameters = 7;
+  ViperTestParameters parameters = 7;
 }
 
 message ViperTestName {
   string value = 1;
+}
+
+message ViperTestParameters {
+  repeated ViperTestParameter parameters = 1;
 }
 
 message ViperTestParameter {

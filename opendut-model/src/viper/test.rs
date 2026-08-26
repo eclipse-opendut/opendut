@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::fmt;
 use std::ops::Not;
 use std::str::FromStr;
@@ -18,7 +17,7 @@ pub struct ViperTestRunDescriptor {
     pub source: ViperSourceId,
     pub peer: PeerId,
     /// Concrete values bindings to run the test with.
-    pub parameters: HashMap<ParameterName, Option<BindingValue>>, //maps to `ParameterBindings` in VIPER (not including ParameterDescriptors here, because they could become out-of-date when we persist them)
+    pub parameters: ViperTestParameters, // not including ParameterDescriptors here, because they could become out-of-date when we persist them
 }
 
 
@@ -123,3 +122,6 @@ impl FromStr for ViperTestName {
         Self::try_from(value)
     }
 }
+
+/// Maps to `ParameterBindings` in VIPER.
+pub type ViperTestParameters = Vec<(ParameterName, Option<BindingValue>)>;

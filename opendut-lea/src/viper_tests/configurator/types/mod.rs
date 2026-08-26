@@ -61,15 +61,14 @@ impl TryFrom<UserViperTestRunDescriptor> for ViperTestRunDescriptor {
             .peer
             .right_ok_or(ViperTestMisconfiguration::InvalidPeerId)?;
 
-        let mut parameters = HashMap::new();
-
-        for (key, value_input) in configuration.parameters {
-
-            let value = value_input
-                .right_ok_or(ViperTestMisconfiguration::InvalidParameterValue)?;
-
-            parameters.insert(key, value);
-        }
+        let parameters = configuration
+            .parameters
+            .into_iter()
+            .map(|(key, value_input)| {
+                value_input
+                    .right_ok_or(ViperTestMisconfiguration::InvalidParameterValue)
+                    .map(|value| (key, value))
+            }).collect::<Result<Vec<_>, _>>()?;
 
         Ok(ViperTestRunDescriptor {
             id: configuration.id,
