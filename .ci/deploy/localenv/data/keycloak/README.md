@@ -34,6 +34,7 @@ Keycloak now supports GitHub Enterprise authentication natively without requirin
 * [22.0.2](https://www.keycloak.org/2023/09/keycloak-2202-released)
 * [26.0.0](https://www.keycloak.org/2024/10/keycloak-2600-released)
 * [26.2.5](https://www.keycloak.org/2025/05/keycloak-2625-released)
+* [26.7.2](https://www.keycloak.org/2026/08/keycloak-2672-released)
 
 ## Upgrading notes 26.2.5
 

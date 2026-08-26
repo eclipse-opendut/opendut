@@ -10,7 +10,13 @@ Always create a database backup before upgrading CARL.
 
 ## Unreleased
 
-TBD
+* Updated Keycloak in Localenv to version `26.7.2`.  
+  This includes the fix for [CVE-2026-18963](https://access.redhat.com/security/cve/cve-2026-18963).  
+  OpenDuT was not actually vulnerable, if it was deployed with the default configuration,
+  since the recommended temporary mitigation of disabling the password reset functionality is the default anyways.  
+  Updating to this version is only urgent, if you have reconfigured Keycloak to offer a password reset.
+  If you cannot update the openDuT version right away, you can also update Keycloak separately by using the up-to-date deployment scripts.
+
 
 ## [v0.10.2] - 2026-06-11
 

@@ -79,7 +79,7 @@ services:
       context: ../../..
       dockerfile: ./.ci/deploy/localenv/data/keycloak/Dockerfile-keycloak-server
       args:
-        KEYCLOAK_VERSION: 26.2.5
+        KEYCLOAK_VERSION: 26.7.2
     #command: ['start', '--optimized']
     restart: unless-stopped
     depends_on:
@@ -122,7 +122,7 @@ services:
       context: ../../..
       dockerfile: .ci/deploy/localenv/data/keycloak/Dockerfile-keycloak-provision
       args:
-        KEYCLOAK_VERSION: 26.2.5
+        KEYCLOAK_VERSION: 26.7.2
     depends_on:
       keycloak:
         condition: service_started
