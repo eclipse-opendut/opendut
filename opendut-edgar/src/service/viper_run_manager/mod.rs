@@ -5,11 +5,11 @@ use thiserror::Error;
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 use tracing::warn;
-use opendut_model::viper::{TestRunSourceCode, ViperRunId};
+use opendut_model::viper::{TestRunSourceCode, ViperRunId, ViperTestParameters};
 use opendut_viper_rt::ViperRuntime;
 use opendut_viper_rt::compile::{CompilationError, IdentifierFilter};
 use opendut_viper_rt::events::emitter;
-use opendut_viper_rt::run::{ParameterBindings, RunError, TestSuiteReport};
+use opendut_viper_rt::run::{BindParameterError, IncompleteParameterBindingsError, ParameterBindings, RunError, TestSuiteReport};
 use opendut_viper_rt::source::Source;
 
 pub type ViperRunManagerRef = Arc<ViperRunManager>;
@@ -32,7 +32,7 @@ impl ViperRunManager {
         })
     }
 
-    pub async fn start_test_run(&self, run_id: ViperRunId, source_code: TestRunSourceCode) {
+    pub async fn start_test_run(&self, run_id: ViperRunId, source_code: TestRunSourceCode, parameters: ViperTestParameters) {
         let handle = tokio::task::spawn_blocking(move || {
             tokio::runtime::Handle::current().block_on(async move {
                 #[allow(clippy::needless_update)]
@@ -43,10 +43,22 @@ impl ViperRunManager {
                 let compilation = viper_runtime.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await
                     .map_err(StartTestRunError::Compilation)?;
 
-                let suite = compilation.into_suite();
-                let bindings = ParameterBindings::new(); // todo: include parameter bindings from CARL
+                let (_, parameter_descriptors, suite) = compilation.split();
 
-                let report = viper_runtime.run(suite, bindings, &mut emitter::drain()).await
+                let mut bindings = ParameterBindings::from(parameter_descriptors);
+
+                for (name, value) in parameters.iter() {
+                    if let Some(value) = value {
+                        bindings
+                            .bind(name, value.clone())
+                            .map_err(StartTestRunError::BindParameter)?;
+                    }
+                }
+
+                let completed_bindings = bindings.complete()
+                    .map_err(StartTestRunError::IncompleteParameterBindings)?;
+
+                let report = viper_runtime.run(suite, completed_bindings, &mut emitter::drain()).await
                     .map_err(StartTestRunError::Run)?;
 
                 Ok(report)
@@ -80,5 +92,11 @@ enum StartTestRunError {
     Compilation(Box<CompilationError>),
 
     #[error(transparent)]
-    Run(Box<RunError>)
+    Run(Box<RunError>),
+
+    #[error(transparent)]
+    BindParameter(BindParameterError),
+
+    #[error(transparent)]
+    IncompleteParameterBindings(IncompleteParameterBindingsError),
 }

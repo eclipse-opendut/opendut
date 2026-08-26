@@ -25,8 +25,9 @@ impl Task for CreateViperTestRun {
     async fn make_present(&self) -> anyhow::Result<Success> {
         let run_id = self.parameter.run_id;
         let source_code = Clone::clone(&self.parameter.source_code);
+        let parameters = Clone::clone(&self.parameter.parameters);
 
-        self.viper_run_manager.start_test_run(run_id, source_code).await;
+        self.viper_run_manager.start_test_run(run_id, source_code, parameters).await;
 
         Ok(Success::default())
     }
