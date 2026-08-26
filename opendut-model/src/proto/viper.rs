@@ -147,16 +147,7 @@ mod conversions {
                 .try_into()?;
 
             let parameters = extract!(value.parameters)?
-                .parameters
-                .into_iter()
-                .map(|parameter| {
-                    let key = opendut_viper_rt::compile::ParameterName::try_from(parameter.key)
-                        .map_err(|cause| ErrorBuilder::message(cause.to_string()))?;
-                    let value = parameter.value.map(TryInto::try_into).transpose()?;
-
-                    Ok((key, value))
-                })
-                .collect::<Result<crate::viper::ViperTestParameters, _>>()?;
+                .try_into()?;
 
             Ok(Model { id, name, source, peer, parameters })
         }
@@ -191,6 +182,40 @@ mod conversions {
         fn try_from(value: Proto) -> ConversionResult<Model> {
             Model::try_from(value.value)
                 .map_err(|cause| ErrorBuilder::message(cause.to_string()))
+        }
+    }
+
+    conversion! {
+        type Model = crate::viper::ViperTestParameters;
+        type Proto = ViperTestParameters;
+
+        fn from(value: Model) -> Proto {
+            let parameters = value.into_iter()
+                .map(|(key, value)| {
+                    ViperTestParameter {
+                        key: key.to_string(),
+                        value: value.map(Into::into),
+                    }
+                })
+                .collect::<Vec<_>>();
+
+            Proto {
+                parameters,
+            }
+        }
+
+        fn try_from(value: Proto) -> ConversionResult<Model> {
+            let parameters = value.parameters.into_iter()
+                .map(|parameter| {
+                    let key = opendut_viper_rt::compile::ParameterName::try_from(parameter.key)
+                        .map_err(|cause| ErrorBuilder::message(cause.to_string()))?;
+                    let value = parameter.value.map(TryInto::try_into).transpose()?;
+
+                    Ok((key, value))
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+
+            Ok(parameters)
         }
     }
 
