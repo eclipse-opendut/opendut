@@ -119,6 +119,10 @@ New contributors:
   
   NETBIRD_DATASTORE_ENC_KEY=$(openssl rand -base64 32)
   sed -i "s#NETBIRD_DATASTORE_ENC_KEY=.*#NETBIRD_DATASTORE_ENC_KEY=$NETBIRD_DATASTORE_ENC_KEY#" /provision/.env
+  exit # leave container shell
+
+  # copy secret to file on host
+  docker cp opendut-update-secret:/provision/.env .ci/deploy/localenv/data/secrets/.env
   
   docker kill opendut-update-secret
   docker rm opendut-update-secret
