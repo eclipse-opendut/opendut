@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use leptos::prelude::*;
 
 #[derive(Default, Clone, Copy)]
@@ -20,7 +21,7 @@ impl TooltipDirection {
     }
 }
 
-pub type TooltipContent = Box<dyn FnOnce() -> AnyView + Send>;
+pub type TooltipContent = Arc<dyn Fn() -> AnyView + Send + Sync>;
 
 #[component]
 pub fn Tooltip(
@@ -38,7 +39,7 @@ pub fn Tooltip(
             <div class="tooltip-container" class=("is-hidden", move || is_hidden.get())>
                 <div class="tooltip-content p-0">
                     <div class="tooltip-item p-3">
-                        { text() }
+                        { move || text() }
                     </div>
                 </div>
             </div>

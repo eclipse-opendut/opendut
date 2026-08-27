@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use leptos::prelude::*;
 use tracing::{error, info};
 use opendut_lea_components::{use_toaster, ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, Toast};
@@ -69,7 +70,7 @@ where F: Fn() + Clone + Send + 'static {
         !matches!(button_state.get(), ButtonState::Disabled)
     });
 
-    let tooltip_content = Box::new(move || {
+    let tooltip_content = Arc::new(move || {
         view! {
             Cluster can not be deleted while it is deployed.
         }.into_any()

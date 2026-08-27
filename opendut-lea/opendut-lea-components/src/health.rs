@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use leptos::prelude::*;
 use crate::tooltip::{Tooltip, TooltipDirection};
 
@@ -33,7 +34,7 @@ pub fn Health(
         Clone::clone(&state.text)
     }));
     
-    let tooltip_content = Box::new(move || {
+    let tooltip_content = Arc::new(move || {
         view! {
             <p> { tooltip_text } </p>
 

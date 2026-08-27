@@ -18,7 +18,7 @@ use crate::util;
 #[component]
 pub fn Controls<OnDeploymentChanged>(
     user_cluster_descriptor: RwSignal<UserClusterDescriptor>,
-    deployed_signal: Signal<IsDeployed>,
+    deployed_signal: Memo<IsDeployed>,
     cluster_state: Signal<ClusterState>,
     on_deployment_changed: OnDeploymentChanged,
 ) -> impl IntoView
@@ -76,7 +76,7 @@ where
 #[component]
 fn SaveClusterButton(
     user_cluster_descriptor: RwSignal<UserClusterDescriptor>,
-    deployed_signal: Signal<IsDeployed>
+    deployed_signal: Memo<IsDeployed>
 ) -> impl IntoView {
 
     let globals = use_app_globals();
@@ -148,7 +148,7 @@ fn SaveClusterButton(
         all_tabs_valid.get() && !deployed_signal.get().0
     });
 
-    let tooltip_content = Box::new(move || {
+    let tooltip_content = Arc::new(move || {
         if !all_tabs_valid.get() {
             util::view::tooltip_content_for_configurator_errors("Cluster")
         } else if deployed_signal.get().0 {

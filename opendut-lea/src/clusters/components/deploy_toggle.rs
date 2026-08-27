@@ -165,9 +165,9 @@ where
                 }
             });
 
-            let tooltip_content = Box::new(move || {
+            let tooltip_content = Arc::new(move || {
                 view! {
-                    <DeploymentTooltipContent is_new_cluster is_deployed blocked_deployment />
+                    <DeploymentTooltipContent is_new_cluster is_deployed blocked_deployment=Clone::clone(&blocked_deployment) />
                 }.into_any()
             });
 

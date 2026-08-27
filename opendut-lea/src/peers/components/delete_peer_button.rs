@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use leptos::{component, view, IntoView};
 use leptos::prelude::*;
 use tracing::{error, info};
@@ -69,7 +70,7 @@ where F: Fn() + Clone + Send + 'static {
         !matches!(button_state.get(), ButtonState::Disabled)
     });
 
-    let tooltip_content = Box::new(move || {
+    let tooltip_content = Arc::new(move || {
         view! {
             Peer can not be deleted while it is configured in a cluster.
         }.into_any()

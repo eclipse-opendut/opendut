@@ -63,7 +63,7 @@ pub fn DuplicateViperTestButton(
         })
     };
 
-    let tooltip_content = Box::new(move || {
+    let tooltip_content = Arc::new(move || {
         view! {
             Duplicate Test Run.
         }.into_any()

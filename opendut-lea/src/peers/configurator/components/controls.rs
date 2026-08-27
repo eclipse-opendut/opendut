@@ -134,7 +134,7 @@ fn SavePeerButton(
         all_tabs_valid.get()
     });
 
-    let tooltip_content = Box::new(move || {
+    let tooltip_content = Arc::new(move || {
         if !all_tabs_valid.get() {
             util::view::tooltip_content_for_configurator_errors("Peer")
         } else { ().into_any() }

@@ -88,8 +88,11 @@ fn LoadedClusterConfigurator(
     let globals = use_app_globals();
     let cluster_state = RwSignal::new(ClusterState::default());
     let active_tab = use_active_tab::<TabIdentifier>();
-    
-    let cluster_id = Signal::derive(move || user_cluster_descriptor.get().id);
+
+    let cluster_id = create_read_slice(
+        user_cluster_descriptor,
+        |descriptor| Clone::clone(&descriptor.id),
+    );
 
     let breadcrumbs = Signal::derive(move || {
         let cluster_id = cluster_id.get().uuid.to_string();
@@ -115,18 +118,18 @@ fn LoadedClusterConfigurator(
         })
     };
 
-    let deployed_clusters = Signal::derive(move || {
-        match cluster_deployments.get() {
-            Some(deployed_clusters) => {
-                deployed_clusters.iter().map(|cluster_deployment| cluster_deployment.id).collect::<Vec<_>>()
-            }
-            None => Vec::new()
-        }
-    });
+    let deployed_signal = Memo::new(move |_| {
+        let cluster_id = cluster_id.get();
 
-    let deployed_signal = Signal::derive(move || IsDeployed(
-        deployed_clusters.get().contains(&cluster_id.get())
-    ));
+        let is_deployed = cluster_deployments.get()
+            .is_some_and(|deployments| {
+                deployments
+                    .iter()
+                    .any(|deployment| deployment.id == cluster_id)
+            });
+
+        IsDeployed(is_deployed)
+    });
 
     let subtitle = Signal::derive(move || {
         if let UserInputValue::Right(name) = user_cluster_descriptor.get().name {
