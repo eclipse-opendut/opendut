@@ -16,6 +16,7 @@ use crate::peers::components::DeletePeerButton;
 use crate::peers::configurator::types::UserPeerDescriptor;
 use crate::routing::{navigate_to, WellKnownRoutes};
 use crate::peers::components::PeerHealth;
+use crate::util;
 
 #[component]
 pub fn Controls(
@@ -135,13 +136,7 @@ fn SavePeerButton(
 
     let tooltip_content = Box::new(move || {
         if !all_tabs_valid.get() {
-            view! {
-                "Peer cannot be saved while configuration errors "
-                <span class="icon has-text-danger">
-                    <i class=FontAwesomeIcon::CircleExclamation.as_class() />
-                </span>
-                " remain."
-            }.into_any()
+            util::view::tooltip_content_for_configurator_errors("Peer")
         } else { ().into_any() }
     });
 

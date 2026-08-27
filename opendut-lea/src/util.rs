@@ -4,6 +4,7 @@ use opendut_model::topology::DeviceId;
 
 pub mod view {
     use leptos::prelude::*;
+    use opendut_lea_components::FontAwesomeIcon;
 
     pub fn join_with_comma_spans<T: RenderHtml + 'static>(elements: Vec<View<T>>) -> Vec<AnyView> {
         let elements_length = elements.len();
@@ -20,6 +21,16 @@ pub mod view {
             }
         }
         elements_with_separator
+    }
+
+    pub fn tooltip_content_for_configurator_errors(configurator: &str) -> AnyView {
+        view! {
+            { configurator } " cannot be saved while configuration errors "
+            <span class="icon has-text-danger">
+                <i class=FontAwesomeIcon::CircleExclamation.as_class() />
+            </span>
+            " remain."
+        }.into_any()
     }
 }
 

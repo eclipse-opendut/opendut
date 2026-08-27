@@ -13,6 +13,7 @@ use crate::clusters::configurator::types::UserClusterDescriptor;
 use crate::clusters::IsDeployed;
 use crate::components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, Toast, use_toaster};
 use crate::routing::{navigate_to, WellKnownRoutes};
+use crate::util;
 
 #[component]
 pub fn Controls<OnDeploymentChanged>(
@@ -149,13 +150,7 @@ fn SaveClusterButton(
 
     let tooltip_content = Box::new(move || {
         if !all_tabs_valid.get() {
-            view! {
-                "Cluster cannot be saved while configuration errors "
-                <span class="icon has-text-danger">
-                    <i class=FontAwesomeIcon::CircleExclamation.as_class() />
-                </span>
-                " remain."
-            }.into_any()
+            util::view::tooltip_content_for_configurator_errors("Cluster")
         } else if deployed_signal.get().0 {
             view! {
                 Cluster can not be updated while it is deployed.

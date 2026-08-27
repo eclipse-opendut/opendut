@@ -7,6 +7,7 @@ use opendut_lea_components::tooltip::{Tooltip, TooltipDirection};
 use opendut_model::viper::ViperSourceDescriptor;
 use crate::app::use_app_globals;
 use crate::routing::{navigate_to, WellKnownRoutes};
+use crate::util;
 use crate::viper_sources::components::DeleteViperSourceButton;
 use crate::viper_sources::configurator::types::UserViperSourceConfiguration;
 
@@ -111,13 +112,7 @@ fn SaveViperSourceButton(
 
     let tooltip_content = Box::new(move || {
         if !all_tabs_valid.get() {
-            view! {
-                "VIPER Source cannot be saved while configuration errors "
-                <span class="icon has-text-danger">
-                    <i class=FontAwesomeIcon::CircleExclamation.as_class() />
-                </span>
-                " remain."
-            }.into_any()
+            util::view::tooltip_content_for_configurator_errors("VIPER Source")
         } else { ().into_any() }
     });
 
