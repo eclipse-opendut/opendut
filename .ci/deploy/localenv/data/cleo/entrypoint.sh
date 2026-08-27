@@ -18,7 +18,7 @@ wait_for_url() {
       echo "Timeout while waiting for $url"
       return 1
     fi
-    if curl --silent --output /dev/null "$url" "${curl_args[@]}"; then
+    if curl --silent --output /dev/null -w "Waiting response code: %{http_code} URL: $url\n" "$url" "${curl_args[@]}"; then
       break
     fi
     echo "Waiting for $url to be available..."
@@ -27,6 +27,7 @@ wait_for_url() {
 }
 
 # Download CLEO
+CARL_URL="https://${OPENDUT_CLEO_NETWORK_CARL_HOST}"
 CLEO_DOWNLOAD_URL="https://${OPENDUT_CLEO_NETWORK_CARL_HOST}/api/cleo/x86_64-unknown-linux-gnu/download"
 CURL_ARGS=()
 
@@ -39,9 +40,10 @@ if [ "$OPENDUT_CLEO_NETWORK_TLS_CLIENT_AUTH_ENABLED" == "true" ]; then
   fi
 fi
 
-wait_for_url "https://${OPENDUT_CLEO_NETWORK_CARL_HOST}" "${CURL_ARGS[@]}" || { echo "CARL did not respond."; exit 1; }
+wait_for_url "${CARL_URL}" "${CURL_ARGS[@]}" || { echo "CARL did not respond."; exit 1; }
+wait_for_url "${CLEO_DOWNLOAD_URL}" "${CURL_ARGS[@]}" || { echo "CARL did not respond."; exit 1; }
 
-curl "${CURL_ARGS[@]}" "$CLEO_DOWNLOAD_URL" --output cleo.tar.gz
+curl "${CURL_ARGS[@]}" "$CLEO_DOWNLOAD_URL" -w "Download response code: %{http_code} URL: $CLEO_DOWNLOAD_URL\n" --output cleo.tar.gz
 tar --strip-components=1 -xvf cleo.tar.gz
 
 echo "Keep container running with sleep infinity"
