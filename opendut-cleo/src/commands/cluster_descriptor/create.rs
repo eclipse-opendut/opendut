@@ -44,7 +44,7 @@ impl CreateClusterDescriptorCli {
             Err(format!("Cluster <{cluster_id}> can not be updated while it is deployed."))?
         };
 
-        let leader = self.leader_id; //TODO: check if peer exists
+        let leader = self.leader_id;
 
         let all_devices = carl.peers.list_devices().await
             .map_err(|error| format!("Error while listing devices.\n  {error}"))?;
