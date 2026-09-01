@@ -1,6 +1,7 @@
 use crate::carl::cluster::{CreateClusterDescriptorError, DeleteClusterDeploymentError, DeleteClusterDescriptorError, GetClusterDescriptorError, GetClusterDeploymentError, ListClusterPeersError, ListClusterDescriptorsError, ListClusterDeploymentsError, StoreClusterDeploymentError};
 use opendut_model::cluster::state::ClusterState;
 use opendut_model::cluster::{ClusterId, ClusterName};
+use opendut_model::peer::PeerId;
 use opendut_model::proto;
 use opendut_util::proto::{ConversionError, ConversionErrorBuilder};
 
@@ -44,6 +45,13 @@ impl From<CreateClusterDescriptorError> for CreateClusterDescriptorFailure {
                     cause
                 })
             }
+            CreateClusterDescriptorError::LeaderNotInCluster { cluster_id, cluster_name, leader } => {
+                create_cluster_descriptor_failure::Error::LeaderNotInCluster(CreateClusterDescriptorFailureLeaderNotInCluster {
+                    cluster_id: Some(cluster_id.into()),
+                    cluster_name: Some(cluster_name.into()),
+                    leader: Some(leader.into()),
+                })
+            }
         };
         CreateClusterDescriptorFailure {
             error: Some(proto_error)
@@ -59,6 +67,9 @@ impl TryFrom<CreateClusterDescriptorFailure> for CreateClusterDescriptorError {
             .ok_or_else(|| ErrorBuilder::field_not_set("error"))?;
         let error = match error {
             create_cluster_descriptor_failure::Error::Internal(error) => {
+                error.try_into()?
+            }
+            create_cluster_descriptor_failure::Error::LeaderNotInCluster(error) => {
                 error.try_into()?
             }
         };
@@ -138,6 +149,23 @@ impl TryFrom<GetClusterDescriptorFailureInternal> for GetClusterDescriptorError 
             .ok_or_else(|| ErrorBuilder::field_not_set("cluster_id"))?
             .try_into()?;
         Ok(GetClusterDescriptorError::Internal { cluster_id, cause: failure.cause })
+    }
+}
+
+impl TryFrom<CreateClusterDescriptorFailureLeaderNotInCluster> for CreateClusterDescriptorError {
+    type Error = ConversionError;
+    fn try_from(failure: CreateClusterDescriptorFailureLeaderNotInCluster) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<CreateClusterDescriptorFailureLeaderNotInCluster, CreateClusterDescriptorError>;
+        let cluster_id: ClusterId = failure.cluster_id
+            .ok_or_else(|| ErrorBuilder::field_not_set("cluster_id"))?
+            .try_into()?;
+        let cluster_name: ClusterName = failure.cluster_name
+            .ok_or_else(|| ErrorBuilder::field_not_set("cluster_name"))?
+            .try_into()?;
+        let leader: PeerId = failure.leader
+            .ok_or_else(|| ErrorBuilder::field_not_set("leader"))?
+            .try_into()?;
+        Ok(CreateClusterDescriptorError::LeaderNotInCluster { cluster_id, cluster_name, leader })
     }
 }
 
