@@ -12,7 +12,7 @@ wait_for_url() {
       echo "Timeout while waiting for $url"
       return 1
     fi
-    if curl --fail --silent --show-error --output /dev/null --write-out "Waiting response code: %{http_code} URL: $url\n" "$url"; then
+    if curl --silent "$url" --output /dev/null; then
       break
     fi
     echo "Waiting for $url to be available..."
