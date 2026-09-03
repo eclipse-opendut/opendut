@@ -14,7 +14,13 @@ pub enum CreateClusterDescriptorError {
         cluster_id: ClusterId,
         cluster_name: ClusterName,
         cause: String
-    }
+    },
+    #[error("Leader <{leader}> is not part of cluster '{cluster_name}' <{cluster_id}>")]
+    LeaderNotInCluster {
+        cluster_id: ClusterId,
+        cluster_name: ClusterName,
+        leader: PeerId,
+    },
 }
 
 #[derive(thiserror::Error, Debug, PartialEq)]

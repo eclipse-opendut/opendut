@@ -2,6 +2,8 @@ use std::collections::HashSet;
 use std::ops::Not;
 
 use opendut_carl_api::carl::CarlClient;
+use opendut_carl_api::carl::cluster::CreateClusterDescriptorError;
+use opendut_carl_api::carl::ClientError;
 use opendut_model::cluster::{ClusterDescriptor, ClusterId};
 use opendut_model::peer::PeerId;
 use opendut_model::topology::{DeviceDescriptor, DeviceId, DeviceName};
@@ -44,7 +46,7 @@ impl CreateClusterDescriptorCli {
             Err(format!("Cluster <{cluster_id}> can not be updated while it is deployed."))?
         };
 
-        let leader = self.leader_id; //TODO: check if peer exists
+        let leader = self.leader_id;
 
         let all_devices = carl.peers.list_devices().await
             .map_err(|error| format!("Error while listing devices.\n  {error}"))?;
@@ -110,7 +112,12 @@ impl CreateClusterDescriptorCli {
 
 pub async fn create_cluster_descriptor(cluster: ClusterDescriptor, carl: &mut CarlClient, output: &CreateOutputFormat) -> crate::Result<()> {
     carl.cluster.store_cluster_descriptor(cluster.clone()).await
-        .map_err(|err| format!("Could not store cluster descriptor. Make sure the application is running. Error: {err}"))?;
+        .map_err(|err| match err {
+            ClientError::UsageError(CreateClusterDescriptorError::LeaderNotInCluster { leader, cluster_name, .. }) => {
+                format!("Could not store cluster descriptor '{cluster_name}': leader peer <{leader}> is not part of the cluster. Make sure the leader's devices are included in the cluster's device list.")
+            }
+            _ => format!("Could not store cluster descriptor. Make sure the application is running. Error: {err}")
+        })?;
     
     let devices = carl.peers.list_devices().await
         .map_err(|error| format!("Error while trying to list devices.\n  {error}"))?;
