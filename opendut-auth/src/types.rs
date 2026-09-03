@@ -2,6 +2,11 @@ use std::fmt::Debug;
 use cfg_if::cfg_if;
 use serde::{Deserialize, Serialize};
 
+/// OAuth scope required to access the management API (ClusterManager, PeerManager, etc.)
+pub const SCOPE_ADMIN_API: &str = "opendut-admin-api";
+/// OAuth scope required to access the edge API (PeerMessagingBroker)
+pub const SCOPE_EDGE_API: &str = "opendut-edge-api";
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
 pub enum Audience {
@@ -44,6 +49,9 @@ pub struct MyAdditionalClaims {
     /// Groups of the user (custom claim) may be omitted by identity provider, so we need a default value
     #[serde(default = "MyAdditionalClaims::empty_vector")]
     pub groups: Vec<String>,
+    /// OAuth scopes (space-separated list transmitted as "scope" claim in JWT)
+    #[serde(default, rename = "scope")]
+    pub scopes: String,
 }
 
 impl MyAdditionalClaims {
@@ -53,6 +61,9 @@ impl MyAdditionalClaims {
     }
     pub fn has_role(&self, role: &str) -> bool {
         self.roles.contains(&role.to_string())
+    }
+    pub fn has_scope(&self, required_scope: &str) -> bool {
+        self.scopes.split_whitespace().any(|s| s == required_scope)
     }
 }
 

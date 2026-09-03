@@ -203,6 +203,73 @@ impl RegistrationClient {
             .map_err(|error| RegistrationClientError::RequestError { error: error.to_string(), cause: error.into() })
     }
 
+    pub async fn assign_scope_to_client(&self, keycloak_client_uuid: &str, scope_name: &str) -> Result<(), RegistrationClientError> {
+        let scopes = self.list_client_scopes().await?;
+
+        let scope_id = scopes.iter()
+            .find(|s| s.name == scope_name)
+            .map(|s| s.id.clone())
+            .ok_or_else(|| RegistrationClientError::InvalidConfiguration {
+                error: format!("Client scope '{scope_name}' not found in Keycloak")
+            })?;
+
+        let assign_uri = format!("clients/{keycloak_client_uuid}/default-client-scopes/{scope_id}");
+        let assign_url = self.config.issuer_admin_url.value().join(&assign_uri)
+            .map_err(|cause| RegistrationClientError::InvalidConfiguration {
+                error: format!("Invalid admin api endpoint for scope assignment. {cause}")
+            })?;
+
+        let request = self.create_http_request_with_auth_token(&assign_url, http::Method::PUT).await?;
+        let response = async_http_client(&self.inner.reqwest_client, request).await
+            .map_err(|error| RegistrationClientError::RequestError {
+                error: format!("Failed to assign scope '{scope_name}' to client '{keycloak_client_uuid}'"),
+                cause: Box::new(error)
+            })?;
+
+        if response.status().is_success() {
+            Ok(())
+        } else {
+            Err(RegistrationClientError::RequestError {
+                error: format!("Failed to assign scope '{scope_name}' to client '{keycloak_client_uuid}': HTTP {}", response.status()),
+                cause: format!("HTTP {}", response.status()).into()
+            })
+        }
+    }
+
+    pub async fn list_client_scopes(&self) -> Result<Vec<KeycloakClientScope>, RegistrationClientError> {
+        let scopes_url = self.config.issuer_admin_url.value().join("client-scopes/")
+            .map_err(|cause| RegistrationClientError::InvalidConfiguration {
+                error: format!("Invalid admin api endpoint for client scopes. {cause}")
+            })?;
+
+        let request = self.create_http_request_with_auth_token(&scopes_url, http::Method::GET).await?;
+        let response = async_http_client(&self.inner.reqwest_client, request).await
+            .map_err(|error| RegistrationClientError::RequestError {
+                error: "Failed to list client scopes".to_string(),
+                cause: Box::new(error)
+            })?;
+
+        let scopes: Vec<KeycloakClientScope> = serde_json::from_slice(response.body())
+            .map_err(|cause| {
+                error!("Could not deserialize client scopes from keycloak: {:?}\nBody:\n{}", cause, String::from_utf8_lossy(response.body()));
+                RegistrationClientError::InvalidConfiguration {
+                    error: format!("Could not deserialize client scopes response. {cause}")
+                }
+            })?;
+
+        Ok(scopes)
+    }
+
+    /// Find the Keycloak internal UUID for use in admin API paths, by its OAuth client_id
+    pub async fn find_client_uuid(&self, oauth_client_id: &str) -> Result<String, RegistrationClientError> {
+        let clients = self.list_clients().await?;
+        clients.value()
+            .into_iter()
+            .find(|c| c.client_id == oauth_client_id)
+            .map(|c| c.id)
+            .ok_or(RegistrationClientError::ClientNotFound)
+    }
+
     async fn create_http_request_with_auth_token(&self, issuer_remote_url: &Url, http_method: http::Method) -> Result<HttpRequest, RegistrationClientError> {
         let access_token = self.inner.get_token().await
             .map_err(|error| RegistrationClientError::RequestError { error: error.to_string(), cause: error.into() })?;
@@ -250,6 +317,13 @@ impl Clients {
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Client {
+    pub id: String,
     pub client_id: String,
     base_url: Option<String>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct KeycloakClientScope {
+    pub id: String,
+    pub name: String,
 }
