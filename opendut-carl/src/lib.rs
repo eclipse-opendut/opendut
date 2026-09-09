@@ -117,6 +117,15 @@ async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::
         &settings
     ).await?;
 
+    // A newtype wrapper so we can store the gRPC path in the request extensions
+    // and retrieve it from inside the tonic async interceptor.
+    // tonic::Request does not expose the URI, and OriginalUri is an Axum HTTP
+    // concept that is not forwarded to tonic::Request extensions. This wrapper
+    // is injected at the Steer map_request level (before dispatch) so the path
+    // is available when the interceptor closure fires.
+    #[derive(Clone)]
+    struct GrpcPath(String);
+
     let http = {
         let carl_installation_directory = CarlInstallDirectory::determine()
             .expect("Could not determine installation directory.");
@@ -162,38 +171,33 @@ async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::
         routes_builder.add_service(grpc_facades.viper_manager_facade.into_grpc_service());
 
         let reqwest_client = reqwest_client::oidc::create_from_config(&settings)?;
+
         routes_builder
             .routes()
             .into_axum_router()
             .layer(async_interceptor(move |request: tonic::Request<()>| {
-                let is_edge = request
+                // Retrieve the path injected into extensions by map_request on the Steer below.
+                let path = request
                     .extensions()
-                    .get::<axum::extract::OriginalUri>()
-                    .map(|u| {
-                        let path = u.path();
-                        path.starts_with("/opendut.carl.services.peer_messaging_broker.") ||
-                        path.contains("/opendut.carl.services.peer_messaging_broker.")
-                    })
-                    .unwrap_or(false);
+                    .get::<GrpcPath>()
+                    .map(|p| p.0.as_str().to_owned())
+                    .unwrap_or_default();
 
-                // metadata_provider serves a single Version() endpoint used by all clients
-                // (EDGAR, CLEO, LEA) on startup. EDGAR only holds opendut-edge-api while
-                // CLEO/LEA only hold opendut-admin-api, so both scopes must be accepted.
-                let is_metadata_provider = request
-                    .extensions()
-                    .get::<axum::extract::OriginalUri>()
-                    .map(|u| {
-                        let path = u.path();
-                        path.starts_with("/opendut.carl.services.metadata_provider.") ||
-                        path.contains("/opendut.carl.services.metadata_provider.")
-                    })
-                    .unwrap_or(false);
+                let is_edge = path.starts_with("/opendut.carl.services.peer_messaging_broker.");
+
+                // MetadataProvider (Version RPC) is called by all clients on startup.
+                // Accept either scope so EDGAR (edge) and CLEO/LEA (admin) can both reach it.
+                let is_metadata_provider = path.starts_with("/opendut.carl.services.metadata_provider.");
 
                 let accepted_scopes: &'static [&'static str] = if is_metadata_provider {
                     &[opendut_auth::types::SCOPE_EDGE_API, opendut_auth::types::SCOPE_ADMIN_API]
                 } else if is_edge {
+                    // PeerMessagingBroker is the EDGAR-only edge API.
                     &[opendut_auth::types::SCOPE_EDGE_API]
                 } else {
+                    // All remaining services (ClusterManager, PeerManager,
+                    // ObserverMessagingBroker, ViperManager) are management APIs
+                    // accessible only to CLEO and LEA.
                     &[opendut_auth::types::SCOPE_ADMIN_API]
                 };
                 Clone::clone(&grpc_auth_layer).auth_interceptor(request, reqwest_client.clone(), accepted_scopes)
@@ -213,7 +217,13 @@ async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::
         usize::from(is_grpc)
     })
     .map_request(|request: ::http::Request<hyper::body::Incoming>| -> ::http::Request<axum::body::Body> {
-        request.map(axum::body::Body::new)
+        let (mut parts, body) = request.into_parts();
+        // Inject the URI path as GrpcPath before the request is dispatched into either
+        // the HTTP or gRPC branch. This lets the tonic async interceptor read the path
+        // from extensions, since tonic::Request does not preserve the URI.
+        let path = parts.uri.path().to_owned();
+        parts.extensions.insert(GrpcPath(path));
+        ::http::Request::from_parts(parts, axum::body::Body::new(body))
     });
 
 

@@ -59,9 +59,13 @@ main() {
   create_secret_client "opendut-cleo-client" "$OPENDUT_CLEO_NETWORK_OIDC_CLIENT_SECRET" "$REALM_OPENDUT"
   create_secret_client "opendut-edgar-client" "$OPENDUT_EDGAR_NETWORK_OIDC_CLIENT_SECRET" "$REALM_OPENDUT"
 
-  # Create API access scopes for authorization
-  create_client_scope "opendut-admin-api" "none" "$REALM_OPENDUT"
-  create_client_scope "opendut-edge-api" "none" "$REALM_OPENDUT"
+  # Create API access scopes for authorization.
+  # Type "default" means Keycloak automatically includes the scope in every token
+  # issued to a client that has it assigned, without the client needing to request it
+  # explicitly. This is required for service-account clients (EDGAR, CLEO) using the
+  # client_credentials grant, which cannot enumerate scopes in the token request.
+  create_client_scope "opendut-admin-api" "default" "$REALM_OPENDUT"
+  create_client_scope "opendut-edge-api" "default" "$REALM_OPENDUT"
 
   # Assign API scopes to clients
   add_client_scope_to_client "opendut-lea-client" "opendut-admin-api" "$REALM_OPENDUT"

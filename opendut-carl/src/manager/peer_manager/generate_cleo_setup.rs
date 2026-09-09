@@ -34,14 +34,21 @@ pub async fn generate_cleo_setup(params: GenerateCleoSetupParams) -> Result<Cleo
                 .map_err(|cause| GenerateCleoSetupError::Internal { cause: cause.to_string() })?;
             debug!("Successfully generated CLEO setup with id <{cleo_id}>. OIDC client_id='{}'.", client_credentials.client_id.clone().value());
 
-            // Assign admin API scope to the CLEO client
-            let keycloak_client_uuid = registration_client.find_client_uuid(&client_credentials.client_id.clone().value())
-                .await
-                .map_err(|cause| GenerateCleoSetupError::Internal { cause: cause.to_string() })?;
-            registration_client.assign_scope_to_client(&keycloak_client_uuid, SCOPE_ADMIN_API)
-                .await
-                .map_err(|cause| GenerateCleoSetupError::Internal { cause: cause.to_string() })?;
-            debug!("Assigned scope '{SCOPE_ADMIN_API}' to CLEO client <{cleo_id}>.");
+            // Only assign the scope when CARL dynamically registered a fresh client.
+            // When peer_credentials is set (static shared credentials, e.g. local dev),
+            // the client already has its scopes assigned by provision.sh, so skipping
+            // the Keycloak round-trip avoids a redundant admin API call and prevents
+            // find_client_uuid from failing if the static client_id is not discoverable
+            // via the dynamic registration listing.
+            if registration_client.config.peer_credentials.is_none() {
+                let keycloak_client_uuid = registration_client.find_client_uuid(&client_credentials.client_id.clone().value())
+                    .await
+                    .map_err(|cause| GenerateCleoSetupError::Internal { cause: cause.to_string() })?;
+                registration_client.assign_scope_to_client(&keycloak_client_uuid, SCOPE_ADMIN_API)
+                    .await
+                    .map_err(|cause| GenerateCleoSetupError::Internal { cause: cause.to_string() })?;
+                debug!("Assigned scope '{SCOPE_ADMIN_API}' to CLEO client <{cleo_id}>.");
+            }
 
             AuthConfig::from_credentials(issuer_url, client_credentials, vec![OAuthScope(SCOPE_ADMIN_API.to_string())])
         }
