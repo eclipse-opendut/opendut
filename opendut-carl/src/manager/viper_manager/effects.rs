@@ -1,7 +1,8 @@
 use std::collections::HashSet;
 use anyhow::Context;
-use tracing::error;
+use tracing::{error, info};
 use opendut_model::peer::configuration::{parameter, ParameterTarget, PeerConfiguration};
+use opendut_model::peer::state::PeerConnectionState;
 use opendut_model::viper::{TestRunSourceCode, ViperRunDeployment, ViperRunId, ViperTestId, ViperTestRunDescriptor};
 use opendut_viper_rt::compile::SourceCode;
 use opendut_viper_rt::source::Source;
@@ -27,15 +28,18 @@ async fn schedule_fetch_source_code_when_test_run_deployment_available(
     resource_manager: ResourceManagerRef,
     fetch_source_code_closure: impl (AsyncFnOnce(ViperRuntime, &Source) -> Result<SourceCode, FetchError>) + Send + Sync + Clone + 'static
 ) {
-    //TODO also await peer online
-    resource_manager.spawn_event_listener::<ViperRunDeployment>({
+    resource_manager.spawn_event_listener_aggregate_2::<PeerConnectionState, ViperRunDeployment>({
         let resource_manager = resource_manager.clone();
 
         async move |event| {
             let resource_manager = resource_manager.clone();
             let fetch_source_code_closure = fetch_source_code_closure.clone();
 
-            if let SubscriptionEvent::Inserted { id: run_id, value: viper_run_deployment } = event {
+            if let (Some(peer_connection_event), Some(viper_run_deployment_event)) = event
+            && let SubscriptionEvent::Inserted { id: peer_id, value: PeerConnectionState::Online { remote_host }} = peer_connection_event
+            && let SubscriptionEvent::Inserted { id: run_id, value: viper_run_deployment } = viper_run_deployment_event {
+                info!("VIPER test run <{run_id}> requested and selected peer <{peer_id}> is online with remote address <{remote_host}>. Fetching source code and updating peer configuration...");
+
                 let test_id = viper_run_deployment.test_id;
 
                 let result = fetch_source_code(resource_manager.clone(), test_id, fetch_source_code_closure).await;
