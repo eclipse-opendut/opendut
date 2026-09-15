@@ -59,6 +59,8 @@
 
         - name: Construct docker compose command
           set_fact:
+            # environment file might contain custom image version for CARL
+            # also include optional override file(s)
             docker_compose_base_command: >
               docker compose
                 --file .ci/deploy/localenv/docker-compose.yml
@@ -69,13 +71,18 @@
                 --env-file .ci/deploy/localenv/data/secrets/.env
 
         - name: Force update CARL image  # With canary releases, we may re-use the same tag, which normally results in the new image not being pulled.
-          # environment file might contain custom image version for CARL
-          # detect optional override file
           command:
             cmd: >
               {{ docker_compose_base_command }} pull --policy=always carl
             chdir: "{{ repo_dir }}"
           changed_when: false  # Prevent marking the playbook as changed just because we pulled an image.
+
+        - name: Force build of all images
+          command:
+            cmd: >
+              {{ docker_compose_base_command }} build
+            chdir: "{{ repo_dir }}"
+          changed_when: false  # Prevent marking the playbook as changed just because we re-build the images.
 
         - name: Start all containers
           command:
