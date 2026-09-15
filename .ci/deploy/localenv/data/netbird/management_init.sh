@@ -16,4 +16,4 @@ wait_for_keycloak_user__in_realm_netbird "netbird" 600 5 || exit 1
 wait_for_keycloak_client__in_realm_netbird "netbird-backend" 600 5 || exit 1
 
 
-exec /go/bin/netbird-mgmt management --port 80 --log-file console --disable-anonymous-metrics=false --single-account-mode-domain="$NETBIRD_MANAGEMENT_DOMAIN" --dns-domain="$NETBIRD_MANAGEMENT_DOMAIN"
+exec /go/bin/netbird-mgmt management --port 80 --log-file console --disable-anonymous-metrics --disable-geolite-update --single-account-mode-domain="$NETBIRD_MANAGEMENT_DOMAIN" --dns-domain="$NETBIRD_MANAGEMENT_DOMAIN"
