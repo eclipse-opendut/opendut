@@ -7,13 +7,18 @@ runs:
     - name: Install and load 'vcan' and 'can-gw' kernel modules
       shell: bash
       run: |
-        kernel_version="$(uname -r | cut -d- -f1)"
+        modules_extra_package="linux-modules-extra-$(uname -r)"
+        echo "Kernel modules extra package name: $modules_extra_package"
+        echo "Updating the index to check if the package is present."
         sudo apt-get update
-        # With the new 6.15 development kernel, the Canonical Kernel Team has also rolled out the deprecation of the linux-modules-extra package, shipping all the kernel modules via the linux-modules package.
-        # See https://discourse.ubuntu.com/t/kernel-development-release-cadence-and-deprecation-of-linux-modules-extra/65176
-        if dpkg --compare-versions "$kernel_version" lt "6.15"; then
+        # Some kernels still require linux-modules-extra while others already ship
+        # those modules via linux-modules, so install only when the package exists.
+        if apt-cache show "$modules_extra_package" >/dev/null 2>&1; then
+          echo "Installing $modules_extra_package"
           sudo apt-get install -y \
-            linux-modules-extra-$(uname -r)
+            "$modules_extra_package"
+        else
+          echo "Package '$modules_extra_package' not available, skipping."
         fi
         sudo modprobe vcan
         sudo modprobe can-gw max_hops=2
