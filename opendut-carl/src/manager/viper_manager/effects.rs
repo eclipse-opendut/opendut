@@ -69,13 +69,13 @@ async fn update_peer_configuration(
 ) -> anyhow::Result<()> {
 
     resource_manager.resources_mut(async |resources| {
-        let peer_id= resources.get_peer_id_for_test(test_id)?;
+        let peer_id = resources.get_peer_id_for_test(test_id)?;
 
         let mut peer_configuration = resources.get::<PeerConfiguration>(peer_id)?
             .unwrap_or_default();
 
         let test_run_descriptor = resources.get::<ViperTestRunDescriptor>(test_id)?
-            .unwrap(); // todo: don't unwrap!
+            .unwrap(); //TODO don't unwrap!
 
         let test_run_report = parameter::TestRunReport {
             run_id,
@@ -83,7 +83,7 @@ async fn update_peer_configuration(
             parameters: test_run_descriptor.parameters,
         };
 
-        peer_configuration.test_run_reports.set(test_run_report, ParameterTarget::Present, HashSet::new()); //Todo: Clean up completed test runs
+        peer_configuration.test_run_reports.set(test_run_report, ParameterTarget::Present, HashSet::new()); //TODO Clean up completed test runs
 
         resources.insert(peer_id, peer_configuration)
             .context("Error while inserting peer configuration while updating test run report parameter.")?;
@@ -100,14 +100,19 @@ mod test {
     use tokio::sync::mpsc;
     use opendut_viper_rt::compile::ParameterName;
     use opendut_viper_rt::run::BindingValue::BooleanValue;
-    use crate::manager::testing::{SourceCodeFixture, ViperRunDeploymentFixture};
+    use crate::manager::peer_messaging_broker::{PeerMessagingBroker, PeerMessagingBrokerOptions};
+    use crate::manager::testing::{PeerFixture, SourceCodeFixture, ViperRunDeploymentFixture};
     use crate::resource::manager::ResourceManager;
     use super::*;
 
-    #[tokio::test]
+    #[test_log::test(tokio::test)]
     async fn should_trigger_fetching_source_code_when_test_run_deployment_available() -> anyhow::Result<()> {
-        let (sender, mut receiver) = mpsc::channel(1);
         let (resource_manager, _resource_manager_cancel) = ResourceManager::new_in_memory();
+
+        let peer = PeerFixture::new();
+        resource_manager.insert(peer.id, peer.descriptor.clone()).await?;
+
+        let (sender, mut receiver) = mpsc::channel(1);
 
         let source_code = SourceCodeFixture::new().source_code;
         let simulate_fetch_source_code = {
@@ -126,7 +131,15 @@ mod test {
 
         let mut peer_configuration_subscription = resource_manager.subscribe::<PeerConfiguration>().await;
 
-        
+
+        let (_peer_tx, _peer_rx) = {
+            let settings = crate::settings::load_defaults().unwrap();
+            let peer_messaging_broker = PeerMessagingBroker::new(resource_manager.clone(), PeerMessagingBrokerOptions::load(&settings)?).await;
+
+            peer.open_peer_messaging_stream(peer_messaging_broker.clone()).await?
+        };
+
+
         let viper_run_deployment = ViperRunDeploymentFixture::create(resource_manager.clone()).await?;
 
         let run_id = viper_run_deployment.id;
@@ -149,7 +162,6 @@ mod test {
 
             peer_configuration
         };
-
 
         let test_run_report = peer_configuration
             .test_run_reports.values

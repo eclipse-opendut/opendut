@@ -514,17 +514,13 @@ pub mod error {
 #[cfg(test)]
 mod test {
     use std::collections::HashSet;
-    use std::net::IpAddr;
-    use std::str::FromStr;
-    use std::time::Duration;
 
     use googletest::prelude::*;
-    use tokio::sync::mpsc;
 
     use opendut_model::cluster::ClusterName;
-    use opendut_model::peer::executor::{container::{ContainerCommand, ContainerImage, ContainerName, Engine}, ExecutorDescriptor, ExecutorDescriptors, ExecutorId, ExecutorKind};
-    use opendut_model::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
-    use opendut_model::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
+    use opendut_model::peer::executor::ExecutorDescriptors;
+use opendut_model::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
+    use opendut_model::topology::{DeviceDescriptor, DeviceId, DeviceName, Topology};
     use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceId, NetworkInterfaceName};
 
     use crate::manager::peer_messaging_broker::{PeerMessagingBroker, PeerMessagingBrokerOptions, PeerMessagingBrokerRef};
@@ -535,15 +531,14 @@ mod test {
 
     mod rollout_cluster {
         use super::*;
-        use opendut_carl_api::carl::broker::{stream_header, DownstreamMessage, DownstreamMessagePayload};
         use opendut_model::peer::configuration::{parameter, PeerConfiguration};
         use crate::manager::peer_manager::StorePeerDescriptorParams;
-        use crate::manager::peer_messaging_broker::PeerMessagingBrokerRef;
+        use crate::manager::testing::PeerFixture;
 
         #[test_log::test(tokio::test)]
         async fn test_rollout_cluster() -> anyhow::Result<()> {
-            let peer_a = PeerFixture::new("PeerA");
-            let peer_b = PeerFixture::new("PeerB");
+            let peer_a = PeerFixture::new();
+            let peer_b = PeerFixture::new();
             let fixture = Fixture::create().await;
 
             let leader_id = peer_a.id;
@@ -552,7 +547,7 @@ mod test {
                 id: cluster_id,
                 name: ClusterName::try_from("MyAwesomeCluster")?,
                 leader: leader_id,
-                devices: HashSet::from([peer_a.device, peer_b.device]),
+                devices: HashSet::from([peer_a.device_1, peer_b.device_1]),
             };
 
             fixture.resource_manager.resources_mut::<_, (), anyhow::Error>(async |resources| {
@@ -570,8 +565,8 @@ mod test {
             }).await??;
 
 
-            let mut peer_a_rx = peer_open(peer_a.id, peer_a.remote_host, Arc::clone(&fixture.peer_messaging_broker)).await?;
-            let mut peer_b_rx = peer_open(peer_b.id, peer_b.remote_host, Arc::clone(&fixture.peer_messaging_broker)).await?;
+            let (_peer_a_tx, mut peer_a_rx) = peer_a.open_peer_messaging_stream(Arc::clone(&fixture.peer_messaging_broker)).await?;
+            let (_peer_b_tx, mut peer_b_rx) = peer_b.open_peer_messaging_stream(Arc::clone(&fixture.peer_messaging_broker)).await?;
 
 
             fixture.resource_manager.resources_mut(async |resources| {
@@ -594,7 +589,7 @@ mod test {
 
                 let bridge_name = peer_fixture.descriptor.network.bridge_name.clone().unwrap();
                 let join_configs = peer_config.joined_interfaces.values().cloned().map(|item| item.value).collect::<Vec<_>>();
-                let gre = NetworkInterfaceName::try_from("gre-AQEBAQEBAQE").unwrap();
+                let gre = NetworkInterfaceName::try_from("gre-fwAAAX8AAAE").unwrap();
                 let eth0 = NetworkInterfaceName::try_from("eth0").unwrap();
                 assert_that!(join_configs, unordered_elements_are![
                     &parameter::InterfaceJoinConfig {
@@ -615,32 +610,15 @@ mod test {
 
             };
 
-            let peer_config_a = receive_peer_configuration_message(&mut peer_a_rx).await;
+            let peer_config_a = PeerFixture::receive_peer_configuration_message(&mut peer_a_rx).await;
             assert_peer_config_valid(&peer_a, &peer_config_a);
             assert_eq!(peer_config_a.remote_peer_connection_checks.len(), 1, "Only the leader should have remote peer connection checks.");
 
-            let peer_config_b = receive_peer_configuration_message(&mut peer_b_rx).await;
+            let peer_config_b = PeerFixture::receive_peer_configuration_message(&mut peer_b_rx).await;
             assert_peer_config_valid(&peer_b, &peer_config_b);
             assert_eq!(peer_config_b.remote_peer_connection_checks.len(), 0, "Follower should not do any connection checks.");
 
             Ok(())
-        }
-
-        async fn peer_open(peer_id: PeerId, peer_remote_host: IpAddr, peer_messaging_broker: PeerMessagingBrokerRef) -> anyhow::Result<mpsc::Receiver<DownstreamMessage>> {
-            let (_peer_tx, mut peer_rx) = peer_messaging_broker.open(peer_id, peer_remote_host, stream_header::ExtraHeaders::default()).await?;
-            receive_peer_configuration_message(&mut peer_rx).await; //initial peer configuration after connect
-            Ok(peer_rx)
-        }
-
-        async fn receive_peer_configuration_message(peer_rx: &mut mpsc::Receiver<DownstreamMessage>) -> PeerConfiguration {
-            let message = tokio::time::timeout(Duration::from_millis(500), peer_rx.recv()).await
-                .unwrap().unwrap().payload;
-
-            if let DownstreamMessagePayload::ApplyPeerConfiguration(peer_config) = message {
-                peer_config.configuration
-            } else {
-                panic!("Did not receive valid message. Received this instead: {message:?}")
-            }
         }
     }
 
@@ -752,75 +730,6 @@ mod test {
                 peer_messaging_broker,
                 cluster_manager_options,
                 _resource_manager_cancel: _cancel,
-            }
-        }
-    }
-
-    struct PeerFixture {
-        id: PeerId,
-        device: DeviceId,
-        remote_host: IpAddr,
-        descriptor: PeerDescriptor,
-    }
-    impl PeerFixture {
-        fn new(peer_name: &str) -> Self {
-            let device = DeviceId::random();
-
-            let id = PeerId::random();
-            let remote_host = IpAddr::from_str("1.1.1.1").unwrap();
-            let network_interface_id = NetworkInterfaceId::random();
-            let interfaces = vec![
-                NetworkInterfaceDescriptor {
-                    id: network_interface_id,
-                    name: NetworkInterfaceName::try_from("eth0").unwrap(),
-                    configuration: NetworkInterfaceConfiguration::Ethernet,
-                }
-            ];
-
-            let descriptor = PeerDescriptor {
-                id,
-                name: PeerName::try_from(peer_name).unwrap(),
-                location: PeerLocation::try_from("Ulm").ok(),
-                network: PeerNetworkDescriptor {
-                    interfaces,
-                    bridge_name: Some(NetworkInterfaceName::try_from("br-opendut-1").unwrap()),
-                },
-                topology: Topology {
-                    devices: vec![
-                        DeviceDescriptor {
-                            id: device,
-                            name: DeviceName::try_from(format!("{peer_name}_Device_1")).unwrap(),
-                            description: DeviceDescription::try_from("Huii").ok(),
-                            interface: network_interface_id,
-                            tags: vec![],
-                        }
-                    ]
-                },
-                executors: ExecutorDescriptors {
-                    executors: vec![
-                        ExecutorDescriptor {
-                            id: ExecutorId::random(),
-                            kind: ExecutorKind::Container {
-                                engine: Engine::Docker,
-                                name: ContainerName::Empty,
-                                image: ContainerImage::try_from("testUrl").unwrap(),
-                                volumes: vec![],
-                                devices: vec![],
-                                envs: vec![],
-                                ports: vec![],
-                                command: ContainerCommand::Default,
-                                args: vec![],
-                            },
-                            results_url: None,
-                        }
-                    ],
-                },
-            };
-            PeerFixture {
-                id,
-                device,
-                remote_host,
-                descriptor
             }
         }
     }

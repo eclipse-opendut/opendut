@@ -8,13 +8,21 @@ pub mod viper_manager;
 
 #[cfg(test)]
 pub(crate) mod testing {
+    use crate::manager::peer_messaging_broker::PeerMessagingBrokerRef;
     use crate::resource::manager::ResourceManagerRef;
+    use opendut_carl_api::carl::broker::{DownstreamMessage, DownstreamMessagePayload, UpstreamMessage, stream_header};
     use opendut_model::cluster::{ClusterDescriptor, ClusterId, ClusterName};
-    use opendut_model::peer::executor::ExecutorDescriptors;
+    use opendut_model::peer::configuration::PeerConfiguration;
+    use opendut_model::peer::executor::*;
+    use opendut_model::peer::executor::container::*;
     use opendut_model::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
     use opendut_model::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
     use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
+use tokio::sync::mpsc;
     use std::collections::HashSet;
+    use std::net::IpAddr;
+    use std::str::FromStr;
+    use std::time::Duration;
     use opendut_util::pem::{read_pem_from_buffer, Pem};
 
     pub fn get_cert() -> Pem {
@@ -30,6 +38,7 @@ pub(crate) mod testing {
         pub descriptor: PeerDescriptor,
         pub device_1: DeviceId,
         pub device_2: DeviceId,
+        pub remote_host: IpAddr,
     }
     impl PeerFixture {
         pub fn new() -> Self {
@@ -38,10 +47,11 @@ pub(crate) mod testing {
             let network_interface_2 = NetworkInterfaceId::random();
             let device_1 = DeviceId::random();
             let device_2 = DeviceId::random();
+            let remote_host = IpAddr::from_str("127.0.0.1").unwrap();
 
             let descriptor = PeerDescriptor {
                 id,
-                name: PeerName::try_from("PeerA").unwrap(),
+                name: PeerName::try_from(format!("Peer-{id}")).unwrap(),
                 location: PeerLocation::try_from("Ulm").ok(),
                 network: PeerNetworkDescriptor {
                     interfaces: vec![
@@ -62,14 +72,14 @@ pub(crate) mod testing {
                     devices: vec![
                         DeviceDescriptor {
                             id: device_1,
-                            name: DeviceName::try_from("PeerA_Device_1").unwrap(),
+                            name: DeviceName::try_from(format!("Peer_{id}_Device_1")).unwrap(),
                             description: DeviceDescription::try_from("Huii").ok(),
                             interface: network_interface_1,
                             tags: vec![],
                         },
                         DeviceDescriptor {
                             id: device_2,
-                            name: DeviceName::try_from("PeerA_Device_2").unwrap(),
+                            name: DeviceName::try_from(format!("Peer_{id}_Device_2")).unwrap(),
                             description: DeviceDescription::try_from("Huii").ok(),
                             interface: network_interface_2,
                             tags: vec![],
@@ -77,7 +87,23 @@ pub(crate) mod testing {
                     ]
                 },
                 executors: ExecutorDescriptors {
-                    executors: vec![],
+                    executors: vec![
+                        ExecutorDescriptor {
+                            id: ExecutorId::random(),
+                            kind: ExecutorKind::Container {
+                                engine: Engine::Docker,
+                                name: ContainerName::Empty,
+                                image: ContainerImage::try_from("testUrl").unwrap(),
+                                volumes: vec![],
+                                devices: vec![],
+                                envs: vec![],
+                                ports: vec![],
+                                command: ContainerCommand::Default,
+                                args: vec![],
+                            },
+                            results_url: None,
+                        }
+                    ],
                 }
             };
             Self {
@@ -85,6 +111,24 @@ pub(crate) mod testing {
                 descriptor,
                 device_1,
                 device_2,
+                remote_host,
+            }
+        }
+
+        pub async fn open_peer_messaging_stream(&self, peer_messaging_broker: PeerMessagingBrokerRef) -> anyhow::Result<(mpsc::Sender<UpstreamMessage>, mpsc::Receiver<DownstreamMessage>)> {
+            let (peer_tx, mut peer_rx) = peer_messaging_broker.open(self.id, self.remote_host, stream_header::ExtraHeaders::default()).await?;
+            Self::receive_peer_configuration_message(&mut peer_rx).await; //initial peer configuration after connect
+            Ok((peer_tx, peer_rx))
+        }
+
+        pub async fn receive_peer_configuration_message(peer_rx: &mut mpsc::Receiver<DownstreamMessage>) -> PeerConfiguration {
+            let message = tokio::time::timeout(Duration::from_millis(500), peer_rx.recv()).await
+                .unwrap().unwrap().payload;
+
+            if let DownstreamMessagePayload::ApplyPeerConfiguration(peer_config) = message {
+                peer_config.configuration
+            } else {
+                panic!("Did not receive valid message. Received this instead: {message:?}")
             }
         }
     }
