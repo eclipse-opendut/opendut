@@ -13,12 +13,17 @@
   - name: Install required packages
     apt:
       # linux-generic is required for the 'vcan' kernel module
-      # This meta package will install the linux-modules-extra-{{ ansible_kernel }} for the current kernel.
       # It will also install the proper modules on the next kernel update.
-      pkg: ['htop', 'tmux', 'jq', 'libssl-dev', 'build-essential', 'pkg-config', 'clang', 'linux-generic', 'linux-modules-extra-{{ ansible_kernel }}']
+      pkg: ['htop', 'tmux', 'jq', 'libssl-dev', 'build-essential', 'pkg-config', 'clang', 'linux-generic']
       state: 'present'
       update_cache: yes
       cache_valid_time: 3600
+
+  - name: Install linux-modules-extra for kernels below 6.15
+    apt:
+      pkg: ['linux-modules-extra-{{ ansible_kernel }}']
+      state: 'present'
+    when: ansible_kernel.split('-')[0] is version('6.15', '<')
 
   - name: Configure firefox profile for vagrant user
     import_tasks: tasks/firefox.yml
