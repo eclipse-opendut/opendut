@@ -16,6 +16,7 @@ Always create a database backup before upgrading CARL.
   since the recommended temporary mitigation of disabling the password reset functionality is the default anyways.  
   Updating to this version is only urgent, if you have reconfigured Keycloak to offer a password reset.
   If you cannot update the openDuT version right away, you can also update Keycloak separately by using the up-to-date deployment scripts.
+* Updated NetBird to version `0.79.0`.
 
 
 ## [v0.10.2] - 2026-06-11
