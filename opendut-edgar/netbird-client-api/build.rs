@@ -43,7 +43,9 @@ fn main() -> anyhow::Result<()> {
 
     tonic_prost_build::configure()
         .build_server(false)
-        .type_attribute(".", "#[allow(clippy::all)]")
+        // Generated protobuf code may contain unused types/fields depending on which messages
+        // are actually used by this crate. Suppress dead_code warnings for the generated code.
+        .type_attribute(".", "#[allow(clippy::all, dead_code)]")
         .compile_protos(&protos, &includes)?;
 
     Ok(())
