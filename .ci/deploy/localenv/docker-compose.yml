@@ -157,7 +157,7 @@ services:
   # Public web entrypoint exposed to end users
   traefik:
     container_name: opendut-traefik
-    image: docker.io/traefik:v3.6.8
+    image: docker.io/traefik:v3.7.13
     restart: unless-stopped
     command:
       - --api.insecure=true
