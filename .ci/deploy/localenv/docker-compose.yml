@@ -446,6 +446,8 @@ services:
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ID=opendut-carl-client
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_SECRET
       - OPENDUT_CARL_NETWORK_OIDC_LEA_ISSUER_URL=https://${OPENDUT_DOMAIN_AUTH}/realms/opendut/
+      # opendut-admin-api must be requested at login so CARL's scope enforcement allows LEA's gRPC calls.
+      - OPENDUT_CARL_NETWORK_OIDC_LEA_SCOPES=openid,profile,email,opendut-admin-api
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_URL=https://${OPENDUT_DOMAIN_AUTH}/realms/opendut/
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_REMOTE_URL=https://${OPENDUT_DOMAIN_AUTH}/realms/opendut/
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_ADMIN_URL=https://${OPENDUT_DOMAIN_AUTH}/admin/realms/opendut/
@@ -492,7 +494,7 @@ services:
       - OPENDUT_CLEO_NETWORK_OIDC_CLIENT_ID=opendut-cleo-client
       - OPENDUT_CLEO_NETWORK_OIDC_CLIENT_SECRET
       - OPENDUT_CLEO_NETWORK_OIDC_CLIENT_ISSUER_URL=https://${OPENDUT_DOMAIN_AUTH}/realms/opendut/
-      - OPENDUT_CLEO_NETWORK_OIDC_CLIENT_SCOPES=
+      - OPENDUT_CLEO_NETWORK_OIDC_CLIENT_SCOPES=opendut-admin-api
       - OPENDUT_CLEO_NETWORK_TLS_CA=${OPENDUT_CERT_CA_PATH}
       - SSL_CERT_FILE=${OPENDUT_CERT_CA_PATH}
     volumes:
