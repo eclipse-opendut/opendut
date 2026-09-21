@@ -4,7 +4,10 @@
   hosts: backend
   vars:
     apply_file: "{{ inventory_dir }}/{{ cleo_apply_dir }}/{{ ansible_host }}.yaml"
+  tags: cleo_apply
   tasks:
+    - name: Looking for cleo-apply file here
+      debug: msg="{{ apply_file }}"
     - name: Include cleo-apply playbook
       include_tasks: "tasks/edge/cleo_apply.yaml"
       when: apply_file is exists
