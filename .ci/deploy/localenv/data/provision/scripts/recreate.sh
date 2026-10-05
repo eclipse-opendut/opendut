@@ -13,7 +13,6 @@ required_vars=(
 	OPENDUT_DOMAIN_NETBIRD_RELAY
 	OPENDUT_DOMAIN_NETBIRD_API
 	OPENDUT_DOMAIN_SIGNAL
-	OPENDUT_DOMAIN_NGINX_WEBDAV
 	OPENDUT_DOMAIN_OPENTELEMETRY
 	OPENDUT_DOMAIN_MONITORING
 )
@@ -34,7 +33,6 @@ done
 /scripts/generate-certificate.sh "${OPENDUT_DOMAIN_NETBIRD_API}"
 /scripts/generate-certificate.sh "${OPENDUT_DOMAIN_SIGNAL}"
 /scripts/generate-certificate.sh "${OPENDUT_DOMAIN_CARL}"
-/scripts/generate-certificate.sh "${OPENDUT_DOMAIN_NGINX_WEBDAV}"
 /scripts/generate-certificate.sh "${OPENDUT_DOMAIN_OPENTELEMETRY}"
 /scripts/generate-certificate.sh "${OPENDUT_DOMAIN_MONITORING}"
 
@@ -50,7 +48,6 @@ done
 /scripts/generate-certificate.sh "${OPENDUT_DOMAIN_NETBIRD_API}" "intermediate-ca" "deploy-intermediate"
 /scripts/generate-certificate.sh "${OPENDUT_DOMAIN_SIGNAL}" "intermediate-ca" "deploy-intermediate"
 /scripts/generate-certificate.sh "${OPENDUT_DOMAIN_CARL}" "intermediate-ca" "deploy-intermediate"
-/scripts/generate-certificate.sh "${OPENDUT_DOMAIN_NGINX_WEBDAV}" "intermediate-ca" "deploy-intermediate"
 /scripts/generate-certificate.sh "${OPENDUT_DOMAIN_OPENTELEMETRY}" "intermediate-ca" "deploy-intermediate"
 /scripts/generate-certificate.sh "${OPENDUT_DOMAIN_MONITORING}" "intermediate-ca" "deploy-intermediate"
 

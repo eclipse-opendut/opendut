@@ -13,8 +13,6 @@ ADD --checksum=sha256:01beb201d2045c5e548d012bde9b6ae6113392a57bbea7b3e81131aac9
     /usr/bin/systemctl
 RUN chmod +x /usr/bin/systemctl
 
-COPY ./.ci/deploy/testenv/edgar/test_execution_container /opt/test_execution_container
-
 
 RUN mkdir /tmp/cannelloni
 WORKDIR /tmp/cannelloni
