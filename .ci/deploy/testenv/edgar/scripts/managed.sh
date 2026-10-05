@@ -65,12 +65,6 @@ pre_flight_tasks() {
   ip link add dut1local type veth peer name dut1
   ip link set dev dut1 up
   ip link set dev dut1local up
-
-  if [ "$1" == "leader" ]; then
-    /usr/local/bin/start-docker.sh
-    echo "Building Docker image for Nmap test"
-    docker build --network=host --tag "nmap-test" /opt/test_execution_container
-  fi
 }
 
 pre_flight_tasks "$1"

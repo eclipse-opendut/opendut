@@ -44,7 +44,6 @@ services:
       - OPENDUT_DOMAIN_NETBIRD_API
       - OPENDUT_DOMAIN_NETBIRD_RELAY
       - OPENDUT_DOMAIN_SIGNAL
-      - OPENDUT_DOMAIN_NGINX_WEBDAV
       - OPENDUT_DOMAIN_OPENTELEMETRY
       - OPENDUT_DOMAIN_MONITORING
     volumes:
@@ -190,8 +189,6 @@ services:
       - OPENDUT_NETBIRD_NETWORK_TLS_KEY
       - OPENDUT_NETBIRD_RELAY_NETWORK_TLS_CERTIFICATE
       - OPENDUT_NETBIRD_RELAY_NETWORK_TLS_KEY
-      - OPENDUT_NGINX_WEBDAV_NETWORK_TLS_CERTIFICATE
-      - OPENDUT_NGINX_WEBDAV_NETWORK_TLS_KEY
       - OPENDUT_MONITORING_NETWORK_TLS_CERTIFICATE
       - OPENDUT_MONITORING_NETWORK_TLS_KEY
       - OPENDUT_OPENTELEMETRY_NETWORK_TLS_CERTIFICATE
@@ -503,34 +500,6 @@ services:
     networks:
       - opendut_local
 
-  nginx-webdav:
-    container_name: opendut-nginx-webdav
-    build:
-      context: ../../..
-      dockerfile: ./.ci/deploy/localenv/data/nginx-webdav/Dockerfile
-    restart: unless-stopped
-    depends_on:
-      traefik:
-        condition: service_started
-    volumes:
-      - opendut_nginx-webdav:/media/data
-    healthcheck:
-      <<: *common-healthcheck-params
-      test: [ "CMD-SHELL", "curl --fail --silent --output /dev/null --noproxy '*' http://localhost || exit 1" ]
-    deploy:
-      mode: replicated
-      replicas: ${OPENDUT_INSECURE_WEBDAV_ENABLED:-0}
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.nginx-webdav.tls=true
-      - traefik.http.routers.nginx-webdav.rule=Host(`${OPENDUT_DOMAIN_NGINX_WEBDAV}`)
-      - traefik.http.services.nginx-webdav.loadbalancer.server.port=80
-      - logging=alloy
-      - logging_job=nginx-webdav
-
-    networks:
-      - opendut_local
-
 
   prometheus:
     container_name: opendut-prometheus
@@ -728,7 +697,6 @@ volumes:
   netbird-mgmt-config:
   netbird-signal:
   carl-config:
-  opendut_nginx-webdav:
   tempo-data:
   loki-data:
   grafana-storage:

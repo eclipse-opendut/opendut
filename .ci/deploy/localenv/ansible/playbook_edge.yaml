@@ -31,7 +31,6 @@
           {{ backend_ip }} netbird-api.opendut.local
           {{ backend_ip }} netbird-relay.opendut.local
           {{ backend_ip }} signal.opendut.local
-          {{ backend_ip }} nginx-webdav.opendut.local
           {{ backend_ip }} {{ hostvars[backend]['hostname_opentelemetry'] }}
           {{ backend_ip }} monitoring.opendut.local
 
