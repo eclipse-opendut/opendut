@@ -60,29 +60,6 @@ spec:
       interface-id: de7d7533-011a-4823-bc51-387a3518166c
       tags:
         - simulation
-  executors:
-    - id: da6ad5f7-ea45-4a11-aadf-4408bdb69e8e
-      kind: container
-      parameters:
-        engine: podman
-        name: nmap-scan
-        image: debian
-        volumes:
-        - /etc/
-        - /opt/
-        devices:
-        - ecu1
-        - restbus-sim1
-        envs:
-        - name: VAR_NAME
-          value: varValue
-        ports:
-        - 8080:8080
-        command: nmap
-        command-args:
-        - -A
-        - -T4
-        - scanme.nmap.org
 ---
 kind: ClusterDescriptor
 version: v1

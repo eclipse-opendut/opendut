@@ -64,7 +64,6 @@ It will prompt you for a Setup-String. You can get a Setup-String from LEA or CL
 This will configure your operating system and start the *EDGAR Service*, which will receive its configuration from *CARL*.
 
 ---
-
 ## Self-Hosted Backend Server
 
 ### DNS
@@ -76,7 +75,6 @@ by appending entries like this (replace `123.456.789.101` with your server's IP 
 123.456.789.101 netbird-api.opendut.local
 123.456.789.101 netbird-relay.opendut.local
 123.456.789.101 signal.opendut.local
-123.456.789.101 nginx-webdav.opendut.local
 123.456.789.101 opentelemetry.opendut.local
 123.456.789.101 monitoring.opendut.local
 ```

@@ -39,7 +39,6 @@ frame Peer {
     agent CanManager
   }
   node "Network Interfaces" as Interfaces
-  node Executor
 }
 node CARL
 node "VPN Management Server"
@@ -51,7 +50,6 @@ CARL -> "VPN Management Server"
 
 EdgarService --> NetworkInterfaceManager
 EdgarService --> CanManager
-EdgarService --> Executor
 NetworkInterfaceManager --> Interfaces : GRE & Bridge
 CanManager --> Interfaces : CAN
 VpnClient --> Interfaces : WireGuard

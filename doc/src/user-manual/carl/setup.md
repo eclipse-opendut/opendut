@@ -31,7 +31,6 @@ This assumes that the system, where OpenDuT was deployed, has the IP address `19
     192.168.56.10 signal.opendut.local
     192.168.56.10 opentelemetry.opendut.local
     192.168.56.10 monitoring.opendut.local
-    192.168.56.10 nginx-webdav.opendut.local
     ```
 
 5. Start the local test environment using Docker Compose.

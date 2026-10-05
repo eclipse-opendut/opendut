@@ -19,7 +19,6 @@
     - [Role-based Access Control (RBAC)](user-manual/authentication/rbac.md)
   - [Configuration](user-manual/configuration.md)
   - [Hardware Setup](user-manual/hardware-setup.md)
-  - [Test Execution](user-manual/test-execution.md)
 - [Developer Manual](development/index.md)
   - [Getting Started](development/getting-started.md)
   - [Starting Applications](development/starting-applications.md)

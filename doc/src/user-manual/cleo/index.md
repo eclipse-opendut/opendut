@@ -9,7 +9,6 @@ CLEO can currently access the following resources:
 - Cluster deployments 
 - Peers
 - Devices (DuTs)
-- Container executors
 
 Every resource can be created, listed, described and deleted.
 Some have additional features such as an option to generate a setup-key or search through them.
