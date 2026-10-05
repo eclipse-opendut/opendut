@@ -6,7 +6,6 @@ import "opendut/model/topology/topology.proto";
 import "opendut/model/util/net.proto";
 import "opendut/model/util/uuid.proto";
 import "opendut/model/vpn/vpn.proto";
-import "opendut/model/peer/executor/executor.proto";
 
 
 message PeerId {
@@ -32,7 +31,6 @@ message PeerDescriptor {
   opendut.model.peer.PeerLocation location = 3;
   opendut.model.peer.PeerNetworkDescriptor network = 4;
   opendut.model.topology.Topology topology = 5;
-  opendut.model.peer.executor.ExecutorDescriptors executors = 6;
 }
 
 message PeerSetup {

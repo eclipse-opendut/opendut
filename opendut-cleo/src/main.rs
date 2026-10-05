@@ -104,8 +104,6 @@ enum ListResource {
     Peers(commands::peer::list::ListPeersCli),
     #[command(alias="device")]
     Devices(commands::device::list::ListDevicesCli),
-    #[command(alias="container-executor")]
-    ContainerExecutors(commands::executor::list::ListContainerExecutorCli),
 }
 
 #[derive(clap::Args)]
@@ -136,7 +134,6 @@ enum CreateResource {
     #[command(alias="cluster-configuration")]
     ClusterDescriptor(commands::cluster_descriptor::create::CreateClusterDescriptorCli),
     Peer(commands::peer::create::CreatePeerCli),
-    ContainerExecutor(commands::executor::create::CreateContainerExecutorCli),
     NetworkInterface(commands::network_interface::create::CreateNetworkInterfaceCli),
     Device(commands::device::create::CreateDeviceCli),
     /// Generate a random UUID, which can be used for assigning a new ID to a resource
@@ -162,7 +159,6 @@ enum DeleteResource {
     #[command(alias="cluster-configuration")]
     ClusterDescriptor(commands::cluster_descriptor::delete::DeleteClusterDescriptorCli),
     Peer(commands::peer::delete::DeletePeerCli),
-    ContainerExecutor(commands::executor::delete::DeleteContainerExecutorCli),
     NetworkInterface(commands::network_interface::delete::DeleteNetworkInterfaceCli),
     Device(commands::device::delete::DeleteDeviceCli),
 }
@@ -280,9 +276,6 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
                 ListResource::Peers(implementation) => {
                     implementation.execute(&mut carl, output).await?;
                 }
-                ListResource::ContainerExecutors(implementation) => {
-                    implementation.execute(&mut carl, output).await?;
-                }
                 ListResource::Devices(implementation) => {
                     implementation.execute(&mut carl, output).await?;
                 }
@@ -303,10 +296,6 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
                     implementation.execute(&mut carl, output).await?;
                 }
                 CreateResource::Peer(implementation) => {
-                    let mut carl = create_carl_client(settings).await;
-                    implementation.execute(&mut carl, output).await?;
-                }
-                CreateResource::ContainerExecutor(implementation) => {
                     let mut carl = create_carl_client(settings).await;
                     implementation.execute(&mut carl, output).await?;
                 }
@@ -355,9 +344,6 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
                     implementation.execute(&mut carl).await?;
                 }
                 DeleteResource::Peer(implementation) => {
-                    implementation.execute(&mut carl).await?;
-                }
-                DeleteResource::ContainerExecutor(implementation) => {
                     implementation.execute(&mut carl).await?;
                 }
                 DeleteResource::NetworkInterface(implementation) => {

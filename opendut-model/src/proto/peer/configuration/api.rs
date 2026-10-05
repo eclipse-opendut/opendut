@@ -11,7 +11,6 @@ conversion! {
 
     fn from(value: Model) -> Proto {
         Proto {
-            executors: value.executors.into_iter().map(From::from).collect(),
             ethernet_bridges: value.ethernet_bridges.into_iter().map(From::from).collect(),
             device_interfaces: value.device_interfaces.into_iter().map(From::from).collect(),
             gre_interfaces: value.gre_interfaces.into_iter().map(From::from).collect(),
@@ -26,7 +25,6 @@ conversion! {
 
     fn try_from(value: Proto) -> ConversionResult<Model> {
         Ok(Model {
-            executors: value.executors.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
             ethernet_bridges: value.ethernet_bridges.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
             device_interfaces: value.device_interfaces.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
             gre_interfaces: value.gre_interfaces.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
@@ -90,11 +88,6 @@ parameter_conversion! {
 parameter_conversion! {
     type ModelParameter = crate::peer::configuration::parameter::EthernetBridge;
     type ProtoParameter = PeerConfigurationParameterEthernetBridge;
-}
-
-parameter_conversion! {
-    type ModelParameter = crate::peer::configuration::parameter::Executor;
-    type ProtoParameter = PeerConfigurationParameterExecutor;
 }
 
 parameter_conversion! {

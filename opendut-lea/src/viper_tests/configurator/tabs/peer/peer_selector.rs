@@ -44,7 +44,7 @@ pub fn PeerSelector(user_test_run_descriptor: RwSignal<UserViperTestRunDescripto
                 });
 
             let rows = peers.iter().map(|peer_descriptor| {
-                let PeerDescriptor { id, name, location: _location, network: _network, topology, executors: _executors } = peer_descriptor;
+                let PeerDescriptor { id, name, location: _location, network: _network, topology } = peer_descriptor;
                 let id = id.to_owned();
                 let name = name.value().to_owned();
 

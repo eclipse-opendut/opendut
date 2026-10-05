@@ -38,4 +38,3 @@ spec:
         interface-id: fc47ccd8-0dfc-4eb6-a3de-aff43b88b568
         tags:
           - test-environment-cluster
-  executors: []

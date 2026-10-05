@@ -1,5 +1,3 @@
-use opendut_model::peer::executor::container::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine};
-use opendut_model::peer::executor::{ExecutorDescriptor, ExecutorDescriptors, ExecutorId, ExecutorKind, ResultsUrl};
 use opendut_model::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
 use opendut_model::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag, Topology};
 use opendut_model::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
@@ -117,40 +115,6 @@ pub fn peer_descriptor() -> anyhow::Result<PeerDescriptor> {
                     ],
                 },
             ],
-        },
-        executors: ExecutorDescriptors {
-            executors: vec![
-                ExecutorDescriptor {
-                    id: ExecutorId::random(),
-                    kind: ExecutorKind::Container {
-                        engine: Engine::Podman,
-                        name: ContainerName::try_from("container-name")?,
-                        image: ContainerImage::try_from("container-image")?,
-                        volumes: vec![
-                            ContainerVolume::try_from("container-volume")?,
-                        ],
-                        devices: vec![
-                            ContainerDevice::try_from("container-device")?,
-                        ],
-                        envs: vec![
-                            ContainerEnvironmentVariable::new("env-name", "env-value")?,
-                        ],
-                        ports: vec![
-                            ContainerPortSpec::try_from("8080:8080")?,
-                        ],
-                        command: ContainerCommand::try_from("ls")?,
-                        args: vec![
-                            ContainerCommandArgument::try_from("-la")?,
-                        ],
-                    },
-                    results_url: None,
-                },
-                ExecutorDescriptor {
-                    id: ExecutorId::random(),
-                    kind: ExecutorKind::Executable,
-                    results_url: Some(ResultsUrl::try_from("https://example.com/")?),
-                },
-            ]
         },
     })
 }

@@ -5,7 +5,6 @@ use opendut_util::conversion;
 use super::util::{NetworkInterfaceDescriptor, NetworkInterfaceName};
 
 pub mod configuration;
-pub mod executor;
 
 opendut_util::include_proto!("opendut.model.peer");
 
@@ -112,7 +111,6 @@ conversion! {
             location: Some(value.location.unwrap_or_default().into()),
             network: Some(value.network.into()),
             topology: Some(value.topology.into()),
-            executors: Some(value.executors.into()),
         }
     }
 
@@ -133,9 +131,6 @@ conversion! {
         let topology: crate::topology::Topology = extract!(value.topology)?
             .try_into()?;
 
-        let executors = extract!(value.executors)?
-            .try_into()?;
-
         //validate integrity
         for device in &topology.devices {
             if network.interfaces.iter().any(|interface| interface.id == device.interface).not() {
@@ -148,7 +143,7 @@ conversion! {
             }
         }
 
-        Ok(Model { id, name, location, network, topology, executors })
+        Ok(Model { id, name, location, network, topology })
     }
 }
 

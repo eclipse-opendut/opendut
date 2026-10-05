@@ -2,18 +2,16 @@ use crate::app::use_app_globals;
 use crate::components::use_active_tab;
 use crate::components::{BasePageContainer, Breadcrumb, UserInputError, UserInputValue};
 use crate::peers::configurator::components::Controls;
-use crate::peers::configurator::tabs::{DevicesTab, ExecutorTab, GeneralTab, NetworkTab, SetupTab, TabIdentifier};
+use crate::peers::configurator::tabs::{DevicesTab,  GeneralTab, NetworkTab, SetupTab, TabIdentifier};
 use crate::routing::{navigate_to, WellKnownRoutes};
 use crate::util;
 use leptos::either::Either;
 use leptos::prelude::*;
-use opendut_model::peer::executor::{ExecutorDescriptor, ExecutorKind};
 use opendut_model::peer::PeerId;
 use leptos_router::hooks::{use_navigate, use_params_map};
 use opendut_lea_components::LoadingSpinner;
 use opendut_lea_components::tabs::{Tab, Tabs};
 use crate::peers::configurator::types::devices::UserDeviceConfiguration;
-use crate::peers::configurator::types::executor::{UserContainerEnv, UserPeerExecutor, UserPeerExecutorKind};
 use crate::peers::configurator::types::network::{UserNetworkInterface, UserPeerNetwork};
 use crate::peers::configurator::types::UserPeerDescriptor;
 use opendut_model::peer::state::PeerState;
@@ -62,7 +60,6 @@ pub fn PeerConfigurator() -> impl IntoView {
             bridge_name: UserInputValue::Right(String::from("")),
         },
         is_new: true,
-        executors: Vec::new(),
     });
 
     let peer_descriptor_resource = LocalResource::new(move || {
@@ -104,74 +101,6 @@ pub fn PeerConfigurator() -> impl IntoView {
                             RwSignal::new(UserNetworkInterface::from(interface))
                         })
                         .collect();
-                    for executor in configuration.executors.executors {
-                        let ExecutorDescriptor { id, kind, results_url } = executor;
-
-                        let kind = match kind {
-                            ExecutorKind::Executable => todo!(),
-                            ExecutorKind::Container {
-                                engine,
-                                name,
-                                image,
-                                volumes,
-                                devices,
-                                envs,
-                                ports,
-                                command,
-                                args,
-                            } => {
-                                let volumes = volumes.into_iter()
-                                    .map(|volume| {
-                                        RwSignal::new(UserInputValue::Right(volume.to_string()))
-                                    })
-                                    .collect::<Vec<_>>();
-                                let devices = devices.into_iter()
-                                    .map(|device| {
-                                        RwSignal::new(UserInputValue::Right(device.to_string()))
-                                    })
-                                    .collect::<Vec<_>>();
-                                let envs = envs.into_iter()
-                                    .map(|env| {
-                                        let (name, value) = env.into();
-                                        RwSignal::new(UserContainerEnv {
-                                            name: UserInputValue::Right(name),
-                                            value: UserInputValue::Right(value)
-                                        })
-                                    })
-                                    .collect::<Vec<_>>();
-                                let ports = ports.into_iter()
-                                    .map(|port| {
-                                        RwSignal::new(UserInputValue::Right(port.to_string()))
-                                    })
-                                    .collect::<Vec<_>>();
-                                let args = args.into_iter()
-                                    .map(|arg| {
-                                        RwSignal::new(UserInputValue::Right(arg.to_string()))
-                                    })
-                                    .collect::<Vec<_>>();
-                                UserPeerExecutorKind::Container {
-                                    engine,
-                                    name: UserInputValue::Right(name.into()),
-                                    image: UserInputValue::Right(image.to_string()),
-                                    volumes,
-                                    devices,
-                                    envs,
-                                    ports,
-                                    command: UserInputValue::Right(command.into()),
-                                    args,
-                                }
-                            }
-                        };
-
-                        user_configuration.executors.push(
-                            RwSignal::new(UserPeerExecutor {
-                                id,
-                                kind,
-                                results_url: UserInputValue::Right(results_url.map(|s| s.to_string()).unwrap_or(String::new())),
-                                is_collapsed: true
-                            })
-                        );
-                    }
                 });
                 if let Ok(state) = carl.peers.get_peer_state(peer_id).await {
                     peer_state.set(state);
@@ -259,11 +188,6 @@ pub fn PeerConfigurator() -> impl IntoView {
             ).with_is_error(Signal::derive(move || !user_peer_descriptor.read().valid_devices_tab())),
 
             Tab::from_title_and_href(
-                String::from("Executor"),
-                TabIdentifier::Executor.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || !user_peer_descriptor.read().valid_executor_tab())),
-
-            Tab::from_title_and_href(
                 String::from("Setup"),
                 TabIdentifier::Setup.as_str().to_owned()
             ).with_is_hidden(setup_disabled),
@@ -296,9 +220,6 @@ pub fn PeerConfigurator() -> impl IntoView {
                         </div>
                         <div class=("is-hidden", move || TabIdentifier::Devices != active_tab.get())>
                             <DevicesTab user_peer_descriptor />
-                        </div>
-                        <div class=("is-hidden", move || TabIdentifier::Executor != active_tab.get())>
-                            <ExecutorTab user_peer_descriptor />
                         </div>
                         <div class=("is-hidden", move || TabIdentifier::Setup != active_tab.get())>
                             <SetupTab peer_configuration=user_peer_descriptor.read_only() />

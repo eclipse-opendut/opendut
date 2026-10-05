@@ -129,7 +129,6 @@ fn clarify_license_information(package: SpdxItemPackages) -> SpdxItemPackages {
                 | "BSD-3-Clause"
                 | "BSD-3-Clause AND MIT"
                 | "BSL-1.0"
-                | "bzip2-1.0.6"
                 | "CC0-1.0"
                 | "CDLA-Permissive-2.0"
                 | "ISC"

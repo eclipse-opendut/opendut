@@ -38,20 +38,3 @@ spec:
         interface-id: 850d6dff-8a98-430c-bfcb-fcba19d543be
         tags:
           - test-environment-cluster
-
-  executors:
-    - id: a0023ebc-7d10-4a65-977f-e41c97f9a7ab
-      kind: container
-      parameters:
-        engine: docker
-        name: nmap-test
-        image: nmap-test
-        volumes: []
-        devices: []
-        envs: []
-        ports: []
-        command: ""
-        command-args:
-          - -A
-          - -T4
-          - 127.0.0.1

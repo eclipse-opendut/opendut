@@ -13,8 +13,6 @@ pub(crate) mod testing {
     use opendut_carl_api::carl::broker::{DownstreamMessage, DownstreamMessagePayload, UpstreamMessage, stream_header};
     use opendut_model::cluster::{ClusterDescriptor, ClusterId, ClusterName};
     use opendut_model::peer::configuration::PeerConfiguration;
-    use opendut_model::peer::executor::*;
-    use opendut_model::peer::executor::container::*;
     use opendut_model::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
     use opendut_model::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
     use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
@@ -86,25 +84,6 @@ use tokio::sync::mpsc;
                         }
                     ]
                 },
-                executors: ExecutorDescriptors {
-                    executors: vec![
-                        ExecutorDescriptor {
-                            id: ExecutorId::random(),
-                            kind: ExecutorKind::Container {
-                                engine: Engine::Docker,
-                                name: ContainerName::Empty,
-                                image: ContainerImage::try_from("testUrl").unwrap(),
-                                volumes: vec![],
-                                devices: vec![],
-                                envs: vec![],
-                                ports: vec![],
-                                command: ContainerCommand::Default,
-                                args: vec![],
-                            },
-                            results_url: None,
-                        }
-                    ],
-                }
             };
             Self {
                 id,

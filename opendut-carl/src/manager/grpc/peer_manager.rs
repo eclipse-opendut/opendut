@@ -352,7 +352,6 @@ mod tests {
     use crate::resource::manager::ResourceManager;
     use crate::settings::vpn::Vpn;
     use opendut_carl_api::proto::services;
-    use opendut_model::peer::executor::{container::{ContainerCommand, ContainerImage, ContainerName, Engine}, ExecutorDescriptor, ExecutorDescriptors, ExecutorId, ExecutorKind};
     use opendut_model::peer::{PeerLocation, PeerName, PeerNetworkDescriptor};
     use opendut_model::proto;
     use opendut_model::topology::Topology;
@@ -388,25 +387,6 @@ mod tests {
                 bridge_name: Some(NetworkInterfaceName::try_from("br-opendut-1").unwrap()),
             },
             topology: Topology::default(),
-            executors: ExecutorDescriptors {
-                executors: vec![
-                    ExecutorDescriptor {
-                        id: ExecutorId::random(),
-                        kind: ExecutorKind::Container {
-                            engine: Engine::Docker,
-                            name: ContainerName::Empty,
-                            image: ContainerImage::try_from("testUrl").unwrap(),
-                            volumes: vec![],
-                            devices: vec![],
-                            envs: vec![],
-                            ports: vec![],
-                            command: ContainerCommand::Default,
-                            args: vec![],
-                        },
-                        results_url: None,
-                    }
-                ],
-            },
         };
 
         let create_peer_reply = testee.store_peer_descriptor(Request::new(

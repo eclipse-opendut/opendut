@@ -1,5 +1,4 @@
 use opendut_model::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
-use opendut_model::peer::executor::ExecutorDescriptors;
 use opendut_model::topology::Topology;
 use opendut_model::util::net::NetworkInterfaceName;
 
@@ -15,8 +14,5 @@ pub fn create_peer_descriptor(peer_id: PeerId) -> PeerDescriptor {
         topology: Topology {
             devices: vec![],
         },
-        executors: ExecutorDescriptors {
-            executors: vec![],
-        }
     }
 }

@@ -154,9 +154,6 @@ fn validate_peer_configuration(peer_descriptor: PeerDescriptor, check_remote_pee
                         })
                     ),
                 }),
-                executors: matches_pattern!(ParameterField {
-                    values: is_empty(),
-                }),
                 gre_interfaces: matches_pattern!(ParameterField {
                     values: has_entry(
                         gre_interface.parameter_identifier(),

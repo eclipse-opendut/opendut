@@ -135,7 +135,6 @@ mod test {
     use googletest::prelude::*;
 
     use opendut_model::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
-    use opendut_model::peer::executor::ExecutorDescriptors;
     use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
     use super::*;
@@ -155,9 +154,6 @@ mod test {
                 bridge_name: Some(NetworkInterfaceName::try_from("br-opendut-1").unwrap())
             },
             topology: Default::default(),
-            executors: ExecutorDescriptors {
-                executors: vec![]
-            }
         };
         assert_that!(
             add_peer_status(peer.clone(), PeerState::default()),

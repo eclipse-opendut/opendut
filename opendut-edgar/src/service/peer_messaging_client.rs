@@ -24,12 +24,10 @@ use crate::service::can::can_manager::CanManager;
 use crate::service::network_interface::manager::{NetworkInterfaceManager, NetworkInterfaceManagerRef};
 use crate::service::network_metrics::manager::{NetworkMetricsManager, NetworkMetricsManagerRef};
 use crate::service::peer_configuration::{ApplyPeerConfigurationParams, NetworkInterfaceManagement};
-use crate::service::test_execution::executor_manager::{ExecutorManager, ExecutorManagerRef};
 
 pub struct PeerMessagingClient {
     self_id: PeerId,
     network_interface_management: NetworkInterfaceManagement,
-    executor_manager: ExecutorManagerRef,
     metrics_manager: NetworkMetricsManagerRef,
     carl_disconnect_timeout: Duration,
     tx_peer_configuration: mpsc::Sender<ApplyPeerConfigurationParams>,
@@ -47,8 +45,6 @@ impl PeerMessagingClient {
         info!("Started with ID <{self_id}> and configuration: {settings:?}");
 
         let carl_disconnect_timeout = Duration::from_millis(settings.get::<u64>("carl.disconnect.timeout.ms")?);
-
-        let executor_manager: ExecutorManagerRef = ExecutorManager::create();
 
         let network_interface_management = {
             let network_interface_management_enabled = settings.get::<bool>("network.interface.management.enabled")?;
@@ -70,7 +66,6 @@ impl PeerMessagingClient {
         Ok(PeerMessagingClient {
             self_id,
             network_interface_management,
-            executor_manager,
             metrics_manager,
             carl_disconnect_timeout,
             tx_peer_configuration,
@@ -269,7 +264,6 @@ impl PeerMessagingClient {
         let apply_config_params = ApplyPeerConfigurationParams {
             peer_configuration: configuration,
             network_interface_management: self.network_interface_management.clone(),
-            executor_manager: Arc::clone(&self.executor_manager),
             metrics_manager: Arc::clone(&self.metrics_manager),
             #[cfg(feature = "viper")]
             viper_run_manager: Arc::clone(&self.viper_run_manager),

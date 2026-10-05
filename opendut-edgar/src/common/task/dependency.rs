@@ -35,7 +35,6 @@ impl Hash for ParameterVariantWithDependencies {
         match &self.parameter {
             ParameterVariant::DeviceInterface(parameter) => parameter.id.hash(state),
             ParameterVariant::EthernetBridge(parameter) => parameter.id.hash(state),
-            ParameterVariant::Executor(parameter) => parameter.id.hash(state),
             ParameterVariant::GreInterface(parameter) => parameter.id.hash(state),
             ParameterVariant::JoinedInterface(parameter) => parameter.id.hash(state),
             ParameterVariant::RemotePeerConnectionCheck(parameter) => parameter.id.hash(state),

@@ -48,11 +48,6 @@ impl ParameterValue for parameter::EthernetBridge {
         ParameterId(id)
     }
 }
-impl ParameterValue for parameter::Executor {
-    fn parameter_identifier(&self) -> ParameterId {
-        ParameterId(self.descriptor.id.uuid)
-    }
-}
 
 impl ParameterValue for parameter::GreInterfaceConfig {
     fn parameter_identifier(&self) -> ParameterId {
@@ -100,27 +95,24 @@ mod tests {
     use std::collections::HashSet;
     use super::*;
     use crate::peer::configuration::{ParameterTarget, PeerConfiguration};
-    use crate::peer::executor::{ExecutorDescriptor, ExecutorId, ExecutorKind};
+    use crate::util::net::NetworkInterfaceName;
 
     #[test]
     fn insert_value_in_peer_configuration() {
         let mut peer_configuration = PeerConfiguration::default();
-
-        let value = parameter::Executor {
-            descriptor: ExecutorDescriptor {
-                id: ExecutorId::random(),
-                kind: ExecutorKind::Executable,
-                results_url: None
-            }
+        
+        let value = parameter::CanBridge {
+            name: NetworkInterfaceName::try_from("eth0").unwrap(),
         };
+        
         let target = ParameterTarget::Present;
-        peer_configuration.executors.set(value.clone(), target, HashSet::new());
+        peer_configuration.can_bridges.set(value.clone(), target, HashSet::new());
 
-        assert_eq!(peer_configuration.executors.len(), 1);
+        assert_eq!(peer_configuration.can_bridges.len(), 1);
 
-        let all_executor_parameters = peer_configuration.executors.into_iter().collect::<Vec<_>>();
-        let executor_parameter = all_executor_parameters.first().unwrap();
-        assert_eq!(executor_parameter.value, value);
-        assert_eq!(executor_parameter.target, target);
+        let all_can_bridges_parameters = peer_configuration.can_bridges.into_iter().collect::<Vec<_>>();
+        let can_bridges_parameter = all_can_bridges_parameters.first().unwrap();
+        assert_eq!(can_bridges_parameter.value, value);
+        assert_eq!(can_bridges_parameter.target, target);
     }
 }

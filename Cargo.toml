@@ -192,7 +192,6 @@ web-sys = "0.3"
 which = "8.0"
 wit-bindgen = "0.51"
 x509-parser = "0.18"
-zip = "8"
 
 
 [workspace.metadata.ci]

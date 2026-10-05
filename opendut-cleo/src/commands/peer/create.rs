@@ -3,7 +3,6 @@ use console::Style;
 use crate::{CreateOutputFormat};
 use opendut_carl_api::carl::CarlClient;
 use opendut_model::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
-use opendut_model::peer::executor::{ExecutorDescriptors};
 use opendut_model::util::net::NetworkInterfaceName;
 
 /// Create a peer
@@ -42,9 +41,6 @@ impl CreatePeerCli {
                 bridge_name,
             },
             topology: Default::default(),
-            executors: ExecutorDescriptors {
-                executors: vec![],
-            }
         };
 
         create_peer(descriptor, carl, &output).await?;

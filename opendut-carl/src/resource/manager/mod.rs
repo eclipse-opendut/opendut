@@ -267,7 +267,6 @@ mod test {
 
     use super::*;
     use opendut_model::cluster::{ClusterDescriptor, ClusterId, ClusterName};
-    use opendut_model::peer::executor::{container::{ContainerCommand, ContainerImage, ContainerName, Engine}, ExecutorDescriptor, ExecutorDescriptors, ExecutorId, ExecutorKind};
     use opendut_model::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
     use opendut_model::topology::Topology;
     use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
@@ -293,25 +292,6 @@ mod test {
                 bridge_name: Some(NetworkInterfaceName::try_from("br-opendut-1")?),
             },
             topology: Topology::default(),
-            executors: ExecutorDescriptors {
-                executors: vec![
-                    ExecutorDescriptor {
-                        id: ExecutorId::random(),
-                        kind: ExecutorKind::Container {
-                            engine: Engine::Docker,
-                            name: ContainerName::Empty,
-                            image: ContainerImage::try_from("testUrl")?,
-                            volumes: vec![],
-                            devices: vec![],
-                            envs: vec![],
-                            ports: vec![],
-                            command: ContainerCommand::Default,
-                            args: vec![],
-                        },
-                        results_url: None,
-                    }
-                ],
-            }
         };
 
         let cluster_resource_id = ClusterId::random();

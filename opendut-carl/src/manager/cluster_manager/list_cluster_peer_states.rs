@@ -134,7 +134,6 @@ mod tests {
     use super::*;
     use crate::resource::manager::{ResourceManager, ResourceManagerRef};
     use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment, ClusterName};
-    use opendut_model::peer::executor::ExecutorDescriptors;
     use opendut_model::peer::state::PeerConnectionState;
     use opendut_model::peer::{PeerDescriptor, PeerId, PeerName, PeerNetworkDescriptor};
     use opendut_model::topology::DeviceName;
@@ -353,9 +352,6 @@ mod tests {
                         tags: vec![],
                     }
                 ],
-            },
-            executors: ExecutorDescriptors {
-                executors: vec![],
             },
         })
     }
