@@ -151,7 +151,6 @@ fn convert_document_to_model(specification_document: SpecificationDocument) -> c
 mod tests {
     use super::*;
     use googletest::prelude::*;
-    use opendut_model::peer::executor::ExecutorDescriptors;
     use opendut_model::peer::{PeerDescriptor, PeerId, PeerName, PeerNetworkDescriptor};
     use opendut_model::specs::peer::{NetworkDescriptorSpecificationV1, NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, PeerDescriptorSpecification, PeerDescriptorSpecificationV1, TopologySpecificationV1};
     use opendut_model::specs::{Specification, SpecificationDocument, SpecificationMetadata};
@@ -180,7 +179,6 @@ mod tests {
                 location: None,
                 network,
                 topology: TopologySpecificationV1 { devices: vec![] },
-                executors: vec![],
             }))
         };
         
@@ -214,7 +212,6 @@ mod tests {
                 bridge_name: Some(NetworkInterfaceName::try_from("br-opendut")?),
             },
             topology: Topology { devices: vec![] },
-            executors: ExecutorDescriptors { executors: vec![] },
         })
     }
     

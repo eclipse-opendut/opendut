@@ -39,7 +39,6 @@ pub(super) fn update_peer_configuration(
     let PeerConfiguration {
         device_interfaces,
         ethernet_bridges,
-        executors,
         gre_interfaces,
         joined_interfaces,
         remote_peer_connection_checks,
@@ -153,12 +152,6 @@ pub(super) fn update_peer_configuration(
         joined_interfaces.set_all_present(expected_joined_interfaces, joined_interfaces_upstream_dependencies);
     }
 
-    { // Executors
-        let expected_executors = peer_descriptor.executors.executors.into_iter()
-            .map(|descriptor| parameter::Executor { descriptor });
-
-        executors.set_all_present(expected_executors, HashSet::new());
-    }
 
     { //Remote Peer Connection Checks
         if cluster_assignment.leader == peer_descriptor.id {
@@ -271,4 +264,3 @@ fn can_connection_for_follower(
         buffer_timeout_microseconds,
     }
 }
-

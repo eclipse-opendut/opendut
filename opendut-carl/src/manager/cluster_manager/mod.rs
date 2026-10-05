@@ -518,8 +518,7 @@ mod test {
     use googletest::prelude::*;
 
     use opendut_model::cluster::ClusterName;
-    use opendut_model::peer::executor::ExecutorDescriptors;
-use opendut_model::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
+    use opendut_model::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
     use opendut_model::topology::{DeviceDescriptor, DeviceId, DeviceName, Topology};
     use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceId, NetworkInterfaceName};
 
@@ -582,7 +581,6 @@ use opendut_model::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNe
 
             let assert_peer_config_valid = |peer_fixture: &PeerFixture, peer_config: &PeerConfiguration| {
                 assert_eq!(peer_config.device_interfaces.len(), 1);
-                assert_eq!(peer_config.executors.len(), 1);
                 assert_eq!(peer_config.ethernet_bridges.len(), 1);
                 assert_eq!(peer_config.gre_interfaces.len(), 1, "For each ethernet device interface there should be a GRE interface.");
                 assert_eq!(peer_config.joined_interfaces.len(), 2, "Joined interfaces should contain the GRE interface and the ethernet interface.");
@@ -673,7 +671,6 @@ use opendut_model::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNe
                 topology: Topology {
                     devices,
                 },
-                executors: ExecutorDescriptors { executors: vec![] },
             }
         }
 

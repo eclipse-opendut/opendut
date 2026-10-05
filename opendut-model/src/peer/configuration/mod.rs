@@ -11,7 +11,6 @@ pub mod parameter;
 pub struct PeerConfiguration {
     pub device_interfaces: ParameterField<parameter::DeviceInterface>,
     pub ethernet_bridges: ParameterField<parameter::EthernetBridge>,
-    pub executors: ParameterField<parameter::Executor>,
     pub gre_interfaces: ParameterField<parameter::GreInterfaceConfig>,
     pub joined_interfaces: ParameterField<parameter::InterfaceJoinConfig>,
     pub remote_peer_connection_checks: ParameterField<parameter::RemotePeerConnectionCheck>,
@@ -25,7 +24,6 @@ pub struct PeerConfiguration {
 pub enum ParameterVariant {
     DeviceInterface(Box<Parameter<parameter::DeviceInterface>>),
     EthernetBridge(Box<Parameter<parameter::EthernetBridge>>),
-    Executor(Box<Parameter<parameter::Executor>>),
     GreInterface(Box<Parameter<parameter::GreInterfaceConfig>>),
     JoinedInterface(Box<Parameter<parameter::InterfaceJoinConfig>>),
     RemotePeerConnectionCheck(Box<Parameter<parameter::RemotePeerConnectionCheck>>),
@@ -40,7 +38,6 @@ impl ParameterVariant {
         match self {
             ParameterVariant::DeviceInterface(parameter) => { parameter.dependencies.clone() }
             ParameterVariant::EthernetBridge(parameter) => { parameter.dependencies.clone() }
-            ParameterVariant::Executor(parameter) => { parameter.dependencies.clone() }
             ParameterVariant::GreInterface(parameter) => { parameter.dependencies.clone() }
             ParameterVariant::JoinedInterface(parameter) => { parameter.dependencies.clone() }
             ParameterVariant::RemotePeerConnectionCheck(parameter) => { parameter.dependencies.clone() }
@@ -54,7 +51,6 @@ impl ParameterVariant {
         match self {
             ParameterVariant::DeviceInterface(parameter) => parameter.target,
             ParameterVariant::EthernetBridge(parameter) => parameter.target,
-            ParameterVariant::Executor(parameter) => parameter.target,
             ParameterVariant::GreInterface(parameter) => parameter.target,
             ParameterVariant::JoinedInterface(parameter) => parameter.target,
             ParameterVariant::RemotePeerConnectionCheck(parameter) => parameter.target,
@@ -68,7 +64,6 @@ impl ParameterVariant {
         match self {
             ParameterVariant::DeviceInterface(parameter) => parameter.id,
             ParameterVariant::EthernetBridge(parameter) => parameter.id,
-            ParameterVariant::Executor(parameter) => parameter.id,
             ParameterVariant::GreInterface(parameter) => parameter.id,
             ParameterVariant::JoinedInterface(parameter) => parameter.id,
             ParameterVariant::RemotePeerConnectionCheck(parameter) => parameter.id,
@@ -85,7 +80,6 @@ impl PeerConfiguration {
         let PeerConfiguration {
             device_interfaces,
             ethernet_bridges,
-            executors,
             gre_interfaces,
             joined_interfaces,
             remote_peer_connection_checks,
@@ -97,7 +91,6 @@ impl PeerConfiguration {
 
         device_interfaces.values.into_iter().map(|(id, parameter) | { (id, ParameterVariant::DeviceInterface(Box::new(parameter))) })
             .chain(ethernet_bridges.values.into_iter().map(|(id, parameter)| { (id, ParameterVariant::EthernetBridge(Box::new(parameter))) }))
-            .chain(executors.values.into_iter().map(|(id, parameter)| { (id, ParameterVariant::Executor(Box::new(parameter))) }))
             .chain(gre_interfaces.values.into_iter().map(|(id, parameter)| { (id, ParameterVariant::GreInterface(Box::new(parameter))) }))
             .chain(joined_interfaces.values.into_iter().map(|(id, parameter)| { (id, ParameterVariant::JoinedInterface(Box::new(parameter))) }))
             .chain(remote_peer_connection_checks.values.into_iter().map(|(id, parameter)| { (id, ParameterVariant::RemotePeerConnectionCheck(Box::new(parameter))) }))
@@ -126,7 +119,6 @@ impl PeerConfiguration {
         let PeerConfiguration {
             device_interfaces,
             ethernet_bridges,
-            executors,
             gre_interfaces,
             joined_interfaces,
             remote_peer_connection_checks,
@@ -138,7 +130,6 @@ impl PeerConfiguration {
 
         remove_obsolete_parameters_from_field(obsolete_parameter_ids, device_interfaces);
         remove_obsolete_parameters_from_field(obsolete_parameter_ids, ethernet_bridges);
-        remove_obsolete_parameters_from_field(obsolete_parameter_ids, executors);
         remove_obsolete_parameters_from_field(obsolete_parameter_ids, gre_interfaces);
         remove_obsolete_parameters_from_field(obsolete_parameter_ids, joined_interfaces);
         remove_obsolete_parameters_from_field(obsolete_parameter_ids, remote_peer_connection_checks);
@@ -271,7 +262,6 @@ impl<V: ParameterValue> FromIterator<Parameter<V>> for ParameterField<V> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::peer::executor::{ExecutorDescriptor, ExecutorId, ExecutorKind, ResultsUrl};
     use crate::util::net::NetworkInterfaceName;
     use googletest::prelude::*;
 
@@ -295,38 +285,6 @@ mod tests {
             let id = parameter_value.parameter_identifier();
             let first_ethernet_bridge = testee.ethernet_bridges.get(&id).unwrap();
             assert_eq!(first_ethernet_bridge.target, ParameterTarget::Absent);
-
-            Ok(())
-        }
-
-
-        #[test]
-        fn should_update_the_value_of_a_parameter() -> anyhow::Result<()> {
-
-            let parameter_value = parameter::Executor {
-                descriptor: ExecutorDescriptor {
-                    id: ExecutorId::random(),
-                    kind: ExecutorKind::Executable,
-                    results_url: Some(ResultsUrl::try_from("https://example.com")?),
-                }
-            };
-
-            let mut testee = PeerConfiguration::default();
-            testee.executors.set(parameter_value.clone(), ParameterTarget::Present, HashSet::new());
-
-
-            let expected = None;
-            let parameter_value = parameter::Executor {
-                descriptor: ExecutorDescriptor {
-                    results_url: expected.clone(),
-                    ..parameter_value.descriptor
-                }
-            };
-            let id = parameter_value.parameter_identifier();
-
-            testee.executors.set(parameter_value, ParameterTarget::Present, HashSet::new());
-            assert_eq!(testee.executors.len(), 1);
-            assert_eq!(testee.executors.get(&id).unwrap().value.descriptor.results_url, expected);
 
             Ok(())
         }

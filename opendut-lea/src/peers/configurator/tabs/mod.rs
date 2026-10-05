@@ -1,13 +1,11 @@
 pub use devices::DevicesTab;
 pub use general::GeneralTab;
 pub use network::NetworkTab;
-pub use executor::ExecutorTab;
 pub use setup::SetupTab;
 
 mod devices;
 mod general;
 mod network;
-mod executor;
 mod setup;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -16,7 +14,6 @@ pub enum TabIdentifier {
     General,
     Devices,
     Network,
-    Executor,
     Setup,
 }
 
@@ -24,7 +21,6 @@ impl TabIdentifier {
     const GENERAL_STR: &'static str = "general";
     const DEVICES_STR: &'static str = "devices";
     const NETWORK_STR: &'static str = "network";
-    const EXECUTOR_STR: &'static str = "executor";
     const SETUP_STR: &'static str = "setup";
 
     pub fn as_str(&self) -> &'static str {
@@ -32,7 +28,6 @@ impl TabIdentifier {
             TabIdentifier::General => TabIdentifier::GENERAL_STR,
             TabIdentifier::Devices => TabIdentifier::DEVICES_STR,
             TabIdentifier::Network => TabIdentifier::NETWORK_STR,
-            TabIdentifier::Executor => TabIdentifier::EXECUTOR_STR,
             TabIdentifier::Setup => TabIdentifier::SETUP_STR,
         }
     }
@@ -46,7 +41,6 @@ impl TryFrom<&str> for TabIdentifier {
             TabIdentifier::GENERAL_STR => Ok(TabIdentifier::General),
             TabIdentifier::DEVICES_STR => Ok(TabIdentifier::Devices),
             TabIdentifier::NETWORK_STR => Ok(TabIdentifier::Network),
-            TabIdentifier::EXECUTOR_STR => Ok(TabIdentifier::Executor),
             TabIdentifier::SETUP_STR => Ok(TabIdentifier::Setup),
             _ => Err(InvalidTabIdentifier {
                 value: String::from(value),

@@ -45,26 +45,6 @@ conversion! {
 }
 
 conversion! {
-    type Model = crate::peer::configuration::parameter::Executor;
-    type Proto = Executor;
-
-    fn from(value: Model) -> Proto {
-        Proto {
-            descriptor: Some(value.descriptor.into())
-        }
-    }
-
-    fn try_from(value: Proto) -> ConversionResult<Model> {
-        let descriptor = extract!(value.descriptor)?
-            .try_into()?;
-
-        Ok(Model {
-            descriptor,
-        })
-    }
-}
-
-conversion! {
     type Model = crate::peer::configuration::parameter::GreInterfaceConfig;
     type Proto = GreInterfaceConfig;
     

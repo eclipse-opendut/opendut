@@ -151,10 +151,6 @@ mod tests {
                   interface-id: a4a3c74c-71e5-49ea-9c2e-afb387951970
                   tags: 
                   - new
-              executors:
-                - id: da6ad5f7-ea45-4a11-aadf-4408bdb69e8e
-                  results-url: https://example.com/webdav/results/
-                  kind: executable
         "#)?;
         
         let result = SpecificationDocument::try_from(document_string);

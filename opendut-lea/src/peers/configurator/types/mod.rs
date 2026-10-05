@@ -1,20 +1,16 @@
 use leptos::prelude::*;
 use opendut_lea_components::UserInputValue;
 use opendut_model::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
-use opendut_model::peer::executor::{ExecutorDescriptor, ExecutorDescriptors};
 use opendut_model::topology::{DeviceDescriptor, Topology};
 use opendut_model::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
 use crate::peers::configurator::types::devices::{DeviceMisconfigurationError, UserDeviceConfiguration};
-use crate::peers::configurator::types::executor::UserPeerExecutor;
 use crate::peers::configurator::types::network::UserPeerNetwork;
 
 pub mod devices;
-pub mod executor;
 pub mod network;
 pub mod validation;
 
 pub const EMPTY_DEVICE_NAME_ERROR_MESSAGE: &str = "Enter a valid device name.";
-pub const EMPTY_CONTAINER_IMAGE_ERROR_MESSAGE: &str = "Enter a valid container image.";
 
 #[derive(thiserror::Error, Clone, Debug)]
 #[allow(clippy::enum_variant_names)] // "all variants have the same prefix: `Invalid`"
@@ -25,8 +21,6 @@ pub enum PeerMisconfigurationError {
     InvalidDevice(DeviceMisconfigurationError),
     #[error("Invalid peer network descriptor")]
     InvalidPeerNetwork,
-    #[error("Invalid peer executor")]
-    InvalidPeerExecutor,
 }
 
 #[derive(Clone, Debug)]
@@ -36,7 +30,6 @@ pub struct UserPeerDescriptor {
     pub location: UserInputValue,
     pub devices: Vec<RwSignal<UserDeviceConfiguration>>,
     pub network: UserPeerNetwork,
-    pub executors: Vec<RwSignal<UserPeerExecutor>>,
     pub is_new: bool,
 }
 
@@ -88,24 +81,13 @@ impl TryFrom<UserPeerDescriptor> for PeerDescriptor {
                     .map_err(PeerMisconfigurationError::InvalidDevice)
             })
             .collect::<Result<Vec<_>, _>>()?;
-        let executors = configuration
-            .executors
-            .into_iter()
-            .map(|signal| signal.get_untracked())
-            .map(|executor| {
-                ExecutorDescriptor::try_from(executor)
-                    .map_err(|_|  PeerMisconfigurationError::InvalidPeerExecutor)
-            })
-            .collect::<Result<Vec<_>, _>>()?;
+
         Ok(PeerDescriptor {
             id: configuration.id,
             name,
             location: Some(location),
             network: PeerNetworkDescriptor::new(network_interfaces, bridge_name),
             topology: Topology::new(devices),
-            executors: ExecutorDescriptors {
-                executors
-            },
         })
     }
 }

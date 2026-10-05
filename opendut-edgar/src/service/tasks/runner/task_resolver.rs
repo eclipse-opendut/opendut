@@ -49,9 +49,6 @@ impl TaskResolver for ServiceTaskResolver {
                 ParameterVariant::EthernetBridge(ethernet_bridge) => {
                     tasks.push(Box::new(tasks::create_ethernet_bridge::CreateEthernetBridge { parameter: ethernet_bridge.value.clone(), network_interface_manager }));
                 }
-                ParameterVariant::Executor(_executor) => {
-                    // TODO: Migrate to a task that can handle the executor
-                }
                 ParameterVariant::GreInterface(gre_interface) => {
                     tasks.push(Box::new(tasks::create_gre_interfaces::ManageGreInterface { parameter: gre_interface.value.clone(), network_interface_manager }));
                 }

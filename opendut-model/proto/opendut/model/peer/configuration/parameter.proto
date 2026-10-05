@@ -3,7 +3,6 @@ syntax = "proto3";
 package opendut.model.peer.configuration.parameter;
 
 import "opendut/model/util/net.proto";
-import "opendut/model/peer/executor/executor.proto";
 import "opendut/model/peer/peer.proto";
 import "opendut/model/viper/run.proto";
 import "opendut/model/viper/test.proto";
@@ -15,10 +14,6 @@ message DeviceInterface {
 
 message EthernetBridge {
   opendut.model.util.NetworkInterfaceName name = 1;
-}
-
-message Executor {
-  opendut.model.peer.executor.ExecutorDescriptor descriptor = 1;
 }
 
 message GreInterfaceConfig {

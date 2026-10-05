@@ -3,7 +3,6 @@ use std::net::{IpAddr, Ipv4Addr};
 use std::str::FromStr;
 use base64::Engine;
 use serde::Serialize;
-use crate::peer::executor::ExecutorDescriptor;
 use crate::peer::PeerId;
 use crate::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName, NetworkInterfaceNameError};
 use crate::util::Port;
@@ -45,11 +44,6 @@ impl GreInterfaceConfig {
 pub struct InterfaceJoinConfig {
     pub name: NetworkInterfaceName,
     pub bridge: NetworkInterfaceName,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize)]
-pub struct Executor {
-    pub descriptor: ExecutorDescriptor,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize)]
