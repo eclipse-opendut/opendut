@@ -1,7 +1,7 @@
 use tracing::trace;
 use opendut_model::viper::{ViperSourceDescriptor, ViperSourceId, ViperTestId, ViperTestRunDescriptor};
 use opendut_viper_rt::source::{Source, SourceLocation};
-use opendut_viper_rt::{ViperOptions, ViperRuntime};
+use opendut_viper_rt::{RuntimeInstantiationError, ViperOptions, ViperRuntime};
 use opendut_viper_rt::common::TestSuiteIdentifier;
 use opendut_viper_rt::compile::{CompilationError, SourceCode};
 use opendut_viper_rt::source::loaders::HttpSourceLoader;
@@ -27,7 +27,7 @@ pub async fn fetch_source_code(
     let viper_runtime = ViperRuntime::new(ViperOptions {
         source_loaders: vec![Box::new(HttpSourceLoader)],
         ..Default::default()
-    }).unwrap(); // Todo: don't unwrap()
+    }).map_err(|cause| FetchError::ViperRuntimeInstantiationError { test_id, cause })?;
 
     let source_code = fetch_source_code(viper_runtime, &source).await?;
 
@@ -84,6 +84,12 @@ pub enum FetchError {
     #[error("Source code for test <{test_id}> could not be fetched, because a test with that ID does not exist!")]
     ViperTestRunDescriptorNotFound {
         test_id: ViperTestId,
+    },
+
+    #[error("Failed to instantiate VIPER runtime for test <{test_id}>")]
+    ViperRuntimeInstantiationError {
+        test_id: ViperTestId,
+        #[source] cause: RuntimeInstantiationError,
     },
 
     #[error("Source code for test <{test_id}> could not be fetched, because a source with the ID <{source_id}> does not exist!")]

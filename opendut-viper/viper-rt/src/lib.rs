@@ -88,6 +88,7 @@
 mod runtime;
 
 pub use runtime::{
+    RuntimeInstantiationError,
     ViperRuntime,
     options::{
         ViperOptions,
