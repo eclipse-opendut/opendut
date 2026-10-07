@@ -21,6 +21,34 @@
         mode: "0644"
         content: "{{ opendut_compose_environment_config }}"
 
+    - name: Define docker compose command
+      block:
+        - name: Find all docker compose override files
+          ansible.builtin.find:
+            paths: "{{ repo_dir }}/.ci/deploy/localenv/"
+            patterns: '*.override.yml'
+          register: _find_docker_compose_override_files
+
+        - name: Extract found docker compose override file paths
+          set_fact:
+            docker_compose_override_files: "{{ _find_docker_compose_override_files.files | map(attribute='path') | list }}"
+
+        - name: Construct docker compose command
+          set_fact:
+            # environment file might contain custom image version for CARL
+            # also include optional override file(s)
+            docker_compose_provision_secrets_base_command: >
+              docker compose
+                --file .ci/deploy/localenv/docker-compose.yml
+                {% for path in docker_compose_override_files %}
+                --file {{ path }}
+                {% endfor %}
+                --env-file {{ opendut_compose_environment_path }}
+
+        - name: Construct docker compose command (with secrets)
+          set_fact:
+            docker_compose_base_command: "{{ docker_compose_provision_secrets_base_command }} --env-file .ci/deploy/localenv/data/secrets/.env"
+
     - name: Provision secrets and initially create volumes
       include_tasks: tasks/provision_secrets.yaml
 
@@ -47,29 +75,6 @@
 
     - name: Start containers
       block:
-        - name: Find all docker compose override files
-          ansible.builtin.find:
-            paths: "{{ repo_dir }}/.ci/deploy/localenv/"
-            patterns: '*.override.yml'
-          register: _find_docker_compose_override_files
-
-        - name: Extract found docker compose override file paths
-          set_fact:
-            docker_compose_override_files: "{{ _find_docker_compose_override_files.files | map(attribute='path') | list }}"
-
-        - name: Construct docker compose command
-          set_fact:
-            # environment file might contain custom image version for CARL
-            # also include optional override file(s)
-            docker_compose_base_command: >
-              docker compose
-                --file .ci/deploy/localenv/docker-compose.yml
-                {% for path in docker_compose_override_files %}
-                --file {{ path }}
-                {% endfor %}
-                --env-file {{ opendut_compose_environment_path }}
-                --env-file .ci/deploy/localenv/data/secrets/.env
-
         - name: Force update CARL image  # With canary releases, we may re-use the same tag, which normally results in the new image not being pulled.
           command:
             cmd: >
