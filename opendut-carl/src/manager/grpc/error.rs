@@ -186,6 +186,7 @@ mod peer_manager {
 #[cfg(feature = "viper")]
 mod viper_manager {
     use opendut_carl_api::carl::viper::{DeleteViperSourceDescriptorError, DeleteViperTestRunDescriptorError, GetViperTestSuiteParametersError};
+    use opendut_viper_rt::source::SourceLocation;
     use crate::manager::viper_manager;
 
     impl From<viper_manager::delete_viper_source_descriptor::DeleteViperSourceDescriptorError> for DeleteViperSourceDescriptorError {
@@ -225,8 +226,51 @@ mod viper_manager {
     impl From<viper_manager::get_viper_test_suite_parameters::GetViperTestSuiteParametersError> for GetViperTestSuiteParametersError {
         fn from(value: viper_manager::get_viper_test_suite_parameters::GetViperTestSuiteParametersError) -> Self {
             match value {
-                viper_manager::get_viper_test_suite_parameters::GetViperTestSuiteParametersError::Compilation { source_id, source_name } =>
-                    Self::Compilation { source_id, source_name },
+                viper_manager::get_viper_test_suite_parameters::GetViperTestSuiteParametersError::Compilation { source_id, source_name, kind } => {
+                    use opendut_carl_api::carl::viper::CompilationErrorKind;
+                    let kind = match kind.as_ref() {
+                        opendut_viper_rt::compile::CompilationErrorKind::NoSuitableSourceLoader { source_location } => {
+                            let url = match source_location {
+                                SourceLocation::Embedded(_) => panic!("Received error that no suitable source loader was available for an embedded source (does not need loading)."),
+                                SourceLocation::Url(url) => url.to_owned(),
+                            };
+                            CompilationErrorKind::NoSuitableSourceLoader { url }
+                        }
+                        opendut_viper_rt::compile::CompilationErrorKind::FailedLoading { source_location, cause } => {
+                            let url = match source_location {
+                                SourceLocation::Embedded(_) => panic!("Received error that embedded source failed to load (does not need loading)."),
+                                SourceLocation::Url(url) => url.to_owned(),
+                            };
+
+                            CompilationErrorKind::FailedLoading {
+                                url,
+                                message: cause.to_string(),
+                            }
+                        }
+                        opendut_viper_rt::compile::CompilationErrorKind::InvalidSource { cause } => {
+                            CompilationErrorKind::InvalidSource { message: cause.to_string() }
+                        }
+                        opendut_viper_rt::compile::CompilationErrorKind::FailedInspection { cause } => {
+                            CompilationErrorKind::FailedInspection { message: cause.to_string() }
+                        }
+                        opendut_viper_rt::compile::CompilationErrorKind::PythonCompilationError { details } => {
+                            CompilationErrorKind::PythonCompilationError { message: details.to_owned() }
+                        }
+                        opendut_viper_rt::compile::CompilationErrorKind::FailedEventEmission { message } => {
+                            CompilationErrorKind::Internal { message: message.to_owned() }
+                        }
+                        opendut_viper_rt::compile::CompilationErrorKind::PythonReflectionError { cause } => {
+                            CompilationErrorKind::Internal { message: cause.to_string() }
+                        }
+                        opendut_viper_rt::compile::CompilationErrorKind::PythonRuntimeError { cause } => {
+                            CompilationErrorKind::Internal { message: cause.to_string() }
+                        }
+                        other => {
+                            CompilationErrorKind::Internal { message: format!("Unhandled compilation error: {other:?}") }
+                        }
+                    };
+                    Self::Compilation { source_id, source_name, kind }
+                }
                 viper_manager::get_viper_test_suite_parameters::GetViperTestSuiteParametersError::TaskJoin { source_id, when, cause: _ } =>
                     Self::Internal {
                         source_id,

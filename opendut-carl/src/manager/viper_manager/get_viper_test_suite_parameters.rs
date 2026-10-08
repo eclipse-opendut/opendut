@@ -1,6 +1,6 @@
-use tracing::debug;
+use tracing::{debug, trace};
 use opendut_model::viper::{ViperSourceDescriptor, ViperSourceId, ViperTestSuiteIdentifier, ViperTestSuiteParameters};
-use opendut_viper_rt::compile::{IdentifierFilter};
+use opendut_viper_rt::compile::{CompilationErrorKind, IdentifierFilter};
 use opendut_viper_rt::events::emitter;
 use opendut_viper_rt::source::Source;
 use opendut_viper_rt::{ViperOptions, ViperRuntime};
@@ -37,10 +37,17 @@ async fn discover_suite(source: ViperSourceDescriptor) -> Result<Option<ViperTes
             let viper_runtime = ViperRuntime::new(ViperOptions {
                 source_loaders: vec![Box::new(HttpSourceLoader)],
                 ..Default::default()
-            }).map_err(|_| GetViperTestSuiteParametersError::ViperRuntime { source_id, source_name: Clone::clone(&test_suite_identifier) })?;
+            }).map_err(|error| {
+                debug!("Failed to instantiate VIPER Runtime while discovering ViperTestSuite: {:?}", error);
+                GetViperTestSuiteParametersError::ViperRuntime { source_id, source_name: Clone::clone(&test_suite_identifier) }
+            })?;
 
-            let compilation = viper_runtime.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await
-                .map_err(|_| GetViperTestSuiteParametersError::Compilation { source_id, source_name: Clone::clone(&test_suite_identifier) })?;
+            let compilation = viper_runtime.compile(&source, &mut emitter::drain(), &IdentifierFilter::default())
+                .await
+                .map_err(|error| {
+                    trace!("Failed to compile VIPER Source <{source_id}> while discovering ViperTestSuite: {:?}", error);
+                    GetViperTestSuiteParametersError::Compilation { source_id, source_name: Clone::clone(&test_suite_identifier), kind: Box::new(error.kind) }
+                })?;
 
             Ok((compilation.identifier().to_owned(), compilation.parameters().to_owned()))
         })
@@ -64,6 +71,7 @@ pub enum GetViperTestSuiteParametersError {
     Compilation {
         source_id: ViperSourceId,
         source_name: ViperTestSuiteIdentifier,
+        kind: Box<CompilationErrorKind>,
     },
     #[error("Async task failed when {when} while getting VIPER test suite descriptor for source <{source_id}>.")]
     TaskJoin {

@@ -116,7 +116,8 @@ pub fn ParametersTab(
                                 <p class="help has-text-danger"> "Selected VIPER source not found." </p>
                             }.into_any()
                         },
-                        GetViperTestSuiteParametersError::Compilation { source_id, source_name } => {
+                        GetViperTestSuiteParametersError::Compilation { source_id, source_name, kind: _kind } => {
+                            // TODO: Use kind for better error handling.
                             let source_name = source_name.to_string();
                             let source_href = create_source_href(&source_id);
                             view! {

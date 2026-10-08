@@ -3,6 +3,7 @@ syntax = "proto3";
 package opendut.carl.services.viper_manager;
 
 import "opendut/model/cluster/cluster.proto";
+import "opendut/model/util/net.proto";
 import "opendut/model/viper/run.proto";
 import "opendut/model/viper/test.proto";
 import "opendut/model/viper_test_id.proto";
@@ -208,6 +209,43 @@ message GetViperTestSuiteParametersFailureSourceNotFound {
 message GetViperTestSuiteParametersFailureCompilation {
   opendut.model.viper.ViperSourceId source_id = 1;
   opendut.viper.rt.test_suite.ViperTestSuiteIdentifier source_name = 2;
+  GetViperTestSuiteParametersFailureCompilationKind kind = 3;
+}
+
+message GetViperTestSuiteParametersFailureCompilationKind {
+  oneof error {
+    GetViperTestSuiteParametersFailureCompilationKindNoSuitableSourceLoader no_suitable_source_loader = 1;
+    GetViperTestSuiteParametersFailureCompilationKindFailedLoading failed_loading = 2;
+    GetViperTestSuiteParametersFailureCompilationKindInvalidSource invalid_source = 3;
+    GetViperTestSuiteParametersFailureCompilationKindFailedInspection failed_inspection = 4;
+    GetViperTestSuiteParametersFailureCompilationKindPythonCompilationError python_compilation_error = 5;
+    GetViperTestSuiteParametersFailureCompilationKindInternal internal = 6;
+  }
+}
+
+message GetViperTestSuiteParametersFailureCompilationKindNoSuitableSourceLoader {
+  opendut.model.util.Url url = 1;
+}
+
+message GetViperTestSuiteParametersFailureCompilationKindFailedLoading {
+  opendut.model.util.Url url = 1;
+  string message = 2;
+}
+
+message GetViperTestSuiteParametersFailureCompilationKindInvalidSource {
+  string message = 1;
+}
+
+message GetViperTestSuiteParametersFailureCompilationKindFailedInspection {
+  string message = 1;
+}
+
+message GetViperTestSuiteParametersFailureCompilationKindPythonCompilationError {
+  string message = 1;
+}
+
+message GetViperTestSuiteParametersFailureCompilationKindInternal {
+  string message = 1;
 }
 
 message GetViperTestSuiteParametersFailureViperRuntime {

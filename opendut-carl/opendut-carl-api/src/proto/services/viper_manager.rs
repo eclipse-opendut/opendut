@@ -199,10 +199,11 @@ conversion! {
                     source_id: Some(source_id.into()),
                 })
             }
-            Model::Compilation { source_id, source_name } => {
+            Model::Compilation { source_id, source_name, kind } => {
                 get_viper_test_suite_parameters_failure::Error::Compilation(GetViperTestSuiteParametersFailureCompilation {
                     source_id: Some(source_id.into()),
                     source_name: Some(source_name.into()),
+                    kind: Some(kind.into()),
                 })
             }
             Model::ViperRuntime { source_id, source_name } => {
@@ -235,8 +236,9 @@ conversion! {
             get_viper_test_suite_parameters_failure::Error::Compilation(error) => {
                 let source_id = extract!(error.source_id)?.try_into()?;
                 let source_name = extract!(error.source_name)?.try_into()?;
+                let kind = extract!(error.kind)?.try_into()?;
                 
-                Ok(Model::Compilation { source_id, source_name })
+                Ok(Model::Compilation { source_id, source_name, kind })
             },
             get_viper_test_suite_parameters_failure::Error::ViperRuntime(error) => {
                 let source_id = extract!(error.source_id)?.try_into()?;
@@ -254,6 +256,93 @@ conversion! {
     }
 }
 
+conversion! {
+    type Model = crate::carl::viper::CompilationErrorKind;
+    type Proto = GetViperTestSuiteParametersFailureCompilationKind;
+
+    fn from(value: Model) -> Proto {
+        let proto_error = match value {
+            Model::NoSuitableSourceLoader { url } => {
+                get_viper_test_suite_parameters_failure_compilation_kind::Error::NoSuitableSourceLoader (
+                    GetViperTestSuiteParametersFailureCompilationKindNoSuitableSourceLoader {
+                        url: Some(url.into()),
+                    }
+                )
+            }
+            Model::FailedLoading { url, message } => {
+                get_viper_test_suite_parameters_failure_compilation_kind::Error::FailedLoading(
+                    GetViperTestSuiteParametersFailureCompilationKindFailedLoading {
+                        url: Some(url.into()),
+                        message,
+                    }
+                )
+            }
+            Model::InvalidSource{ message } => {
+                get_viper_test_suite_parameters_failure_compilation_kind::Error::InvalidSource(
+                    GetViperTestSuiteParametersFailureCompilationKindInvalidSource {
+                        message,
+                    }
+                )
+            }
+            Model::FailedInspection{ message } => {
+                get_viper_test_suite_parameters_failure_compilation_kind::Error::FailedInspection(
+                    GetViperTestSuiteParametersFailureCompilationKindFailedInspection {
+                        message,
+                    }
+                )
+            }
+            Model::PythonCompilationError{ message } => {
+                get_viper_test_suite_parameters_failure_compilation_kind::Error::PythonCompilationError(
+                    GetViperTestSuiteParametersFailureCompilationKindPythonCompilationError {
+                        message,
+                    }
+                )
+            }
+            Model::Internal{ message } => {
+                get_viper_test_suite_parameters_failure_compilation_kind::Error::Internal(
+                    GetViperTestSuiteParametersFailureCompilationKindInternal {
+                        message,
+                    }
+                )
+            }
+        };
+        Proto {
+            error: Some(proto_error)
+        }
+    }
+
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let error = extract!(value.error)?;
+
+        match error {
+            get_viper_test_suite_parameters_failure_compilation_kind::Error::NoSuitableSourceLoader(error) => {
+                let url = extract!(error.url)?.try_into()?;
+                Ok(Model::NoSuitableSourceLoader { url })
+            }
+            get_viper_test_suite_parameters_failure_compilation_kind::Error::FailedLoading(error) => {
+                let url = extract!(error.url)?.try_into()?;
+                let message = error.message;
+                Ok(Model::FailedLoading { url, message })
+            }
+            get_viper_test_suite_parameters_failure_compilation_kind::Error::InvalidSource(error) => {
+                let message = error.message;
+                Ok(Model::InvalidSource { message })
+            }
+            get_viper_test_suite_parameters_failure_compilation_kind::Error::FailedInspection(error) => {
+                let message = error.message;
+                Ok(Model::FailedInspection { message })
+            }
+            get_viper_test_suite_parameters_failure_compilation_kind::Error::PythonCompilationError(error) => {
+                let message = error.message;
+                Ok(Model::PythonCompilationError { message })
+            }
+            get_viper_test_suite_parameters_failure_compilation_kind::Error::Internal(error) => {
+                let message = error.message;
+                Ok(Model::Internal { message })
+            }
+        }
+    }
+}
 
 //
 // ViperTestRunDescriptor

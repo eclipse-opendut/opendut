@@ -1,10 +1,9 @@
+use url::Url;
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 pub use client::*;
 
 use opendut_model::viper::{ViperTestId, ViperSourceId, ViperRunId, ViperTestSuiteIdentifier};
 use opendut_model::format::{format_id_with_name, format_id_with_optional_name};
-
-
 //
 // ViperSourceDescriptor
 //
@@ -74,6 +73,7 @@ pub enum GetViperTestSuiteParametersError {
     Compilation {
         source_id: ViperSourceId,
         source_name: ViperTestSuiteIdentifier,
+        kind: CompilationErrorKind,
     },
     #[error("Error while initializing VIPER runtime for VIPER test source {source_name} with the ID <{source_id}>.")]
     ViperRuntime {
@@ -87,6 +87,28 @@ pub enum GetViperTestSuiteParametersError {
     }
 }
 
+#[derive(Debug, Clone)]
+pub enum CompilationErrorKind {
+    NoSuitableSourceLoader {
+        url: Url,
+    },
+    FailedLoading {
+        url: Url,
+        message: String,
+    },
+    InvalidSource {
+        message: String,
+    },
+    FailedInspection {
+        message: String,
+    },
+    PythonCompilationError {
+        message: String,
+    },
+    Internal {
+        message: String,
+    },
+}
 
 //
 // ViperTestRunDescriptor
