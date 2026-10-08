@@ -75,7 +75,7 @@ async fn update_peer_configuration(
             .unwrap_or_default();
 
         let test_run_descriptor = resources.get::<ViperTestRunDescriptor>(test_id)?
-            .unwrap(); //TODO don't unwrap!
+            .context(format!("Failed to insert peer configuration while fetching the ViperTestRunDescriptor for test <{}>", test_id))?;
 
         let test_run_report = parameter::TestRunReport {
             run_id,
@@ -86,7 +86,7 @@ async fn update_peer_configuration(
         peer_configuration.test_run_reports.set(test_run_report, ParameterTarget::Present, HashSet::new()); //TODO Clean up completed test runs
 
         resources.insert(peer_id, peer_configuration)
-            .context("Error while inserting peer configuration while updating test run report parameter.")?;
+            .context("Failed to insert peer configuration while updating the test run report parameter.")?;
 
         anyhow::Ok(())
     }).await??;
