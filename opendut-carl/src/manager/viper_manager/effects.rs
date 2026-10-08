@@ -52,7 +52,7 @@ async fn schedule_fetch_source_code_when_test_run_deployment_available(
                         }
                     },
                     Err(error) => {
-                        //TODO handle result in some way (retry or decide not to send updated peer configuration)
+                        // TODO Provide feedback to user (e.g. Add into TestCompletionState to be fetched by LEA/CLEO)
                         error!("Error while fetching source code for run <{run_id}>: \n{error}")
                     },
                 }
