@@ -29,7 +29,7 @@ create_id_type!(ViperTestId);
 pub struct ViperTestName(pub(crate) String);
 
 impl ViperTestName {
-    pub const MIN_LENGTH: usize = 4;
+    pub const MIN_LENGTH: usize = 1;
     pub const MAX_LENGTH: usize = 64;
 
     pub fn value(&self) -> &str {

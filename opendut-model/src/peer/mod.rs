@@ -23,7 +23,7 @@ create_id_type!(PeerId);
 pub struct PeerName(pub(crate) String);
 
 impl PeerName {
-    pub const MIN_LENGTH: usize = 4;
+    pub const MIN_LENGTH: usize = 1;
     pub const MAX_LENGTH: usize = 64;
 
     pub fn value(&self) -> &str {
