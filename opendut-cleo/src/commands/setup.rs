@@ -63,15 +63,16 @@ impl SetupCli {
                             OPENDUT_CLEO_NETWORK_OIDC_ENABLED=false
                         ").as_str());
                     }
-                    AuthConfig::Enabled { issuer_url, client_id, client_secret, .. } => {
+                    AuthConfig::Enabled { issuer_url, client_id, client_secret, scopes } => {
                         let id = client_id.value();
                         let secret = client_secret.value();
+                        let scopes_str = scopes.into_iter().map(|s| s.0).collect::<Vec<_>>().join(",");
                         environment_variables.push_str(formatdoc!("
                             OPENDUT_CLEO_NETWORK_OIDC_ENABLED=true
                             OPENDUT_CLEO_NETWORK_OIDC_CLIENT_ISSUER_URL={issuer_url}
                             OPENDUT_CLEO_NETWORK_OIDC_CLIENT_ID={id}
                             OPENDUT_CLEO_NETWORK_OIDC_CLIENT_SECRET={secret}
-                            OPENDUT_CLEO_NETWORK_OIDC_CLIENT_SCOPES=\"\"
+                            OPENDUT_CLEO_NETWORK_OIDC_CLIENT_SCOPES=\"{scopes_str}\"
                         ").as_str());
                     }
                 }
