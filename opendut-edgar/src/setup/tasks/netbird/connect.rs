@@ -44,6 +44,7 @@ impl Task for Connect {
             let process::Output { status, stdout, stderr } =
                 constants::netbird::command()?
                     .arg("up")
+                    .arg("--disable-dns")
                     .arg("--management-url").arg(self.management_url.as_str())
                     .arg("--setup-key").arg(&self.setup_key.value)
                     .arg("--mtu").arg(self.mtu.to_string())
