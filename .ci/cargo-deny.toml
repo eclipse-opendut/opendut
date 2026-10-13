@@ -26,7 +26,9 @@ ignore = [
 
     { id = "RUSTSEC-2025-0057", reason = "`fxhash` library is unmaintained. No actual vulnerability known. Is depended on by `wasmtime` in version 36.x. We stick to this `wasmtime` version, because it is an LTS and versions 39+ contain the `im-rc` dependency, which is under MPL-2.0." },
 
-    { id = "RUSTSEC-2026-0173", reason = "`proc-macro-error2` library is unmaintained. No actual vulnerability known."}
+    { id = "RUSTSEC-2026-0173", reason = "`proc-macro-error2` library is unmaintained. No actual vulnerability known." },
+
+    { id = "RUSTSEC-2024-0449", reason = "`unsafe-libyaml` and `serde_yaml` libraries are unmaintained. No actual vulnerability known. Tracked by issue #592." },
 ]
 
 [licenses]
