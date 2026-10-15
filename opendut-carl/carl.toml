@@ -46,7 +46,9 @@ key = ""
 [network.oidc.lea]
 client.id = "opendut-lea-client"
 issuer.url = "https://auth.opendut.local/realms/opendut/"
-scopes = "openid,profile,email"
+# opendut-admin-api must be included so CARL's scope enforcement allows LEA's gRPC calls.
+# parse_scopes accepts hyphens, so this is safe to pass as a comma-separated list.
+scopes = "openid,profile,email,opendut-admin-api"
 
 [persistence]
 enabled = false
