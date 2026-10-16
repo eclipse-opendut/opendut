@@ -110,6 +110,9 @@ enum ListResource {
     #[cfg(feature = "viper")]
     #[command(alias="viper-test-run")]
     ViperTestRuns(commands::viper_test_run_descriptor::list::ListViperTestRunDescriptorsCli),
+    #[cfg(feature = "viper")]
+    #[command(alias="viper-test-run-deployment")]
+    ViperTestRunDeployments(commands::viper_run_deployment::list::ListViperRunDeploymentsCli),
 }
 
 #[derive(clap::Args)]
@@ -146,8 +149,11 @@ enum CreateResource {
     #[command(alias="viper-sources")]
     ViperSource(commands::viper_source_descriptor::create::CreateViperSourceDescriptorCli),
     #[cfg(feature = "viper")]
-    #[command(alias="viper-tests")]
-    ViperTest(commands::viper_test_run_descriptor::create::CreateViperTestRunDescriptorCli),
+    #[command(alias="viper-test-runs")]
+    ViperTestRun(commands::viper_test_run_descriptor::create::CreateViperTestRunDescriptorCli),
+    #[cfg(feature = "viper")]
+    #[command(alias="viper-test-run-deployments")]
+    ViperTestRunDeployment(commands::viper_run_deployment::create::CreateViperRunDeploymentCli),
     /// Generate a random UUID, which can be used for assigning a new ID to a resource
     Uuid,
 }
@@ -162,8 +168,11 @@ enum DescribeResource {
     #[command(alias="viper-sources")]
     ViperSource(commands::viper_source_descriptor::describe::DescribeViperSourceDescriptorCli),
     #[cfg(feature = "viper")]
-    #[command(alias="viper-tests")]
-    ViperTest(commands::viper_test_run_descriptor::describe::DescribeViperTestRunDescriptorCli),
+    #[command(alias="viper-test-runs")]
+    ViperTestRun(commands::viper_test_run_descriptor::describe::DescribeViperTestRunDescriptorCli),
+    #[cfg(feature = "viper")]
+    #[command(alias="viper-test-run-deployments")]
+    ViperTestRunDeployment(commands::viper_run_deployment::describe::DescribeViperRunDeploymentCli),
 }
 
 #[derive(Subcommand)]
@@ -183,8 +192,11 @@ enum DeleteResource {
     #[command(alias="viper-sources")]
     ViperSource(commands::viper_source_descriptor::delete::DeleteViperSourceDescriptorCli),
     #[cfg(feature = "viper")]
-    #[command(alias="viper-tests")]
-    ViperTest(commands::viper_test_run_descriptor::delete::DeleteViperTestRunDescriptorCli),
+    #[command(alias="viper-test-runs")]
+    ViperTestRun(commands::viper_test_run_descriptor::delete::DeleteViperTestRunDescriptorCli),
+    #[cfg(feature = "viper")]
+    #[command(alias="viper-test-run-deployments")]
+    ViperTestRunDeployment(commands::viper_run_deployment::delete::DeleteViperRunDeploymentCli),
 }
 
 #[derive(Subcommand)]
@@ -311,6 +323,10 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
                 ListResource::ViperTestRuns(implementation) => {
                     implementation.execute(&mut carl, output).await?;
                 }
+                #[cfg(feature = "viper")]
+                ListResource::ViperTestRunDeployments(implementation) => {
+                    implementation.execute(&mut carl, output).await?;
+                }
             }
         }
         Commands::Apply(implementation) => {
@@ -345,7 +361,12 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
                     implementation.execute(&mut carl, output).await?;
                 }
                 #[cfg(feature = "viper")]
-                CreateResource::ViperTest(implementation) => {
+                CreateResource::ViperTestRun(implementation) => {
+                    let mut carl = create_carl_client(settings).await;
+                    implementation.execute(&mut carl, output).await?;
+                }
+                #[cfg(feature = "viper")]
+                CreateResource::ViperTestRunDeployment(implementation) => {
                     let mut carl = create_carl_client(settings).await;
                     implementation.execute(&mut carl, output).await?;
                 }
@@ -379,7 +400,11 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
                     implementation.execute(&mut carl, output).await?
                 }
                 #[cfg(feature = "viper")]
-                DescribeResource::ViperTest(implementation)=> {
+                DescribeResource::ViperTestRun(implementation)=> {
+                    implementation.execute(&mut carl, output).await?
+                }
+                #[cfg(feature = "viper")]
+                DescribeResource::ViperTestRunDeployment(implementation)=> {
                     implementation.execute(&mut carl, output).await?
                 }
             }
@@ -407,7 +432,11 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
                     implementation.execute(&mut carl).await?;
                 }
                 #[cfg(feature = "viper")]
-                DeleteResource::ViperTest(implementation) => {
+                DeleteResource::ViperTestRun(implementation) => {
+                    implementation.execute(&mut carl).await?;
+                }
+                #[cfg(feature = "viper")]
+                DeleteResource::ViperTestRunDeployment(implementation) => {
                     implementation.execute(&mut carl).await?;
                 }
             }
