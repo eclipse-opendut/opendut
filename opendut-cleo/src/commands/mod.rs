@@ -11,3 +11,5 @@ pub mod setup;
 pub mod wait;
 #[cfg(feature = "viper")]
 pub mod viper_source_descriptor;
+#[cfg(feature = "viper")]
+pub mod viper_test_run_descriptor;
