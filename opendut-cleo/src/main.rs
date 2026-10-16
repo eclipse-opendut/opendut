@@ -104,6 +104,9 @@ enum ListResource {
     Peers(commands::peer::list::ListPeersCli),
     #[command(alias="device")]
     Devices(commands::device::list::ListDevicesCli),
+    #[cfg(feature = "viper")]
+    #[command(alias="viper-source")]
+    ViperSources(commands::viper_source_descriptor::list::ListViperSourceDescriptorsCli),
 }
 
 #[derive(clap::Args)]
@@ -136,6 +139,9 @@ enum CreateResource {
     Peer(commands::peer::create::CreatePeerCli),
     NetworkInterface(commands::network_interface::create::CreateNetworkInterfaceCli),
     Device(commands::device::create::CreateDeviceCli),
+    #[cfg(feature = "viper")]
+    #[command(alias="viper-sources")]
+    ViperSource(commands::viper_source_descriptor::create::CreateViperSourceDescriptorCli),
     /// Generate a random UUID, which can be used for assigning a new ID to a resource
     Uuid,
 }
@@ -146,6 +152,9 @@ enum DescribeResource {
     ClusterDescriptor(commands::cluster_descriptor::describe::DescribeClusterDescriptorCli),
     Peer(commands::peer::describe::DescribePeerCli),
     Device(commands::device::describe::DescribeDeviceCli),
+    #[cfg(feature = "viper")]
+    #[command(alias="viper-sources")]
+    ViperSource(commands::viper_source_descriptor::describe::DescribeViperSourceDescriptorCli),
 }
 
 #[derive(Subcommand)]
@@ -161,6 +170,9 @@ enum DeleteResource {
     Peer(commands::peer::delete::DeletePeerCli),
     NetworkInterface(commands::network_interface::delete::DeleteNetworkInterfaceCli),
     Device(commands::device::delete::DeleteDeviceCli),
+    #[cfg(feature = "viper")]
+    #[command(alias="viper-sources")]
+    ViperSource(commands::viper_source_descriptor::delete::DeleteViperSourceDescriptorCli),
 }
 
 #[derive(Subcommand)]
@@ -279,6 +291,10 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
                 ListResource::Devices(implementation) => {
                     implementation.execute(&mut carl, output).await?;
                 }
+                #[cfg(feature = "viper")]
+                ListResource::ViperSources(implementation) => {
+                    implementation.execute(&mut carl, output).await?;
+                }
             }
         }
         Commands::Apply(implementation) => {
@@ -307,6 +323,11 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
                     let mut carl = create_carl_client(settings).await;
                     implementation.execute(&mut carl, output).await?;
                 }
+                #[cfg(feature = "viper")]
+                CreateResource::ViperSource(implementation) => {
+                    let mut carl = create_carl_client(settings).await;
+                    implementation.execute(&mut carl, output).await?;
+                }
                 CreateResource::Uuid => {
                     println!("{}", Uuid::new_v4());
                 }
@@ -332,6 +353,10 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
                 DescribeResource::Device (implementation)=> {
                     implementation.execute(&mut carl, output).await?
                 }
+                #[cfg(feature = "viper")]
+                DescribeResource::ViperSource(implementation)=> {
+                    implementation.execute(&mut carl, output).await?
+                }
             }
         }
         Commands::Delete { resource} => {
@@ -350,6 +375,10 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
                     implementation.execute(&mut carl).await?;
                 }
                 DeleteResource::Device(implementation) => {
+                    implementation.execute(&mut carl).await?;
+                }
+                #[cfg(feature = "viper")]
+                DeleteResource::ViperSource(implementation) => {
                     implementation.execute(&mut carl).await?;
                 }
             }
