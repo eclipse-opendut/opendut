@@ -21,24 +21,13 @@ struct ViperTestRunTable {
     source: ViperSourceId,
     #[table(title = "PeerID")]
     peer: PeerId,
-    #[table(title = "Parameters")]
-    parameters: String,
 }
 
 impl From<SerializableViperTestRun> for ViperTestRunTable {
     fn from(test: SerializableViperTestRun) -> Self {
-        let SerializableViperTestRun { name, id, source, peer, parameters } = test;
+        let SerializableViperTestRun { name, id, source, peer, parameters: _ } = test;
 
-        let parameters = parameters.into_iter()
-            .map(|(name, value)| {
-                let value = value.map(|value| value.to_string())
-                    .unwrap_or_else(|| String::from("<default>"));
-                format!("{name}={value}")
-            })
-            .collect::<Vec<_>>()
-            .join(", ");
-
-        Self { name, id, source, peer, parameters }
+        Self { name, id, source, peer }
     }
 }
 
