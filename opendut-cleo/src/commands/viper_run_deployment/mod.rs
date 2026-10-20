@@ -1,6 +1,5 @@
 pub mod create;
 pub mod delete;
-pub mod describe;
 pub mod list;
 
 use opendut_model::viper::{ViperRunDeployment, ViperRunId, ViperTestId};
