@@ -85,7 +85,7 @@ impl CreateDeviceCli {
         carl.peers.store_peer_descriptor(Clone::clone(&peer_descriptor)).await
             .map_err(|error| format!("Failed to update peer <{peer_id}>.\n  {error}"))?;
         let output_format = DescribeOutputFormat::from(output);
-        crate::commands::peer::describe::render_peer_descriptor(peer_descriptor, output_format);
+        crate::commands::peer::describe::render_peer_descriptor(peer_descriptor, carl, output_format).await?;
 
         Ok(())
     }
