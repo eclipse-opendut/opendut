@@ -146,13 +146,10 @@ enum CreateResource {
     NetworkInterface(commands::network_interface::create::CreateNetworkInterfaceCli),
     Device(commands::device::create::CreateDeviceCli),
     #[cfg(feature = "viper")]
-    #[command(alias="viper-sources")]
     ViperSource(commands::viper_source_descriptor::create::CreateViperSourceDescriptorCli),
     #[cfg(feature = "viper")]
-    #[command(alias="viper-test-runs")]
     ViperTestRun(commands::viper_test_run_descriptor::create::CreateViperTestRunDescriptorCli),
     #[cfg(feature = "viper")]
-    #[command(alias="viper-test-run-deployments")]
     ViperTestRunDeployment(commands::viper_run_deployment::create::CreateViperRunDeploymentCli),
     /// Generate a random UUID, which can be used for assigning a new ID to a resource
     Uuid,
@@ -165,13 +162,10 @@ enum DescribeResource {
     Peer(commands::peer::describe::DescribePeerCli),
     Device(commands::device::describe::DescribeDeviceCli),
     #[cfg(feature = "viper")]
-    #[command(alias="viper-sources")]
     ViperSource(commands::viper_source_descriptor::describe::DescribeViperSourceDescriptorCli),
     #[cfg(feature = "viper")]
-    #[command(alias="viper-test-runs")]
     ViperTestRun(commands::viper_test_run_descriptor::describe::DescribeViperTestRunDescriptorCli),
     #[cfg(feature = "viper")]
-    #[command(alias="viper-test-run-deployments")]
     ViperTestRunDeployment(commands::viper_run_deployment::describe::DescribeViperRunDeploymentCli),
 }
 
@@ -189,13 +183,10 @@ enum DeleteResource {
     NetworkInterface(commands::network_interface::delete::DeleteNetworkInterfaceCli),
     Device(commands::device::delete::DeleteDeviceCli),
     #[cfg(feature = "viper")]
-    #[command(alias="viper-sources")]
     ViperSource(commands::viper_source_descriptor::delete::DeleteViperSourceDescriptorCli),
     #[cfg(feature = "viper")]
-    #[command(alias="viper-test-runs")]
     ViperTestRun(commands::viper_test_run_descriptor::delete::DeleteViperTestRunDescriptorCli),
     #[cfg(feature = "viper")]
-    #[command(alias="viper-test-run-deployments")]
     ViperTestRunDeployment(commands::viper_run_deployment::delete::DeleteViperRunDeploymentCli),
 }
 
