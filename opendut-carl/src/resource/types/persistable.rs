@@ -62,7 +62,7 @@ impl Persistable for ViperSourceDescriptor {
 #[cfg(feature = "viper")]
 impl Persistable for ViperTestRunDescriptor {
     type Proto = opendut_model::proto::viper::ViperTestRunDescriptor;
-    const TABLE: &'static str = "viper_test_run_descriptor";
+    const TABLE: &'static str = "viper_test_run";
     const STORAGE: StorageKind = StorageKind::Persistent;
 }
 
