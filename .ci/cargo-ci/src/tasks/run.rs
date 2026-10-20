@@ -1,3 +1,4 @@
+use cicero::command_exit_ok::CommandExitOk;
 use std::process::Command;
 
 /// Start the application
@@ -20,7 +21,7 @@ impl RunCli {
             .arg("--features").arg(self.features.join(","))
             .arg("--")
             .args(&self.passthrough)
-            .status()?;
+            .status_exit_ok()?;
 
         Ok(())
     }
