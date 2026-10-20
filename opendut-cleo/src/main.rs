@@ -106,7 +106,7 @@ enum ListResource {
     Devices(commands::device::list::ListDevicesCli),
     #[cfg(feature = "viper")]
     #[command(alias="viper-source")]
-    ViperSources(commands::viper_source_descriptor::list::ListViperSourceDescriptorsCli),
+    ViperSources(commands::viper_source::list::ListViperSourceDescriptorsCli),
     #[cfg(feature = "viper")]
     #[command(alias="viper-test-run")]
     ViperTestRuns(commands::viper_test_run::list::ListViperTestRunDescriptorsCli),
@@ -146,7 +146,7 @@ enum CreateResource {
     NetworkInterface(commands::network_interface::create::CreateNetworkInterfaceCli),
     Device(commands::device::create::CreateDeviceCli),
     #[cfg(feature = "viper")]
-    ViperSource(commands::viper_source_descriptor::create::CreateViperSourceDescriptorCli),
+    ViperSource(commands::viper_source::create::CreateViperSourceDescriptorCli),
     #[cfg(feature = "viper")]
     ViperTestRun(commands::viper_test_run::create::CreateViperTestRunDescriptorCli),
     #[cfg(feature = "viper")]
@@ -162,7 +162,7 @@ enum DescribeResource {
     Peer(commands::peer::describe::DescribePeerCli),
     Device(commands::device::describe::DescribeDeviceCli),
     #[cfg(feature = "viper")]
-    ViperSource(commands::viper_source_descriptor::describe::DescribeViperSourceDescriptorCli),
+    ViperSource(commands::viper_source::describe::DescribeViperSourceDescriptorCli),
     #[cfg(feature = "viper")]
     ViperTestRun(commands::viper_test_run::describe::DescribeViperTestRunDescriptorCli),
 }
@@ -181,7 +181,7 @@ enum DeleteResource {
     NetworkInterface(commands::network_interface::delete::DeleteNetworkInterfaceCli),
     Device(commands::device::delete::DeleteDeviceCli),
     #[cfg(feature = "viper")]
-    ViperSource(commands::viper_source_descriptor::delete::DeleteViperSourceDescriptorCli),
+    ViperSource(commands::viper_source::delete::DeleteViperSourceDescriptorCli),
     #[cfg(feature = "viper")]
     ViperTestRun(commands::viper_test_run::delete::DeleteViperTestRunDescriptorCli),
     #[cfg(feature = "viper")]

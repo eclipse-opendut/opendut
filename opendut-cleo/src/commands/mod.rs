@@ -10,7 +10,7 @@ pub mod completions;
 pub mod setup;
 pub mod wait;
 #[cfg(feature = "viper")]
-pub mod viper_source_descriptor;
+pub mod viper_source;
 #[cfg(feature = "viper")]
 pub mod viper_test_run;
 #[cfg(feature = "viper")]
