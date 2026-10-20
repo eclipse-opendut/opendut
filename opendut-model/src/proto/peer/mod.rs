@@ -108,7 +108,9 @@ conversion! {
         Proto {
             id: Some(value.id.into()),
             name: Some(value.name.into()),
-            location: Some(value.location.unwrap_or_default().into()),
+            location: value.location
+                .filter(|location| !location.0.is_empty())
+                .map(Into::into),
             network: Some(value.network.into()),
             topology: Some(value.topology.into()),
         }
@@ -122,6 +124,7 @@ conversion! {
             .try_into()?;
 
         let location = value.location
+            .filter(|location| !location.value.is_empty())
             .map(crate::peer::PeerLocation::try_from)
             .transpose()?;
 
