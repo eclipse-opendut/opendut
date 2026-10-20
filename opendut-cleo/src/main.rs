@@ -109,7 +109,7 @@ enum ListResource {
     ViperSources(commands::viper_source_descriptor::list::ListViperSourceDescriptorsCli),
     #[cfg(feature = "viper")]
     #[command(alias="viper-test-run")]
-    ViperTestRuns(commands::viper_test_run_descriptor::list::ListViperTestRunDescriptorsCli),
+    ViperTestRuns(commands::viper_test_run::list::ListViperTestRunDescriptorsCli),
     #[cfg(feature = "viper")]
     #[command(alias="viper-test-run-deployment")]
     ViperTestRunDeployments(commands::viper_run_deployment::list::ListViperRunDeploymentsCli),
@@ -148,7 +148,7 @@ enum CreateResource {
     #[cfg(feature = "viper")]
     ViperSource(commands::viper_source_descriptor::create::CreateViperSourceDescriptorCli),
     #[cfg(feature = "viper")]
-    ViperTestRun(commands::viper_test_run_descriptor::create::CreateViperTestRunDescriptorCli),
+    ViperTestRun(commands::viper_test_run::create::CreateViperTestRunDescriptorCli),
     #[cfg(feature = "viper")]
     ViperTestRunDeployment(commands::viper_run_deployment::create::CreateViperRunDeploymentCli),
     /// Generate a random UUID, which can be used for assigning a new ID to a resource
@@ -164,7 +164,7 @@ enum DescribeResource {
     #[cfg(feature = "viper")]
     ViperSource(commands::viper_source_descriptor::describe::DescribeViperSourceDescriptorCli),
     #[cfg(feature = "viper")]
-    ViperTestRun(commands::viper_test_run_descriptor::describe::DescribeViperTestRunDescriptorCli),
+    ViperTestRun(commands::viper_test_run::describe::DescribeViperTestRunDescriptorCli),
 }
 
 #[derive(Subcommand)]
@@ -183,7 +183,7 @@ enum DeleteResource {
     #[cfg(feature = "viper")]
     ViperSource(commands::viper_source_descriptor::delete::DeleteViperSourceDescriptorCli),
     #[cfg(feature = "viper")]
-    ViperTestRun(commands::viper_test_run_descriptor::delete::DeleteViperTestRunDescriptorCli),
+    ViperTestRun(commands::viper_test_run::delete::DeleteViperTestRunDescriptorCli),
     #[cfg(feature = "viper")]
     ViperTestRunDeployment(commands::viper_run_deployment::delete::DeleteViperRunDeploymentCli),
 }
