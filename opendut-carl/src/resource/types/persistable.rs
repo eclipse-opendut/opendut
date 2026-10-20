@@ -55,7 +55,7 @@ impl Persistable for EdgePeerConfigurationState {
 #[cfg(feature = "viper")]
 impl Persistable for ViperSourceDescriptor {
     type Proto = opendut_model::proto::viper::ViperSourceDescriptor;
-    const TABLE: &'static str = "viper_source_descriptor";
+    const TABLE: &'static str = "viper_source";
     const STORAGE: StorageKind = StorageKind::Persistent;
 }
 
