@@ -165,8 +165,6 @@ enum DescribeResource {
     ViperSource(commands::viper_source_descriptor::describe::DescribeViperSourceDescriptorCli),
     #[cfg(feature = "viper")]
     ViperTestRun(commands::viper_test_run_descriptor::describe::DescribeViperTestRunDescriptorCli),
-    #[cfg(feature = "viper")]
-    ViperTestRunDeployment(commands::viper_run_deployment::describe::DescribeViperRunDeploymentCli),
 }
 
 #[derive(Subcommand)]
@@ -392,10 +390,6 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
                 }
                 #[cfg(feature = "viper")]
                 DescribeResource::ViperTestRun(implementation)=> {
-                    implementation.execute(&mut carl, output).await?
-                }
-                #[cfg(feature = "viper")]
-                DescribeResource::ViperTestRunDeployment(implementation)=> {
                     implementation.execute(&mut carl, output).await?
                 }
             }
