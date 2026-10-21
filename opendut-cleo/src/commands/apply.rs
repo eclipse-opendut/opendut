@@ -16,6 +16,9 @@ use std::fs;
 use std::path::PathBuf;
 use opendut_model::specs::viper_source::ViperSourceDescriptorSpecification;
 use opendut_model::specs::viper_test_run::ViperTestRunDescriptorSpecification;
+use opendut_model::viper::ViperSourceDescriptor;
+use crate::commands::viper_source::apply::convert_document_to_viper_source_descriptor;
+use crate::commands::viper_source::create::create_viper_source_descriptor;
 
 #[derive(clap::Parser)]
 ///Create openDuT resource form file
@@ -82,6 +85,9 @@ impl ApplyCli {
             ResourceModel::ClusterDescriptor(model) => {
                 create_cluster_descriptor(model, carl, &self.output).await?;
             }
+            ResourceModel::ViperSourceDescriptor(model) => {
+                create_viper_source_descriptor(model, carl, &self.output).await?;
+            }
         }
         Ok(())
     }
@@ -129,6 +135,7 @@ fn parse_source(arg: &str) -> Result<Source, SourceParsingError> {
 enum ResourceModel {
     PeerDescriptor(PeerDescriptor),
     ClusterDescriptor(ClusterDescriptor),
+    ViperSourceDescriptor(ViperSourceDescriptor),
 }
 
 fn convert_document_to_model(specification_document: SpecificationDocument) -> crate::Result<ResourceModel> {
@@ -147,7 +154,9 @@ fn convert_document_to_model(specification_document: SpecificationDocument) -> c
         }
         Specification::ViperSourceDescriptorSpecification(ViperSourceDescriptorSpecification::V1(viper_source)) => {
             let viper_source_id = specification_document.metadata.id;
-            todo!()
+            let viper_source_descriptor = convert_document_to_viper_source_descriptor(specification_document.metadata, viper_source)
+                .map_err(|error| format!("Could not parse the provided specification for VIPER source descriptor <{viper_source_id}>.\n {error}"))?;
+            ResourceModel::ViperSourceDescriptor(viper_source_descriptor)
         }
         Specification::ViperTestRunDescriptorSpecification(ViperTestRunDescriptorSpecification::V1(viper_test_run)) => {
             let viper_test_id = specification_document.metadata.id;

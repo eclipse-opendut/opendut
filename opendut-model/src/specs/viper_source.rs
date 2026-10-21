@@ -10,12 +10,12 @@ pub enum ViperSourceDescriptorSpecification {
 #[serde(rename_all = "kebab-case")]
 pub struct ViperSourceDescriptorSpecificationV1 {
     pub url: Url,
-    pub kind: ViperSourceKind,
+    pub kind: ViperSourceKindSpecificationV1,
 }
 
 #[derive(Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "kebab-case")]
-pub enum ViperSourceKind {
+pub enum ViperSourceKindSpecificationV1 {
     Git,
     Http,
 }
