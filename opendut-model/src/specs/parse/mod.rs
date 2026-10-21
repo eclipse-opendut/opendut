@@ -27,4 +27,5 @@ pub enum ParseSpecificationError {
 pub enum ResourceKind {
     PeerDescriptor,
     ClusterDescriptor,
+    ViperSourceDescriptor,
 }
