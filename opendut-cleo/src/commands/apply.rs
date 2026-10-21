@@ -11,14 +11,15 @@ use opendut_model::specs::parse::json::JsonSpecificationDocument;
 use opendut_model::specs::parse::yaml::YamlSpecificationFile;
 use opendut_model::specs::peer::PeerDescriptorSpecification;
 use opendut_model::specs::{Specification, SpecificationDocument};
-use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 use opendut_model::specs::viper_source::ViperSourceDescriptorSpecification;
 use opendut_model::specs::viper_test_run::ViperTestRunDescriptorSpecification;
-use opendut_model::viper::ViperSourceDescriptor;
+use opendut_model::viper::{ViperSourceDescriptor, ViperTestRunDescriptor};
 use crate::commands::viper_source::apply::convert_document_to_viper_source_descriptor;
 use crate::commands::viper_source::create::create_viper_source_descriptor;
+use crate::commands::viper_test_run::apply::convert_document_to_viper_test_run_descriptor;
+use crate::commands::viper_test_run::create::create_viper_test_run_descriptor;
 
 #[derive(clap::Parser)]
 ///Create openDuT resource form file
@@ -88,6 +89,9 @@ impl ApplyCli {
             ResourceModel::ViperSourceDescriptor(model) => {
                 create_viper_source_descriptor(model, carl, &self.output).await?;
             }
+            ResourceModel::ViperTestRunDescriptor(model) => {
+                create_viper_test_run_descriptor(model, carl, &self.output).await?;
+            }
         }
         Ok(())
     }
@@ -131,11 +135,12 @@ fn parse_source(arg: &str) -> Result<Source, SourceParsingError> {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq)]
 enum ResourceModel {
     PeerDescriptor(PeerDescriptor),
     ClusterDescriptor(ClusterDescriptor),
     ViperSourceDescriptor(ViperSourceDescriptor),
+    ViperTestRunDescriptor(ViperTestRunDescriptor),
 }
 
 fn convert_document_to_model(specification_document: SpecificationDocument) -> crate::Result<ResourceModel> {
@@ -160,7 +165,9 @@ fn convert_document_to_model(specification_document: SpecificationDocument) -> c
         }
         Specification::ViperTestRunDescriptorSpecification(ViperTestRunDescriptorSpecification::V1(viper_test_run)) => {
             let viper_test_id = specification_document.metadata.id;
-            todo!()
+            let viper_test_run_descriptor = convert_document_to_viper_test_run_descriptor(specification_document.metadata, viper_test_run)
+                .map_err(|error| format!("Could not parse the provided specification for VIPER test run descriptor <{viper_test_id}>.\n {error}"))?;
+            ResourceModel::ViperTestRunDescriptor(viper_test_run_descriptor)
         }
     };
     Ok(result)

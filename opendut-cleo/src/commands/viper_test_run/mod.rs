@@ -2,6 +2,7 @@ pub mod create;
 pub mod delete;
 pub mod describe;
 pub mod list;
+pub mod apply;
 
 use opendut_model::peer::PeerId;
 use opendut_model::viper::{ViperSourceId, ViperTestId, ViperTestName, ViperTestParameters, ViperTestRunDescriptor};
