@@ -2,6 +2,7 @@
 pub mod cluster;
 pub mod parse;
 pub mod peer;
+pub mod viper_source;
 
 use serde::Deserialize;
 use strum::Display;
@@ -32,4 +33,5 @@ pub enum SpecificationVersion {
 pub enum Specification {
     PeerDescriptorSpecification(peer::PeerDescriptorSpecification),
     ClusterDescriptorSpecification(cluster::ClusterDescriptorSpecification),
+    ViperSourceDescriptorSpecification(viper_source::ViperSourceDescriptorSpecification),
 }
