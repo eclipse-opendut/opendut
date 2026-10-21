@@ -2,6 +2,7 @@ pub mod create;
 pub mod delete;
 pub mod describe;
 pub mod list;
+pub mod apply;
 
 use opendut_model::viper::{ViperSourceDescriptor, ViperSourceId, ViperSourceKind};
 use serde::Serialize;
