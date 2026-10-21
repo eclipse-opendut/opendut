@@ -14,7 +14,8 @@ use opendut_model::specs::{Specification, SpecificationDocument};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
-use opendut_model::specs::viper_source::{ViperSourceDescriptorSpecification, ViperSourceDescriptorSpecificationV1};
+use opendut_model::specs::viper_source::ViperSourceDescriptorSpecification;
+use opendut_model::specs::viper_test_run::ViperTestRunDescriptorSpecification;
 
 #[derive(clap::Parser)]
 ///Create openDuT resource form file
@@ -146,6 +147,10 @@ fn convert_document_to_model(specification_document: SpecificationDocument) -> c
         }
         Specification::ViperSourceDescriptorSpecification(ViperSourceDescriptorSpecification::V1(viper_source)) => {
             let viper_source_id = specification_document.metadata.id;
+            todo!()
+        }
+        Specification::ViperTestRunDescriptorSpecification(ViperTestRunDescriptorSpecification::V1(viper_test_run)) => {
+            let viper_test_id = specification_document.metadata.id;
             todo!()
         }
     };
