@@ -28,4 +28,5 @@ pub enum ResourceKind {
     PeerDescriptor,
     ClusterDescriptor,
     ViperSourceDescriptor,
+    ViperTestRunDescriptor,
 }
