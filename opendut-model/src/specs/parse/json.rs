@@ -90,5 +90,13 @@ fn parse_spec(kind: ResourceKind, version: SpecificationVersion, spec: Value) ->
         (ResourceKind::PeerDescriptor, _) => {
             Err(ParseSpecificationError::UnknownVersion { kind, version })
         }
+        (ResourceKind::ViperSourceDescriptor, SpecificationVersion::V1) => {
+            let spec = serde_json::from_value::<specs::viper_source::ViperSourceDescriptorSpecificationV1>(spec)
+                .map_err(|cause| ParseSpecificationError::IllegalJsonSpecification { cause } )?;
+            Ok(Specification::ViperSourceDescriptorSpecification(specs::viper_source::ViperSourceDescriptorSpecification::V1(spec)))
+        }
+        (ResourceKind::ViperSourceDescriptor, _) => {
+            Err(ParseSpecificationError::UnknownVersion { kind, version })
+        }
     }
 }

@@ -14,6 +14,7 @@ use opendut_model::specs::{Specification, SpecificationDocument};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
+use opendut_model::specs::viper_source::{ViperSourceDescriptorSpecification, ViperSourceDescriptorSpecificationV1};
 
 #[derive(clap::Parser)]
 ///Create openDuT resource form file
@@ -142,7 +143,11 @@ fn convert_document_to_model(specification_document: SpecificationDocument) -> c
             let cluster_descriptor = convert_document_to_cluster_descriptor(specification_document.metadata, cluster_descriptor)
                 .map_err(|error| format!("Could not parse the provided specification for cluster descriptor <{cluster_descriptor_id}>.\n {error}"))?;
             ResourceModel::ClusterDescriptor(cluster_descriptor)
-        }        
+        }
+        Specification::ViperSourceDescriptorSpecification(ViperSourceDescriptorSpecification::V1(viper_source)) => {
+            let viper_source_id = specification_document.metadata.id;
+            todo!()
+        }
     };
     Ok(result)
 }
