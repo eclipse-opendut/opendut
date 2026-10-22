@@ -12,7 +12,6 @@ const SELF_PACKAGE: &Package = &workspace::package::opendut_carl;
 
 /// Tasks available or specific for CARL
 #[derive(clap::Parser)]
-#[command(alias="opendut-carl")]
 pub struct CarlCli {
     #[command(subcommand)]
     pub task: TaskCli,
@@ -36,7 +35,7 @@ pub enum TaskCli {
 
 impl CarlCli {
     #[tracing::instrument(name="carl", skip(self))]
-    pub fn run(self) -> anyhow::Result<()> {
+    pub fn run(self, viper: bool) -> anyhow::Result<()> {
         match self.task {
             TaskCli::DistributionBuild(crate::tasks::build::DistributionBuildCli { target, build_args }) => {
                 build::build_release(target, &build_args)?;
@@ -80,7 +79,7 @@ impl CarlCli {
                 cli.run(SELF_PACKAGE)?;
             }
 
-            TaskCli::PushSamples => push_samples()?,
+            TaskCli::PushSamples => push_samples(viper)?,
         };
         Ok(())
     }
@@ -359,13 +358,19 @@ pub mod distribution {
 }
 
 
-fn push_samples() -> anyhow::Result<()> {
+fn push_samples(viper: bool) -> anyhow::Result<()> {
     let file = std::env::temp_dir().join("opendut-cargo-ci-carl-push-samples.yaml");
 
-    fs::write(&file, include_str!("cargo-ci-carl-push-samples.yaml"))?;
+    let mut samples = String::from(include_str!("cargo-ci-carl-push-samples.yaml"));
+    if viper {
+        samples.push('\n');
+        samples.push_str(include_str!("cargo-ci-carl-push-samples-viper.yaml"));
+    }
+
+    fs::write(&file, samples)?;
 
     crate::tasks::run::RunCli {
-        features: vec![],
+        features: if viper { vec![String::from("viper")] } else { vec![] },
         passthrough: vec!["apply".to_string(), file.display().to_string()],
     }
     .run(&workspace::package::opendut_cleo)?;
