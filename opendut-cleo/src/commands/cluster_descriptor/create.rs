@@ -116,7 +116,7 @@ pub async fn create_cluster_descriptor(cluster: ClusterDescriptor, carl: &mut Ca
             ClientError::UsageError(CreateClusterDescriptorError::LeaderNotInCluster { leader, cluster_name, .. }) => {
                 format!("Could not store cluster descriptor '{cluster_name}': leader peer <{leader}> is not part of the cluster. Make sure the leader's devices are included in the cluster's device list.")
             }
-            _ => format!("Could not store cluster descriptor. Make sure the application is running. Error: {err}")
+            _ => format!("Could not store cluster descriptor. Error: {err}")
         })?;
     
     let devices = carl.peers.list_devices().await
