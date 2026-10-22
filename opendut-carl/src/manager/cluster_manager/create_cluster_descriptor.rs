@@ -1,5 +1,5 @@
 use opendut_model::cluster::{ClusterDescriptor, ClusterId, ClusterName};
-use opendut_model::peer::{PeerDescriptor, PeerId};
+use opendut_model::peer::PeerId;
 use tracing::{debug, info};
 use crate::resource::manager::Resources;
 use crate::resource::manager::error::PersistenceError;
@@ -15,22 +15,15 @@ impl Resources<'_> {
 
         let cluster_id = params.cluster_descriptor.id;
         let cluster_name = Clone::clone(&params.cluster_descriptor.name);
-        let leader = params.cluster_descriptor.leader;
+        let leader_id = params.cluster_descriptor.leader;
 
         debug!("Creating cluster descriptor '{cluster_name}' <{cluster_id}>.");
 
-        let peers = self.list::<PeerDescriptor>()
+        let leader_in_cluster = self.is_peer_in_cluster(leader_id, &params.cluster_descriptor.devices)
             .map_err(|source| CreateClusterDescriptorError::Persistence { cluster_id, cluster_name: cluster_name.clone(), source })?;
 
-        let leader_devices_in_cluster = peers.get(&leader)
-            .map(|peer| {
-                peer.topology.devices.iter()
-                    .any(|device| params.cluster_descriptor.devices.contains(&device.id))
-            })
-            .unwrap_or(false);
-
-        if !leader_devices_in_cluster {
-            return Err(CreateClusterDescriptorError::LeaderNotInCluster { cluster_id, cluster_name, leader });
+        if !leader_in_cluster {
+            return Err(CreateClusterDescriptorError::LeaderNotInCluster { cluster_id, cluster_name, leader: leader_id });
         }
 
         self.insert(cluster_id, params.cluster_descriptor)
@@ -44,13 +37,13 @@ impl Resources<'_> {
 
 #[derive(thiserror::Error, Debug)]
 pub enum CreateClusterDescriptorError {
-    #[error("ClusterConfigration '{cluster_name}' <{cluster_id}> could not be created")]
+    #[error("ClusterConfiguration '{cluster_name}' <{cluster_id}> could not be created, due to an error when accessing persistence")]
     Persistence {
         cluster_id: ClusterId,
         cluster_name: ClusterName,
         #[source] source: PersistenceError
     },
-    #[error("Leader <{leader}> is not part of cluster '{cluster_name}' <{cluster_id}>")]
+    #[error("ClusterConfiguration '{cluster_name}' <{cluster_id}> could not be created, because the specified leader peer <{leader}> is not part of the cluster")]
     LeaderNotInCluster {
         cluster_id: ClusterId,
         cluster_name: ClusterName,
@@ -60,6 +53,7 @@ pub enum CreateClusterDescriptorError {
 
 #[cfg(test)]
 mod tests {
+    use std::assert_matches::assert_matches;
     use std::collections::HashSet;
     use opendut_model::cluster::{ClusterDescriptor, ClusterId, ClusterName};
     use opendut_model::peer::PeerId;
@@ -92,7 +86,7 @@ mod tests {
             })
         }).await?;
 
-        assert!(matches!(result, Err(CreateClusterDescriptorError::LeaderNotInCluster { .. })));
+        assert_matches!(result, Err(CreateClusterDescriptorError::LeaderNotInCluster { .. }));
         Ok(())
     }
 
