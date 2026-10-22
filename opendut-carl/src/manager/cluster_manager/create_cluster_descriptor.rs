@@ -53,7 +53,7 @@ pub enum CreateClusterDescriptorError {
 
 #[cfg(test)]
 mod tests {
-    use std::assert_matches::assert_matches;
+    use std::assert_matches;
     use std::collections::HashSet;
     use opendut_model::cluster::{ClusterDescriptor, ClusterId, ClusterName};
     use opendut_model::peer::PeerId;
