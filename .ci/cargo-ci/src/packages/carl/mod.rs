@@ -32,7 +32,10 @@ pub enum TaskCli {
     DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli),
 
     /// Upload sample data to simplify debugging LEA and CLEO. In VIPER mode, host the test suite until Ctrl+C. Start CARL beforehand.
-    PushSamples,
+    PushSamples {
+        #[arg(long, default_value_t = 8000)]
+        port: u16,
+    },
 }
 
 impl CarlCli {
@@ -81,7 +84,7 @@ impl CarlCli {
                 cli.run(SELF_PACKAGE)?;
             }
 
-            TaskCli::PushSamples => push_samples(viper)?,
+            TaskCli::PushSamples { port } => push_samples(viper, port)?,
         };
         Ok(())
     }
@@ -360,13 +363,22 @@ pub mod distribution {
 }
 
 
-fn push_samples(viper: bool) -> anyhow::Result<()> {
+fn push_samples(viper: bool, port: u16) -> anyhow::Result<()> {
+    let listener = if viper {
+        Some(std::net::TcpListener::bind(("127.0.0.1", port))
+            .with_context(|| format!("Failed to bind VIPER sample server to 127.0.0.1:{port}. Check whether the port is already in use."))?)
+    } else {
+        None
+    };
+
     let file = std::env::temp_dir().join("opendut-cargo-ci-carl-push-samples.yaml");
 
     let mut samples = String::from(include_str!("cargo-ci-carl-push-samples.yaml"));
-    if viper {
+    if let Some(listener) = &listener {
+        let port = listener.local_addr()?.port();
         samples.push('\n');
-        samples.push_str(include_str!("cargo-ci-carl-push-samples-viper.yaml"));
+        samples.push_str(&include_str!("cargo-ci-carl-push-samples-viper.yaml")
+            .replace("{{port}}", &port.to_string()));
     }
 
     fs::write(&file, samples)?;
@@ -376,11 +388,11 @@ fn push_samples(viper: bool) -> anyhow::Result<()> {
         passthrough: vec!["apply".to_string(), file.display().to_string()],
     };
 
-    if viper {
+    if let Some(listener) = listener {
         let runtime = tokio::runtime::Runtime::new()
             .context("Failed to initialize Tokio runtime for VIPER samples")?;
 
-        runtime.block_on(viper_samples::push_samples(cleo))?;
+        runtime.block_on(viper_samples::push_samples(cleo, listener))?;
     } else {
         cleo.run(&workspace::package::opendut_cleo)?;
     }

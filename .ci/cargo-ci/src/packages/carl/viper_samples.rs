@@ -6,9 +6,12 @@ use tracing::info;
 
 use crate::{tasks::run::RunCli, workspace};
 
-pub(super) async fn push_samples(cleo: RunCli) -> anyhow::Result<()> {
-    let listener = TcpListener::bind("127.0.0.1:8000").await
-        .context("Failed to bind VIPER sample server to 127.0.0.1:8000. Check whether the port is already in use.")?;
+pub(super) async fn push_samples(cleo: RunCli, listener: std::net::TcpListener) -> anyhow::Result<()> {
+    listener.set_nonblocking(true)
+        .context("Failed to configure VIPER sample server listener")?;
+
+    let listener = TcpListener::from_std(listener)
+        .context("Failed to initialize VIPER sample server listener")?;
 
     serve_samples(
         listener,

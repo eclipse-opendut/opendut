@@ -5,7 +5,7 @@ metadata:
   id: 120ea214-f92c-45ac-96df-015c6045e582
   name: opendut-viper-source1
 spec:
-  url: http://localhost:8000/script.py
+  url: "http://localhost:{{port}}/script.py"
   kind: http
 
 ---
