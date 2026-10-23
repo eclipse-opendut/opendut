@@ -62,9 +62,11 @@ pub struct TestSuiteIdentifier {
 
 impl TestSuiteIdentifier {
 
+    pub const MAX_LENGTH: usize = 64;
+
     pub(crate) fn new(name: String) -> Self {
         assert!(name.is_empty().not(), "The name for a test-suite must not be empty");
-        assert!(validate::invalid_test_suite_identifier_characters(&name).is_ok(), "The name for a test-suite must not contain invalid characters: {name}");
+        assert!(validate::test_suite_identifier(&name).is_ok(), "The name for a test-suite must be valid: {name}");
         Self::new_unchecked(name)
     }
 
@@ -310,7 +312,7 @@ impl TryFrom<String> for TestSuiteIdentifier {
             return Err(InvalidIdentifierError::new_empty_identifier_error());
         }
 
-        validate::invalid_test_suite_identifier_characters(&value)?;
+        validate::test_suite_identifier(&value)?;
 
         Ok(Self { value })
     }
@@ -347,7 +349,7 @@ impl TryFrom<&str> for TestCaseIdentifier {
             if part.is_none_or(str::is_empty) {
                 return Err(InvalidIdentifierError::new_missing_test_suite_identifier_error(value))
             }
-            validate::invalid_test_suite_identifier_characters(part.expect("The suite part has to be checked for not be none until here"))?
+            validate::test_suite_identifier(part.expect("The suite part has to be checked for not be none until here"))?
         };
 
         let case_part = {
@@ -397,7 +399,7 @@ impl TryFrom<&str> for TestIdentifier {
         let suite_part = {
             let part = parts.next()
                 .ok_or_else(|| InvalidIdentifierError::new_missing_test_suite_identifier_error(value))?;
-            validate::invalid_test_suite_identifier_characters(part)?
+            validate::test_suite_identifier(part)?
         };
 
         let case_part = {

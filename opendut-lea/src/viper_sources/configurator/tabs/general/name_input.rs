@@ -25,6 +25,9 @@ pub fn ViperSourceNameInput(user_source_descriptor: RwSignal<UserViperSourceConf
                     InvalidViperTestSuiteIdentifierErrorKind::Empty => {
                         UserInputValue::Both("Enter a VIPER source name.".to_string(), cause.value)
                     }
+                    InvalidViperTestSuiteIdentifierErrorKind::TestSuiteIdentifierTooLong { expected, .. } => {
+                        UserInputValue::Both(format!("A VIPER source name must be at most {expected} characters long."), cause.value)
+                    }
                     InvalidViperTestSuiteIdentifierErrorKind::IllegalTestSuiteIdentifierCharacter { character } => {
                         UserInputValue::Both(format!("The VIPER source name contains an invalid character: '{character}'"), cause.value)
                     }

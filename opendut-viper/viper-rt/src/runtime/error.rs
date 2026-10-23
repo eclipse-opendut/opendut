@@ -142,6 +142,7 @@ impl Display for InvalidIdentifierError {
         let InvalidIdentifierError { value, kind } = self;
         match kind {
             InvalidIdentifierErrorKind::Empty => write!(f, "Identifier is empty."),
+            InvalidIdentifierErrorKind::TestSuiteIdentifierTooLong { expected, actual } => write!(f, "Test suite name '{value}' is too long. Expected at most {expected} characters, got {actual}."),
             InvalidIdentifierErrorKind::IllegalTestSuiteIdentifierCharacter { character } => write!(f, "Value '{value}' contains illegal character '{character}' for a test suite name."),
             InvalidIdentifierErrorKind::IllegalTestCaseIdentifierCharacter { character } => write!(f, "Value '{value}' contains illegal character '{character}' for a test case name."),
             InvalidIdentifierErrorKind::IllegalTestIdentifierCharacter { character } => write!(f, "Value '{value}' contains illegal character '{character}' for a test name."),

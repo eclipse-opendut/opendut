@@ -11,6 +11,7 @@ pub struct InvalidIdentifierError {
 #[non_exhaustive]
 pub enum InvalidIdentifierErrorKind {
     Empty,
+    TestSuiteIdentifierTooLong { expected: usize, actual: usize },
     IllegalTestSuiteIdentifierCharacter { character: char },
     IllegalTestCaseIdentifierCharacter { character: char },
     IllegalTestIdentifierCharacter { character: char },
@@ -24,6 +25,10 @@ impl InvalidIdentifierError {
 
     pub fn new_empty_identifier_error() -> Self {
         Self { value: String::new(), kind: InvalidIdentifierErrorKind::Empty }
+    }
+
+    pub fn new_test_suite_identifier_too_long_error(value: impl Into<String>, expected: usize, actual: usize) -> Self {
+        Self { value: value.into(), kind: InvalidIdentifierErrorKind::TestSuiteIdentifierTooLong { expected, actual } }
     }
 
     pub fn new_illegal_test_suite_identifier_character_error(value: impl Into<String>, character: char) -> Self {
