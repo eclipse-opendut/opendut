@@ -8,6 +8,8 @@ use crate::packages::carl::distribution::copy_license_json::copy_license_json;
 use crate::Package;
 use crate::tasks::build::BuildArgs;
 
+mod viper_samples;
+
 const SELF_PACKAGE: &Package = &workspace::package::opendut_carl;
 
 /// Tasks available or specific for CARL
@@ -29,7 +31,7 @@ pub enum TaskCli {
     DistributionBundleFiles(crate::tasks::distribution::bundle::DistributionBundleFilesCli),
     DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli),
 
-    /// Upload sample data to simplify debugging LEA and CLEO. Run CARL with `cargo carl` beforehand.
+    /// Upload sample data to simplify debugging LEA and CLEO. In VIPER mode, host the test suite until Ctrl+C. Start CARL beforehand.
     PushSamples,
 }
 
@@ -369,11 +371,19 @@ fn push_samples(viper: bool) -> anyhow::Result<()> {
 
     fs::write(&file, samples)?;
 
-    crate::tasks::run::RunCli {
+    let cleo = crate::tasks::run::RunCli {
         features: if viper { vec![String::from("viper")] } else { vec![] },
         passthrough: vec!["apply".to_string(), file.display().to_string()],
+    };
+
+    if viper {
+        let runtime = tokio::runtime::Runtime::new()
+            .context("Failed to initialize Tokio runtime for VIPER samples")?;
+
+        runtime.block_on(viper_samples::push_samples(cleo))?;
+    } else {
+        cleo.run(&workspace::package::opendut_cleo)?;
     }
-    .run(&workspace::package::opendut_cleo)?;
 
     Ok(())
 }
