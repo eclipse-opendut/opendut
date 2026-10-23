@@ -42,6 +42,8 @@ pub enum TaskCli {
     Cluster(TestClusterCli),
     /// Run EDGAR production container.
     Edgar,
+    /// Extract localenv Docker images and optionally scan them with Trivy.
+    Audit(localenv::audit::AuditCli),
 }
 
 
@@ -82,6 +84,9 @@ impl TestenvCli {
                     .arg("up")
                     .arg("--build")
                     .run()?;
+            }
+            TaskCli::Audit(cli) => {
+                cli.run()?;
             }
         }
         Ok(())

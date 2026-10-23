@@ -4848,6 +4848,7 @@ version = "0.11.0-alpha"
 dependencies = [
  "anyhow",
  "cargo_toml",
+ "chrono",
  "cicero",
  "clap",
  "ctrlc",

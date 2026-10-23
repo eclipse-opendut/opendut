@@ -17,6 +17,7 @@ Always create a database backup before upgrading CARL.
   Updating to this version is only urgent, if you have reconfigured Keycloak to offer a password reset.
   If you cannot update the openDuT version right away, you can also update Keycloak separately by using the up-to-date deployment scripts.
 * Updated NetBird to version `0.81.3`.
+* THEO: Added `cargo theo testenv audit` subcommand to list resolved Localenv container images and scan them for vulnerabilities using Trivy.
 
 
 ## [v0.10.2] - 2026-06-11

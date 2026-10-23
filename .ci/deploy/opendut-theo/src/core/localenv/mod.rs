@@ -1,3 +1,4 @@
+pub(crate) mod audit;
 pub(crate) mod carl_image;
 
 use crate::core::docker::command::DockerCommand;
