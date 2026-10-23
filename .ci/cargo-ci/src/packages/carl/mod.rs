@@ -32,7 +32,10 @@ pub enum TaskCli {
 
     /// Upload sample data to simplify debugging LEA and CLEO. Run CARL with `cargo carl` beforehand.
     /// When working with VIPER: Run CARL with `cargo carl-viper` beforehand.
-    PushSamples,
+    PushSamples {
+        #[arg(long, default_value_t = 8000)]
+        port: u16,
+    },
 }
 
 impl CarlCli {
@@ -81,7 +84,7 @@ impl CarlCli {
                 cli.run(SELF_PACKAGE)?;
             }
 
-            TaskCli::PushSamples => push_samples(viper)?,
+            TaskCli::PushSamples { port } => push_samples(viper, port)?,
         };
         Ok(())
     }
@@ -360,26 +363,35 @@ pub mod distribution {
 }
 
 
-fn push_samples(viper: bool) -> anyhow::Result<()> {
-    let base_samples_path = "cargo-ci-carl-push-samples.yaml";
-    let base_samples_features = Vec::new();
-    apply_samples(base_samples_path, base_samples_features)?;
+fn push_samples(viper: bool, port: u16) -> anyhow::Result<()> {
+    apply_samples(
+        "cargo-ci-carl-push-samples.yaml",
+        include_str!("cargo-ci-carl-push-samples.yaml"),
+        vec![],
+    )?;
 
     if viper {
-        let viper_samples_path = "cargo-ci-carl-push-samples-viper.yaml";
-        let viper_samples_features = vec![String::from("viper")];
-        apply_samples(viper_samples_path, viper_samples_features)?;
+        let listener = std::net::TcpListener::bind(("127.0.0.1", port))?;
+        let actual_port = listener.local_addr()?.port();
+        let samples = include_str!("cargo-ci-carl-push-samples-viper.yaml")
+            .replace("{{port}}", &actual_port.to_string());
 
-        host_viper_source()?;
+        apply_samples(
+            "cargo-ci-carl-push-samples-viper.yaml",
+            &samples,
+            vec![String::from("viper")],
+        )?;
+
+        host_viper_source(listener)?;
     }
 
     Ok(())
 }
 
-fn apply_samples(path: &str, features: Vec<String>) -> anyhow::Result<()> {
-    let file = std::env::temp_dir().join(format!("opendut-{}", path));
+fn apply_samples(name: &str, samples: &str, features: Vec<String>) -> anyhow::Result<()> {
+    let file = std::env::temp_dir().join(format!("opendut-{name}"));
 
-    fs::write(&file, fs::read_to_string(path)?)?;
+    fs::write(&file, samples)?;
 
     crate::tasks::run::RunCli {
         features,
@@ -388,9 +400,11 @@ fn apply_samples(path: &str, features: Vec<String>) -> anyhow::Result<()> {
     .run(&workspace::package::opendut_cleo)
 }
 
-fn host_viper_source() -> anyhow::Result<()> {
+fn host_viper_source(listener: std::net::TcpListener) -> anyhow::Result<()> {
+    listener.set_nonblocking(true)?;
+
     tokio::runtime::Runtime::new()?.block_on(async {
-        let listener = tokio::net::TcpListener::bind(("127.0.0.1", 8000)).await?;
+        let listener = tokio::net::TcpListener::from_std(listener)?;
         let app = axum::Router::new().route(
             "/viper_test_suite.py",
             axum::routing::get(|| async {
@@ -399,7 +413,8 @@ fn host_viper_source() -> anyhow::Result<()> {
         );
 
         info!(
-            "Hosting VIPER source at http://localhost:8000/viper_test_suite.py. Press Ctrl+C to stop."
+            "Hosting VIPER source at http://{}/viper_test_suite.py. Press Ctrl+C to stop.",
+            listener.local_addr()?
         );
 
         axum::serve(listener, app).await?;
