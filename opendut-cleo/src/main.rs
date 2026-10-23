@@ -104,6 +104,15 @@ enum ListResource {
     Peers(commands::peer::list::ListPeersCli),
     #[command(alias="device")]
     Devices(commands::device::list::ListDevicesCli),
+    #[cfg(feature = "viper")]
+    #[command(alias="viper-source")]
+    ViperSources(commands::viper_source::list::ListViperSourceDescriptorsCli),
+    #[cfg(feature = "viper")]
+    #[command(alias="viper-test-run")]
+    ViperTestRuns(commands::viper_test_run::list::ListViperTestRunDescriptorsCli),
+    #[cfg(feature = "viper")]
+    #[command(alias="viper-test-run-deployment")]
+    ViperTestRunDeployments(commands::viper_run_deployment::list::ListViperRunDeploymentsCli),
 }
 
 #[derive(clap::Args)]
@@ -136,6 +145,12 @@ enum CreateResource {
     Peer(commands::peer::create::CreatePeerCli),
     NetworkInterface(commands::network_interface::create::CreateNetworkInterfaceCli),
     Device(commands::device::create::CreateDeviceCli),
+    #[cfg(feature = "viper")]
+    ViperSource(commands::viper_source::create::CreateViperSourceDescriptorCli),
+    #[cfg(feature = "viper")]
+    ViperTestRun(commands::viper_test_run::create::CreateViperTestRunDescriptorCli),
+    #[cfg(feature = "viper")]
+    ViperTestRunDeployment(commands::viper_run_deployment::create::CreateViperRunDeploymentCli),
     /// Generate a random UUID, which can be used for assigning a new ID to a resource
     Uuid,
 }
@@ -146,6 +161,10 @@ enum DescribeResource {
     ClusterDescriptor(commands::cluster_descriptor::describe::DescribeClusterDescriptorCli),
     Peer(commands::peer::describe::DescribePeerCli),
     Device(commands::device::describe::DescribeDeviceCli),
+    #[cfg(feature = "viper")]
+    ViperSource(commands::viper_source::describe::DescribeViperSourceDescriptorCli),
+    #[cfg(feature = "viper")]
+    ViperTestRun(commands::viper_test_run::describe::DescribeViperTestRunDescriptorCli),
 }
 
 #[derive(Subcommand)]
@@ -161,6 +180,12 @@ enum DeleteResource {
     Peer(commands::peer::delete::DeletePeerCli),
     NetworkInterface(commands::network_interface::delete::DeleteNetworkInterfaceCli),
     Device(commands::device::delete::DeleteDeviceCli),
+    #[cfg(feature = "viper")]
+    ViperSource(commands::viper_source::delete::DeleteViperSourceDescriptorCli),
+    #[cfg(feature = "viper")]
+    ViperTestRun(commands::viper_test_run::delete::DeleteViperTestRunDescriptorCli),
+    #[cfg(feature = "viper")]
+    ViperTestRunDeployment(commands::viper_run_deployment::delete::DeleteViperRunDeploymentCli),
 }
 
 #[derive(Subcommand)]
@@ -279,6 +304,18 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
                 ListResource::Devices(implementation) => {
                     implementation.execute(&mut carl, output).await?;
                 }
+                #[cfg(feature = "viper")]
+                ListResource::ViperSources(implementation) => {
+                    implementation.execute(&mut carl, output).await?;
+                }
+                #[cfg(feature = "viper")]
+                ListResource::ViperTestRuns(implementation) => {
+                    implementation.execute(&mut carl, output).await?;
+                }
+                #[cfg(feature = "viper")]
+                ListResource::ViperTestRunDeployments(implementation) => {
+                    implementation.execute(&mut carl, output).await?;
+                }
             }
         }
         Commands::Apply(implementation) => {
@@ -307,6 +344,21 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
                     let mut carl = create_carl_client(settings).await;
                     implementation.execute(&mut carl, output).await?;
                 }
+                #[cfg(feature = "viper")]
+                CreateResource::ViperSource(implementation) => {
+                    let mut carl = create_carl_client(settings).await;
+                    implementation.execute(&mut carl, output).await?;
+                }
+                #[cfg(feature = "viper")]
+                CreateResource::ViperTestRun(implementation) => {
+                    let mut carl = create_carl_client(settings).await;
+                    implementation.execute(&mut carl, output).await?;
+                }
+                #[cfg(feature = "viper")]
+                CreateResource::ViperTestRunDeployment(implementation) => {
+                    let mut carl = create_carl_client(settings).await;
+                    implementation.execute(&mut carl, output).await?;
+                }
                 CreateResource::Uuid => {
                     println!("{}", Uuid::new_v4());
                 }
@@ -332,6 +384,14 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
                 DescribeResource::Device (implementation)=> {
                     implementation.execute(&mut carl, output).await?
                 }
+                #[cfg(feature = "viper")]
+                DescribeResource::ViperSource(implementation)=> {
+                    implementation.execute(&mut carl, output).await?
+                }
+                #[cfg(feature = "viper")]
+                DescribeResource::ViperTestRun(implementation)=> {
+                    implementation.execute(&mut carl, output).await?
+                }
             }
         }
         Commands::Delete { resource} => {
@@ -350,6 +410,18 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
                     implementation.execute(&mut carl).await?;
                 }
                 DeleteResource::Device(implementation) => {
+                    implementation.execute(&mut carl).await?;
+                }
+                #[cfg(feature = "viper")]
+                DeleteResource::ViperSource(implementation) => {
+                    implementation.execute(&mut carl).await?;
+                }
+                #[cfg(feature = "viper")]
+                DeleteResource::ViperTestRun(implementation) => {
+                    implementation.execute(&mut carl).await?;
+                }
+                #[cfg(feature = "viper")]
+                DeleteResource::ViperTestRunDeployment(implementation) => {
                     implementation.execute(&mut carl).await?;
                 }
             }
