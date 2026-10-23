@@ -8,6 +8,7 @@ use crate::packages::carl::distribution::copy_license_json::copy_license_json;
 use crate::Package;
 use crate::tasks::build::BuildArgs;
 
+
 const SELF_PACKAGE: &Package = &workspace::package::opendut_carl;
 
 /// Tasks available or specific for CARL
@@ -30,6 +31,7 @@ pub enum TaskCli {
     DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli),
 
     /// Upload sample data to simplify debugging LEA and CLEO. Run CARL with `cargo carl` beforehand.
+    /// When working with VIPER: Run CARL with `cargo carl-viper` beforehand.
     PushSamples,
 }
 
@@ -359,21 +361,49 @@ pub mod distribution {
 
 
 fn push_samples(viper: bool) -> anyhow::Result<()> {
-    let file = std::env::temp_dir().join("opendut-cargo-ci-carl-push-samples.yaml");
+    let base_samples_path = "cargo-ci-carl-push-samples.yaml";
+    let base_samples_features = Vec::new();
+    apply_samples(base_samples_path, base_samples_features)?;
 
-    let mut samples = String::from(include_str!("cargo-ci-carl-push-samples.yaml"));
     if viper {
-        samples.push('\n');
-        samples.push_str(include_str!("cargo-ci-carl-push-samples-viper.yaml"));
-    }
+        let viper_samples_path = "cargo-ci-carl-push-samples-viper.yaml";
+        let viper_samples_features = vec![String::from("viper")];
+        apply_samples(viper_samples_path, viper_samples_features)?;
 
-    fs::write(&file, samples)?;
-
-    crate::tasks::run::RunCli {
-        features: if viper { vec![String::from("viper")] } else { vec![] },
-        passthrough: vec!["apply".to_string(), file.display().to_string()],
+        host_viper_source()?;
     }
-    .run(&workspace::package::opendut_cleo)?;
 
     Ok(())
+}
+
+fn apply_samples(path: &str, features: Vec<String>) -> anyhow::Result<()> {
+    let file = std::env::temp_dir().join(format!("opendut-{}", path));
+
+    fs::write(&file, fs::read_to_string(path)?)?;
+
+    crate::tasks::run::RunCli {
+        features,
+        passthrough: vec![String::from("apply"), file.display().to_string()],
+    }
+    .run(&workspace::package::opendut_cleo)
+}
+
+fn host_viper_source() -> anyhow::Result<()> {
+    tokio::runtime::Runtime::new()?.block_on(async {
+        let listener = tokio::net::TcpListener::bind(("127.0.0.1", 8000)).await?;
+        let app = axum::Router::new().route(
+            "/viper_test_suite.py",
+            axum::routing::get(|| async {
+                include_str!("viper_test_suite_sample.py")
+            }),
+        );
+
+        info!(
+            "Hosting VIPER source at http://localhost:8000/viper_test_suite.py. Press Ctrl+C to stop."
+        );
+
+        axum::serve(listener, app).await?;
+
+        Ok(())
+    })
 }
