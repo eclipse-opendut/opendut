@@ -25,7 +25,9 @@ enum Cli {
     Test(tasks::test::TestCli),
     IntegrationTest(tasks::integration_tests::IntegrationTestCli),
 
+    #[command(alias = "opendut-carl")]
     Carl(packages::carl::CarlCli),
+    CarlViper(packages::carl::CarlCli),
     Cleo(packages::cleo::CleoCli),
     Edgar(packages::edgar::EdgarCli),
     Lea(packages::lea::LeaCli),
@@ -51,7 +53,8 @@ fn main() -> anyhow::Result<()> {
         Cli::Test(cli) => cli.run(),
         Cli::IntegrationTest(cli) => cli.run(),
 
-        Cli::Carl(cli) => cli.run(),
+        Cli::Carl(cli) => cli.run(false),
+        Cli::CarlViper(cli) => cli.run(true),
         Cli::Cleo(cli) => cli.run(),
         Cli::Edgar(cli) => cli.run(),
         Cli::Lea(cli) => cli.run(),

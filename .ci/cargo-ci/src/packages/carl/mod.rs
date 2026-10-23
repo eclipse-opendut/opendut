@@ -8,11 +8,12 @@ use crate::packages::carl::distribution::copy_license_json::copy_license_json;
 use crate::Package;
 use crate::tasks::build::BuildArgs;
 
+mod viper_samples;
+
 const SELF_PACKAGE: &Package = &workspace::package::opendut_carl;
 
 /// Tasks available or specific for CARL
 #[derive(clap::Parser)]
-#[command(alias="opendut-carl")]
 pub struct CarlCli {
     #[command(subcommand)]
     pub task: TaskCli,
@@ -30,13 +31,16 @@ pub enum TaskCli {
     DistributionBundleFiles(crate::tasks::distribution::bundle::DistributionBundleFilesCli),
     DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli),
 
-    /// Upload sample data to simplify debugging LEA and CLEO. Run CARL with `cargo carl` beforehand.
-    PushSamples,
+    /// Upload sample data to simplify debugging LEA and CLEO. In VIPER mode, host the test suite until Ctrl+C. Start CARL beforehand.
+    PushSamples {
+        #[arg(long, default_value_t = 8000)]
+        port: u16,
+    },
 }
 
 impl CarlCli {
     #[tracing::instrument(name="carl", skip(self))]
-    pub fn run(self) -> anyhow::Result<()> {
+    pub fn run(self, viper: bool) -> anyhow::Result<()> {
         match self.task {
             TaskCli::DistributionBuild(crate::tasks::build::DistributionBuildCli { target, build_args }) => {
                 build::build_release(target, &build_args)?;
@@ -80,7 +84,7 @@ impl CarlCli {
                 cli.run(SELF_PACKAGE)?;
             }
 
-            TaskCli::PushSamples => push_samples()?,
+            TaskCli::PushSamples { port } => push_samples(viper, port)?,
         };
         Ok(())
     }
@@ -359,16 +363,39 @@ pub mod distribution {
 }
 
 
-fn push_samples() -> anyhow::Result<()> {
+fn push_samples(viper: bool, port: u16) -> anyhow::Result<()> {
+    let listener = if viper {
+        Some(std::net::TcpListener::bind(("127.0.0.1", port))
+            .with_context(|| format!("Failed to bind VIPER sample server to 127.0.0.1:{port}. Check whether the port is already in use."))?)
+    } else {
+        None
+    };
+
     let file = std::env::temp_dir().join("opendut-cargo-ci-carl-push-samples.yaml");
 
-    fs::write(&file, include_str!("cargo-ci-carl-push-samples.yaml"))?;
-
-    crate::tasks::run::RunCli {
-        features: vec![],
-        passthrough: vec!["apply".to_string(), file.display().to_string()],
+    let mut samples = String::from(include_str!("cargo-ci-carl-push-samples.yaml"));
+    if let Some(listener) = &listener {
+        let port = listener.local_addr()?.port();
+        samples.push('\n');
+        samples.push_str(&include_str!("cargo-ci-carl-push-samples-viper.yaml")
+            .replace("{{port}}", &port.to_string()));
     }
-    .run(&workspace::package::opendut_cleo)?;
+
+    fs::write(&file, samples)?;
+
+    let cleo = crate::tasks::run::RunCli {
+        features: if viper { vec![String::from("viper")] } else { vec![] },
+        passthrough: vec!["apply".to_string(), file.display().to_string()],
+    };
+
+    if let Some(listener) = listener {
+        let runtime = tokio::runtime::Runtime::new()
+            .context("Failed to initialize Tokio runtime for VIPER samples")?;
+
+        runtime.block_on(viper_samples::push_samples(cleo, listener))?;
+    } else {
+        cleo.run(&workspace::package::opendut_cleo)?;
+    }
 
     Ok(())
 }

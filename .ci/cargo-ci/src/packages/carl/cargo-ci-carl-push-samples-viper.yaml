@@ -1,0 +1,23 @@
+---
+version: v1
+kind: ViperSourceDescriptor
+metadata:
+  id: 120ea214-f92c-45ac-96df-015c6045e582
+  name: opendut-viper-source1
+spec:
+  url: "http://localhost:{{port}}/script.py"
+  kind: http
+
+---
+version: v1
+kind: ViperTestRunDescriptor
+metadata:
+  id: 70cb5c47-4d08-4f22-b5e8-14258518a039
+  name: opendut-viper-test-run1
+spec:
+  source-id: 120ea214-f92c-45ac-96df-015c6045e582
+  peer-id: 24e08de9-3bf0-43e1-a75e-e1bcb7ebe2fb
+  parameters:
+    letter: "a"
+    version: 2
+    enabled: true

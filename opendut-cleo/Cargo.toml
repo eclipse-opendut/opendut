@@ -41,7 +41,10 @@ googletest = { workspace = true }
 shadow-rs = { workspace = true, default-features = true }
 
 [features]
-viper = []
+viper = [
+    "opendut-carl-api/viper",
+    "opendut-model/viper",
+]
 
 [lints]
 workspace = true

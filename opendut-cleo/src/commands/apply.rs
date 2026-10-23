@@ -11,7 +11,6 @@ use opendut_model::specs::parse::json::JsonSpecificationDocument;
 use opendut_model::specs::parse::yaml::YamlSpecificationFile;
 use opendut_model::specs::peer::PeerDescriptorSpecification;
 use opendut_model::specs::{Specification, SpecificationDocument};
-use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 
@@ -80,6 +79,14 @@ impl ApplyCli {
             ResourceModel::ClusterDescriptor(model) => {
                 create_cluster_descriptor(model, carl, &self.output).await?;
             }
+            #[cfg(feature = "viper")]
+            ResourceModel::ViperSourceDescriptor(model) => {
+                crate::commands::viper_source::create::create_viper_source_descriptor(model, carl, &self.output).await?;
+            }
+            #[cfg(feature = "viper")]
+            ResourceModel::ViperTestRunDescriptor(model) => {
+                crate::commands::viper_test_run::create::create_viper_test_run_descriptor(model, carl, &self.output).await?;
+            }
         }
         Ok(())
     }
@@ -123,10 +130,14 @@ fn parse_source(arg: &str) -> Result<Source, SourceParsingError> {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq)]
 enum ResourceModel {
     PeerDescriptor(PeerDescriptor),
     ClusterDescriptor(ClusterDescriptor),
+    #[cfg(feature = "viper")]
+    ViperSourceDescriptor(opendut_model::viper::ViperSourceDescriptor),
+    #[cfg(feature = "viper")]
+    ViperTestRunDescriptor(opendut_model::viper::ViperTestRunDescriptor),
 }
 
 fn convert_document_to_model(specification_document: SpecificationDocument) -> crate::Result<ResourceModel> {
@@ -142,7 +153,25 @@ fn convert_document_to_model(specification_document: SpecificationDocument) -> c
             let cluster_descriptor = convert_document_to_cluster_descriptor(specification_document.metadata, cluster_descriptor)
                 .map_err(|error| format!("Could not parse the provided specification for cluster descriptor <{cluster_descriptor_id}>.\n {error}"))?;
             ResourceModel::ClusterDescriptor(cluster_descriptor)
-        }        
+        }
+        #[cfg(feature = "viper")]
+        Specification::ViperSourceDescriptorSpecification(opendut_model::specs::viper_source::ViperSourceDescriptorSpecification::V1(viper_source)) => {
+            let viper_source_id = specification_document.metadata.id;
+            let viper_source_descriptor = crate::commands::viper_source::apply::convert_document_to_viper_source_descriptor(specification_document.metadata, viper_source)
+                .map_err(|error| format!("Could not parse the provided specification for VIPER source descriptor <{viper_source_id}>.\n {error}"))?;
+            ResourceModel::ViperSourceDescriptor(viper_source_descriptor)
+        }
+        #[cfg(feature = "viper")]
+        Specification::ViperTestRunDescriptorSpecification(opendut_model::specs::viper_test_run::ViperTestRunDescriptorSpecification::V1(viper_test_run)) => {
+            let viper_test_id = specification_document.metadata.id;
+            let viper_test_run_descriptor = crate::commands::viper_test_run::apply::convert_document_to_viper_test_run_descriptor(specification_document.metadata, viper_test_run)
+                .map_err(|error| format!("Could not parse the provided specification for VIPER test run descriptor <{viper_test_id}>.\n {error}"))?;
+            ResourceModel::ViperTestRunDescriptor(viper_test_run_descriptor)
+        }
+        #[cfg(not(feature = "viper"))]
+        Specification::ViperSourceDescriptorSpecification(_) | Specification::ViperTestRunDescriptorSpecification(_) => {
+            return Err(String::from("VIPER resources require CLEO to be built with the viper feature."));
+        }
     };
     Ok(result)
 }
