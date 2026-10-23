@@ -10,14 +10,48 @@ Always create a database backup before upgrading CARL.
 
 ## Unreleased
 
-* Updated Keycloak in Localenv to version `26.7.2`.  
-  This includes the fix for [CVE-2026-18963](https://access.redhat.com/security/cve/cve-2026-18963).  
-  OpenDuT was not actually vulnerable, if it was deployed with the default configuration,
-  since the recommended temporary mitigation of disabling the password reset functionality is the default anyways.  
-  Updating to this version is only urgent, if you have reconfigured Keycloak to offer a password reset.
-  If you cannot update the openDuT version right away, you can also update Keycloak separately by using the up-to-date deployment scripts.
-* Updated NetBird to version `0.81.3`.
-* THEO: Added `cargo theo testenv audit` subcommand to list resolved Localenv container images and scan them for vulnerabilities using Trivy.
+### Added
+* VIPER / CARL / EDGAR:
+  * Pre-fetch VIPER test source code in CARL when a test run deployment is created and pass compilation/instantiation errors through to LEA/CLEO.
+  * Added `ViperRunManager` in EDGAR to execute VIPER test runs with `ViperTestParameters` passed from CARL and log test results.
+  * Wait for the target peer to be online before running a VIPER test.
+* LEA:
+  * Added device tagging (`DeviceTagInput`) and display device tags when configuring clusters.
+  * Added peer selection tab to `ViperTestConfigurator` (replacing cluster selection) and display the selected peer in `ViperTestOverview`.
+  * Added ability to duplicate VIPER test descriptors (`ViperTestRuns`).
+  * Disable the cluster `DeployToggle` when adding a new cluster or when a cluster cannot be deployed due to blocked peers (with a clickable peer link in the tooltip).
+  * Show explanatory tooltips when a peer, cluster, VIPER source, or VIPER test cannot be saved.
+* THEO:
+  * Added `cargo theo testenv audit` subcommand to list resolved Localenv container images and scan them for vulnerabilities using Trivy.
+* Documentation:
+  * Added chapters on configuring authentication, mTLS, hardware setup examples, EDGAR monitoring dashboard troubleshooting, and the Localenv vulnerability scanner.
+
+### Fixed
+* CARL / Localenv: Fixed the CARL Docker healthcheck to use mTLS client certificates when mTLS is enabled.
+* EDGAR / NetBird:
+  * Disabled NetBird DNS management (`--disable-dns`) during `netbird up`.
+  * Disabled NetBird lazy connections (`NB_LAZY_CONN=off`) so peer WireGuard tunnels are always established eagerly.
+* LEA:
+  * Fixed a reactivity bug when deploying and undeploying a cluster.
+  * Fixed warnings caused by using reactive signals outside a reactive tracking context.
+* `viper-py`: Adapted assertion failure error messages to match CPython.
+* `cargo-ci`: Propagate non-zero exit codes when running sub-packages (e.g. `cargo cleo`).
+* Security / Dependencies:
+  * Updated Keycloak in Localenv to version `26.8.1` (previously `26.7.2`, which included the fix for [CVE-2026-18963](https://access.redhat.com/security/cve/cve-2026-18963)).  
+    OpenDuT was not actually vulnerable, if it was deployed with the default configuration,
+    since the recommended temporary mitigation of disabling the password reset functionality is the default anyways.  
+    Updating to this version is only urgent, if you have reconfigured Keycloak to offer a password reset.
+    If you cannot update the openDuT version right away, you can also update Keycloak separately by using the up-to-date deployment scripts.
+  * Updated Localenv container images (`postgres:14.24`, `traefik:v3.7.16`, `prometheus:v3.15.1`, `tempo:2.10.10`, `loki:3.6.19`, `alloy:v1.21.2`, `opentelemetry-collector-contrib:0.163.2`, `grafana:12.4`) to address reported CVEs.
+  * Updated Rust dependencies (`wasmtime`, `rustls`, `rustls-webpki`, `webpki-root-certs`, `h2`, `crossbeam-epoch`) to address RustSec advisories and the eMudhra/emSign CA distrust.
+
+### Changed
+* Updated NetBird to version `0.81.3` and disabled GeoLite database updates in NetBird Management.
+* Updated Rust toolchain to `v1.97.1`.
+* LEA: Refactored configurator breadcrumbs to display `"Configure ..."` instead of raw resource IDs.
+
+### Removed
+* Removed the legacy `Executor` feature from openDuT (replaced by VIPER) along with the `nginx-webdav` container from Localenv and Testenv.
 
 
 ## [v0.10.2] - 2026-06-11
