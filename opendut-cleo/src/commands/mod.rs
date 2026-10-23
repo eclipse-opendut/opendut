@@ -9,3 +9,9 @@ pub mod generate_setup_string;
 pub mod completions;
 pub mod setup;
 pub mod wait;
+#[cfg(feature = "viper")]
+pub mod viper_source;
+#[cfg(feature = "viper")]
+pub mod viper_test_run;
+#[cfg(feature = "viper")]
+pub mod viper_run_deployment;

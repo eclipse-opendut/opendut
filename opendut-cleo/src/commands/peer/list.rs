@@ -1,11 +1,10 @@
-use std::fmt::{Display, Formatter};
-
 use cli_table::{print_stdout, Table, WithTitle};
 use serde::Serialize;
 
 use opendut_carl_api::carl::CarlClient;
 use opendut_model::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName};
-use opendut_model::peer::state::{PeerConnectionState, PeerState};
+use opendut_model::peer::state::PeerState;
+use crate::commands::peer::PeerStatus;
 use crate::ListOutputFormat;
 
 /// List all peers
@@ -44,31 +43,6 @@ impl From<SerializablePeer> for PeerTable {
             status,
             location,
             network_interfaces: network_interfaces.join(", "),
-        }
-    }
-}
-
-
-#[derive(Debug, PartialEq, Serialize)]
-enum PeerStatus {
-    Connected,
-    Disconnected,
-}
-
-impl From<PeerState> for PeerStatus {
-    fn from(peer_state: PeerState) -> Self {
-        match peer_state.connection {
-            PeerConnectionState::Offline => { PeerStatus::Disconnected }
-            PeerConnectionState::Online { .. } => { PeerStatus::Connected }
-        }
-    }
-}
-
-impl Display for PeerStatus {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            PeerStatus::Connected => write!(f, "Connected"),
-            PeerStatus::Disconnected => write!(f, "Disconnected"),
         }
     }
 }
