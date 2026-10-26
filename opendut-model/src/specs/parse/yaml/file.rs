@@ -47,12 +47,7 @@ impl YamlSpecificationFile {
     /// # }
     /// ```
     pub fn try_from_yaml_str(s: &str) -> Result<Self, ParseSpecificationError> {
-        let documents = serde_yaml::Deserializer::from_str(s)
-            .map(|yaml_document| {
-                serde_yaml::Value::deserialize(yaml_document)
-                    .and_then(serde_yaml::from_value::<YamlSpecificationDocument>)
-            })
-            .collect::<Result<Vec<_>, _>>()
+        let documents = serde_saphyr::from_multiple::<YamlSpecificationDocument>(s)
             .map_err(|cause| ParseSpecificationError::IllegalYamlSpecification { cause })?;
         Ok(Self { documents })
     }
