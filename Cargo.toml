@@ -103,7 +103,7 @@ hyper-util = "0.1"
 indexmap = { version = "2" } # align with 'rustpython-vm'
 indicatif = "0.18"
 indoc = "2"
-jsonwebtoken = { version = "10", features = ["rust_crypto"] }
+jsonwebtoken = { version = "11", features = ["rust_crypto"] }
 leptos = "0.8"
 leptos_oidc = "0.9"
 leptos_router = "0.8"
