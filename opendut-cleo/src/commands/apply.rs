@@ -131,6 +131,7 @@ fn parse_source(arg: &str) -> Result<Source, SourceParsingError> {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+#[allow(clippy::enum_variant_names)]
 enum ResourceModel {
     PeerDescriptor(PeerDescriptor),
     ClusterDescriptor(ClusterDescriptor),
