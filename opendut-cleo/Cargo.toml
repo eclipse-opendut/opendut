@@ -22,7 +22,6 @@ glob = { workspace = true }
 indoc = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
-serde_yaml = { workspace = true }
 shadow-formatted-version = { workspace = true }
 shadow-rs = { workspace = true, default-features = true }
 thiserror = { workspace = true }

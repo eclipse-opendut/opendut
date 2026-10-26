@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use serde_yaml::Value;
+use serde_json::Value;
 
 use crate::specs::*;
 
@@ -44,7 +44,7 @@ impl YamlSpecificationDocument {
     /// # }
     /// ```
     pub fn try_from_yaml_str(s: &str) -> Result<Self, ParseSpecificationError> {
-        serde_yaml::from_str::<YamlSpecificationDocument>(s)
+        serde_saphyr::from_str::<YamlSpecificationDocument>(s)
             .map_err(|cause| ParseSpecificationError::IllegalYamlSpecification { cause })
     }
 }
@@ -64,12 +64,12 @@ impl TryFrom<YamlSpecificationDocument> for SpecificationDocument {
 }
 
 fn parse_kind(s: &str) -> Result<ResourceKind, ParseSpecificationError> {
-    serde_yaml::from_str::<ResourceKind>(s)
+    serde_saphyr::from_str::<ResourceKind>(s)
         .map_err(|_| ParseSpecificationError::IllegalResourceKind { kind: String::from(s) })
 }
 
 fn parse_version(s: &str) -> Result<SpecificationVersion, ParseSpecificationError> {
-    match serde_yaml::from_str::<SpecificationVersion>(s) {
+    match serde_saphyr::from_str::<SpecificationVersion>(s) {
         Ok(version) => {
             match version {
                 SpecificationVersion::V1 => { Ok(SpecificationVersion::V1) }
@@ -85,16 +85,20 @@ fn parse_version(s: &str) -> Result<SpecificationVersion, ParseSpecificationErro
 fn parse_spec(kind: ResourceKind, version: SpecificationVersion, spec: Value) -> Result<Specification, ParseSpecificationError> {
     match (kind, version) {
         (ResourceKind::ClusterDescriptor, SpecificationVersion::V1) => {
-            let spec = serde_yaml::from_value::<cluster::ClusterDescriptorSpecificationV1>(spec)
-                .map_err(|cause| ParseSpecificationError::IllegalYamlSpecification { cause } )?;
+            let spec = serde_json::from_value::<cluster::ClusterDescriptorSpecificationV1>(spec)
+                .map_err(|cause| ParseSpecificationError::IllegalYamlSpecification {
+                    cause: serde::de::Error::custom(cause),
+                })?;
             Ok(Specification::ClusterDescriptorSpecification(cluster::ClusterDescriptorSpecification::V1(spec)))
         }
         (ResourceKind::ClusterDescriptor, _) => {
             Err(ParseSpecificationError::UnknownVersion { kind, version })
         }
         (ResourceKind::PeerDescriptor, SpecificationVersion::V1) => {
-            let spec = serde_yaml::from_value::<peer::PeerDescriptorSpecificationV1>(spec)
-                .map_err(|cause| ParseSpecificationError::IllegalYamlSpecification { cause } )?;
+            let spec = serde_json::from_value::<peer::PeerDescriptorSpecificationV1>(spec)
+                .map_err(|cause| ParseSpecificationError::IllegalYamlSpecification {
+                    cause: serde::de::Error::custom(cause),
+                })?;
             Ok(Specification::PeerDescriptorSpecification(peer::PeerDescriptorSpecification::V1(spec)))
         }
         (ResourceKind::PeerDescriptor, _) => {
