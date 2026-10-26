@@ -2,7 +2,7 @@ use crate::commands::cluster_descriptor::apply::convert_document_to_cluster_desc
 use crate::commands::cluster_descriptor::create::create_cluster_descriptor;
 use crate::commands::peer::apply::convert_document_to_peer_descriptor;
 use crate::commands::peer::create::create_peer;
-use crate::CreateOutputFormat;
+use crate::OutputFormat;
 use opendut_carl_api::carl::CarlClient;
 use opendut_model::cluster::ClusterDescriptor;
 use opendut_model::peer::PeerDescriptor;
@@ -20,9 +20,9 @@ pub struct ApplyCli {
     ///Path to read a YAML file from. Alternatively, the configuration can be specified inline as JSON.
     #[arg(value_parser=parse_source)]
     from: Source,
-    ///Text, JSON or prettified JSON as output format
-    #[arg(global=true, value_enum, short, long, default_value_t=CreateOutputFormat::Text)]
-    output: CreateOutputFormat,
+    ///Table, JSON or prettified JSON as output format
+    #[arg(global=true, value_enum, short, long, default_value_t=OutputFormat::Table)]
+    output: OutputFormat,
 }
 
 impl ApplyCli {

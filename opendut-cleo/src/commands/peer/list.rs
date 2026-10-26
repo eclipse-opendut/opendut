@@ -2,10 +2,10 @@ use cli_table::{print_stdout, Table, WithTitle};
 use serde::Serialize;
 
 use opendut_carl_api::carl::CarlClient;
-use opendut_model::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName};
+use opendut_model::peer::{PeerDescriptor, PeerId, PeerName};
 use opendut_model::peer::state::PeerState;
 use crate::commands::peer::PeerStatus;
-use crate::ListOutputFormat;
+use crate::OutputFormat;
 
 /// List all peers
 #[derive(clap::Parser)]
@@ -16,8 +16,6 @@ struct SerializablePeer {
     name: PeerName,
     id: PeerId,
     status: PeerStatus,
-    location: PeerLocation,
-    network_interfaces: Vec<String>,
 }
 
 #[derive(Table)]
@@ -28,44 +26,37 @@ struct PeerTable {
     id: PeerId,
     #[table(title = "Status")]
     status: PeerStatus,
-    #[table(title = "Location")]
-    location: PeerLocation,
-    #[table(title = "NetworkInterfaces")]
-    network_interfaces: String,
 }
+
 impl From<SerializablePeer> for PeerTable {
     fn from(peer: SerializablePeer) -> Self {
-        let SerializablePeer { name, id, status, location, network_interfaces } = peer;
+        let SerializablePeer { name, id, status } = peer;
 
         PeerTable {
             name,
             id,
             status,
-            location,
-            network_interfaces: network_interfaces.join(", "),
         }
     }
 }
 
 impl ListPeersCli {
-    pub async fn execute(self, carl: &mut CarlClient, output: ListOutputFormat) -> crate::Result<()> {
-        let all_peer_descriptors = carl
-            .peers
-            .list_peer_descriptors()
-            .await
+    pub async fn execute(self, carl: &mut CarlClient, output: OutputFormat) -> crate::Result<()> {
+        let all_peer_descriptors = carl.peers.list_peer_descriptors().await
             .map_err(|error| format!("Could not list peers.\n  {error}"))?;
+
         let all_peer_states = carl.peers.list_peer_states().await
             .map_err(|_| "Failed to list peer states!")?;
         
-        let serializable_peers = all_peer_descriptors
-            .into_iter()
+        let serializable_peers = all_peer_descriptors.into_iter()
             .map(|peer| {
                 let peer_state = all_peer_states.get(&peer.id).cloned().unwrap_or_default();
-                add_peer_status(peer, peer_state)
+                add_peer_status(&peer, peer_state)
             })
             .collect::<Vec<_>>();
+
         match output {
-            ListOutputFormat::Table => {
+            OutputFormat::Table => {
                 let peer_table = serializable_peers.into_iter()
                     .map(PeerTable::from)
                     .collect::<Vec<_>>();
@@ -73,11 +64,11 @@ impl ListPeersCli {
                 print_stdout(peer_table.with_title())
                     .expect("List of clusters should be printable as table.");
             }
-            ListOutputFormat::Json => {
+            OutputFormat::Json => {
                 let json = serde_json::to_string(&serializable_peers).unwrap();
                 println!("{json}");
             }
-            ListOutputFormat::PrettyJson => {
+            OutputFormat::PrettyJson => {
                 let json = serde_json::to_string_pretty(&serializable_peers).unwrap();
                 println!("{json}");
             }
@@ -87,20 +78,15 @@ impl ListPeersCli {
 }
 
 fn add_peer_status(
-    peer: PeerDescriptor,
+    peer: &PeerDescriptor,
     peer_state: PeerState
 ) -> SerializablePeer {
     let status = peer_state.into();
-    let network_interfaces = peer.network.interfaces.iter()
-        .map(|interface| interface.name.to_string())
-        .collect::<Vec<_>>();
 
     SerializablePeer {
         name: Clone::clone(&peer.name),
         id: peer.id,
-        location: Clone::clone(&peer.location.clone().unwrap_or_default()),
-        network_interfaces,
-        status
+        status,
     }
 }
 
@@ -108,13 +94,15 @@ fn add_peer_status(
 mod test {
     use googletest::prelude::*;
 
+    use opendut_model::cluster::ClusterId;
     use opendut_model::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
+    use opendut_model::peer::state::{PeerConnectionState, PeerMemberState};
     use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
-
+    use crate::commands::peer::PeerStatus;
     use super::*;
 
     #[test]
-    fn test() {
+    fn should_add_peer_status_from_state() {
         let peer = PeerDescriptor {
             id: PeerId::random(),
             name: PeerName::try_from("MyPeer").unwrap(),
@@ -129,14 +117,26 @@ mod test {
             },
             topology: Default::default(),
         };
-        assert_that!(
-            add_peer_status(peer.clone(), PeerState::default()),
-            matches_pattern!(SerializablePeer {
-                name: eq(&peer.name),
-                id: eq(&peer.id),
-                status: eq(&PeerStatus::Disconnected),
-                ..
-            }),
-        );
+        let cluster_id = ClusterId::random();
+        let blocked = PeerMemberState::Blocked { by_cluster: cluster_id };
+        let online = PeerConnectionState::Online { remote_host: "127.0.0.1".parse().unwrap() };
+
+        for (peer_state, expected_status) in [
+            (PeerState::default(), PeerStatus::Offline),
+            (PeerState { connection: PeerConnectionState::Offline, member: blocked.clone() }, PeerStatus::Offline),
+            (PeerState { connection: online.clone(), member: PeerMemberState::Available }, PeerStatus::Available),
+            (PeerState { connection: online, member: blocked }, PeerStatus::Blocked(cluster_id)),
+        ] {
+            let serializable_peer = add_peer_status(&peer, peer_state);
+            assert_that!(
+                serializable_peer,
+                matches_pattern!(SerializablePeer {
+                    name: eq(&peer.name),
+                    id: eq(&peer.id),
+                    status: eq(&expected_status),
+                    ..
+                }),
+            );
+        }
     }
 }

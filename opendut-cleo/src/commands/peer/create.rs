@@ -1,6 +1,6 @@
 use console::Style;
 
-use crate::{CreateOutputFormat};
+use crate::{OutputFormat};
 use opendut_carl_api::carl::CarlClient;
 use opendut_model::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
 use opendut_model::util::net::NetworkInterfaceName;
@@ -25,7 +25,7 @@ pub struct CreatePeerCli {
 }
 
 impl CreatePeerCli {
-    pub async fn execute(self, carl: &mut CarlClient, output: CreateOutputFormat) -> crate::Result<()> {
+    pub async fn execute(self, carl: &mut CarlClient, output: OutputFormat) -> crate::Result<()> {
         let id = self.id.unwrap_or_else(PeerId::random);
 
         let name = self.name;
@@ -49,25 +49,25 @@ impl CreatePeerCli {
     }
 }
 
-pub async fn create_peer(descriptor: PeerDescriptor, carl: &mut CarlClient, output: &CreateOutputFormat) -> crate::Result<()> {
+pub async fn create_peer(descriptor: PeerDescriptor, carl: &mut CarlClient, output: &OutputFormat) -> crate::Result<()> {
     carl.peers
         .store_peer_descriptor(descriptor.clone())
         .await
         .map_err(|error| format!("Failed to create new peer.\n  {error}"))?;
     let bold = Style::new().bold();
     match output {
-        CreateOutputFormat::Text => {
+        OutputFormat::Table => {
             println!(
                 "Created the peer '{}' with the ID: <{}>",
                 descriptor.name,
                 bold.apply_to(descriptor.id)
             );
         }
-        CreateOutputFormat::Json => {
+        OutputFormat::Json => {
             let json = serde_json::to_string(&descriptor).unwrap();
             println!("{json}");
         }
-        CreateOutputFormat::PrettyJson => {
+        OutputFormat::PrettyJson => {
             let json = serde_json::to_string_pretty(&descriptor).unwrap();
             println!("{json}");
         }

@@ -3,7 +3,7 @@ use indoc::indoc;
 use opendut_carl_api::carl::CarlClient;
 use opendut_model::topology::DeviceId;
 
-use crate::DescribeOutputFormat;
+use crate::OutputFormat;
 
 /// Describe a device
 #[derive(clap::Parser)]
@@ -14,7 +14,7 @@ pub struct DescribeDeviceCli {
 }
 
 impl DescribeDeviceCli {
-    pub async fn execute(self, carl: &mut CarlClient, output: DescribeOutputFormat) -> crate::Result<()> {
+    pub async fn execute(self, carl: &mut CarlClient, output: OutputFormat) -> crate::Result<()> {
         let device_id = self.id;
 
         let devices = carl.peers.list_devices().await
@@ -24,7 +24,7 @@ impl DescribeDeviceCli {
             .ok_or(format!("Failed to find device for id <{device_id}>"))?;
 
         let text = match output {
-            DescribeOutputFormat::Text => {
+            OutputFormat::Table => {
                 format!(indoc!("
                     Device: {}
                       Id: {}
@@ -43,10 +43,10 @@ impl DescribeDeviceCli {
                         .join(", ")
                 )
             }
-            DescribeOutputFormat::Json => {
+            OutputFormat::Json => {
                 serde_json::to_string(&device).unwrap()
             }
-            DescribeOutputFormat::PrettyJson => {
+            OutputFormat::PrettyJson => {
                 serde_json::to_string_pretty(&device).unwrap()
             }
         };

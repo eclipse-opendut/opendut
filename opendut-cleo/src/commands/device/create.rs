@@ -1,4 +1,4 @@
-use crate::{CreateOutputFormat, DescribeOutputFormat};
+use crate::{OutputFormat};
 use opendut_carl_api::carl::CarlClient;
 use opendut_model::peer::PeerId;
 use opendut_model::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag};
@@ -29,7 +29,7 @@ pub struct CreateDeviceCli {
 
 impl CreateDeviceCli {
     #[allow(clippy::too_many_arguments)]
-    pub async fn execute(self, carl: &mut CarlClient, output: CreateOutputFormat) -> crate::Result<()> {
+    pub async fn execute(self, carl: &mut CarlClient, output: OutputFormat) -> crate::Result<()> {
         let peer_id = self.peer_id;
         let device_id = self.device_id.unwrap_or(DeviceId::random());
 
@@ -84,8 +84,7 @@ impl CreateDeviceCli {
         }
         carl.peers.store_peer_descriptor(Clone::clone(&peer_descriptor)).await
             .map_err(|error| format!("Failed to update peer <{peer_id}>.\n  {error}"))?;
-        let output_format = DescribeOutputFormat::from(output);
-        crate::commands::peer::describe::render_peer_descriptor(peer_descriptor, carl, output_format).await?;
+        crate::commands::peer::describe::render_peer_descriptor(peer_descriptor, carl, output);
 
         Ok(())
     }

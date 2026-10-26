@@ -9,11 +9,11 @@ use serde::Serialize;
 
 use opendut_model::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName};
 
-use crate::ListOutputFormat;
+use crate::OutputFormat;
 
-fn render_devices(devices: Vec<SerializableDevice>, output: ListOutputFormat) -> String {
+fn render_devices(devices: Vec<SerializableDevice>, output: OutputFormat) -> String {
     match output {
-        ListOutputFormat::Table => {
+        OutputFormat::Table => {
             let devices = devices.into_iter()
                 .map(DeviceTable::from)
                 .collect::<Vec<_>>();
@@ -25,10 +25,10 @@ fn render_devices(devices: Vec<SerializableDevice>, output: ListOutputFormat) ->
                 .unwrap();
             format!("{table}")
         }
-        ListOutputFormat::Json => {
+        OutputFormat::Json => {
             serde_json::to_string(&devices).unwrap()
         }
-        ListOutputFormat::PrettyJson => {
+        OutputFormat::PrettyJson => {
             serde_json::to_string_pretty(&devices).unwrap()
         }
     }
