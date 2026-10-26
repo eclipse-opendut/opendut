@@ -4,7 +4,7 @@ use opendut_carl_api::carl::CarlClient;
 use opendut_model::peer::PeerId;
 use opendut_model::viper::{ViperSourceId, ViperTestId, ViperTestName};
 
-use crate::ListOutputFormat;
+use crate::OutputFormat;
 use super::SerializableViperTestRun;
 
 /// List all VIPER test run descriptors
@@ -32,7 +32,7 @@ impl From<SerializableViperTestRun> for ViperTestRunTable {
 }
 
 impl ListViperTestRunDescriptorsCli {
-    pub async fn execute(self, carl: &mut CarlClient, output: ListOutputFormat) -> crate::Result<()> {
+    pub async fn execute(self, carl: &mut CarlClient, output: OutputFormat) -> crate::Result<()> {
         let tests = carl.viper.list_viper_test_run_descriptors().await
             .map_err(|error| format!("Could not list VIPER test run descriptors.\n  {error}"))?;
 
@@ -41,7 +41,7 @@ impl ListViperTestRunDescriptorsCli {
             .collect::<Vec<_>>();
 
         match output {
-            ListOutputFormat::Table => {
+            OutputFormat::Table => {
                 let test_table = serializable_tests.into_iter()
                     .map(ViperTestRunTable::from)
                     .collect::<Vec<_>>();
@@ -49,12 +49,12 @@ impl ListViperTestRunDescriptorsCli {
                 print_stdout(test_table.with_title())
                     .map_err(|error| format!("Could not print VIPER test run descriptors.\n  {error}"))?;
             }
-            ListOutputFormat::Json => {
+            OutputFormat::Json => {
                 let json = serde_json::to_string(&serializable_tests)
                     .map_err(|error| format!("Could not serialize VIPER test run descriptors.\n  {error}"))?;
                 println!("{json}");
             }
-            ListOutputFormat::PrettyJson => {
+            OutputFormat::PrettyJson => {
                 let json = serde_json::to_string_pretty(&serializable_tests)
                     .map_err(|error| format!("Could not serialize VIPER test run descriptors.\n  {error}"))?;
                 println!("{json}");

@@ -2,7 +2,7 @@ use opendut_carl_api::carl::CarlClient;
 use opendut_model::peer::PeerId;
 use opendut_model::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
-use crate::{CreateOutputFormat, DescribeOutputFormat, NetworkInterfaceType};
+use crate::{OutputFormat, NetworkInterfaceType};
 
 /// Create a network interface
 #[derive(clap::Parser)]
@@ -18,7 +18,7 @@ pub struct CreateNetworkInterfaceCli {
     interface_name: NetworkInterfaceName,
 }
 impl CreateNetworkInterfaceCli {
-    pub async fn execute(self, carl: &mut CarlClient, output: CreateOutputFormat) -> crate::Result<()> {
+    pub async fn execute(self, carl: &mut CarlClient, output: OutputFormat) -> crate::Result<()> {
         let peer_id = self.peer_id;
 
         let mut peer_descriptor = carl.peers.get_peer_descriptor(peer_id).await
@@ -58,8 +58,7 @@ impl CreateNetworkInterfaceCli {
 
         carl.peers.store_peer_descriptor(Clone::clone(&peer_descriptor)).await
             .map_err(|error| format!("Failed to update peer <{peer_id}>.\n  {error}"))?;
-        let output_format = DescribeOutputFormat::from(output);
-        crate::commands::peer::describe::render_peer_descriptor(peer_descriptor, carl, output_format).await?;
+        crate::commands::peer::describe::render_peer_descriptor(peer_descriptor, carl, output);
 
         Ok(())
     }

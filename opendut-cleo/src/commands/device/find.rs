@@ -1,7 +1,7 @@
 use opendut_carl_api::carl::CarlClient;
 
 use crate::commands::device::{render_devices, SerializableDevice};
-use crate::ListOutputFormat;
+use crate::OutputFormat;
 
 /// Find a device
 #[derive(clap::Parser)]
@@ -12,7 +12,7 @@ pub struct FindDeviceCli {
 }
 
 impl FindDeviceCli {
-    pub async fn execute(self, carl: &mut CarlClient, output: ListOutputFormat) -> crate::Result<()> {
+    pub async fn execute(self, carl: &mut CarlClient, output: OutputFormat) -> crate::Result<()> {
         let devices = {
             let devices = carl.peers.list_devices().await
                 .map_err(|_| String::from("Failed to find devices."))?;

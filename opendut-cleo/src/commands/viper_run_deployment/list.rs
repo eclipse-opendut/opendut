@@ -3,7 +3,7 @@ use cli_table::{print_stdout, Table, WithTitle};
 use opendut_carl_api::carl::CarlClient;
 use opendut_model::viper::{ViperRunId, ViperTestId};
 
-use crate::ListOutputFormat;
+use crate::OutputFormat;
 use super::SerializableViperRunDeployment;
 
 /// List all VIPER run deployments
@@ -27,7 +27,7 @@ impl From<SerializableViperRunDeployment> for ViperRunDeploymentTable {
 }
 
 impl ListViperRunDeploymentsCli {
-    pub async fn execute(self, carl: &mut CarlClient, output: ListOutputFormat) -> crate::Result<()> {
+    pub async fn execute(self, carl: &mut CarlClient, output: OutputFormat) -> crate::Result<()> {
         let deployments = carl.viper.list_viper_run_deployments().await
             .map_err(|error| format!("Could not list VIPER run deployments.\n  {error}"))?;
 
@@ -36,7 +36,7 @@ impl ListViperRunDeploymentsCli {
             .collect::<Vec<_>>();
 
         match output {
-            ListOutputFormat::Table => {
+            OutputFormat::Table => {
                 let deployment_table = serializable_deployments.into_iter()
                     .map(ViperRunDeploymentTable::from)
                     .collect::<Vec<_>>();
@@ -44,12 +44,12 @@ impl ListViperRunDeploymentsCli {
                 print_stdout(deployment_table.with_title())
                     .map_err(|error| format!("Could not print VIPER run deployments.\n  {error}"))?;
             }
-            ListOutputFormat::Json => {
+            OutputFormat::Json => {
                 let json = serde_json::to_string(&serializable_deployments)
                     .map_err(|error| format!("Could not serialize VIPER run deployments.\n  {error}"))?;
                 println!("{json}");
             }
-            ListOutputFormat::PrettyJson => {
+            OutputFormat::PrettyJson => {
                 let json = serde_json::to_string_pretty(&serializable_deployments)
                     .map_err(|error| format!("Could not serialize VIPER run deployments.\n  {error}"))?;
                 println!("{json}");

@@ -4,7 +4,7 @@ use opendut_carl_api::carl::CarlClient;
 use opendut_model::peer::PeerId;
 use opendut_model::viper::{ViperBindingValue, ViperParameterDescriptor, ViperParameterDescriptors, ViperParameterName, ViperSourceId, ViperTestId, ViperTestName, ViperTestParameters, ViperTestRunDescriptor};
 
-use crate::CreateOutputFormat;
+use crate::OutputFormat;
 use super::SerializableViperTestRun;
 
 /// Create a VIPER test run descriptor
@@ -28,7 +28,7 @@ pub struct CreateViperTestRunDescriptorCli {
 }
 
 impl CreateViperTestRunDescriptorCli {
-    pub async fn execute(self, carl: &mut CarlClient, output: CreateOutputFormat) -> crate::Result<()> {
+    pub async fn execute(self, carl: &mut CarlClient, output: OutputFormat) -> crate::Result<()> {
         let peer_id = self.peer_id;
         carl.peers.get_peer_descriptor(peer_id).await
             .map_err(|error| format!("Failed to retrieve peer descriptor <{peer_id}>.\n  {error}"))?;
@@ -52,7 +52,7 @@ impl CreateViperTestRunDescriptorCli {
 pub async fn create_viper_test_run_descriptor(
     descriptor: ViperTestRunDescriptor,
     carl: &mut CarlClient,
-    output: &CreateOutputFormat,
+    output: &OutputFormat,
 ) -> crate::Result<()> {
     carl.viper.store_viper_test_run_descriptor(descriptor.clone()).await
         .map_err(|error| format!("Could not store VIPER test run descriptor <{}>.\n  {error}", descriptor.id))?;
@@ -60,15 +60,15 @@ pub async fn create_viper_test_run_descriptor(
     let test = SerializableViperTestRun::from(descriptor);
 
     match output {
-        CreateOutputFormat::Text => {
+        OutputFormat::Table => {
             println!("Stored VIPER test '{}' with ID <{}>.", test.name, test.id);
         }
-        CreateOutputFormat::Json => {
+        OutputFormat::Json => {
             let json = serde_json::to_string(&test)
                 .map_err(|error| format!("Could not serialize VIPER test run descriptor.\n  {error}"))?;
             println!("{json}");
         }
-        CreateOutputFormat::PrettyJson => {
+        OutputFormat::PrettyJson => {
             let json = serde_json::to_string_pretty(&test)
                 .map_err(|error| format!("Could not serialize VIPER test run descriptor.\n  {error}"))?;
             println!("{json}");

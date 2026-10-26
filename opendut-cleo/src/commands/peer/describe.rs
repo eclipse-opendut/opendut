@@ -3,7 +3,7 @@ use indoc::indoc;
 use opendut_carl_api::carl::CarlClient;
 use opendut_model::peer::{PeerDescriptor, PeerId};
 use crate::commands::peer::PeerStatus;
-use crate::DescribeOutputFormat;
+use crate::OutputFormat;
 
 /// Describe a peer
 #[derive(clap::Parser)]
@@ -14,7 +14,7 @@ pub struct DescribePeerCli {
 }
 
 impl DescribePeerCli {
-    pub async fn execute(self, carl: &mut CarlClient, output: DescribeOutputFormat) -> crate::Result<()> {
+    pub async fn execute(self, carl: &mut CarlClient, output: OutputFormat) -> crate::Result<()> {
         let peer_id = self.id;
         
         let peer_descriptor =
@@ -27,7 +27,7 @@ impl DescribePeerCli {
     }
 }
 
-pub async fn render_peer_descriptor(peer_descriptor: PeerDescriptor, carl: &mut CarlClient, output: DescribeOutputFormat) -> crate::Result<()> {
+pub async fn render_peer_descriptor(peer_descriptor: PeerDescriptor, carl: &mut CarlClient, output: OutputFormat) -> crate::Result<()> {
     let peer_devices = peer_descriptor
         .topology
         .devices
@@ -36,7 +36,7 @@ pub async fn render_peer_descriptor(peer_descriptor: PeerDescriptor, carl: &mut 
         .collect::<Vec<_>>()
         .join(", ");
     let text = match output {
-        DescribeOutputFormat::Text => {
+        OutputFormat::Table => {
             let peer_id = peer_descriptor.id;
             let peer_state = carl.peers.get_peer_state(peer_id).await
                 .map_err(|error| format!("Failed to retrieve peer state for peer <{peer_id}>.\n  {error}"))?;
@@ -66,8 +66,8 @@ pub async fn render_peer_descriptor(peer_descriptor: PeerDescriptor, carl: &mut 
                 peer_devices
             )
         }
-        DescribeOutputFormat::Json => serde_json::to_string(&peer_descriptor).unwrap(),
-        DescribeOutputFormat::PrettyJson => {
+        OutputFormat::Json => serde_json::to_string(&peer_descriptor).unwrap(),
+        OutputFormat::PrettyJson => {
             serde_json::to_string_pretty(&peer_descriptor).unwrap()
         }
     };

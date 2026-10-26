@@ -6,7 +6,7 @@ use opendut_model::peer::{PeerId, PeerName};
 use opendut_model::topology::DeviceName;
 use serde::Serialize;
 
-use crate::DescribeOutputFormat;
+use crate::OutputFormat;
 
 
 /// Describe a cluster descriptor
@@ -27,7 +27,7 @@ struct ClusterTable {
 }
 
 impl DescribeClusterDescriptorCli {
-    pub async fn execute(self, carl: &mut CarlClient, output: DescribeOutputFormat) -> crate::Result<()> {
+    pub async fn execute(self, carl: &mut CarlClient, output: OutputFormat) -> crate::Result<()> {
         let cluster_id = self.id;
 
         let clusters_configuration = carl.cluster.list_cluster_descriptors().await
@@ -66,7 +66,7 @@ impl DescribeClusterDescriptorCli {
         };
 
         let text = match output {
-            DescribeOutputFormat::Text => {
+            OutputFormat::Table => {
                 format!(indoc!("
                 Cluster Descriptor: {}
                   Id: {}
@@ -75,10 +75,10 @@ impl DescribeClusterDescriptorCli {
                   Devices: [{:?}]
             "), table.name, table.id, table.leader, table.peers, table.devices)
             }
-            DescribeOutputFormat::Json => {
+            OutputFormat::Json => {
                 serde_json::to_string(&table).unwrap()
             }
-            DescribeOutputFormat::PrettyJson => {
+            OutputFormat::PrettyJson => {
                 serde_json::to_string_pretty(&table).unwrap()
             }
         };

@@ -3,7 +3,7 @@ use cli_table::{print_stdout, Table, WithTitle};
 use opendut_carl_api::carl::CarlClient;
 use opendut_model::cluster::{ClusterId, ClusterName};
 
-use crate::ListOutputFormat;
+use crate::OutputFormat;
 
 /// List all cluster descriptors
 #[derive(clap::Parser)]
@@ -18,12 +18,12 @@ struct ClusterTable {
 }
 
 impl ListClusterDescriptorsCli {
-    pub async fn execute(self, carl: &mut CarlClient, output: ListOutputFormat) -> crate::Result<()> {
+    pub async fn execute(self, carl: &mut CarlClient, output: OutputFormat) -> crate::Result<()> {
         let clusters = carl.cluster.list_cluster_descriptors().await
             .map_err(|error| format!("Could not list any cluster descriptors.\n  {error}"))?;
 
         match output {
-            ListOutputFormat::Table => {
+            OutputFormat::Table => {
                 let cluster_table = clusters.into_iter()
                     .map(|cluster| {
                         ClusterTable {
@@ -35,11 +35,11 @@ impl ListClusterDescriptorsCli {
                 print_stdout(cluster_table.with_title())
                     .expect("List of cluster descriptors should be printable as table.");
             }
-            ListOutputFormat::Json => {
+            OutputFormat::Json => {
                 let json = serde_json::to_string(&clusters).unwrap();
                 println!("{json}");
             }
-            ListOutputFormat::PrettyJson => {
+            OutputFormat::PrettyJson => {
                 let json = serde_json::to_string_pretty(&clusters).unwrap();
                 println!("{json}");
             }

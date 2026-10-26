@@ -3,7 +3,7 @@ use indoc::indoc;
 use opendut_carl_api::carl::CarlClient;
 use opendut_model::viper::{ViperSourceDescriptor, ViperSourceId};
 
-use crate::DescribeOutputFormat;
+use crate::OutputFormat;
 use super::SerializableViperSource;
 
 /// Describe a VIPER source descriptor
@@ -15,7 +15,7 @@ pub struct DescribeViperSourceDescriptorCli {
 }
 
 impl DescribeViperSourceDescriptorCli {
-    pub async fn execute(self, carl: &mut CarlClient, output: DescribeOutputFormat) -> crate::Result<()> {
+    pub async fn execute(self, carl: &mut CarlClient, output: OutputFormat) -> crate::Result<()> {
         let source_id = self.id;
 
         let descriptor = carl.viper.get_viper_source_descriptor(source_id).await
@@ -25,22 +25,22 @@ impl DescribeViperSourceDescriptorCli {
     }
 }
 
-pub fn render_viper_source_descriptor(descriptor: ViperSourceDescriptor, output: DescribeOutputFormat) -> crate::Result<()> {
+pub fn render_viper_source_descriptor(descriptor: ViperSourceDescriptor, output: OutputFormat) -> crate::Result<()> {
     let source = SerializableViperSource::from(descriptor);
 
     let text = match output {
-        DescribeOutputFormat::Text => {
+        OutputFormat::Table => {
             format!(indoc!("
                 VIPER Source: {}
                   Id: {}
                   URL: {}
                   Kind: {}"), source.name, source.id, source.url, source.kind)
         }
-        DescribeOutputFormat::Json => {
+        OutputFormat::Json => {
             serde_json::to_string(&source)
                 .map_err(|error| format!("Could not serialize VIPER source.\n  {error}"))?
         }
-        DescribeOutputFormat::PrettyJson => {
+        OutputFormat::PrettyJson => {
             serde_json::to_string_pretty(&source)
                 .map_err(|error| format!("Could not serialize VIPER source.\n  {error}"))?
         }

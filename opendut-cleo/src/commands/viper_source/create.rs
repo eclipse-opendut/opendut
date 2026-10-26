@@ -2,7 +2,7 @@ use opendut_carl_api::carl::CarlClient;
 use opendut_model::viper::{ViperSourceDescriptor, ViperSourceId, ViperSourceKind, ViperTestSuiteIdentifier};
 use url::Url;
 
-use crate::CreateOutputFormat;
+use crate::OutputFormat;
 use super::SerializableViperSource;
 
 /// Create a VIPER source descriptor
@@ -43,7 +43,7 @@ fn parse_suite_identifier(value: &str) -> crate::Result<ViperTestSuiteIdentifier
 }
 
 impl CreateViperSourceDescriptorCli {
-    pub async fn execute(self, carl: &mut CarlClient, output: CreateOutputFormat) -> crate::Result<()> {
+    pub async fn execute(self, carl: &mut CarlClient, output: OutputFormat) -> crate::Result<()> {
         let descriptor = ViperSourceDescriptor {
             id: self.id.unwrap_or_else(ViperSourceId::random),
             name: self.name,
@@ -58,7 +58,7 @@ impl CreateViperSourceDescriptorCli {
 pub async fn create_viper_source_descriptor(
     descriptor: ViperSourceDescriptor,
     carl: &mut CarlClient,
-    output: &CreateOutputFormat,
+    output: &OutputFormat,
 ) -> crate::Result<()> {
     carl.viper.store_viper_source_descriptor(descriptor.clone()).await
         .map_err(|error| format!("Could not store VIPER source <{}>.\n  {error}", descriptor.id))?;
@@ -66,15 +66,15 @@ pub async fn create_viper_source_descriptor(
     let source = SerializableViperSource::from(descriptor);
 
     match output {
-        CreateOutputFormat::Text => {
+        OutputFormat::Table => {
             println!("Stored VIPER source '{}' with ID <{}>.", source.name, source.id);
         }
-        CreateOutputFormat::Json => {
+        OutputFormat::Json => {
             let json = serde_json::to_string(&source)
                 .map_err(|error| format!("Could not serialize VIPER source.\n  {error}"))?;
             println!("{json}");
         }
-        CreateOutputFormat::PrettyJson => {
+        OutputFormat::PrettyJson => {
             let json = serde_json::to_string_pretty(&source)
                 .map_err(|error| format!("Could not serialize VIPER source.\n  {error}"))?;
             println!("{json}");
