@@ -31,6 +31,11 @@ ignore = [
     { id = "RUSTSEC-2026-0387", reason = "`crypto-bigint` is still pulled in via the upstream RustCrypto JWT/OIDC dependency chain. The project code compiles with the direct `jsonwebtoken` 11.x upgrade, but the transitive stack still constrains the lockfile to this vulnerable release until the chain updates. Tracked by issue #603." },
 
     { id = "RUSTSEC-2024-0449", reason = "`unsafe-libyaml` and `serde_yaml` libraries are unmaintained. No actual vulnerability known. Tracked by issue #592." },
+
+    { id = "RUSTSEC-2026-0391", reason = "`zstd` libraries are vulnerable. Tracked by issue #609." },
+    { id = "RUSTSEC-2026-0398", reason = "`zstd` libraries are vulnerable. Tracked by issue #609." },
+    { id = "RUSTSEC-2026-0403", reason = "`zstd` libraries are vulnerable. Tracked by issue #609." },
+    { id = "RUSTSEC-2026-0410", reason = "`zstd` libraries are vulnerable. Tracked by issue #609." },
 ]
 
 [licenses]
