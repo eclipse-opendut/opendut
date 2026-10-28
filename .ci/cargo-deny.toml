@@ -32,10 +32,13 @@ ignore = [
 
     { id = "RUSTSEC-2024-0449", reason = "`unsafe-libyaml` and `serde_yaml` libraries are unmaintained. No actual vulnerability known. Tracked by issue #592." },
 
+
     { id = "RUSTSEC-2026-0391", reason = "`zstd` libraries are vulnerable. Tracked by issue #609." },
     { id = "RUSTSEC-2026-0398", reason = "`zstd` libraries are vulnerable. Tracked by issue #609." },
     { id = "RUSTSEC-2026-0403", reason = "`zstd` libraries are vulnerable. Tracked by issue #609." },
     { id = "RUSTSEC-2026-0410", reason = "`zstd` libraries are vulnerable. Tracked by issue #609." },
+
+    { id = "RUSTSEC-2026-0394", reason = "`rustpython_vm` is unsafe. Tracked by issue #610." },
 ]
 
 [licenses]
