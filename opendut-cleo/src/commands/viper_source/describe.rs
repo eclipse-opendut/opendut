@@ -1,4 +1,4 @@
-use indoc::indoc;
+use indoc::formatdoc;
 
 use opendut_carl_api::carl::CarlClient;
 use opendut_model::viper::{ViperSourceDescriptor, ViperSourceId};
@@ -30,11 +30,17 @@ pub fn render_viper_source_descriptor(descriptor: ViperSourceDescriptor, output:
 
     let text = match output {
         OutputFormat::Table => {
-            format!(indoc!("
-                VIPER Source: {}
-                  Id: {}
-                  URL: {}
-                  Kind: {}"), source.name, source.id, source.url, source.kind)
+            let id = source.id;
+            let name = source.name;
+            let url = source.url;
+            let kind = source.kind;
+            
+            formatdoc!("
+                VIPER Source: {name}
+                  Id: {id}
+                  URL: {url}
+                  Kind: {kind}\
+            ")
         }
         OutputFormat::Json => {
             serde_json::to_string(&source)
