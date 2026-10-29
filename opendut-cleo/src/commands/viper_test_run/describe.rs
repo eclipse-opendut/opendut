@@ -1,4 +1,4 @@
-use indoc::indoc;
+use indoc::formatdoc;
 
 use opendut_carl_api::carl::CarlClient;
 use opendut_model::viper::{ViperTestId, ViperTestRunDescriptor};
@@ -26,11 +26,16 @@ impl DescribeViperTestRunDescriptorCli {
 }
 
 pub fn render_viper_test_run_descriptor(descriptor: ViperTestRunDescriptor, output: OutputFormat) -> crate::Result<()> {
-    let test = SerializableViperTestRun::from(descriptor);
+    let viper_test = SerializableViperTestRun::from(descriptor);
 
     let text = match output {
         OutputFormat::Table => {
-            let parameters = test.parameters.iter()
+            let id = viper_test.id;
+            let name = viper_test.name;
+            let viper_source = viper_test.source;
+            let peer_id = viper_test.peer;
+
+            let parameters = viper_test.parameters.iter()
                 .map(|(name, value)| {
                     let value = value.as_ref().map(|value| value.to_string())
                         .unwrap_or_else(|| String::from("<default>"));
@@ -39,19 +44,20 @@ pub fn render_viper_test_run_descriptor(descriptor: ViperTestRunDescriptor, outp
                 .collect::<Vec<_>>()
                 .join(", ");
 
-            format!(indoc!("
-                VIPER Test Run: {}
-                  Id: {}
-                  Source: {}
-                  Peer: {}
-                  Parameters: [{}]"), test.name, test.id, test.source, test.peer, parameters)
+            formatdoc!("
+                VIPER Test Run: {name}
+                  Id: {id}
+                  Source: {viper_source}
+                  Peer: {peer_id}
+                  Parameters: [{parameters}]\
+            ")
         }
         OutputFormat::Json => {
-            serde_json::to_string(&test)
+            serde_json::to_string(&viper_test)
                 .map_err(|error| format!("Could not serialize VIPER test run descriptor.\n  {error}"))?
         }
         OutputFormat::PrettyJson => {
-            serde_json::to_string_pretty(&test)
+            serde_json::to_string_pretty(&viper_test)
                 .map_err(|error| format!("Could not serialize VIPER test run descriptor.\n  {error}"))?
         }
     };

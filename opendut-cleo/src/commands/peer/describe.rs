@@ -1,4 +1,4 @@
-use indoc::indoc;
+use indoc::formatdoc;
 
 use opendut_carl_api::carl::CarlClient;
 use opendut_model::peer::{PeerDescriptor, PeerId};
@@ -17,27 +17,23 @@ impl DescribePeerCli {
     pub async fn execute(self, carl: &mut CarlClient, output: OutputFormat) -> crate::Result<()> {
         let peer_id = self.id;
         
-        let peer_descriptor =
-            carl.peers.get_peer_descriptor(peer_id).await.map_err(|_| {
+        let peer_descriptor = carl.peers.get_peer_descriptor(peer_id)
+            .await
+            .map_err(|_| {
                 format!("Failed to retrieve peer descriptor for peer <{peer_id}>")
             })?;
 
-        render_peer_descriptor(peer_descriptor, carl, output).await?;
-        Ok(())
+        render_peer_descriptor(peer_descriptor, carl, output).await
     }
 }
 
 pub async fn render_peer_descriptor(peer_descriptor: PeerDescriptor, carl: &mut CarlClient, output: OutputFormat) -> crate::Result<()> {
-    let peer_devices = peer_descriptor
-        .topology
-        .devices
-        .iter()
-        .map(|device| device.name.value())
-        .collect::<Vec<_>>()
-        .join(", ");
     let text = match output {
         OutputFormat::Table => {
             let peer_id = peer_descriptor.id;
+            let name = peer_descriptor.name.value();
+            let location = peer_descriptor.location.unwrap_or_default();
+
             let peer_state = carl.peers.get_peer_state(peer_id).await
                 .map_err(|error| format!("Failed to retrieve peer state for peer <{peer_id}>.\n  {error}"))?;
             let status = PeerStatus::from(peer_state);
@@ -47,30 +43,31 @@ pub async fn render_peer_descriptor(peer_descriptor: PeerDescriptor, carl: &mut 
                 .collect::<Vec<_>>()
                 .join(", ");
 
-            format!(
-                indoc!(
-                    "
-                Peer: {}
-                  Id: {}
-                  Location: {}
-                  Status: {}
-                  NetworkInterfaces: [{}]
-                  Devices: [{}]\
-            "
-                ),
-                peer_descriptor.name,
-                peer_descriptor.id,
-                peer_descriptor.location.unwrap_or_default(),
-                status.to_string(),
-                network_interfaces,
-                peer_devices
-            )
+            let peer_devices = peer_descriptor.topology.devices
+                .iter()
+                .map(|device| device.name.value())
+                .collect::<Vec<_>>()
+                .join(", ");
+
+            formatdoc!("
+                Peer: {name}
+                  Id: {peer_id}
+                  Location: {location}
+                  Status: {status}
+                  NetworkInterfaces: [{network_interfaces}]
+                  Devices: [{peer_devices}]\
+            ")
         }
-        OutputFormat::Json => serde_json::to_string(&peer_descriptor).unwrap(),
+        OutputFormat::Json => {
+            serde_json::to_string(&peer_descriptor)
+                .map_err(|error| format!("Could not serialize peer descriptor.\n  {error}"))?
+        },
         OutputFormat::PrettyJson => {
-            serde_json::to_string_pretty(&peer_descriptor).unwrap()
+            serde_json::to_string_pretty(&peer_descriptor)
+                .map_err(|error| format!("Could not serialize peer descriptor.\n  {error}"))?
         }
     };
+
     println!("{text}");
     Ok(())
 }
