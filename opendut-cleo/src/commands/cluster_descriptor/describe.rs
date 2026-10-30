@@ -20,8 +20,8 @@ impl DescribeClusterDescriptorCli {
 
         let cluster_descriptor = carl.cluster.get_cluster_descriptor(cluster_id)
             .await
-            .map_err({
-                |_| format!("Failed to retrieve cluster descriptor for cluster <{cluster_id}>")
+            .map_err(|error| {
+                format!("Failed to retrieve cluster descriptor for cluster <{cluster_id}>.\n  {error}")
             })?;
 
         render_cluster_descriptor(cluster_descriptor, carl, output).await
