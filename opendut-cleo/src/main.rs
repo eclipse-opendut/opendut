@@ -12,7 +12,10 @@ use opendut_util::pem::{self, ClientAuth, Pem, PemFromConfig};
 use opendut_util::settings::{load_config, FileFormat, LoadedConfig};
 
 mod commands;
+mod output;
 pub mod parse;
+
+use output::OutputFormat;
 
 type Error = String;
 type Result<T> = std::result::Result<T, Error>;
@@ -40,8 +43,8 @@ enum Commands {
         #[command(subcommand)]
         resource: ListResource,
         ///JSON, prettified JSON or table as output format
-        #[arg(global = true, value_enum, short, long, default_value_t=ListOutputFormat::Table)]
-        output: ListOutputFormat,
+        #[arg(global = true, value_enum, short, long, default_value_t=OutputFormat::Table)]
+        output: OutputFormat,
     },
     /// Create openDuT resources from specifications files
     Apply(commands::apply::ApplyCli),
@@ -49,9 +52,9 @@ enum Commands {
     Create {
         #[command(subcommand)]
         resource: Box<CreateResource>,
-        ///Text, JSON or prettified JSON as output format
-        #[arg(global = true, value_enum, short, long, default_value_t=CreateOutputFormat::Text)]
-        output: CreateOutputFormat,
+        ///Table, JSON or prettified JSON as output format
+        #[arg(global = true, value_enum, short, long, default_value_t=OutputFormat::Table)]
+        output: OutputFormat,
     },
     GenerateSetupString(commands::generate_setup_string::GenerateSetupStringCli),
     DecodeSetupString(commands::decode_setup_string::DecodeSetupStringCli),
@@ -61,8 +64,8 @@ enum Commands {
         #[command(subcommand)]
         resource: DescribeResource,
         ///JSON, prettified JSON or table as output format
-        #[arg(global = true, value_enum, short, long, default_value_t=DescribeOutputFormat::Text)]
-        output: DescribeOutputFormat,
+        #[arg(global = true, value_enum, short, long, default_value_t=OutputFormat::Table)]
+        output: OutputFormat,
     },
     ///Find openDuT resource
     Find {
@@ -70,8 +73,8 @@ enum Commands {
         #[command(subcommand)]
         resource: FindResource,
         ///JSON, prettified JSON or table as output format
-        #[arg(global = true, value_enum, short, long, default_value_t=ListOutputFormat::Table)]
-        output: ListOutputFormat,
+        #[arg(global = true, value_enum, short, long, default_value_t=OutputFormat::Table)]
+        output: OutputFormat,
     },
     ///Delete openDuT resource
     Delete {
@@ -194,44 +197,6 @@ enum AwaitResource {
     ClusterPeersOnline(commands::wait::cluster_peers_online::WaitPeersInClusterOnline),
 }
 
-
-#[derive(ValueEnum, Clone)]
-pub(crate) enum CreateOutputFormat {
-    Text,
-    Json,
-    PrettyJson,
-}
-
-#[derive(ValueEnum, Clone)]
-enum ListOutputFormat {
-    Table,
-    Json,
-    PrettyJson,
-}
-
-#[derive(ValueEnum, Clone)]
-enum DescribeOutputFormat {
-    Text,
-    Json,
-    PrettyJson,
-}
-
-impl From<CreateOutputFormat> for DescribeOutputFormat {
-    fn from(value: CreateOutputFormat) -> Self {
-        match value {
-            CreateOutputFormat::Text => DescribeOutputFormat::Text,
-            CreateOutputFormat::Json => DescribeOutputFormat::Json,
-            CreateOutputFormat::PrettyJson => DescribeOutputFormat::PrettyJson,
-        }
-    }
-}
-
-#[derive(ValueEnum, Clone)]
-enum DecodeSetupStringOutputFormat {
-    Text,
-    Json,
-    PrettyJson,
-}
 
 #[tokio::main]
 async fn main() -> ExitCode {

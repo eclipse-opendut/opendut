@@ -7,7 +7,7 @@ use opendut_model::peer::PeerId;
 use opendut_model::topology::{DeviceDescriptor, DeviceId, DeviceName};
 
 use crate::parse::cluster::{ParseableClusterId, ParseableClusterName};
-use crate::{ClusterDescriptorDevices, CreateOutputFormat};
+use crate::{ClusterDescriptorDevices, OutputFormat};
 
 /// Create a cluster descriptor
 #[derive(clap::Parser)]
@@ -30,7 +30,7 @@ impl CreateClusterDescriptorCli {
     pub async fn execute(
         self,
         carl: &mut CarlClient,
-        output: CreateOutputFormat,
+        output: OutputFormat,
     ) -> crate::Result<()> {
         let ParseableClusterName(cluster_name) = self.name;
 
@@ -108,7 +108,7 @@ impl CreateClusterDescriptorCli {
     }
 }
 
-pub async fn create_cluster_descriptor(cluster: ClusterDescriptor, carl: &mut CarlClient, output: &CreateOutputFormat) -> crate::Result<()> {
+pub async fn create_cluster_descriptor(cluster: ClusterDescriptor, carl: &mut CarlClient, output: &OutputFormat) -> crate::Result<()> {
     carl.cluster.store_cluster_descriptor(cluster.clone()).await
         .map_err(|err| format!("Could not store cluster descriptor. Make sure the application is running. Error: {err}"))?;
     
@@ -123,7 +123,7 @@ pub async fn create_cluster_descriptor(cluster: ClusterDescriptor, carl: &mut Ca
         .collect::<Vec<_>>();
 
     match output {
-        CreateOutputFormat::Text => {
+        OutputFormat::Table => {
             println!("Successfully stored new cluster descriptor.");
         
             println!("ClusterID: {}", cluster.id);
@@ -133,11 +133,11 @@ pub async fn create_cluster_descriptor(cluster: ClusterDescriptor, carl: &mut Ca
                 println!("\x09{device_name}");
             };
         }
-        CreateOutputFormat::Json => {
+        OutputFormat::Json => {
             let json = serde_json::to_string(&cluster).unwrap();
             println!("{json}");
         }
-        CreateOutputFormat::PrettyJson => {
+        OutputFormat::PrettyJson => {
             let json = serde_json::to_string_pretty(&cluster).unwrap();
             println!("{json}");
         }

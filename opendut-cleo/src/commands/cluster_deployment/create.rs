@@ -1,4 +1,4 @@
-use crate::CreateOutputFormat;
+use crate::OutputFormat;
 use opendut_carl_api::carl::CarlClient;
 use opendut_model::cluster::{ClusterDeployment, ClusterId};
 
@@ -11,21 +11,21 @@ pub struct CreateClusterDeploymentCli {
 }
 
 impl CreateClusterDeploymentCli {
-    pub async fn execute(self, carl: &mut CarlClient, output: CreateOutputFormat) -> crate::Result<()> {
+    pub async fn execute(self, carl: &mut CarlClient, output: OutputFormat) -> crate::Result<()> {
         let id = self.id;
 
         let deployment = ClusterDeployment { id };
         carl.cluster.store_cluster_deployment(deployment).await
             .map_err(|error| format!("Could not create cluster deployment for ClusterID: '{id}'.\n  {error}"))?;
         match output {
-            CreateOutputFormat::Text => {
+            OutputFormat::Table => {
                 println!("Successfully created cluster deployment for cluster <{id}>.");
             }
-            CreateOutputFormat::Json => {
+            OutputFormat::Json => {
                 let json = serde_json::to_string(&id).unwrap();
                 println!("{json}");
             }
-            CreateOutputFormat::PrettyJson => {
+            OutputFormat::PrettyJson => {
                 let json = serde_json::to_string_pretty(&id).unwrap();
                 println!("{json}");
             }
