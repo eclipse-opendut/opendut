@@ -47,7 +47,7 @@ wait_for_netbird_peers_to_connect() {
     local now
     now=$(date +%s)
     if [ "$now" -gt "$END_TIME" ]; then
-      echo "Timeout while waiting for netbird peers to connect: $file"
+      echo "Timeout while waiting for netbird peers to connect."
       return 1
     fi
 
@@ -76,7 +76,7 @@ wait_for_wireguard_peers_to_connect() {
     local now
     now=$(date +%s)
     if [ "$now" -gt "$END_TIME" ]; then
-      echo "Timeout while waiting for binary to be extracted by edgar: $file"
+      echo "Timeout while waiting for wireguard peers to connect."
       return 1
     fi
 
@@ -105,7 +105,7 @@ wait_for_edgar_to_create_gre_interfaces() {
     local now
     now=$(date +%s)
     if [ "$now" -gt "$END_TIME" ]; then
-      echo "Timeout while waiting for binary to be extracted by edgar: $file"
+      echo "Timeout while waiting for EDGAR to create GRE interfaces."
       return 1
     fi
 

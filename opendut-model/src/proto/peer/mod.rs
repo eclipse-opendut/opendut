@@ -108,7 +108,7 @@ conversion! {
         Proto {
             id: Some(value.id.into()),
             name: Some(value.name.into()),
-            location: Some(value.location.unwrap_or_default().into()),
+            location: value.location.map(Into::into),
             network: Some(value.network.into()),
             topology: Some(value.topology.into()),
         }

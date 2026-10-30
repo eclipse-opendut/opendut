@@ -76,6 +76,7 @@ pub mod netbird {
         let executable = unpack_dir()?.join("netbird");
         let mut command = Command::new(executable);
         command.env("SSL_CERT_FILE", default_carl_ca_certificate_path());
+        command.env("NB_LAZY_CONN", "off");
         Ok(command)
     }
 }

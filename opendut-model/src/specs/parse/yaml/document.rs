@@ -100,6 +100,22 @@ fn parse_spec(kind: ResourceKind, version: SpecificationVersion, spec: Value) ->
         (ResourceKind::PeerDescriptor, _) => {
             Err(ParseSpecificationError::UnknownVersion { kind, version })
         }
+        (ResourceKind::ViperSourceDescriptor, SpecificationVersion::V1) => {
+            let spec = serde_yaml::from_value::<viper_source::ViperSourceDescriptorSpecificationV1>(spec)
+                .map_err(|cause| ParseSpecificationError::IllegalYamlSpecification { cause } )?;
+            Ok(Specification::ViperSourceDescriptorSpecification(viper_source::ViperSourceDescriptorSpecification::V1(spec)))
+        }
+        (ResourceKind::ViperSourceDescriptor, _) => {
+            Err(ParseSpecificationError::UnknownVersion { kind, version })
+        }
+        (ResourceKind::ViperTestRunDescriptor, SpecificationVersion::V1) => {
+            let spec = serde_yaml::from_value::<viper_test_run::ViperTestRunDescriptorSpecificationV1>(spec)
+                .map_err(|cause| ParseSpecificationError::IllegalYamlSpecification { cause } )?;
+            Ok(Specification::ViperTestRunDescriptorSpecification(viper_test_run::ViperTestRunDescriptorSpecification::V1(spec)))
+        }
+        (ResourceKind::ViperTestRunDescriptor, _) => {
+            Err(ParseSpecificationError::UnknownVersion { kind, version })
+        }
     }
 }
 

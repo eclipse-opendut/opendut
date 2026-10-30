@@ -53,7 +53,7 @@ services:
 
   keycloak-postgres:
     container_name: opendut-keycloak-postgres
-    image: "postgres:14.15"
+    image: "postgres:14.24"
     restart: unless-stopped
     healthcheck:
       <<: *common-healthcheck-params
@@ -78,7 +78,7 @@ services:
       context: ../../..
       dockerfile: ./.ci/deploy/localenv/data/keycloak/Dockerfile-keycloak-server
       args:
-        KEYCLOAK_VERSION: 26.7.2
+        KEYCLOAK_VERSION: 26.8.1
     #command: ['start', '--optimized']
     restart: unless-stopped
     depends_on:
@@ -121,7 +121,7 @@ services:
       context: ../../..
       dockerfile: .ci/deploy/localenv/data/keycloak/Dockerfile-keycloak-provision
       args:
-        KEYCLOAK_VERSION: 26.7.2
+        KEYCLOAK_VERSION: 26.8.1
     depends_on:
       keycloak:
         condition: service_started
@@ -156,7 +156,7 @@ services:
   # Public web entrypoint exposed to end users
   traefik:
     container_name: opendut-traefik
-    image: docker.io/traefik:v3.7.13
+    image: docker.io/traefik:v3.7.16
     restart: unless-stopped
     command:
       - --api.insecure=true
@@ -231,7 +231,7 @@ services:
   # Signal
   netbird-signal:
     container_name: opendut-netbird-signal
-    image: netbirdio/signal:0.64.5  # https://hub.docker.com/r/netbirdio/management/tags
+    image: netbirdio/signal:0.81.3  # https://hub.docker.com/r/netbirdio/management/tags
     restart: unless-stopped
     volumes:
       - netbird-signal:/var/lib/netbird
@@ -263,7 +263,7 @@ services:
       context: ../../..
       dockerfile: ./.ci/deploy/localenv/data/netbird/Dockerfile_management
       args:
-        NETBIRD_MANAGEMENT_VERSION: "0.64.5"  # https://hub.docker.com/r/netbirdio/management/tags
+        NETBIRD_MANAGEMENT_VERSION: "0.81.3"  # https://hub.docker.com/r/netbirdio/management/tags
     restart: unless-stopped
     depends_on:
       traefik:
@@ -367,7 +367,7 @@ services:
   netbird-relay:
     <<: *default
     container_name: opendut-netbird-relay
-    image: netbirdio/relay:0.64.5
+    image: netbirdio/relay:0.81.3
     environment:
       - NB_LOG_LEVEL=info
       - NB_LISTEN_ADDRESS=:33080
@@ -503,7 +503,7 @@ services:
 
   prometheus:
     container_name: opendut-prometheus
-    image: prom/prometheus:v3.9.1
+    image: prom/prometheus:v3.15.1
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--web.enable-remote-write-receiver"
@@ -531,7 +531,7 @@ services:
       context: ../../..
       dockerfile: ./.ci/deploy/localenv/data/telemetry/Dockerfile_grafana-tempo
       args:
-        OPENDUT_GRAFANA_TEMPO_VERSION: 2.10.0
+        OPENDUT_GRAFANA_TEMPO_VERSION: 2.10.10
     restart: unless-stopped
     command: [ "-config.file=/etc/tempo.yml", "-config.expand-env=true" ]
     deploy:
@@ -552,7 +552,7 @@ services:
     container_name: opendut-loki
     # https://grafana.com/docs/loki/latest/
     # https://hub.docker.com/r/grafana/loki/tags
-    image: grafana/loki:3.6.5
+    image: grafana/loki:3.6.19
     restart: unless-stopped
     deploy:
       <<: *telemetry-deploy-params
@@ -570,7 +570,7 @@ services:
 
   alloy:
     container_name: opendut-alloy
-    image: grafana/alloy:v1.13.1
+    image: grafana/alloy:v1.21.2
     restart: unless-stopped
     deploy:
       <<: *telemetry-deploy-params
@@ -598,7 +598,7 @@ services:
       context: ../../..
       dockerfile: ./.ci/deploy/localenv/data/telemetry/Dockerfile_otel-collector
       args:
-        OTEL_COLLECTOR_VERSION: 0.145.0
+        OTEL_COLLECTOR_VERSION: 0.163.2
     restart: unless-stopped
     # Note: otel-collector is always enabled (no replicas config)
     environment:
@@ -633,7 +633,7 @@ services:
 
   grafana:
     container_name: opendut-grafana
-    image: grafana/grafana:12.3
+    image: grafana/grafana:12.4
     restart: unless-stopped
     deploy:
       <<: *telemetry-deploy-params

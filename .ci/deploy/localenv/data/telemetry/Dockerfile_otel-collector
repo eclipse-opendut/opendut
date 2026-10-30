@@ -1,4 +1,4 @@
-ARG OTEL_COLLECTOR_VERSION=0.145.0
+ARG OTEL_COLLECTOR_VERSION
 
 # https://github.com/open-telemetry/opentelemetry-collector-contrib
 FROM otel/opentelemetry-collector-contrib:$OTEL_COLLECTOR_VERSION

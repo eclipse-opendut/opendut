@@ -36,6 +36,7 @@
     - [Known Issues](development/testenv/known-issues.md)
     - [Advanced](development/testenv/advanced.md)
     - [Secret Scanner](development/testenv/secret-scanner.md)
+    - [Vulnerability Scanner](development/testenv/vulnerability-scanner.md)
   - [Release](development/release/index.md)
     - [Publishing a Release](development/release/publishing-a-release.md)
     - [Manually Building a Release](development/release/manually-building-a-release.md)
