@@ -134,11 +134,13 @@ pub async fn create_cluster_descriptor(cluster: ClusterDescriptor, carl: &mut Ca
             };
         }
         OutputFormat::Json => {
-            let json = serde_json::to_string(&cluster).unwrap();
+            let json = serde_json::to_string(&cluster)
+                .map_err(|error| format!("Could not serialize cluster descriptor.\n  {error}"))?;
             println!("{json}");
         }
         OutputFormat::PrettyJson => {
-            let json = serde_json::to_string_pretty(&cluster).unwrap();
+            let json = serde_json::to_string_pretty(&cluster)
+                .map_err(|error| format!("Could not serialize cluster descriptor.\n  {error}"))?;
             println!("{json}");
         }
     }

@@ -22,11 +22,13 @@ impl CreateClusterDeploymentCli {
                 println!("Successfully created cluster deployment for cluster <{id}>.");
             }
             OutputFormat::Json => {
-                let json = serde_json::to_string(&id).unwrap();
+                let json = serde_json::to_string(&id)
+                    .map_err(|error| format!("Could not serialize cluster deployment.\n  {error}"))?;
                 println!("{json}");
             }
             OutputFormat::PrettyJson => {
-                let json = serde_json::to_string_pretty(&id).unwrap();
+                let json = serde_json::to_string_pretty(&id)
+                    .map_err(|error| format!("Could not serialize cluster deployment.\n  {error}"))?;
                 println!("{json}");
             }
         }

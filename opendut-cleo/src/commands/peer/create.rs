@@ -64,11 +64,13 @@ pub async fn create_peer(descriptor: PeerDescriptor, carl: &mut CarlClient, outp
             );
         }
         OutputFormat::Json => {
-            let json = serde_json::to_string(&descriptor).unwrap();
+            let json = serde_json::to_string(&descriptor)
+                .map_err(|error| format!("Could not serialize peer descriptor.\n  {error}"))?;
             println!("{json}");
         }
         OutputFormat::PrettyJson => {
-            let json = serde_json::to_string_pretty(&descriptor).unwrap();
+            let json = serde_json::to_string_pretty(&descriptor)
+                .map_err(|error| format!("Could not serialize peer descriptor.\n  {error}"))?;
             println!("{json}");
         }
     }

@@ -20,9 +20,13 @@ impl DecodeSetupStringCli {
             OutputFormat::Table => {
                 format!("{setup_string:#?}")
             }
-            OutputFormat::Json => serde_json::to_string(&setup_string).unwrap(),
+            OutputFormat::Json => {
+                serde_json::to_string(&setup_string)
+                    .map_err(|error| format!("Could not serialize setup string.\n  {error}"))?
+            }
             OutputFormat::PrettyJson => {
-                serde_json::to_string_pretty(&setup_string).unwrap()
+                serde_json::to_string_pretty(&setup_string)
+                    .map_err(|error| format!("Could not serialize setup string.\n  {error}"))?
             }
         };
         println!("{text}");

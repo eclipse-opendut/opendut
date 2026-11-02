@@ -29,7 +29,8 @@ impl ApplyCli {
     pub async fn execute(self, carl: &mut CarlClient) -> crate::Result<()> {
         match &self.from {
             Source::File(path) => {
-                let content = fs::read_to_string(path).unwrap();
+                let content = fs::read_to_string(path)
+                    .map_err(|error| format!("Failed to read file '{}': {error}", path.display()))?;
 
                 match YamlSpecificationFile::try_from_yaml_str(&content) {
                     Ok(file) => {

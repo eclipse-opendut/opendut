@@ -56,7 +56,6 @@ mod tests {
 
         assert_that!(result, eq(&cluster_descriptor));
 
-
         Ok(())      
     }
 }
