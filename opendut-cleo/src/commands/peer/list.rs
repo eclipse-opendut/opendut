@@ -62,14 +62,16 @@ impl ListPeersCli {
                     .collect::<Vec<_>>();
 
                 print_stdout(peer_table.with_title())
-                    .expect("List of clusters should be printable as table.");
+                    .expect("List of peers should be printable as table.");
             }
             OutputFormat::Json => {
-                let json = serde_json::to_string(&serializable_peers).unwrap();
+                let json = serde_json::to_string(&serializable_peers)
+                    .map_err(|error| format!("Could not serialize peers.\n  {error}"))?;
                 println!("{json}");
             }
             OutputFormat::PrettyJson => {
-                let json = serde_json::to_string_pretty(&serializable_peers).unwrap();
+                let json = serde_json::to_string_pretty(&serializable_peers)
+                    .map_err(|error| format!("Could not serialize peers.\n  {error}"))?;
                 println!("{json}");
             }
         }

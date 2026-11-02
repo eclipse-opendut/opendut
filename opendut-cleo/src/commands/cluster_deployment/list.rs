@@ -31,11 +31,13 @@ impl ListClusterDeploymentsCli {
                     .expect("List of clusters should be printable as table.");
             }
             OutputFormat::Json => {
-                let json = serde_json::to_string(&clusters).unwrap();
+                let json = serde_json::to_string(&clusters)
+                    .map_err(|error| format!("Could not serialize cluster deployments.\n  {error}"))?;
                 println!("{json}");
             }
             OutputFormat::PrettyJson => {
-                let json = serde_json::to_string_pretty(&clusters).unwrap();
+                let json = serde_json::to_string_pretty(&clusters)
+                    .map_err(|error| format!("Could not serialize cluster deployments.\n  {error}"))?;
                 println!("{json}");
             }
         }

@@ -26,10 +26,12 @@ fn render_devices(devices: Vec<SerializableDevice>, output: OutputFormat) -> Str
             format!("{table}")
         }
         OutputFormat::Json => {
-            serde_json::to_string(&devices).unwrap()
+            serde_json::to_string(&devices)
+                .map_err(|error| format!("Could not serialize devices.\n  {error}"))?;
         }
         OutputFormat::PrettyJson => {
-            serde_json::to_string_pretty(&devices).unwrap()
+            serde_json::to_string_pretty(&devices)
+                .map_err(|error| format!("Could not serialize devices.\n  {error}"))?;
         }
     }
 }
