@@ -1,6 +1,6 @@
 use opendut_carl_api::carl::CarlClient;
 
-use crate::commands::device::{render_devices, SerializableDevice};
+use crate::commands::device::render_devices;
 use crate::OutputFormat;
 
 /// Find a device
@@ -27,11 +27,10 @@ impl FindDeviceCli {
                             || device.tags.iter().any(|tag| pattern.matches(&tag.value().to_lowercase()))
                     })
                 })
-                .map(SerializableDevice::from)
                 .collect::<Vec<_>>()
         };
-        let text = render_devices(devices, output);
-        println!("{text}");
+        
+        render_devices(devices, carl, output).await?;
         Ok(())
     }
 }
