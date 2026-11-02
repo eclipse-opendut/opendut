@@ -1,7 +1,7 @@
-use indoc::indoc;
+use indoc::formatdoc;
 
 use opendut_carl_api::carl::CarlClient;
-use opendut_model::topology::DeviceId;
+use opendut_model::topology::{DeviceDescriptor, DeviceId};
 
 use crate::OutputFormat;
 
@@ -23,35 +23,40 @@ impl DescribeDeviceCli {
         let device = devices.into_iter().find(|device| device.id == device_id)
             .ok_or(format!("Failed to find device for id <{device_id}>"))?;
 
-        let text = match output {
-            OutputFormat::Table => {
-                format!(indoc!("
-                    Device: {}
-                      Id: {}
-                      Description: {}
-                      Interface: {}
-                      Tags: [{}]\
-                    "),
-                    device.name,
-                    device.id,
-                    device.description.unwrap_or_default(),
-                    device.interface,
-                    device.tags
-                        .iter()
-                        .map(|tag| tag.value())
-                        .collect::<Vec<_>>()
-                        .join(", ")
-                )
-            }
-            OutputFormat::Json => {
-                serde_json::to_string(&device).unwrap()
-            }
-            OutputFormat::PrettyJson => {
-                serde_json::to_string_pretty(&device).unwrap()
-            }
-        };
-        println!("{text}");
-
-        Ok(())
+        render_device_descriptor(device, output)
     }
+}
+
+fn render_device_descriptor(device: DeviceDescriptor, output: OutputFormat) -> crate::Result<()> {
+    let text = match output {
+        OutputFormat::Table => {
+            let device_id = device.id;
+            let name = device.name;
+            let description = device.description.unwrap_or_default();
+            let interface = device.interface;
+            let tags = device.tags.iter()
+                .map(|tag| tag.value())
+                .collect::<Vec<_>>()
+                .join(", ");
+
+            formatdoc!("
+                Device: {name}
+                  Id: {device_id}
+                  Description: {description}
+                  Interface: {interface}
+                  Tags: [{tags}]\
+            ")
+        }
+        OutputFormat::Json => {
+            serde_json::to_string(&device)
+                .map_err(|error| format!("Could not serialize device.\n  {error}"))?
+        }
+        OutputFormat::PrettyJson => {
+            serde_json::to_string_pretty(&device)
+                .map_err(|error| format!("Could not serialize device.\n  {error}"))?
+        }
+    };
+
+    println!("{text}");
+    Ok(())
 }
