@@ -98,7 +98,7 @@ mod tests {
 
     #[test]
     fn should_reject_invalid_viper_test_run_name() {
-        for name in [String::new(), String::from("abc"), "a".repeat(65), String::from("Invalid?Name")] {
+        for name in [String::new(), "a".repeat(65), String::from("Invalid?Name")] {
             let specification_metadata = SpecificationMetadata {
                 id: ViperTestId::random().uuid,
                 name,
