@@ -77,9 +77,9 @@ pub mod copy_license_json {
 
         match skip_generate {
             SkipGenerate::Yes => info!("Skipping generation of licenses, as requested. Directly attempting to copy to target location."),
-            SkipGenerate::No => crate::tasks::licenses::json::export_json(package)?,
+            SkipGenerate::No => crate::tasks::licenses::sbom::generate_sbom(package)?,
         };
-        let licenses_file = crate::tasks::licenses::json::out_file(package);
+        let licenses_file = crate::tasks::licenses::sbom::out_file(package);
 
         let out_file = out_file(package, target);
         fs::create_dir_all(out_file.parent().unwrap())?;
@@ -91,7 +91,7 @@ pub mod copy_license_json {
     pub fn out_file(package: &Package, target: Target) -> PathBuf {
         out_package_dir(package, target)
             .join("licenses")
-            .join(crate::tasks::licenses::json::out_file_name(package))
+            .join(crate::tasks::licenses::sbom::out_file_name(package))
     }
 }
 

@@ -121,7 +121,7 @@ pub mod distribution {
             licenses_dir.assert(path::is_dir());
 
             {   //validate licenses dir contents
-                let licenses_edgar_file = licenses_dir.child("opendut-theo.licenses.json");
+                let licenses_edgar_file = licenses_dir.child("opendut-theo-sbom.spdx.json");
 
                 licenses_dir.dir_contains_exactly_in_order(vec![
                     &licenses_edgar_file,

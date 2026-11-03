@@ -56,7 +56,7 @@ pub fn generate_sbom(package: &Package) -> anyhow::Result<()> {
     let sbom = serde_json::to_string_pretty(&sbom)?;
 
     fs::write(
-        sbom_dir.join(format!("{package}-sbom.spdx.json")),
+        out_file(package),
         sbom
     )?;
 
@@ -310,6 +310,13 @@ fn rperf_spdx_package(cargo_metadata: &cargo_metadata::Metadata) -> SpdxItemPack
         supplier: None,
         valid_until_date: None,
     }
+}
+
+pub fn out_file(package: &Package) -> PathBuf {
+    out_dir().join(out_file_name(package))
+}
+pub fn out_file_name(package: &Package) -> String {
+    format!("{package}-sbom.spdx.json")
 }
 
 pub fn out_dir() -> PathBuf {

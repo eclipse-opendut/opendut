@@ -245,21 +245,21 @@ pub mod distribution {
                 SkipGenerate::No => {
                     use workspace::package::*;
                     for package in [SELF_PACKAGE, &opendut_lea, &opendut_edgar, &opendut_cleo] {
-                        crate::tasks::licenses::json::export_json(package)?;
+                        crate::tasks::licenses::sbom::generate_sbom(package)?;
                     }
                 }
             };
 
-            let carl_in_file = crate::tasks::licenses::json::out_file(SELF_PACKAGE);
+            let carl_in_file = crate::tasks::licenses::sbom::out_file(SELF_PACKAGE);
             let carl_out_file = crate::tasks::distribution::copy_license_json::out_file(SELF_PACKAGE, target);
             let out_dir = carl_out_file.parent().unwrap();
 
-            let cleo_in_file = crate::tasks::licenses::json::out_file(&workspace::package::opendut_cleo);
-            let cleo_out_file = out_dir.join(crate::tasks::licenses::json::out_file_name(&workspace::package::opendut_cleo));
-            let lea_in_file = crate::tasks::licenses::json::out_file(&workspace::package::opendut_lea);
-            let lea_out_file = out_dir.join(crate::tasks::licenses::json::out_file_name(&workspace::package::opendut_lea));
-            let edgar_in_file = crate::tasks::licenses::json::out_file(&workspace::package::opendut_edgar);
-            let edgar_out_file = out_dir.join(crate::tasks::licenses::json::out_file_name(&workspace::package::opendut_edgar));
+            let cleo_in_file = crate::tasks::licenses::sbom::out_file(&workspace::package::opendut_cleo);
+            let cleo_out_file = out_dir.join(crate::tasks::licenses::sbom::out_file_name(&workspace::package::opendut_cleo));
+            let lea_in_file = crate::tasks::licenses::sbom::out_file(&workspace::package::opendut_lea);
+            let lea_out_file = out_dir.join(crate::tasks::licenses::sbom::out_file_name(&workspace::package::opendut_lea));
+            let edgar_in_file = crate::tasks::licenses::sbom::out_file(&workspace::package::opendut_edgar);
+            let edgar_out_file = out_dir.join(crate::tasks::licenses::sbom::out_file_name(&workspace::package::opendut_edgar));
 
             fs::create_dir_all(out_dir)?;
             fs::copy(carl_in_file, &carl_out_file)?;
@@ -331,10 +331,10 @@ pub mod distribution {
 
             { //validate license dir contents
                 let licenses_index_file = licenses_dir.child("index.json");
-                let licenses_carl_file = licenses_dir.child("opendut-carl.licenses.json");
-                let licenses_edgar_file = licenses_dir.child("opendut-edgar.licenses.json");
-                let licenses_cleo_file = licenses_dir.child("opendut-cleo.licenses.json");
-                let licenses_lea_file = licenses_dir.child("opendut-lea.licenses.json");
+                let licenses_carl_file = licenses_dir.child("opendut-carl-sbom.spdx.json");
+                let licenses_edgar_file = licenses_dir.child("opendut-edgar-sbom.spdx.json");
+                let licenses_cleo_file = licenses_dir.child("opendut-cleo-sbom.spdx.json");
+                let licenses_lea_file = licenses_dir.child("opendut-lea-sbom.spdx.json");
 
                 licenses_dir.dir_contains_exactly_in_order(vec![
                     &licenses_index_file,

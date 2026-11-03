@@ -7,7 +7,7 @@ use crate::constants;
 use crate::core::types::parsing::package::PackageSelection;
 use crate::Package;
 
-mod sbom;
+pub mod sbom;
 
 
 /// Check or export licenses
