@@ -85,25 +85,25 @@ jobs:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
 
   bundle-edgar:
-    needs: [ legal, generate-sbom, build-edgar ]
+    needs: [ generate-sbom, build-edgar ]
     uses: ./.github/workflows/job-bundle-edgar.yaml
     with:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
 
   bundle-cleo:
-    needs: [ legal, generate-sbom, build-cleo ]
+    needs: [ generate-sbom, build-cleo ]
     uses: ./.github/workflows/job-bundle-cleo.yaml
     with:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
 
   bundle-carl:
-    needs: [ legal, generate-sbom, build-carl, build-lea, bundle-cleo, bundle-edgar ]
+    needs: [ generate-sbom, build-carl, build-lea, bundle-cleo, bundle-edgar ]
     uses: ./.github/workflows/job-bundle-carl.yaml
     with:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
 
   status-check:
-    needs: [ legal, test, integration-test ]
+    needs: [ test, integration-test ]
     runs-on: "${{ fromJson(vars.OPENDUT_GH_RUNNER_SMALL || '[\"ubuntu-latest\"]') }}"
     steps:
     - run: echo "Minimum required jobs for merging the pull request have completed."
