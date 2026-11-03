@@ -23,12 +23,3 @@ jobs:
 
       - name: Run license and vulnerability check
         run: cargo ci licenses check
-      - name: Generate License JSON Report
-        run: cargo ci licenses json
-      - name: Upload licenses artifact
-        uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8
-        with:
-          name: "licenses-${{ github.sha }}"
-          path: "./target/ci/licenses"
-          if-no-files-found: error
-          retention-days: 1

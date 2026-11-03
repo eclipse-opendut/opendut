@@ -41,11 +41,11 @@ jobs:
         run: cargo ci opendut-edgar distribution-rperf --target=${{ matrix.package.target }}
       - name: Create plugins dir
         run: cargo ci edgar distribution-plugins-dir --target=${{ matrix.package.target }}
-      - name: Download licenses
+      - name: Download SBOMs
         uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935
         with:
-          name: "licenses-${{ github.sha }}"
-          path: "./target/ci/licenses"
+          name: "opendut-sbom-${{ github.sha }}"
+          path: "./target/ci/sbom/"
       - name: Prepare Licenses
         run: cargo ci opendut-edgar distribution-copy-license-json --skip-generate --target=${{ matrix.package.target }}
       - name: Prepare Executables
