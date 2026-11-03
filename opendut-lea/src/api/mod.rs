@@ -11,10 +11,9 @@ pub enum ApiError {
 }
 
 mod licenses {
-    use std::collections::BTreeMap;
-
     use gloo_net::http;
     use serde::Deserialize;
+    use serde_spdx::spdx::v_2_3::Spdx;
     use tracing::debug;
 
     use crate::api::ApiError;
@@ -38,11 +37,6 @@ mod licenses {
         pub cleo: String,
         pub edgar: String,
         pub lea: String,
-    }
-
-    #[derive(Deserialize)]
-    pub struct LicenseJsonEntry {
-        pub licenses: Vec<String>,
     }
 
     pub async fn get_licenses() -> Result<Vec<ComponentLicenses>, ApiError> {
@@ -79,25 +73,25 @@ mod licenses {
                 .map_err(|cause| ApiError::HttpError {
                     message: format!("Failed to request the licenses file due to: {cause}"),
                 })?
-                .json::<BTreeMap<String, LicenseJsonEntry>>()
+                .json::<Spdx>()
                 .await
                 .map_err(|cause| ApiError::HttpError {
                     message: format!("Failed to parse the licenses file due to: {cause}"),
                 })?;
 
-            let dependencies = licenses
-                .iter()
-                .map(|(dependency, licenses)| {
-                    let split = dependency.split(' ').collect::<Vec<_>>();
-                    let dependency_name = split[0];
-                    let dependency_version = split[1];
+            let mut dependencies = licenses.packages
+                .unwrap_or_default()
+                .into_iter()
+                .map(|dependency| {
                     ComponentDependencyLicense {
-                        name: String::from(dependency_name),
-                        version: String::from(dependency_version),
-                        licenses: licenses.licenses.clone(),
+                        name: dependency.name,
+                        version: dependency.version_info.unwrap_or_else(|| String::from("No version found.")),
+                        licenses: vec![dependency.license_declared
+                            .unwrap_or_else(|| String::from("No license found."))],
                     }
                 })
                 .collect::<Vec<ComponentDependencyLicense>>();
+            dependencies.sort_by(|a, b| (&a.name, &a.version).cmp(&(&b.name, &b.version)));
 
             result.push(ComponentLicenses {
                 name: String::from(name),

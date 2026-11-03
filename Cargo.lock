@@ -4771,6 +4771,7 @@ dependencies = [
  "opendut-lea-components",
  "opendut-model",
  "serde",
+ "serde-spdx",
  "shadow-rs",
  "strum 0.28.0",
  "thiserror 2.0.20",
