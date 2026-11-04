@@ -42,6 +42,8 @@
     - [Manually Building a Release](development/release/manually-building-a-release.md)
   - [CARL gRPC API](development/carl-grpc-api.md)
   - [CARL DB CLI](development/carl-db-cli.md)
+  - [Community](development/community/index.md)
+    - [Committer Candidate Guidelines](development/community/committer-candidate-guidelines.md)
 - [Architecture](architecture/index.md)
   - [CARL](architecture/carl/index.md)
     - [Peer](architecture/carl/peer/index.md)
