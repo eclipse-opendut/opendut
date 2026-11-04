@@ -21,8 +21,6 @@ pub struct LicensesCli {
 pub enum TaskCli {
     /// Check for license violations and security vulnerabilities
     Check,
-    /// Generate a license report in JSON format
-    Json,
     /// Generate a license report in SBOM format
     Sbom,
     /// Collect the license texts
@@ -35,11 +33,6 @@ impl LicensesCli {
         match self.task {
             TaskCli::Check => {
                 check::check_licenses()?;
-            }
-            TaskCli::Json => {
-                for package in packages.iter() {
-                    json::export_json(&package)?
-                }
             }
             TaskCli::Sbom => {
                 sbom::generate_sboms(packages)?
@@ -64,42 +57,6 @@ pub mod check {
             .current_dir(repo_path!())
             .status_exit_ok()?;
         Ok(())
-    }
-}
-
-pub mod json {
-    use std::process::Stdio;
-    use tracing::info;
-
-    use super::*;
-
-    #[tracing::instrument(skip_all)]
-    pub fn export_json(package: &Package) -> anyhow::Result<()> {
-        let out_file = out_file(package);
-        fs::create_dir_all(out_file.parent().unwrap())?;
-
-        commands::CARGO_DENY.command()
-            .arg("--exclude-dev")
-            .arg("list")
-            .arg("--config").arg(cargo_deny_toml())
-            .arg("--layout=crate")
-            .arg("--format=json")
-            .current_dir(repo_path!().join(package.name))
-            .stdout(Stdio::from(std::fs::File::create(&out_file)?))
-            .status_exit_ok()?;
-
-        info!("Wrote licenses for package '{package}' to path: {}", out_file.display());
-
-        Ok(())
-    }
-
-    pub fn out_file(package: &Package) -> PathBuf {
-        constants::target_dir()
-            .join("licenses")
-            .join(out_file_name(package))
-    }
-    pub fn out_file_name(package: &Package) -> String {
-        format!("{package}.licenses.json")
     }
 }
 

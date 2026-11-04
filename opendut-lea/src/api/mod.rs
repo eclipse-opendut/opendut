@@ -86,8 +86,10 @@ mod licenses {
                     ComponentDependencyLicense {
                         name: dependency.name,
                         version: dependency.version_info.unwrap_or_else(|| String::from("No version found.")),
-                        licenses: vec![dependency.license_declared
-                            .unwrap_or_else(|| String::from("No license found."))],
+                        licenses: vec![
+                            dependency.license_declared
+                                .unwrap_or_else(|| String::from("No license found."))
+                        ],
                     }
                 })
                 .collect::<Vec<ComponentDependencyLicense>>();
