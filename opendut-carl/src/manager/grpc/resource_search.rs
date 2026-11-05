@@ -1,5 +1,5 @@
 use tonic::{Request, Response, Status};
-use tracing::trace;
+use tracing::{error, trace};
 
 use opendut_carl_api::carl::resource_search::SearchError;
 use opendut_carl_api::proto::services::resource_search::{resource_match, search_response, ResourceMatch, SearchRequest, SearchResponse, SearchSuccess};
@@ -23,38 +23,6 @@ impl ResourceSearchFacade {
         super::web::enable(ResourceSearchServer::new(self))
     }
 
-    async fn do_search(&self, query: &str) -> Result<Vec<ResourceMatch>, SearchError> {
-        let mut matches: Vec<ResourceMatch> = Vec::new();
-
-        let peers = self.resource_manager.list::<PeerDescriptor>().await
-            .map_err(|cause| SearchError::Internal { cause: cause.to_string() })?;
-        for peer in peers.into_values() {
-            for device in &peer.topology.devices {
-                if device.name.value().contains(query) {
-                    matches.push(ResourceMatch {
-                        resource: Some(resource_match::Resource::Device(device.clone().into())),
-                    });
-                }
-            }
-            if peer.name.value().contains(query) {
-                matches.push(ResourceMatch {
-                    resource: Some(resource_match::Resource::Peer(peer.into())),
-                });
-            }
-        }
-
-        let clusters = self.resource_manager.list::<ClusterDescriptor>().await
-            .map_err(|cause| SearchError::Internal { cause: cause.to_string() })?;
-        for cluster in clusters.into_values() {
-            if cluster.name.value().contains(query) {
-                matches.push(ResourceMatch {
-                    resource: Some(resource_match::Resource::Cluster(cluster.into())),
-                });
-            }
-        }
-
-        Ok(matches)
-    }
 }
 
 #[tonic::async_trait]
@@ -63,13 +31,52 @@ impl ResourceSearch for ResourceSearchFacade {
     #[tracing::instrument(skip_all, level="trace")]
     async fn search(&self, request: Request<SearchRequest>) -> Result<Response<SearchResponse>, Status> {
 
-        let query = request.into_inner().query;
+        let query = request.into_inner().query.to_lowercase();
 
         trace!("Received request to search resources matching '{query}'.");
 
-        let reply = match self.do_search(&query).await {
-            Ok(matches) => search_response::Reply::Success(SearchSuccess { matches }),
+        let mut matches: Vec<ResourceMatch> = Vec::new();
+
+        let peers_result = self.resource_manager.list::<PeerDescriptor>().await
+            .inspect_err(|error| error!("Error while listing peer descriptors from gRPC API: {error}"))
+            .map_err(|cause| SearchError::Internal { cause: cause.to_string() });
+
+        let reply = match peers_result {
             Err(error) => search_response::Reply::Failure(error.into()),
+            Ok(peers) => {
+                for peer in peers.into_values() {
+                    for device in &peer.topology.devices {
+                        if device.name.value().to_lowercase().contains(&query) {
+                            matches.push(ResourceMatch {
+                                resource: Some(resource_match::Resource::Device(device.clone().into())),
+                            });
+                        }
+                    }
+                    if peer.name.value().to_lowercase().contains(&query) {
+                        matches.push(ResourceMatch {
+                            resource: Some(resource_match::Resource::Peer(peer.into())),
+                        });
+                    }
+                }
+
+                let clusters_result = self.resource_manager.list::<ClusterDescriptor>().await
+                    .inspect_err(|error| error!("Error while listing cluster descriptors from gRPC API: {error}"))
+                    .map_err(|cause| SearchError::Internal { cause: cause.to_string() });
+
+                match clusters_result {
+                    Err(error) => search_response::Reply::Failure(error.into()),
+                    Ok(clusters) => {
+                        for cluster in clusters.into_values() {
+                            if cluster.name.value().to_lowercase().contains(&query) {
+                                matches.push(ResourceMatch {
+                                    resource: Some(resource_match::Resource::Cluster(cluster.into())),
+                                });
+                            }
+                        }
+                        search_response::Reply::Success(SearchSuccess { matches })
+                    }
+                }
+            }
         };
 
         Ok(Response::new(SearchResponse { reply: Some(reply) }))
