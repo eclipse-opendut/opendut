@@ -1,10 +1,6 @@
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 pub use client::*;
 
-use opendut_model::cluster::ClusterDescriptor;
-use opendut_model::peer::PeerDescriptor;
-use opendut_model::topology::DeviceDescriptor;
-
 #[derive(thiserror::Error, Debug)]
 pub enum SearchError {
     #[error("An internal error occurred while searching for resources:\n  {cause}")]
@@ -15,14 +11,18 @@ pub enum SearchError {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum ResourceMatch {
-    Peer(PeerDescriptor),
-    Cluster(ClusterDescriptor),
-    Device(DeviceDescriptor),
+    Peer(opendut_model::peer::PeerDescriptor),
+    Cluster(opendut_model::cluster::ClusterDescriptor),
+    Device(opendut_model::topology::DeviceDescriptor),
 }
 
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 mod client {
     use super::*;
+
+    use opendut_model::cluster::ClusterDescriptor;
+    use opendut_model::peer::PeerDescriptor;
+    use opendut_model::topology::DeviceDescriptor;
 
     use tonic::codegen::{Body, Bytes, http, InterceptedService, StdError};
 
