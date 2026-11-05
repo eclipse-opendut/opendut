@@ -6,6 +6,7 @@ use tonic::codegen::InterceptedService;
     use crate::carl::InitializationError;
     use crate::carl::metadata::MetadataProvider;
     use crate::carl::peer::PeersRegistrar;
+    use crate::carl::resource_search::ResourceSearcher;
     #[cfg(feature="viper")]
     use crate::carl::viper::ViperManager;
 
@@ -14,6 +15,7 @@ pub struct CarlClient {
     pub cluster: ClusterManager<InterceptedService<tonic_web_wasm_client::Client, AuthInterceptor>>,
     pub metadata: MetadataProvider<InterceptedService<tonic_web_wasm_client::Client, AuthInterceptor>>,
     pub peers: PeersRegistrar<InterceptedService<tonic_web_wasm_client::Client, AuthInterceptor>>,
+    pub resource_search: ResourceSearcher<InterceptedService<tonic_web_wasm_client::Client, AuthInterceptor>>,
     #[cfg(feature="viper")]
     pub viper: ViperManager<InterceptedService<tonic_web_wasm_client::Client, AuthInterceptor>>,
 }
@@ -35,6 +37,7 @@ impl CarlClient {
             cluster: ClusterManager::with_interceptor(Clone::clone(&client), Clone::clone(&auth_interceptor)),
             metadata: MetadataProvider::with_interceptor(Clone::clone(&client), Clone::clone(&auth_interceptor)),
             peers: PeersRegistrar::with_interceptor(Clone::clone(&client), Clone::clone(&auth_interceptor)),
+            resource_search: ResourceSearcher::with_interceptor(Clone::clone(&client), Clone::clone(&auth_interceptor)),
             #[cfg(feature="viper")]
             viper: ViperManager::with_interceptor(Clone::clone(&client), Clone::clone(&auth_interceptor)),
         })

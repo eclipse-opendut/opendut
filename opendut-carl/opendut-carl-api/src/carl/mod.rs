@@ -3,6 +3,7 @@ pub mod cluster;
 pub mod metadata;
 pub mod peer;
 pub mod observer;
+pub mod resource_search
 #[cfg(feature="viper")]
 pub mod viper;
 
