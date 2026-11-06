@@ -105,7 +105,7 @@ where F: Fn() + Clone + Send + 'static {
 
     let tooltip_content = Arc::new(move || {
         view! {
-            Peer can not be deleted while it is configured in a cluster.
+            <TooltipContent used_clusters_length used_by_viper />
         }.into_any()
     });
 
@@ -124,5 +124,57 @@ where F: Fn() + Clone + Send + 'static {
                 on_confirm
             />
         </Tooltip>
+    }
+}
+
+#[component]
+fn TooltipContent(
+    used_clusters_length: Signal<usize>,
+    used_by_viper: LocalResource<Result<Vec<(ViperTestId, ViperTestName)>, String>>,
+) -> impl IntoView {
+
+    let display_cluster_usage = move || {
+        used_clusters_length.get() > 0
+    };
+
+    let display_viper_usage = Signal::derive(move || {
+        match used_by_viper.get() {
+            Some(Ok(tests)) if tests.is_empty() => None,
+            usage => usage,
+        }
+    });
+
+    let display_divider = move || display_cluster_usage() && display_viper_usage.get().is_some();
+
+    view! {
+        <div class="content">
+            <Show when=display_cluster_usage>
+                <p>"Peer can not be deleted while it is configured in a cluster."</p>
+            </Show>
+            <Show when=display_divider>
+                <hr class="dropdown-divider" />
+            </Show>
+            { move || match display_viper_usage.get() {
+                Some(Ok(tests)) => view! {
+                    <p>"Peer can not be deleted while it is used by a VIPER test."</p>
+                    <p>"Usage:"</p>
+                    <ul>
+                        {tests.into_iter().map(|(id, name)| view! {
+                            <li title=id.to_string()>
+                                <a href=format!("/viper_tests/{id}/configure/peer")>
+                                    { String::from(name) }
+                                </a>
+                            </li>
+                        }).collect_view()}
+                    </ul>
+                }.into_any(),
+                Some(Err(error)) => view! {
+                    <p>
+                        {format!("Peer usage could not be checked, due to: {error}.")}
+                    </p>
+                }.into_any(),
+                _ => ().into_any(),
+            }}
+        </div>
     }
 }
