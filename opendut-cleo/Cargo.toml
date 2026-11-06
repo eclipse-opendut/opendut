@@ -12,6 +12,7 @@ opendut-telemetry = { workspace = true }
 opendut-util = { workspace = true, features = ["pem", "settings"] }
 
 
+backon = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 clap_complete = { workspace = true }
 clap-verbosity-flag = { workspace = true }
