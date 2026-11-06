@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package opendut.carl.services.resource_search;
+
+import "opendut/model/peer/peer.proto";
+import "opendut/model/cluster/cluster.proto";
+import "opendut/model/topology/device.proto";
+
+service ResourceSearch {
+  rpc Search(SearchRequest) returns (SearchResponse) {}
+}
+
+message SearchRequest {
+  string query = 1;
+}
+
+message SearchResponse {
+  oneof reply {
+    SearchSuccess success = 1;
+    SearchFailure failure = 2;
+  }
+}
+
+message SearchSuccess {
+  repeated ResourceMatch matches = 1;
+}
+
+message ResourceMatch {
+  oneof resource {
+    opendut.model.peer.PeerDescriptor peer = 1;
+    opendut.model.cluster.ClusterDescriptor cluster = 2;
+    opendut.model.topology.DeviceDescriptor device  = 3;
+  }
+}
+
+message SearchFailure {
+  oneof error {
+    SearchFailureInternal internal = 1;
+  }
+}
+
+message SearchFailureInternal {
+  string cause = 1;
+}
