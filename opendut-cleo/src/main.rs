@@ -1,5 +1,7 @@
 use std::ops::Not;
 use std::process::ExitCode;
+use std::time::Duration;
+use backon::{ConstantBuilder, Retryable};
 use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::Shell;
 use console::Style;
@@ -212,6 +214,16 @@ async fn main() -> ExitCode {
 }
 
 async fn execute() -> Result<()> {
+    let args = match Args::try_parse() {
+        Ok(args) => Some(args),
+        Err(error) if error.kind() == clap::error::ErrorKind::DisplayVersion => {
+            print!("{error}");
+            println!("Fetching CARL version. Press Ctrl+C to cancel...");
+            None
+        }
+        Err(error) => error.exit(),
+    };
+
     let cleo_config_hide_secrets_override = config::Config::builder()
         .set_override("network.oidc.client.secret", "redacted")
         .map_err(|_| "Failed to hide CLEO secrets.")?
@@ -221,7 +233,9 @@ async fn execute() -> Result<()> {
     let settings = load_config("cleo", include_str!("../cleo.toml"), FileFormat::Toml, config::Config::default(), cleo_config_hide_secrets_override)
         .expect("Failed to load config"); // TODO: Point the user to the source of the error.
 
-    let args = Args::parse();
+    let Some(args) = args else {
+        return print_carl_version(&settings).await;
+    };
 
     let mut telemetry_shutdown_handle = {
         let mut config = opendut_telemetry::logging::LoggingConfig::load(&settings)
@@ -246,6 +260,26 @@ async fn execute() -> Result<()> {
 
     telemetry_shutdown_handle.shutdown();
 
+    Ok(())
+}
+
+async fn print_carl_version(config: &config::Config) -> Result<()> {
+    let version = (|| async {
+        let mut carl = try_create_carl_client(config).await?;
+        carl.metadata.version().await.map_err(|error| error.to_string())
+    })
+        .retry(
+            ConstantBuilder::default()
+                .with_delay(Duration::from_secs(10))
+                .with_max_times(3)
+        )
+        .notify(|error, duration| {
+            eprintln!("Request failed: {error}. Retrying in {duration:?}...");
+        })
+        .await
+        .map_err(|error| format!("Failed to fetch CARL version after 4 attempts: {error}"))?;
+
+    println!("CARL {}", version.name);
     Ok(())
 }
 
@@ -422,28 +456,35 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
 }
 
 
-pub async fn create_carl_client(config: &config::Config) -> CarlClient {
+async fn try_create_carl_client(config: &config::Config) -> Result<CarlClient> {
     let host = config.get_string("network.carl.host")
-        .expect("Configuration should contain a valid host name to connect to CARL");
+        .map_err(|error| format!("Configuration should contain a valid host name to connect to CARL: {error}"))?;
 
     let port = config.get_int("network.carl.port")
-        .expect("Configuration should contain a valid port number to connect to CARL");
+        .map_err(|error| format!("Configuration should contain a valid port number to connect to CARL: {error}"))?;
 
     let ca_certs = Pem::read_from_configured_path_or_content(pem::config_keys::DEFAULT_NETWORK_TLS_CA, None, config)
-        .expect("Error while reading CA certificate.");
+        .map_err(|error| format!("Error while reading CA certificate: {error}"))?;
 
     let client_auth = ClientAuth::load_from_config_for_carl_connection(config)
-        .expect("Error while loading configuration for client authentication");
+        .map_err(|error| format!("Error while loading configuration for client authentication: {error}"))?;
 
     let domain_name_override = {
         let domain_name_override = config.get_string("network.tls.domain.name.override")
-            .expect("Configuration should contain a field for 'domain.name.override'.");
+            .map_err(|error| format!("Configuration should contain a field for 'domain.name.override': {error}"))?;
+
         domain_name_override.is_empty().not().then_some(domain_name_override)
     };
 
-    let mut carl_client = CarlClient::create(&host, port as u16, &ca_certs, &client_auth, &domain_name_override, config).await
-        .expect("Failed to create CARL client");
+    CarlClient::create(&host, port as u16, &ca_certs, &client_auth, &domain_name_override, config).await
+        .map_err(|error| error.to_string())
+}
 
+pub async fn create_carl_client(config: &config::Config) -> CarlClient {
+    let mut carl_client = try_create_carl_client(config).await
+        .map_err(|error| println!("Failed to create CARL client: {error}"))
+        .unwrap();
+    
     let _ignore_errors = opendut_carl_api::carl::metadata::version_compatibility::log_version_compatibility_with_carl(
         VersionCompatibilityInfo {
             own_version: app_info::PKG_VERSION,
