@@ -98,25 +98,9 @@ where F: Fn() + Clone + Send + 'static {
     });
 
     let tooltip_content = Arc::new(move || {
-        match used_by.get() {
-            Some(Ok(tests)) => view! {
-                <div class="content has-text-left">
-                    <p>VIPER source can not be deleted while it is used by a VIPER test.</p>
-                    <p>"Usage:"</p>
-                    <ul>
-                        {tests.into_iter().map(|(id, name)| view! {
-                            <li title=id.to_string()>
-                                <a href=format!("/viper_tests/{id}/configure/general")> {name.to_string()} </a>
-                            </li>
-                        }).collect_view()}
-                    </ul>
-                </div>
-            }.into_any(),
-            Some(Err(_)) => view! {
-                <p>"VIPER source usage could not be checked."</p>
-            }.into_any(),
-            None => ().into_any(),
-        }
+        view! {
+            <TooltipContent used_by />
+        }.into_any()
     });
 
     view! {
@@ -134,5 +118,34 @@ where F: Fn() + Clone + Send + 'static {
                 on_confirm
             />
         </Tooltip>
+    }
+}
+
+#[component]
+fn TooltipContent(
+    used_by: LocalResource<Result<Vec<(ViperTestId, ViperTestName)>, String>>,
+) -> impl IntoView {
+    move || match used_by.get() {
+        Some(Ok(tests)) => view! {
+            <div class="content">
+                <p>VIPER source can not be deleted while it is used by a VIPER test.</p>
+                <p>"Usage:"</p>
+                <ul>
+                    {tests.into_iter().map(|(id, name)| view! {
+                        <li title=id.to_string()>
+                            <a href=format!("/viper_tests/{id}/configure/viper_sources")>
+                                { String::from(name) }
+                            </a>
+                        </li>
+                    }).collect_view()}
+                </ul>
+            </div>
+        }.into_any(),
+        Some(Err(error)) => view! {
+                <p>
+                    {format!("VIPER source usage could not be checked, due to: {error}.")}
+                </p>
+            }.into_any(),
+        None => ().into_any(),
     }
 }
