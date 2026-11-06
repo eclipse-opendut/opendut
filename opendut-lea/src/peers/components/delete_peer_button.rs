@@ -5,6 +5,7 @@ use tracing::{error, info};
 use opendut_lea_components::{use_toaster, ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, Toast};
 use opendut_lea_components::tooltip::{Tooltip, TooltipDirection};
 use opendut_model::peer::PeerId;
+use opendut_model::viper::{ViperTestId, ViperTestName};
 use crate::app::use_app_globals;
 
 #[component]
@@ -18,18 +19,50 @@ where F: Fn() + Clone + Send + 'static {
 
     let globals = use_app_globals();
     let pending = RwSignal::new(false);
+    let toaster = use_toaster();
+
+    let used_by_viper: LocalResource<Result<Vec<(ViperTestId, ViperTestName)>, String>> = {
+        let carl = globals.client.clone();
+        let toaster = toaster.clone();
+
+        LocalResource::new(move || {
+            let peer_id = peer_id.get();
+            let mut carl = carl.clone();
+            let toaster = toaster.clone();
+            pending.set(true);
+
+            async move {
+                let result = carl.viper.list_viper_test_run_descriptors().await
+                    .map(|tests| tests.into_iter()
+                        .filter(|test| test.peer == peer_id)
+                        .map(|test| (test.id, test.name))
+                        .collect())
+                    .map_err(|cause| {
+                        error!("Failed to load peer <{peer_id}>, due to error: {cause}");
+                        toaster.toast(Toast::builder()
+                            .simple("Failed to check peer usage.")
+                            .error());
+                        cause.to_string()
+                    });
+                pending.set(false);
+                result
+            }
+        })
+    };
 
     let button_state = Signal::derive(move || {
-        if  used_clusters_length.get() > 0 {
+        if used_clusters_length.get() > 0 {
             ButtonState::Disabled
         } else if pending.get() {
             ButtonState::Loading
         } else {
-            ButtonState::Enabled
+            match used_by_viper.get() {
+                None => ButtonState::Loading,
+                Some(Ok(tests)) if tests.is_empty() => ButtonState::Enabled,
+                Some(_) => ButtonState::Disabled,
+            }
         }
     });
-
-    let toaster = use_toaster();
 
     let on_confirm = move || {
         let on_delete = on_delete.clone();

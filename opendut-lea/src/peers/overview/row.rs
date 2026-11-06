@@ -77,7 +77,8 @@ where
                 <div class="is-flex">
                     <DeletePeerButton
                         on:click=|e| e.stop_propagation() on:mousedown=|e| e.stop_propagation()
-                        peer_id used_clusters_length
+                        peer_id
+                        used_clusters_length
                         button_color=ButtonColor::TextDanger
                         on_delete
                     />
