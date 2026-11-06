@@ -5,28 +5,9 @@ all-features = true
 
 [advisories]
 yanked = "warn"
+unmaintained = "workspace"
 ignore = [
     { id = "RUSTSEC-2023-0071", reason = "ignore until https://github.com/RustCrypto/RSA/issues/19 is resolved, tracked by issue #144" },
-
-    { id = "RUSTSEC-2024-0436", reason = "`paste` library is unmaintained. No actual vulnerability known. Several of our dependencies currently use `paste`. Tracked by issue #336." },
-
-
-    { id = "RUSTSEC-2024-0375", reason = "`atty` library is unmaintained. A known vulnerability only affects Windows. Tracked by issue #410." },
-
-    { id = "RUSTSEC-2025-0081", reason = "`unic-*` crates are unmaintained. Tracked by issue #411." },
-    { id = "RUSTSEC-2025-0075", reason = "`unic-*` crates are unmaintained. Tracked by issue #411." },
-    { id = "RUSTSEC-2025-0080", reason = "`unic-*` crates are unmaintained. Tracked by issue #411." },
-    { id = "RUSTSEC-2025-0090", reason = "`unic-*` crates are unmaintained. Tracked by issue #411." },
-    { id = "RUSTSEC-2025-0083", reason = "`unic-*` crates are unmaintained. Tracked by issue #411." },
-    { id = "RUSTSEC-2025-0094", reason = "`unic-*` crates are unmaintained. Tracked by issue #411." },
-    { id = "RUSTSEC-2025-0100", reason = "`unic-*` crates are unmaintained. Tracked by issue #411." },
-    { id = "RUSTSEC-2025-0098", reason = "`unic-*` crates are unmaintained. Tracked by issue #411." },
-
-    { id = "RUSTSEC-2025-0134", reason = "`rustls-pemfile` library is unmaintained. No actual vulnerability known and the advisory says that it is just a thin wrapper at this point. Is depended on by the `axum-server` library in version 0.7.x, which is what we're currently pinned to by axum-server-dual-protocol v0.7.0. Tracked by issue #426." },
-
-    { id = "RUSTSEC-2025-0057", reason = "`fxhash` library is unmaintained. No actual vulnerability known. Is depended on by `wasmtime` in version 36.x. We stick to this `wasmtime` version, because it is an LTS and versions 39+ contain the `im-rc` dependency, which is under MPL-2.0." },
-
-    { id = "RUSTSEC-2026-0173", reason = "`proc-macro-error2` library is unmaintained. No actual vulnerability known." },
 
     { id = "RUSTSEC-2026-0387", reason = "`crypto-bigint` is still pulled in via the upstream RustCrypto JWT/OIDC dependency chain. The project code compiles with the direct `jsonwebtoken` 11.x upgrade, but the transitive stack still constrains the lockfile to this vulnerable release until the chain updates. Tracked by issue #603." },
 
