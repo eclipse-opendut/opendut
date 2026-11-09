@@ -1,6 +1,7 @@
 use crate::components::{UserInput, UserInputValue};
 use crate::peers::configurator::types::UserPeerDescriptor;
 use leptos::prelude::*;
+use opendut_lea_components::WarningMessage;
 use opendut_model::util::net::{NetworkInterfaceName, NetworkInterfaceNameError};
 
 #[component]
@@ -40,16 +41,9 @@ pub fn BridgeNameInput(user_peer_descriptor: RwSignal<UserPeerDescriptor>) -> im
                 placeholder="br-opendut"
                 validator=validator
             />
-            <div class="notification is-warning">
-                <div class="columns is-mobile is-vcentered">
-                    <div class="column is-narrow">
-                        <i class="fa-solid fa-triangle-exclamation fa-2xl"></i>
-                    </div>
-                    <div class="column">
-                        <p>"Bridges with custom names are not automatically removed and need to be removed manually. Not removing the bridge could lead to network traffic being misdirected!"</p>
-                    </div>
-                </div>
-            </div>
+            <WarningMessage
+                text="Bridges with custom names are not automatically removed and need to be removed manually. Not removing the bridge could lead to network traffic being misdirected!"
+            />
         </div>
     }
 }

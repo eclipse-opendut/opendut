@@ -16,16 +16,16 @@ pub fn SetupTab(peer_configuration: ReadSignal<UserPeerDescriptor>) -> impl Into
             {move || {
                 if is_new.get() {
                     Either::Left(view! {
-                        <WarningMessage>
-                            "The peer configuration must be saved before a Setup-String can be generated. Please complete the configuration and save the peer first."
-                        </WarningMessage>
+                        <WarningMessage
+                            text="The peer configuration must be saved before a Setup-String can be generated. Please complete the configuration and save the peer first."
+                        />
                     })
                 } else {
                     Either::Right(view! {
                         <GenerateSetupStringForm kind />
-                        <WarningMessage>
-                            "Setup-Strings may only be used to set up one host. For setting up multiple hosts, you should create a peer for each host."
-                        </WarningMessage>
+                        <WarningMessage
+                            text="Setup-Strings may only be used to set up one host. For setting up multiple hosts, you should create a peer for each host."
+                        />
                     })
                 }
             }}

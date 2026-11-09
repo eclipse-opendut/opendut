@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 
 #[component]
-pub fn WarningMessage(children: Children) -> impl IntoView {
+pub fn WarningMessage(#[prop(into)] text: String) -> impl IntoView {
     view! {
         <div class="notification is-warning">
             <div class="columns is-mobile is-vcentered">
@@ -9,7 +9,7 @@ pub fn WarningMessage(children: Children) -> impl IntoView {
                     <i class="fa-solid fa-triangle-exclamation fa-2xl"></i>
                 </div>
                 <div class="column">
-                    <p>{children()}</p>
+                    <p>{ text }</p>
                 </div>
             </div>
         </div>
