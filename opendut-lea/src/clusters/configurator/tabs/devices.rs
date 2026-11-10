@@ -1,4 +1,5 @@
 use leptos::prelude::*;
+use opendut_lea_components::InfoMessage;
 use opendut_model::peer::PeerDescriptor;
 
 use crate::clusters::configurator::DeviceSelector;
@@ -13,6 +14,7 @@ pub fn DevicesTab(
 
     view! {
         <div>
+            <InfoMessage text="The Devices of individual Peers to connect into the Cluster." />
             <DeviceSelector user_cluster_descriptor peers is_disabled />
         </div>
     }
