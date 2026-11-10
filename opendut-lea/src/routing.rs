@@ -122,7 +122,9 @@ mod routes {
     #[component]
     pub fn AppRoutes(app_globals: AppGlobalsResource) -> impl IntoView {
         let user = use_context::<UserAuthenticationSignal>().expect("UserAuthenticationSignal should be provided in the context.");
-        let opendut_user = move || user.get().is_authenticated();
+        
+        let is_authenticated = Memo::new(move |_| user.with(|user| user.is_authenticated()));
+        let opendut_user = move || is_authenticated.get();
 
         view! {
             <Routes fallback=NotFound>
