@@ -68,6 +68,9 @@ impl CarlCli {
                         .context("Error while building LEA for CARL distribution") //ensure the LEA distribution exists and is up-to-date
                 })?;
 
+                crate::tasks::doc::book::build()
+                    .context("Error while building documentation for CARL")?;
+
                 info!("Starting CARL. You can view the web-UI at: https://localhost:8080");
                 cli.run(SELF_PACKAGE)?
             }

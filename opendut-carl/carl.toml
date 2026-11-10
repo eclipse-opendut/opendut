@@ -62,6 +62,7 @@ ethernet.bridge.name.default = "br-opendut"
 
 [serve]
 ui.directory = "opendut-lea/"
+documentation.directory = "documentation/"
 
 [vpn]
 enabled = true
