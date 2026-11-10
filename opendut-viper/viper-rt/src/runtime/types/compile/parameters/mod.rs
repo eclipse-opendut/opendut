@@ -177,7 +177,7 @@ pub enum ParameterDescriptor {
         /// Primary identifier for the parameter
         name: ParameterName,
         info: ParameterInfo,
-        default: Option<bool>,
+        default: bool,
     },
     NumberParameter {
         /// Primary identifier for the parameter
@@ -221,7 +221,7 @@ impl ParameterDescriptor {
 
     pub fn has_default_value(&self) -> bool {
         match self {
-            ParameterDescriptor::BooleanParameter { default, .. } => default.is_some(),
+            ParameterDescriptor::BooleanParameter { .. } => true,
             ParameterDescriptor::NumberParameter { default, .. } => default.is_some(),
             ParameterDescriptor::TextParameter { default, .. } => default.is_some(),
         }

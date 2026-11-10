@@ -82,7 +82,7 @@ pub mod parameters {
     #[derive(Debug, PyPayload)]
     pub struct PyBooleanParameterDescriptor {
         pub name: String,
-        pub default: Option<bool>,
+        pub default: bool,
         pub display_name: Option<String>,
         pub description: Option<String>,
     }
@@ -99,7 +99,7 @@ pub mod parameters {
                         .ok_or_else(|| vm.new_type_error(String::from("argument 0 must be a string")))
                 })?;
 
-            let mut default: Option<bool> = None;
+            let mut default = false;
             let mut display_name: Option<String> = None;
             let mut description: Option<String> = None;
 
@@ -107,8 +107,8 @@ pub mod parameters {
                 match key.as_str() {
                     // TODO: Typecheck does not work properly
                     "default" => {
-                        default = Some(parse_pybool_to_bool(value, vm)
-                            .expect("downcast to `PyBool` for `PyBoolParameterDescriptor.default`"));
+                        default = parse_pybool_to_bool(value, vm)
+                            .expect("downcast to `PyBool` for `PyBoolParameterDescriptor.default`");
                     }
                     "display_name" => {
                         display_name = Some(parse_pystr_to_string(value, vm)

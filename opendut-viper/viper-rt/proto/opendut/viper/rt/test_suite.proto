@@ -24,7 +24,7 @@ message ViperParameterInfo {
 message ViperParameterDescriptorBoolean {
   string name = 1;
   ViperParameterInfo info = 2;
-  optional bool default = 11;
+  bool default = 11;
 }
 
 message ViperParameterDescriptorNumber {

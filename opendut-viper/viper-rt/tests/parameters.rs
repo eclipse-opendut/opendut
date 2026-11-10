@@ -47,17 +47,17 @@ async fn test_boolean_parameters() -> Result<()> {
             ParameterDescriptor::BooleanParameter {
                 name: ParameterName::try_from("foo")?,
                 info: ParameterInfo::default(),
-                default: None,
+                default: false,
             },
             ParameterDescriptor::BooleanParameter {
                 name: ParameterName::try_from("bar")?,
                 info: ParameterInfo::default(),
-                default: None,
+                default: false,
             },
             ParameterDescriptor::BooleanParameter {
                 name: ParameterName::try_from("fubar")?,
                 info: ParameterInfo { display_name: Some(String::from("The FUBAR")), description: Some(String::from("This is an awesome boolean parameter.")) },
-                default: Some(true),
+                default: true,
             }
         ]));
     }

@@ -142,7 +142,7 @@ impl ParameterBindings<Complete> {
             .find(|binding| binding.name() == parameter)
             .and_then(|binding| match &binding.descriptor {
                 ParameterDescriptor::BooleanParameter { default, .. } =>
-                    default.map(BindingValue::BooleanValue),
+                    Some(BindingValue::BooleanValue(*default)),
                 ParameterDescriptor::NumberParameter { default, .. } =>
                     default.map(BindingValue::NumberValue),
                 ParameterDescriptor::TextParameter { default, .. } =>
@@ -297,7 +297,7 @@ mod tests {
         descriptors.push(ParameterDescriptor::BooleanParameter {
             name: ParameterName::try_from("some_boolean")?,
             info: ParameterInfo::default(),
-            default: None,
+            default: false,
         });
 
         descriptors.push(ParameterDescriptor::NumberParameter {
@@ -333,7 +333,7 @@ mod tests {
         descriptors.push(ParameterDescriptor::BooleanParameter {
             name: Clone::clone(&parameter),
             info: ParameterInfo::default(),
-            default: None,
+            default: false,
         });
 
         let mut bindings = ParameterBindings::from(descriptors);
@@ -522,7 +522,7 @@ mod tests {
         descriptors.push(ParameterDescriptor::BooleanParameter {
             name: Clone::clone(&parameter_a),
             info: ParameterInfo::default(),
-            default: None,
+            default: false,
         });
 
         descriptors.push(ParameterDescriptor::TextParameter {
@@ -563,7 +563,7 @@ mod tests {
         descriptors.push(ParameterDescriptor::BooleanParameter {
             name: Clone::clone(&parameter),
             info: ParameterInfo::default(),
-            default: None,
+            default: false,
         });
 
         let mut bindings = ParameterBindings::from(descriptors);
@@ -587,7 +587,7 @@ mod tests {
         descriptors.push(ParameterDescriptor::BooleanParameter {
             name: Clone::clone(&parameter),
             info: ParameterInfo::default(),
-            default: Some(false),
+            default: false,
         });
 
         let bindings = ParameterBindings::from(descriptors);
@@ -606,10 +606,11 @@ mod tests {
 
         let mut descriptors = ParameterDescriptors::new();
 
-        descriptors.push(ParameterDescriptor::BooleanParameter {
+        descriptors.push(ParameterDescriptor::TextParameter {
             name: Clone::clone(&parameter),
             info: ParameterInfo::default(),
             default: None,
+            max: u32::MAX,
         });
 
         let bindings = ParameterBindings::from(descriptors);

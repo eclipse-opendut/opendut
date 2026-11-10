@@ -58,7 +58,6 @@ pub fn ParametersTab(
 
                         match parameter_descriptor {
                             ViperParameterDescriptor::BooleanParameter { name, info, default } => {
-                                let default = default.unwrap_or(false);
                                 view! {
                                     <BooleanParameterInput
                                         getter=test_run_getter
