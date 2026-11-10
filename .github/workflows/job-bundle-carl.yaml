@@ -83,6 +83,8 @@ jobs:
           path: "./target/ci/sbom/"
       - name: Prepare Licenses
         run: cargo ci opendut-carl distribution-copy-license-json --skip-generate --target=${{ matrix.package.target }}
+      - name: Build and prepare documentation
+        run: cargo ci opendut-carl distribution-copy-documentation --target=${{ matrix.package.target }}
       - name: Prepare Executables
         run: chmod +x ./target/ci/distribution/${{ matrix.package.target }}/${{ matrix.package.name }}/${{ matrix.package.name }}
       - name: Bundle

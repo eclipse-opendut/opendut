@@ -42,6 +42,44 @@ pub fn collect_executables(package: &Package, target: Target) -> anyhow::Result<
 }
 
 
+pub mod copy_documentation {
+    use crate::tasks::doc::book;
+    use super::*;
+
+    /// Build and copy the documentation to the distribution directory, as it normally happens when building a distribution.
+    /// Intended for parallelization in CI/CD.
+    #[derive(Debug, clap::Parser)]
+    #[command(hide=true)]
+    pub struct DistributionCopyDocumentationCli {
+        #[arg(long, default_value_t)]
+        pub target: Target,
+    }
+    impl DistributionCopyDocumentationCli {
+        pub fn run(&self, package: &Package) -> anyhow::Result<()> {
+            copy_documentation(package, self.target)
+        }
+    }
+    
+    #[tracing::instrument(skip_all)]
+    pub fn copy_documentation(package: &Package, target: Target) -> anyhow::Result<()> {
+        book::build()?;
+        let documentation_build_dir = book::out_dir();
+
+        let documentation_out_dir = out_package_dir(package, target).join("documentation");
+        fs::create_dir_all(&documentation_out_dir)?;
+
+        fs_extra::dir::copy(
+            documentation_build_dir,
+            &documentation_out_dir,
+            &fs_extra::dir::CopyOptions::default()
+                .overwrite(true)
+                .content_only(true)
+        )?;
+
+        Ok(())
+    }
+}
+
 pub mod copy_license_json {
     use tracing::info;
     use super::*;
