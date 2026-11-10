@@ -26,6 +26,8 @@ pub use inputs::user_textarea::UserTextarea;
 pub use inputs::vector_user_input::VectorUserInput;
 pub use inputs::{InputType, UserInputError, UserInputValue};
 pub use loading_spinner::LoadingSpinner;
+pub use messages::info_message::InfoMessage;
+pub use messages::warning_message::WarningMessage;
 pub use page::BasePageContainer;
 pub use tables::multiple_selection_table::{CollapsableInfo, MultipleSelectionTable, MultipleSelectionTableCell, MultipleSelectionTableRow, };
 pub use tables::overview_table::{OverviewTable, OverviewTableCell, OverviewTableRow, TableHeading, };
@@ -38,7 +40,6 @@ pub use util::ior::Ior;
 pub use util::net::UserNetworkInterfaceConfiguration;
 pub use util::signal::{ButtonStateSignalProvider, ToggleSignal, Toggled};
 pub use util::table_row_selection::has_text_selection;
-pub use warning_message::WarningMessage;
 
 pub mod health;
 pub mod tabs;
@@ -50,13 +51,13 @@ mod doorhanger;
 mod icon_text;
 mod inputs;
 mod loading_spinner;
+mod messages;
 mod page;
 mod tables;
 mod tag;
 mod toast;
 mod toggle;
 mod util;
-mod warning_message;
 
 pub const NON_BREAKING_SPACE: &str = "\u{a0}";
 

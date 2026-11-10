@@ -1,4 +1,5 @@
 use leptos::prelude::*;
+use opendut_lea_components::InfoMessage;
 use opendut_model::proto::util::VersionInfo;
 use crate::routing;
 
@@ -32,6 +33,7 @@ pub fn EdgarCard(
                 <div class="card-header-title"><i class="fa-solid fa-microchip mr-1"></i>"EDGAR"</div>
             </div>
             <div class="card-content">
+                <InfoMessage text="Edge software for integrating ECUs into openDuT." />
                 "Download for different architectures:"
                 <div class="mt-2 mb-2 ml-2">
                     <a href="/api/edgar/aarch64-unknown-linux-gnu/download" download=output_name_aarch64>

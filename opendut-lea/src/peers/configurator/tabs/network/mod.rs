@@ -1,6 +1,7 @@
 use leptos::prelude::*;
 
 use network_interface_list::NetworkInterfaceList;
+use opendut_lea_components::InfoMessage;
 use opendut_model::util::net::NetworkInterfaceId;
 
 use crate::peers::configurator::tabs::network::bridge_name_input::BridgeNameInput;
@@ -30,6 +31,9 @@ pub fn NetworkTab(user_peer_descriptor: RwSignal<UserPeerDescriptor>) -> impl In
     );
 
     view! {
+        <InfoMessage
+            text="An Interface is a physical or virtual networking port on the computer where EDGAR is installed."
+        />
         <div class="box">
             <h5 class="title is-5">Network Interfaces</h5>
             <NetworkInterfaceInput
