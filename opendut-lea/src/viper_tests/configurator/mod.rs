@@ -5,7 +5,7 @@ use opendut_carl_api::carl::ClientError;
 use opendut_carl_api::carl::viper::GetViperTestSuiteParametersError;
 use opendut_lea_components::{BasePageContainer, Breadcrumb, LoadingSpinner, UserInputError, UserInputValue};
 use opendut_lea_components::tabs::{Tab, Tabs};
-use opendut_model::viper::{ViperParameterDescriptor, ViperParameterName, ViperTestId, ViperTestRunDescriptor};
+use opendut_model::viper::{ViperParameterName, ViperTestId, ViperTestRunDescriptor};
 use crate::app::use_app_globals;
 use crate::components::use_active_tab;
 use crate::routing::{navigate_to, WellKnownRoutes};
@@ -118,17 +118,10 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                                         .get(&parameter_name)
                                         .cloned()
                                         .unwrap_or_else(|| {
-                                            match parameter {
-                                                ViperParameterDescriptor::BooleanParameter { .. } => {
-                                                    // Todo: Remove this match arm, when backend/VIPER forces default parameters for `BooleanParameter`.
-                                                    ViperBindingValueInput::Right(None)
-                                                }
-                                                _ if parameter.has_default_value() => {
-                                                    ViperBindingValueInput::Right(None)
-                                                }
-                                                _ => {
-                                                    ViperBindingValueInput::Left(String::from("Please enter a value."))
-                                                }
+                                            if parameter.has_default_value() {
+                                                ViperBindingValueInput::Right(None)
+                                            } else {
+                                                ViperBindingValueInput::Left(String::from("Please enter a value."))
                                             }
                                         });
 
