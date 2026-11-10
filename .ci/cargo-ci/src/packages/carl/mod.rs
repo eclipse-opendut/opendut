@@ -26,6 +26,7 @@ pub enum TaskCli {
     Run(crate::tasks::run::RunCli),
 
     DistributionBuild(crate::tasks::build::DistributionBuildCli),
+    DistributionCopyDocumentation(crate::tasks::distribution::copy_documentation::DistributionCopyDocumentationCli),
     DistributionCopyLicenseJson(crate::tasks::distribution::copy_license_json::DistributionCopyLicenseJsonCli),
     DistributionBundleFiles(crate::tasks::distribution::bundle::DistributionBundleFilesCli),
     DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli),
@@ -71,6 +72,9 @@ impl CarlCli {
                 cli.run(SELF_PACKAGE)?
             }
 
+            TaskCli::DistributionCopyDocumentation(cli) => {
+                cli.run(SELF_PACKAGE)?;
+            }
             TaskCli::DistributionCopyLicenseJson(cli) => {
                 copy_license_json(cli.target, cli.skip_generate.into())?;
             }
@@ -118,6 +122,7 @@ pub mod distribution {
         cleo::get_cleo(&distribution_out_dir, build_args)?;
         edgar::get_edgar(&distribution_out_dir, build_args)?;
         lea::get_lea(&distribution_out_dir, build_args)?;
+        distribution::copy_documentation::copy_documentation(SELF_PACKAGE, target)?;
         copy_license_json::copy_license_json(target, SkipGenerate::No)?;
 
         distribution::bundle::bundle_files(SELF_PACKAGE, target, build_args.release_build)?;
@@ -314,8 +319,10 @@ pub mod distribution {
             let opendut_edgar_dir = carl_dir.child(workspace::package::opendut_edgar.name);
             let opendut_lea_dir = carl_dir.child(workspace::package::opendut_lea.name);
             let licenses_dir = carl_dir.child("licenses");
+            let documentation_dir = carl_dir.child("documentation");
 
             carl_dir.dir_contains_exactly_in_order(vec![
+                &documentation_dir,
                 &licenses_dir,
                 &opendut_carl_executable,
                 &opendut_cleo_dir,
@@ -328,6 +335,7 @@ pub mod distribution {
             opendut_edgar_dir.assert(path::is_dir());
             opendut_lea_dir.assert(path::is_dir());
             licenses_dir.assert(path::is_dir());
+            documentation_dir.child("index.html").assert_non_empty_file();
 
             { //validate license dir contents
                 let licenses_index_file = licenses_dir.child("index.json");

@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use tracing::info;
 
-mod book;
+pub(crate) mod book;
 mod homepage;
 mod latex;
 
