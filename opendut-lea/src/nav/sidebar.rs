@@ -52,6 +52,9 @@ pub fn Sidebar(menu_visible: RwSignal<bool>, hide_buttons: Signal<bool>) -> impl
             <div class="px-2">
                 <div class="dut-divider" class=("is-hidden", move || hide_buttons.get()) />
                 <ul class="menu-label">
+                    <li>
+                        <a href=routing::path::documentation rel="external" target="_blank"> Documentation </a>
+                    </li>
                     <li class=("is-hidden", move || hide_buttons.get())>
                         <a href=routing::path::about> About </a>
                     </li>
