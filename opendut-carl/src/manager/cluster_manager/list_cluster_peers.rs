@@ -1,8 +1,11 @@
+use std::collections::HashSet;
+
 use crate::resource::manager::Resources;
 use crate::resource::manager::error::PersistenceError;
 use crate::resource::manager::ResourcesStorageApi;
 use opendut_model::cluster::{ClusterDescriptor, ClusterId};
-use opendut_model::peer::PeerDescriptor;
+use opendut_model::peer::{PeerDescriptor, PeerId};
+use opendut_model::topology::DeviceId;
 
 
 impl Resources<'_> {
@@ -19,6 +22,19 @@ impl Resources<'_> {
             .collect();
 
         Ok(cluster_peers)
+    }
+
+    pub fn is_peer_in_cluster(&self, peer_id: PeerId, cluster_devices: &HashSet<DeviceId>) -> Result<bool, PersistenceError> {
+        let peer = self.get::<PeerDescriptor>(peer_id)?;
+
+        let is_in_cluster = peer
+            .map(|peer| {
+                peer.topology.devices.iter()
+                    .any(|device| cluster_devices.contains(&device.id))
+            })
+            .unwrap_or(false);
+
+        Ok(is_in_cluster)
     }
 }
 
