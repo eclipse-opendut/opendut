@@ -32,6 +32,12 @@ pub enum StorePeerDescriptorError {
 
 #[derive(thiserror::Error, PartialEq, Debug)]
 pub enum DeletePeerDescriptorError {
+    #[cfg(feature = "viper")]
+    #[error("Peer <{peer_id}> could not be deleted, because a VIPER test <{test_id}> using this peer still exists!")]
+    ViperTestExists {
+        peer_id: PeerId,
+        test_id: opendut_model::viper::ViperTestId,
+    },
     #[error("Peer <{peer_id}> could not be deleted, because a peer with that ID does not exist!")]
     PeerNotFound {
         peer_id: PeerId,
