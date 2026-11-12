@@ -5,10 +5,12 @@ use backon::{ConstantBuilder, Retryable};
 use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::Shell;
 use console::Style;
+use indoc::formatdoc;
 use tracing::metadata::LevelFilter;
 use uuid::Uuid;
 use opendut_carl_api::carl::CarlClient;
 use opendut_carl_api::carl::metadata::version_compatibility::VersionCompatibilityInfo;
+use opendut_model::proto::util::VersionInfo;
 use opendut_model::topology::{DeviceId, DeviceName};
 use opendut_util::pem::{self, ClientAuth, Pem, PemFromConfig};
 use opendut_util::settings::{load_config, FileFormat, LoadedConfig};
@@ -217,7 +219,11 @@ async fn execute() -> Result<()> {
     let args = match Args::try_parse() {
         Ok(args) => Some(args),
         Err(error) if error.kind() == clap::error::ErrorKind::DisplayVersion => {
-            print!("{error}");
+            let cleo_version = formatdoc! {"
+                opendut-cleo\
+                  {FORMATTED_VERSION}
+            "};
+            print!("{cleo_version}");
             println!("Fetching CARL version. Press Ctrl+C to cancel...");
             None
         }
@@ -277,9 +283,19 @@ async fn print_carl_version(config: &config::Config) -> Result<()> {
             eprintln!("Request failed: {error}. Retrying in {duration:?}...");
         })
         .await
-        .map_err(|error| format!("Failed to fetch CARL version after 4 attempts: {error}"))?;
+        .map_err(|error| format!("Failed to fetch CARL version after 3 retries: {error}"))?;
 
-    println!("CARL {}", version.name);
+    let VersionInfo { name, revision, revision_date, build_date } = version;
+
+    let carl_version = formatdoc! {"
+        opendut-carl
+          Version:       {name}
+          Revision:      {revision}
+          Revision-Date: {revision_date}
+          Build-Date:    {build_date}
+    "};
+
+    print!("{carl_version}");
     Ok(())
 }
 
@@ -482,9 +498,8 @@ async fn try_create_carl_client(config: &config::Config) -> Result<CarlClient> {
 
 pub async fn create_carl_client(config: &config::Config) -> CarlClient {
     let mut carl_client = try_create_carl_client(config).await
-        .map_err(|error| println!("Failed to create CARL client: {error}"))
-        .unwrap();
-    
+        .expect("Failed to create CARL client");
+
     let _ignore_errors = opendut_carl_api::carl::metadata::version_compatibility::log_version_compatibility_with_carl(
         VersionCompatibilityInfo {
             own_version: app_info::PKG_VERSION,
