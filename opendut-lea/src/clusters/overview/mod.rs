@@ -1,7 +1,7 @@
 mod row;
 
 use leptos::prelude::*;
-use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, OverviewTable, TableHeading};
+use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, InfoMessage, OverviewTable, TableHeading};
 use opendut_model::cluster::ClusterDescriptor;
 
 use crate::app::use_app_globals;
@@ -87,6 +87,9 @@ pub fn ClustersOverview() -> impl IntoView {
                 </div>
             }
         >
+            <InfoMessage
+                text="Clusters establish the communication between Peers and handle the lifecycle of the network."
+            />
             <OverviewTable headings=table_headings>
                 { move || {
                         Suspend::new(async move {
