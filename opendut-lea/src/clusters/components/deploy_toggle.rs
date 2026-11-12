@@ -118,25 +118,27 @@ where
                     return None;
                 }
 
-                let states = carl.cluster.list_cluster_peer_states(cluster_id).await
-                    .expect("Failed to request the list of cluster's peer state.");
+                let states = carl.cluster.list_cluster_peer_states(cluster_id).await;
+
                 match states {
-                    ListClusterPeerStatesResponse::Success { peer_states } => {
-                        let invalid_peers = peer_states.iter()
+                    Ok(ListClusterPeerStatesResponse::Success { peer_states }) => {
+                        let blocked_peers = peer_states.iter()
                             .filter(|(_, peer_state)| {
                                 matches!(&peer_state.member, PeerMemberState::Blocked { .. })
                             })
                             .map(|(peer_id, _)| peer_id.to_owned())
                             .collect::<Vec<_>>();
 
-                        if invalid_peers.is_empty() {
-                            None
-                        } else {
-                            Some(BlockedDeployment::Peers(invalid_peers))
-                        }
+                        (!blocked_peers.is_empty())
+                            .then_some(DeploymentBlocker::Peers(blocked_peers))
                     }
-                    ListClusterPeerStatesResponse::Failure { message } => {
-                        Some(BlockedDeployment::Message(message))
+                    Ok(ListClusterPeerStatesResponse::Failure { message }) => {
+                        Some(DeploymentBlocker::Message(message))
+                    }
+                    Err(_) => {
+                        Some(DeploymentBlocker::Message(String::from(
+                            "Failed to request the list of cluster's peer states."
+                        )))
                     }
                 }
             }
