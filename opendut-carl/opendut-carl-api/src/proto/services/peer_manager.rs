@@ -118,6 +118,13 @@ conversion! {
     
     fn from(value: Model) -> Proto {
         let proto_error = match value {
+            #[cfg(feature = "viper")]
+            DeletePeerDescriptorError::ViperTestExists { peer_id, test_id } => {
+                delete_peer_descriptor_failure::Error::ViperTestExists(DeletePeerDescriptorFailureViperTestExists {
+                    peer_id: Some(peer_id.into()),
+                    test_id: Some(test_id.into()),
+                })
+            }
             DeletePeerDescriptorError::PeerNotFound { peer_id } => {
                 delete_peer_descriptor_failure::Error::PeerNotFound(DeletePeerDescriptorFailurePeerNotFound {
                     peer_id: Some(peer_id.into())
@@ -154,6 +161,19 @@ conversion! {
         let error = extract!(value.error)?;
 
         match error {
+            delete_peer_descriptor_failure::Error::ViperTestExists(error) => {
+                #[cfg(feature = "viper")]
+                {
+                    let peer_id = extract!(error.peer_id)?.try_into()?;
+                    let test_id = extract!(error.test_id)?.try_into()?;
+                    Ok(Model::ViperTestExists { peer_id, test_id })
+                }
+                #[cfg(not(feature = "viper"))]
+                {
+                    let _ = error;
+                    Err(ErrorBuilder::message("Cannot convert VIPER test usage error without the VIPER feature."))
+                }
+            }
             delete_peer_descriptor_failure::Error::PeerNotFound(error) => {
                 let peer_id = extract!(error.peer_id)?.try_into()?;
                 Ok(Model::PeerNotFound { peer_id })
@@ -431,5 +451,27 @@ impl TryFrom<ListPeerStatesFailureInternal> for ListPeerStatesError {
     type Error = ConversionError;
     fn try_from(failure: ListPeerStatesFailureInternal) -> Result<Self, Self::Error> {
         Ok(ListPeerStatesError::Internal{ cause: failure.cause})
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::assert_matches;
+    use super::*;
+
+    #[cfg(feature = "viper")]
+    #[test]
+    fn roundtrip_peer_deletion_blocked_by_viper_test() -> Result<(), Box<dyn std::error::Error>> {
+        let expected = DeletePeerDescriptorError::ViperTestExists {
+            peer_id: PeerId::random(),
+            test_id: opendut_model::viper::ViperTestId::random(),
+        };
+        let proto = DeletePeerDescriptorFailure::from(expected);
+        let bytes = prost::Message::encode_to_vec(&proto);
+        let decoded = <DeletePeerDescriptorFailure as prost::Message>::decode(bytes.as_slice())?;
+        let actual = DeletePeerDescriptorError::try_from(decoded)?;
+        assert_matches!(actual, DeletePeerDescriptorError::ViperTestExists { .. });
+        assert_eq!(DeletePeerDescriptorFailure::from(actual), proto);
+        Ok(())
     }
 }
