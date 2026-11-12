@@ -7,15 +7,13 @@ use opendut_model::cluster::state::ClusterState;
 use crate::components::ClickableOverviewTableRow;
 
 #[component]
-pub fn Row<OnDeploymentChanged, OnDeleteFn>(
+pub fn Row<OnChangeFn>(
     cluster_descriptor: RwSignal<ClusterDescriptor>,
     is_deployed: RwSignal<IsDeployed>,
-    on_deployment_changed: OnDeploymentChanged,
-    on_delete: OnDeleteFn,
+    on_change: OnChangeFn,
 ) -> impl IntoView
 where
-    OnDeploymentChanged: Fn() + Clone + Send + 'static,
-    OnDeleteFn: Fn() + Copy + Send + 'static,
+    OnChangeFn: Fn() + Copy + Send + 'static,
 {
     let cluster_id = create_read_slice(cluster_descriptor, |cluster_descriptor| {
         cluster_descriptor.id
@@ -36,7 +34,7 @@ where
                     <DeployToggle
                         cluster_id
                         is_deployed
-                        on_deployment_changed
+                        on_deployment_changed=on_change
                     />
                 </div>
             </OverviewTableCell>
@@ -55,7 +53,7 @@ where
                         cluster_id
                         deployed_signal=is_deployed
                         button_color=ButtonColor::TextDanger
-                        on_delete
+                        on_delete=on_change
                     />
                 </div>
             </OverviewTableCell>
