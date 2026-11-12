@@ -72,6 +72,13 @@ pub fn Navbar(menu_visible: RwSignal<bool>, hide_buttons: Signal<bool>) -> impl 
                         label="Downloads"
                         path=routing::path::downloads
                     />
+                    <NavbarButton
+                        icon=FontAwesomeIcon::ExternalLink
+                        label="Docs"
+                        show_label=true
+                        path=routing::path::documentation
+                        external_link=true
+                    />
                 </div>
             </div>
             <div class="column is-narrow ml-auto p-1" class=("is-hidden", move || hide_buttons.get())>
