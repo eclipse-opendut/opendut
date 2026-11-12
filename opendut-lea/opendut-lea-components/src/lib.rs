@@ -17,6 +17,7 @@ pub use buttons::confirmation_button::ConfirmationButton;
 pub use buttons::doorhanger_button::DoorhangerButton;
 pub use buttons::icon_button::IconButton;
 pub use doorhanger::{Doorhanger, DoorhangerAlignment};
+pub use error_message::{ErrorMessage, ErrorText};
 pub use icon_text::IconText;
 pub use inputs::default_value::DefaultValue;
 pub use inputs::readonly_input::ReadOnlyInput;
@@ -48,6 +49,7 @@ pub mod tooltip;
 mod breadcrumbs;
 mod buttons;
 mod doorhanger;
+mod error_message;
 mod icon_text;
 mod inputs;
 mod loading_spinner;
@@ -86,6 +88,7 @@ pub enum FontAwesomeIcon {
     Peers,
     Play,
     Plus,
+    Retry,
     Save,
     SignOut,
     TrashCan,
@@ -118,6 +121,7 @@ impl FontAwesomeIcon {
             FontAwesomeIcon::Peers => "fa-solid fa-microchip",
             FontAwesomeIcon::Play => "fa-solid fa-play",
             FontAwesomeIcon::Plus => "fa-solid fa-plus",
+            FontAwesomeIcon::Retry => "fa-solid fa-rotate-right",
             FontAwesomeIcon::Save => "fa-solid fa-save",
             FontAwesomeIcon::SignOut => "fas fa-sign-out-alt",
             FontAwesomeIcon::TrashCan => "fa-solid fa-trash-can",
