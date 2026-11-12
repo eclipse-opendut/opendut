@@ -148,26 +148,27 @@ where
         let on_undeploy = on_undeploy.clone();
 
         Suspend::new(async move {
-            let blocked_deployment = blocked_cluster_deployment.await;
+            let deployment_blocker = blocked_cluster_deployment.await;
 
             let is_deployed = Signal::derive(move || is_deployed.get().0);
 
-            let show_error = Signal::derive({
-                let blocked_deployment = blocked_deployment.clone();
-                move || blocked_deployment.is_some() && !is_deployed.get()
-            });
+            let toggle_state = Signal::derive({
+                let deployment_blocker = deployment_blocker.clone();
 
-            let toggle_state = Signal::derive(move || {
-                if show_error.get() || is_new_cluster.get() {
-                    ToggleState::Disabled
-                } else {
-                    ToggleState::Enabled
+                move || {
+                    let is_blocked = deployment_blocker.is_some() && !is_deployed.get();
+
+                    if is_new_cluster.get() || is_blocked {
+                        ToggleState::Disabled
+                    } else {
+                        ToggleState::Enabled
+                    }
                 }
             });
 
             let tooltip_content = Arc::new(move || {
                 view! {
-                    <DeploymentTooltipContent is_new_cluster is_deployed blocked_deployment=Clone::clone(&blocked_deployment) />
+                    <DeploymentTooltipContent is_new_cluster is_deployed blocked_deployment=Clone::clone(&deployment_blocker) />
                 }.into_any()
             });
 
@@ -187,7 +188,7 @@ where
 }
 
 #[derive(Clone)]
-enum BlockedDeployment {
+enum DeploymentBlocker {
     Peers(Vec<PeerId>),
     Message(String),
 }
@@ -196,7 +197,7 @@ enum BlockedDeployment {
 fn DeploymentTooltipContent(
     is_new_cluster: Signal<bool>,
     is_deployed: Signal<bool>,
-    blocked_deployment: Option<BlockedDeployment>,
+    blocked_deployment: Option<DeploymentBlocker>,
 ) -> impl IntoView {
 
     move || {
@@ -209,7 +210,7 @@ fn DeploymentTooltipContent(
         if !is_deployed.get()
             && let Some(blocked_deployment) = blocked_deployment.as_ref() {
                 return match blocked_deployment {
-                    BlockedDeployment::Peers(peers) => {
+                    DeploymentBlocker::Peers(peers) => {
                         let amount = peers.len();
 
                         let message = if amount == 1 {
@@ -239,7 +240,7 @@ fn DeploymentTooltipContent(
                             .into_any()
                     }
 
-                    BlockedDeployment::Message(message) => {
+                    DeploymentBlocker::Message(message) => {
                         view! { { message.to_owned() } }.into_any()
                     }
                 };
