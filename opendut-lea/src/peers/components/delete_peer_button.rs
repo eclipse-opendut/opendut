@@ -5,7 +5,6 @@ use tracing::{error, info};
 use opendut_lea_components::{use_toaster, ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, Toast};
 use opendut_lea_components::tooltip::{Tooltip, TooltipDirection};
 use opendut_model::peer::PeerId;
-use opendut_model::viper::{ViperTestId, ViperTestName};
 use crate::app::use_app_globals;
 
 #[component]
@@ -21,7 +20,8 @@ where F: Fn() + Clone + Send + 'static {
     let pending = RwSignal::new(false);
     let toaster = use_toaster();
 
-    let used_by_viper: LocalResource<Result<Vec<(ViperTestId, ViperTestName)>, String>> = {
+    #[cfg(feature = "viper")]
+    let used_by_viper: LocalResource<Result<Vec<(opendut_model::viper::ViperTestId, opendut_model::viper::ViperTestName)>, String>> = {
         let carl = globals.client.clone();
         let toaster = toaster.clone();
 
@@ -56,11 +56,14 @@ where F: Fn() + Clone + Send + 'static {
         } else if pending.get() {
             ButtonState::Loading
         } else {
+            #[cfg(feature = "viper")]
             match used_by_viper.get() {
                 None => ButtonState::Loading,
                 Some(Ok(tests)) if tests.is_empty() => ButtonState::Enabled,
                 Some(_) => ButtonState::Disabled,
             }
+            #[cfg(not(feature = "viper"))]
+            ButtonState::Enabled
         }
     });
 
@@ -104,9 +107,18 @@ where F: Fn() + Clone + Send + 'static {
     });
 
     let tooltip_content = Arc::new(move || {
-        view! {
-            <TooltipContent used_clusters_length used_by_viper />
-        }.into_any()
+        #[cfg(feature = "viper")]
+        {
+            view! {
+                <TooltipContent used_clusters_length used_by_viper />
+            }.into_any()
+        }
+        #[cfg(not(feature = "viper"))]
+        {
+            view! {
+                <TooltipContent />
+            }.into_any()
+        }
     });
 
     view! {
@@ -127,10 +139,11 @@ where F: Fn() + Clone + Send + 'static {
     }
 }
 
+#[cfg(feature = "viper")]
 #[component]
 fn TooltipContent(
     used_clusters_length: Signal<usize>,
-    used_by_viper: LocalResource<Result<Vec<(ViperTestId, ViperTestName)>, String>>,
+    used_by_viper: LocalResource<Result<Vec<(opendut_model::viper::ViperTestId, opendut_model::viper::ViperTestName)>, String>>,
 ) -> impl IntoView {
 
     let display_cluster_usage = move || {
@@ -175,6 +188,16 @@ fn TooltipContent(
                 }.into_any(),
                 _ => ().into_any(),
             }}
+        </div>
+    }
+}
+
+#[cfg(not(feature = "viper"))]
+#[component]
+fn TooltipContent() -> impl IntoView {
+    view! {
+        <div class="content">
+            <p>"Peer can not be deleted while it is configured in a cluster."</p>
         </div>
     }
 }
