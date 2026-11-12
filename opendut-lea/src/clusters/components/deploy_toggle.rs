@@ -131,11 +131,11 @@ where
                         if invalid_peers.is_empty() {
                             None
                         } else {
-                            Some(BlockedDeployment::Peers(invalid_peers))
+                            Some(DeploymentBlocker::Peers(invalid_peers))
                         }
                     }
                     Err(error) => {
-                        Some(BlockedDeployment::Message(error.to_string()))
+                        Some(DeploymentBlocker::Message(error.to_string()))
                     }
                 }
             }
