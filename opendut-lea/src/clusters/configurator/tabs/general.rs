@@ -1,5 +1,4 @@
 use leptos::prelude::*;
-use opendut_lea_components::InfoMessage;
 use crate::clusters::configurator::components::ClusterNameInput;
 use crate::clusters::configurator::types::UserClusterDescriptor;
 use crate::components::ReadOnlyInput;
@@ -11,9 +10,6 @@ pub fn GeneralTab(user_cluster_descriptor: RwSignal<UserClusterDescriptor>) -> i
 
     view! {
         <div>
-            <InfoMessage
-                text="Clusters establish the communication between Peers and handle the lifecycle of the network."
-            />
             <ReadOnlyInput
                 label="ID"
                 value=cluster_id
