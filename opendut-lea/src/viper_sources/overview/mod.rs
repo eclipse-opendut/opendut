@@ -1,7 +1,7 @@
 mod row;
 
 use leptos::prelude::*;
-use opendut_lea_components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, OverviewTable, TableHeading};
+use opendut_lea_components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, InfoMessage, OverviewTable, TableHeading};
 use opendut_model::viper::ViperSourceDescriptor;
 use crate::app::use_app_globals;
 use crate::viper_sources::components::CreateViperSourceButton;
@@ -67,6 +67,9 @@ pub fn ViperSourcesOverview() -> impl IntoView {
                 </div>
             }
         >
+        <InfoMessage
+            text="" // TODO: description (What is a VIPER-Source)
+        />
             <OverviewTable headings=table_headings>
                 { move || Suspend::new(async move {
                     let viper_sources = viper_sources.await;
