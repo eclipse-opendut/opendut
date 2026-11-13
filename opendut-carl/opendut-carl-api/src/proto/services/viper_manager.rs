@@ -265,14 +265,14 @@ conversion! {
             Model::NoSuitableSourceLoader { url } => {
                 get_viper_test_suite_parameters_failure_compilation_kind::Error::NoSuitableSourceLoader (
                     GetViperTestSuiteParametersFailureCompilationKindNoSuitableSourceLoader {
-                        url: Some(url.into()),
+                        url: Some((*url).into()),
                     }
                 )
             }
             Model::FailedLoading { url, message } => {
                 get_viper_test_suite_parameters_failure_compilation_kind::Error::FailedLoading(
                     GetViperTestSuiteParametersFailureCompilationKindFailedLoading {
-                        url: Some(url.into()),
+                        url: Some((*url).into()),
                         message,
                     }
                 )
@@ -317,12 +317,12 @@ conversion! {
         match error {
             get_viper_test_suite_parameters_failure_compilation_kind::Error::NoSuitableSourceLoader(error) => {
                 let url = extract!(error.url)?.try_into()?;
-                Ok(Model::NoSuitableSourceLoader { url })
+                Ok(Model::NoSuitableSourceLoader { url: Box::new(url) })
             }
             get_viper_test_suite_parameters_failure_compilation_kind::Error::FailedLoading(error) => {
                 let url = extract!(error.url)?.try_into()?;
                 let message = error.message;
-                Ok(Model::FailedLoading { url, message })
+                Ok(Model::FailedLoading { url: Box::new(url), message })
             }
             get_viper_test_suite_parameters_failure_compilation_kind::Error::InvalidSource(error) => {
                 let message = error.message;

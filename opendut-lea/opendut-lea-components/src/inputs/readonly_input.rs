@@ -6,7 +6,7 @@ pub fn ReadOnlyInput(
     #[prop(into)] value: Signal<String>,
 ) -> impl IntoView {
 
-    let aria_label = Clone::clone(&label);
+    let aria_label = label;
 
     view! {
         <div class="field">

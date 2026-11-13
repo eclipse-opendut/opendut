@@ -61,7 +61,7 @@ pub fn PeerSelector(user_test_run_descriptor: RwSignal<UserViperTestRunDescripto
                     .join(", ");
 
                 SelectionTableRow {
-                    id: Clone::clone(&id),
+                    id,
                     cells: vec![name, id.to_string(), clusters]
                 }
             }).collect::<Vec<_>>();

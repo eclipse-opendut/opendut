@@ -90,10 +90,10 @@ pub enum GetViperTestSuiteParametersError {
 #[derive(Debug, Clone)]
 pub enum CompilationErrorKind {
     NoSuitableSourceLoader {
-        url: Url,
+        url: Box<Url>,
     },
     FailedLoading {
-        url: Url,
+        url: Box<Url>,
         message: String,
     },
     InvalidSource {

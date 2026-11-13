@@ -171,9 +171,9 @@ checksum = "c3d036a3c4ab069c7b410a2ce876bd74808d2d0888a82667669f8e783a898bf1"
 
 [[package]]
 name = "arc-swap"
-version = "1.9.2"
+version = "1.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c049c0be4daef0b145cb3555416b3b8ef5b7888a38aea1a3a155801fe7b0810b"
+checksum = "380962b3d93b99642e50b9febf72c071e97e8b32d86eae9cf4ef582bb960ae6e"
 dependencies = [
  "rustversion",
 ]
@@ -459,25 +459,6 @@ dependencies = [
  "rustls-pki-types",
  "tokio",
  "tokio-rustls",
- "tower-service",
-]
-
-[[package]]
-name = "axum-server-dual-protocol"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2164551db024e87f20316d164eab9f5ad342d8188b08051ceb15ca92a60ea7b7"
-dependencies = [
- "axum-server",
- "bytes",
- "http",
- "http-body-util",
- "pin-project",
- "rustls",
- "tokio",
- "tokio-rustls",
- "tokio-util",
- "tower-layer",
  "tower-service",
 ]
 
@@ -4509,7 +4490,6 @@ dependencies = [
  "assert_fs",
  "axum",
  "axum-server",
- "axum-server-dual-protocol",
  "backon",
  "chrono",
  "clap",
@@ -4576,7 +4556,6 @@ dependencies = [
  "glob",
  "googletest",
  "http",
- "jsonwebtoken 11.1.0",
  "leptos",
  "opendut-auth",
  "opendut-model",
@@ -4833,7 +4812,6 @@ dependencies = [
  "backon",
  "cargo_metadata",
  "hyper-util",
- "opendut-model",
  "opendut-util",
  "prost",
  "prost-types",
@@ -4846,7 +4824,6 @@ dependencies = [
  "tonic-prost-build",
  "tower",
  "tracing",
- "url",
 ]
 
 [[package]]
@@ -4890,7 +4867,6 @@ dependencies = [
  "phf 0.13.1",
  "serde",
  "serde_json",
- "shadow-rs",
  "strum 0.28.0",
  "thiserror 2.0.20",
  "tracing",
@@ -7718,10 +7694,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "adb6935a6f5c20170eeceb1a3835a49e12e19d792f6dd344ccc76a985ca5a6ca"
 
 [[package]]
-name = "target-triple"
-version = "1.0.1"
+name = "target-tuple"
+version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3a6bfce3d99adfa72d24750a61f782f3036a81e7f86d8841ee1326deaebd171"
+checksum = "876fef147edbcbddc8ac5cbbba92c7b86519e314e86638596c09673b2ed01e7f"
 
 [[package]]
 name = "tempfile"
@@ -8418,15 +8394,15 @@ checksum = "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b"
 
 [[package]]
 name = "trybuild"
-version = "1.0.120"
+version = "1.0.122"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e605bf6b39357663d8ba4e984f8be8da8df6bb32e81031d6889024ea8fd68e4"
+checksum = "62db9c92d704393fbf2132041720cc80b689f2d3f28521015c2ac866223c11b8"
 dependencies = [
  "glob",
  "serde",
  "serde_derive",
  "serde_json",
- "target-triple",
+ "target-tuple",
  "termcolor",
  "toml 1.1.4+spec-1.1.0",
 ]
@@ -9439,7 +9415,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.48.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]

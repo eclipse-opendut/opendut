@@ -161,14 +161,14 @@ mod tests {
         let native = crate::topology::Topology {
             devices: vec![
                 crate::topology::DeviceDescriptor {
-                    id: Clone::clone(&device_id_1).into(),
+                    id: device_id_1.into(),
                     name: DeviceName::try_from("device-1")?,
                     description: DeviceDescription::try_from("Some device").ok(),
                     interface: network_interface_id1.into(),
                     tags: vec![DeviceTag::try_from("tag-1")?, DeviceTag::try_from("tag-2")?],
                 },
                 crate::topology::DeviceDescriptor {
-                    id: Clone::clone(&device_id_2).into(),
+                    id: device_id_2.into(),
                     name: DeviceName::try_from("device-2")?,
                     description: DeviceDescription::try_from("Some other device").ok(),
                     interface: network_interface_id2.into(),
@@ -180,7 +180,7 @@ mod tests {
         let proto = Topology {
             device_descriptors: vec![
                 DeviceDescriptor {
-                    id: Some(Clone::clone(&device_id_1).into()),
+                    id: Some(device_id_1.into()),
                     name: Some(crate::proto::topology::DeviceName {
                         value: String::from("device-1"),
                     }),
@@ -200,7 +200,7 @@ mod tests {
                     ],
                 },
                 DeviceDescriptor {
-                    id: Some(Clone::clone(&device_id_2).into()),
+                    id: Some(device_id_2.into()),
                     name: Some(crate::proto::topology::DeviceName {
                         value: String::from("device-2"),
                     }),

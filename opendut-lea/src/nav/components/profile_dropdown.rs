@@ -48,7 +48,6 @@ pub fn ProfileDropdown() -> impl IntoView {
                 visible=dropdown_visible.read_only()
                 alignment=DoorhangerAlignment::Left
                 trigger=Box::new({
-                    let initials = Clone::clone(&initials);
                     move || {
                         view! {
                             <button class="button dut-profile-picture-button is-text p-0" on:click=move |_| dropdown_visible.toggle()>

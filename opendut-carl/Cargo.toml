@@ -24,8 +24,7 @@ opendut-vpn = { workspace = true }
 
 anyhow = { workspace = true }
 axum = { workspace = true }
-axum-server = { workspace = true }
-axum-server-dual-protocol = { workspace = true }
+axum-server = { workspace = true, features = ["tls-rustls-no-provider"] }
 backon = { workspace = true }
 chrono = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
@@ -33,7 +32,6 @@ config = { workspace = true }
 flate2 = { workspace = true }
 fs-err = { workspace = true }
 futures = { workspace = true }
-googletest = { workspace = true }
 http = { workspace = true }
 http-body = { workspace = true }
 hyper = { workspace = true }
@@ -70,6 +68,7 @@ uuid = { workspace = true }
 
 [dev-dependencies]
 assert_fs = { workspace = true }
+googletest = { workspace = true }
 opendut-auth-tests = { workspace = true }
 predicates = { workspace = true }
 test-log = { workspace = true }

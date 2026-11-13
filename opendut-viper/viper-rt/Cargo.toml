@@ -54,3 +54,6 @@ tokio-util = { workspace = true }
 tokio-stream = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["fmt"] }
+
+[lints]
+workspace = true

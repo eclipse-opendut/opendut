@@ -15,7 +15,7 @@ pub fn DoorhangerButton(
     children: ChildrenFn,
 ) -> impl IntoView {
 
-    let aria_label = Clone::clone(&label);
+    let aria_label = label;
 
     let doorhanger_visible = RwSignal::new(false);
 

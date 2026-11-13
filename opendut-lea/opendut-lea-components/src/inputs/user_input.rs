@@ -44,7 +44,7 @@ where A: UserInputValidator + Clone + Send + Sync + 'static {
         })
     };
 
-    let aria_label = Clone::clone(&label);
+    let aria_label = label;
 
     let validate_value = Callback::new(move |value| {
         if let Some(validator) = &validator {

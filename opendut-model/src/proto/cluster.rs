@@ -168,7 +168,7 @@ mod test {
             let proto: ClusterState = Clone::clone(&native).into();
 
             assert_that!(
-                crate::cluster::state::ClusterState::try_from(Clone::clone(&proto)),
+                crate::cluster::state::ClusterState::try_from(proto),
                 ok(eq(&native))
             );
         }
@@ -178,7 +178,7 @@ mod test {
             let proto: ClusterState = Clone::clone(&native).into();
 
             assert_that!(
-                crate::cluster::state::ClusterState::try_from(Clone::clone(&proto)),
+                crate::cluster::state::ClusterState::try_from(proto),
                 ok(eq(&native))
             );
         }
@@ -190,7 +190,7 @@ mod test {
             let proto: ClusterState = Clone::clone(&native).into();
 
             assert_that!(
-                crate::cluster::state::ClusterState::try_from(Clone::clone(&proto)),
+                crate::cluster::state::ClusterState::try_from(proto),
                 ok(eq(&native))
             );
         }
@@ -202,7 +202,7 @@ mod test {
             let proto: ClusterState = Clone::clone(&native).into();
 
             assert_that!(
-                crate::cluster::state::ClusterState::try_from(Clone::clone(&proto)),
+                crate::cluster::state::ClusterState::try_from(proto),
                 ok(eq(&native))
             );
         }

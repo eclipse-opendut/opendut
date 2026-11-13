@@ -10,7 +10,7 @@ pub fn SimpleButton<A>(
 ) -> impl IntoView
 where A: Fn() + 'static {
 
-    let aria_label = Clone::clone(&text);
+    let aria_label = text;
 
     let button_class = move || {
         format!("button {} {}",

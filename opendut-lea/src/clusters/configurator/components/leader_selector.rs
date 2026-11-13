@@ -74,7 +74,7 @@ pub fn LeaderSelector(
                 let location = location.unwrap_or_default().to_string();
 
                 SelectionTableRow {
-                    id: Clone::clone(&id),
+                    id,
                     cells: vec![name, id.to_string(), location]
                 }
             })

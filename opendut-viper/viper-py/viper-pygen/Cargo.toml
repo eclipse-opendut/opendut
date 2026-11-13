@@ -17,3 +17,6 @@ syn = { workspace = true, features = ["full", "visit-mut"] }
 [dev-dependencies]
 trybuild = { workspace = true }
 rustpython-vm = { workspace = true }
+
+[lints]
+workspace = true

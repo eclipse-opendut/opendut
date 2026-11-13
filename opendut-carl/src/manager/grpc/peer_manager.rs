@@ -399,7 +399,7 @@ mod tests {
             some(matches_pattern!(
                 store_peer_descriptor_response::Reply::Success(
                     matches_pattern!(services::peer_manager::StorePeerDescriptorSuccess {
-                        peer_id: some(eq(&proto::peer::PeerId::from(Clone::clone(&peer_id))))
+                        peer_id: some(eq(&proto::peer::PeerId::from(peer_id)))
                     })
                 )
             ))

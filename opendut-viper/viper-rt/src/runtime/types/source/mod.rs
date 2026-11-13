@@ -16,7 +16,7 @@ pub struct Source {
 #[derive(Clone, Debug)]
 pub enum SourceLocation {
     Embedded(String),
-    Url(Url),
+    Url(Box<Url>),
 }
 
 impl Source {
@@ -31,7 +31,7 @@ impl Source {
     }
 
     pub fn from_url(identifier: TestSuiteIdentifier, url: Url) -> Self {
-        Self::new(identifier, SourceLocation::Url(url))
+        Self::new(identifier, SourceLocation::Url(Box::new(url)))
     }
 
     pub fn try_from_url_str(identifier: TestSuiteIdentifier, url: &str) -> Result<Self, InvalidSourceLocationError> {

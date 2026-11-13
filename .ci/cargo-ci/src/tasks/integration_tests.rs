@@ -1,6 +1,5 @@
 use anyhow::Context;
 use cicero::command_exit_ok::CommandExitOk;
-use cicero::distribution::build::target;
 use cicero::path::repo_path;
 use serde::Deserialize;
 use std::path::PathBuf;
@@ -48,16 +47,18 @@ impl CargoCompilerOutput {
 #[tracing::instrument(skip_all)]
 pub fn test(_params: IntegrationTestCli) -> anyhow::Result<()> {
     let edgar_test_binary = create_edgar_integration_test_binary()?;
-    debug!("EDGAR test binary: {}", edgar_test_binary);
+    debug!("EDGAR test binary: {:?}", edgar_test_binary);
 
     run_edgar_integration_test_binary_in_docker(edgar_test_binary)?;
 
     Ok(())
 }
 
-fn run_edgar_integration_test_binary_in_docker(edgar_test_binary: String) -> anyhow::Result<()> {
-    let test_binary_directory = determine_test_binary_directory()?;
+fn run_edgar_integration_test_binary_in_docker(test_binary: PathBuf) -> anyhow::Result<()> {
+    let test_binary_directory = test_binary.parent().unwrap().display();
     debug!("Using test binary directory: {test_binary_directory}");
+
+    let test_binary = test_binary.display();
 
     /*
      EDGAR integration tests require:
@@ -77,28 +78,18 @@ fn run_edgar_integration_test_binary_in_docker(edgar_test_binary: String) -> any
         .env("RUST_LOG", "info,opendut=debug")
         .arg("--rm")
         .arg("--entrypoint=")
-        .arg("--volume").arg(format!("{test_binary_directory}/:/tmp/debug"))
+        .arg("--volume").arg(format!("{test_binary_directory}:{test_binary_directory}"))
         .arg("test")
         .arg("sh")
         .arg("-c")
-        .arg(format!("/tmp/debug/{edgar_test_binary} --include-ignored --nocapture"));
+        .arg(format!("{test_binary} --include-ignored --nocapture"));
 
     docker.status_exit_ok()?;
 
     Ok(())
 }
 
-fn determine_test_binary_directory() -> anyhow::Result<String> {
-    let target_directory = cicero::path::target_dir();
-    let test_binary_directory = target_directory.join(target::x86_64_unknown_linux_gnu.to_string()).join("debug").join("deps");
-    let test_binary_directory = test_binary_directory.to_str()
-        .context("Test target directory could not be determined!")?
-        .to_owned();
-    Ok(test_binary_directory)
-}
-
-
-fn create_edgar_integration_test_binary() -> anyhow::Result<String> {
+fn create_edgar_integration_test_binary() -> anyhow::Result<PathBuf> {
     let mut command = CROSS.command();
     let cargo_build_integration_test = command
         .arg("test")
@@ -123,10 +114,9 @@ fn create_edgar_integration_test_binary() -> anyhow::Result<String> {
         }
     }).context("Could not find EDGAR test binary!")?;
 
-    let test_binary = test_binary
-        .file_name()
-        .map(|file| file.to_string_lossy().to_string())
-        .context("EDGAR test binary does not have a file name!")?;
+    let test_binary = repo_path!().join(
+        test_binary.strip_prefix("/")? //path starts with `/target/...`
+    );
 
     Ok(test_binary)
 }

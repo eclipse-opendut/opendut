@@ -24,7 +24,6 @@ client = [
 ]
 wasm-client = [
     "codegen",
-    "dep:jsonwebtoken",
     "dep:leptos",
     "opendut-auth/public_client",
     "dep:tonic-web-wasm-client",
@@ -45,7 +44,6 @@ anyhow = { workspace = true, optional = true }
 config = { workspace = true, optional = true }
 const_format = { workspace = true }
 http = { workspace = true, optional = true }
-jsonwebtoken = { workspace = true, optional = true }
 leptos = { workspace = true, optional = true }
 prost = { workspace = true }
 semver = { workspace = true }

@@ -30,7 +30,7 @@ where A: UserInputValidator + 'static {
         })
     };
 
-    let aria_label = Clone::clone(&label);
+    let aria_label = label;
 
     view! {
         <div class="field">

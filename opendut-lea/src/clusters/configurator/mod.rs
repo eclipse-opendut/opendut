@@ -91,7 +91,7 @@ fn LoadedClusterConfigurator(
 
     let cluster_id = create_read_slice(
         user_cluster_descriptor,
-        |descriptor| Clone::clone(&descriptor.id),
+        |descriptor| descriptor.id,
     );
 
     let breadcrumbs = Signal::derive(move || {

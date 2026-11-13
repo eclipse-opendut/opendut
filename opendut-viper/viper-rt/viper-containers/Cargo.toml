@@ -17,3 +17,6 @@ futures = { workspace = true }
 
 [dev-dependencies]
 googletest = { workspace = true }
+
+[lints]
+workspace = true

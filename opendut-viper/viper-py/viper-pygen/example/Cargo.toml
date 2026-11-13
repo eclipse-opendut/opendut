@@ -7,3 +7,6 @@ license.workspace = true
 [dependencies]
 opendut-viper-pygen = { workspace = true }
 indoc = { workspace = true }
+
+[lints]
+workspace = true

@@ -20,7 +20,7 @@ pub fn Container(
     let toasts_list = Memo::new(move |_| {
         let mut result = toasts.with(|toasts| {
             toasts.iter()
-                .map(|(key, toast)| (key, Clone::clone(toast)))
+                .map(|(key, toast)| (key, *toast))
                 .collect::<Vec<_>>()
         });
         result.sort_unstable_by(|(_, lhs), (_, rhs)| {

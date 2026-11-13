@@ -28,7 +28,6 @@ flate2 = { workspace = true }
 fs-err = { workspace = true }
 futures = { workspace = true }
 indicatif = { workspace = true }
-indoc = { workspace = true }
 nix = { workspace = true, features = ["user", "fs", "signal"] }
 opentelemetry = { workspace = true }
 opentelemetry_sdk = { workspace = true }
@@ -61,6 +60,7 @@ which = { workspace = true }
 [dev-dependencies]
 assert_fs = { workspace = true }
 googletest = { workspace = true }
+indoc = { workspace = true }
 predicates = { workspace = true }
 rand = { workspace = true }
 repo_path = { workspace = true }

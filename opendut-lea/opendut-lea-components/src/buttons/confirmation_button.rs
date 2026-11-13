@@ -16,8 +16,8 @@ pub fn ConfirmationButton<OnConfirm>(
 ) -> impl IntoView
 where OnConfirm: Fn() + Send + 'static {
 
-    let text = Clone::clone(&label);
-    let aria_label = Clone::clone(&label);
+    let text = label;
+    let aria_label = label;
 
     let doorhanger_visible = RwSignal::new(false);
 

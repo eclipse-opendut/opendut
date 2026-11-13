@@ -35,7 +35,7 @@ where
         setter.set(remaining_values)
     };
 
-    let aria_label = Clone::clone(&label);
+    let aria_label = label;
 
     // TODO: refactor, use new leptos store type, see also create_slice
     let panels = move || { 
@@ -119,7 +119,7 @@ where
         })
     };
 
-    let aria_label = Clone::clone(&label);
+    let aria_label = label;
 
     view! {
         <div>

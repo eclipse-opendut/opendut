@@ -72,11 +72,11 @@ fn check_if_distribution_tar_exists_of_each_component(expected_dist_files: &[&st
 pub(crate) fn make_distribution_if_not_present() -> anyhow::Result<()> {
     let dist_directory_path = PathBuf::project_path_buf()
         .join(format!("target/ci/distribution/{TARGET_TRIPLE}"));
-    let expected_dist_files = vec!(
+    let expected_dist_files = vec![
         //"opendut-cleo-linux-x86_64",
         "opendut-edgar-x86_64-unknown-linux-gnu",
         "opendut-carl-x86_64-unknown-linux-gnu",
-    );
+    ];
 
     if dist_directory_path.exists().not()
     || fs::read_dir(&dist_directory_path)?.next().is_none() {

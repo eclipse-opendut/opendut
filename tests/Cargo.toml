@@ -20,3 +20,6 @@ test-log = { workspace = true, features = ["trace"] }
 tokio = { workspace = true, features = ["full", "test-util"] }
 tokio-util = { workspace = true }
 tracing = { workspace = true }
+
+[lints]
+workspace = true

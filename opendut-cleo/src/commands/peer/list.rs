@@ -110,11 +110,11 @@ mod test {
             name: PeerName::try_from("MyPeer").unwrap(),
             location: Some(PeerLocation::try_from("SiFi").unwrap()),
             network: PeerNetworkDescriptor{
-                interfaces: vec!(NetworkInterfaceDescriptor {
+                interfaces: vec![NetworkInterfaceDescriptor {
                     id: NetworkInterfaceId::random(),
                     name: NetworkInterfaceName::try_from("eth0").unwrap(),
                     configuration: NetworkInterfaceConfiguration::Ethernet,
-                }),
+                }],
                 bridge_name: Some(NetworkInterfaceName::try_from("br-opendut-1").unwrap())
             },
             topology: Default::default(),

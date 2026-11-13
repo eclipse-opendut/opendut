@@ -325,7 +325,7 @@ mod tests {
         let proto = PeerId::from(peer_id);
 
         assert_that!(
-            crate::peer::PeerId::try_from(Clone::clone(&proto)),
+            crate::peer::PeerId::try_from(proto),
             ok(eq(&native))
         );
 

@@ -88,7 +88,7 @@ impl SourceLoader for HttpSourceLoader {
             return Err(SourceLoaderError::new("Invalid source location"))
         };
 
-        let response: Response = reqwest::get(Clone::clone(url))
+        let response: Response = reqwest::get(*Clone::clone(url))
             .map_err(|error| SourceLoaderError::new(error.to_string()))
             .await?;
 
