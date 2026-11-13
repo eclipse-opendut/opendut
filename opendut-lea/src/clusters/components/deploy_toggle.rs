@@ -18,6 +18,7 @@ pub fn DeployToggle<OnDeploymentChange>(
     #[prop(into)] cluster_id: Signal<ClusterId>,
     #[prop(into, default=Signal::from(false))] is_new_cluster: Signal<bool>,
     #[prop(into)] is_deployed: Signal<Option<IsDeployed>>,
+    #[prop(into, default=Signal::from(()))] refetch_peer_states: Signal<()>,
     on_deployment_change: OnDeploymentChange,
     #[prop(optional)] tooltip_direction: TooltipDirection,
 ) -> impl IntoView
@@ -112,6 +113,7 @@ where
             let mut carl = carl.clone();
             let is_new_cluster = is_new_cluster.get();
             let _ = is_deployed.get();
+            refetch_peer_states.get();
 
             async move {
                 if is_new_cluster {

@@ -10,6 +10,7 @@ use crate::components::ClickableOverviewTableRow;
 pub fn Row<OnChangeFn, OnDeleteFn>(
     cluster_descriptor: RwSignal<ClusterDescriptor>,
     is_deployed: Signal<Option<IsDeployed>>,
+    refetch_cluster_deployments: RwSignal<()>,
     on_deployment_change: OnChangeFn,
     on_delete: OnDeleteFn,
 ) -> impl IntoView
@@ -36,6 +37,7 @@ where
                     <DeployToggle
                         cluster_id
                         is_deployed
+                        refetch_peer_states=refetch_cluster_deployments
                         on_deployment_change
                     />
                 </div>
