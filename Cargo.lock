@@ -4630,6 +4630,7 @@ name = "opendut-cleo"
 version = "0.11.0-alpha"
 dependencies = [
  "anyhow",
+ "backon",
  "clap",
  "clap-verbosity-flag",
  "clap_complete",
