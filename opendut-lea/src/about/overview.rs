@@ -3,6 +3,8 @@ use crate::components::BasePageContainer;
 use crate::components::NON_BREAKING_SPACE;
 
 use shadow_rs::shadow;
+use opendut_lea_components::FontAwesomeIcon;
+
 shadow!(build);
 
 #[component]
@@ -35,7 +37,9 @@ pub fn AboutOverview() -> impl IntoView {
                     </tbody>
                 </table>
 
-                <a href="https://opendut.eclipse.dev/"><i class="fa-solid fa-arrow-up-right-from-square"></i>{ NON_BREAKING_SPACE } openDuT Project Overview</a>
+                <a href="https://opendut.eclipse.dev/">
+                    <i class=FontAwesomeIcon::ExternalLink.as_class()></i>{ NON_BREAKING_SPACE } openDuT Project Overview
+                </a>
             </div>
         </BasePageContainer>
     }

@@ -37,8 +37,16 @@ pub fn create_http_service(settings: &Config) -> anyhow::Result<axum::Router<Htt
 
     let licenses_dir = project::make_path_absolute("./licenses")
         .expect("licenses directory should be absolute");
+    let documentation_dir = project::make_path_absolute(settings.get_string("serve.documentation.directory")
+        .expect("Failed to find configuration for `serve.documentation.directory`."))
+        .expect("documentation directory should be absolute");
 
     let router = axum::Router::new()
+        .nest_service(
+            "/documentation/",
+            ServeDir::new(&documentation_dir)
+                .fallback(ServeFile::new(documentation_dir.join("index.html")))
+        )
         .nest_service(
             "/api/licenses",
             ServeDir::new(&licenses_dir)

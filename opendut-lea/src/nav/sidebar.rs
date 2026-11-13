@@ -48,6 +48,12 @@ pub fn Sidebar(menu_visible: RwSignal<bool>, hide_buttons: Signal<bool>) -> impl
                     label="Downloads"
                     path=routing::path::downloads
                 />
+                <SidebarItem
+                    icon= FontAwesomeIcon::ExternalLink
+                    label="Documentation"
+                    path=routing::path::documentation
+                    external_link=true
+                />
             </ul>
             <div class="px-2">
                 <div class="dut-divider" class=("is-hidden", move || hide_buttons.get()) />
@@ -69,14 +75,21 @@ pub fn SidebarItem(
     #[prop(into)] icon: Signal<FontAwesomeIcon>,
     #[prop(into)] label: Signal<String>,
     #[prop(into)] path: Signal<String>,
+    #[prop(default=false)] external_link: bool,
 ) -> impl IntoView {
 
     let location = use_location();
     let is_active = move || location.pathname.get() == path.get();
 
+    let (rel, target) = if external_link {
+        (Some("external"), Some("_blank"))
+    } else {
+        (None, None)
+    };
+
     view! {
         <li>
-            <a class=("is-active", is_active) href=path.get()>
+            <a class=("is-active", is_active) href=path.get() rel=rel target=target>
                 <i class=icon.get().as_class() />
                 <span class="ml-2 is-size-6"> {label} </span>
             </a>
