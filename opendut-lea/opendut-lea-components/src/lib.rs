@@ -40,6 +40,7 @@ pub use tables::multiple_selection_table::{MultipleSelectionTable, MultipleSelec
 pub use tables::selection_table::{SelectionTable, SelectionTableRow};
 pub use tables::overview_table::{TableHeading, OverviewTable, OverviewTableRow, OverviewTableCell};
 pub use tag::Tag;
+pub use error_message::{ErrorMessage, ErrorMessageType, ErrorText};
 
 pub mod health;
 pub mod tooltip;
@@ -58,6 +59,7 @@ mod icon_text;
 mod toggle;
 mod tables;
 mod tag;
+mod error_message;
 
 pub const NON_BREAKING_SPACE: &str = "\u{a0}";
 
@@ -87,9 +89,11 @@ pub enum FontAwesomeIcon {
     Peers,
     Play,
     Plus,
+    Retry,
     Save,
     SignOut,
     TrashCan,
+    TriangleExclamation,
     User,
     UserOutlined,
     Users,
@@ -123,9 +127,11 @@ impl FontAwesomeIcon {
             FontAwesomeIcon::Peers => "fa-solid fa-microchip",
             FontAwesomeIcon::Play => "fa-solid fa-play",
             FontAwesomeIcon::Plus => "fa-solid fa-plus",
+            FontAwesomeIcon::Retry => "fa-solid fa-rotate-right",
             FontAwesomeIcon::Save => "fa-solid fa-save",
             FontAwesomeIcon::SignOut => "fas fa-sign-out-alt",
             FontAwesomeIcon::TrashCan => "fa-solid fa-trash-can",
+            FontAwesomeIcon::TriangleExclamation => "fa-solid fa-triangle-exclamation",
             FontAwesomeIcon::User => "fa-solid fa-user-large",
             FontAwesomeIcon::UserOutlined => "fa-regular fa-user",
             FontAwesomeIcon::Users =>"fa-solid fa-users",

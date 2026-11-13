@@ -10,7 +10,7 @@ use crate::clusters::IsDeployed;
 #[component]
 pub fn DeleteClusterButton<F>(
     cluster_id: Signal<ClusterId>,
-    #[prop(into)] deployed_signal: Signal<IsDeployed>,
+    #[prop(into)] deployed_signal: Signal<Option<IsDeployed>>,
     #[prop(into)] button_color: Signal<ButtonColor>,
     on_delete: F,
 ) -> impl IntoView
@@ -20,7 +20,7 @@ where F: Fn() + Clone + Send + 'static {
     let pending = RwSignal::new(false);
 
     let button_state = Signal::derive(move || {
-        if deployed_signal.get().0 {
+        if !matches!(deployed_signal.get(), Some(IsDeployed(false)))  {
             ButtonState::Disabled
         } else if pending.get() {
             ButtonState::Loading
@@ -72,7 +72,11 @@ where F: Fn() + Clone + Send + 'static {
 
     let tooltip_content = Arc::new(move || {
         view! {
-            Cluster can not be deleted while it is deployed.
+            {move || match deployed_signal.get() {
+                Some(IsDeployed(true)) => "Cluster can not be deleted while it is deployed.",
+                Some(IsDeployed(false)) => "",
+                None => "Cluster can not be deleted because its deployment status could not be determined.",
+            }}
         }.into_any()
     });
 

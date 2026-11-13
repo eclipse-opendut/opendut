@@ -1,14 +1,15 @@
 mod row;
 
 use leptos::prelude::*;
-use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, OverviewTable, TableHeading};
-use opendut_model::cluster::ClusterDescriptor;
+use tracing::error;
+use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, ErrorMessage, ErrorMessageType, ErrorText, FontAwesomeIcon, IconButton, OverviewTable, TableHeading};
+use opendut_model::cluster::{ClusterDeployment, ClusterDescriptor};
 
 use crate::app::use_app_globals;
 use crate::clusters::components::CreateClusterButton;
 use crate::clusters::IsDeployed;
 use crate::clusters::overview::row::Row;
-use crate::components::{BasePageContainer, Breadcrumb};
+use crate::components::{BasePageContainer, Breadcrumb, LoadingSpinner};
 
 #[component]
 pub fn ClustersOverview() -> impl IntoView {
@@ -27,10 +28,18 @@ pub fn ClustersOverview() -> impl IntoView {
             let mut carl = carl.clone();
             async move {
                 let mut clusters = carl.cluster.list_cluster_descriptors().await
-                    .expect("Failed to request the list of clusters");
+                    .map_err(|error| {
+                        error!("Failed to request the list of clusters: {error}");
+
+                        ErrorText {
+                            headline: String::from("Unable to load cluster descriptors"),
+                            description: String::from("The cluster descriptors could not be loaded. Please check your connection and try again."),
+                        }
+                    })?;
 
                 clusters.sort_by_key(|cluster| cluster.name.value().to_lowercase());
-                clusters
+
+                Ok::<_, ErrorText>(clusters)
             }
         })
     };
@@ -46,13 +55,16 @@ pub fn ClustersOverview() -> impl IntoView {
             let mut carl = carl.clone();
             async move {
                 carl.cluster.list_cluster_deployments().await
-                    .expect("Failed to request the list of cluster deployments")
+                    .map_err(|error| {
+                        error!("Failed to request the list of cluster deployments: {error}");
+
+                        ErrorText {
+                            headline: String::from("Unable to load cluster deployments"),
+                            description: String::from("The cluster deployments could not be loaded. Please check your connection and try again."),
+                        }
+                    })
             }
         })
-    };
-
-    let on_delete = move || {
-        refetch_cluster_descriptors.notify();
     };
 
     let breadcrumbs = vec![
@@ -82,48 +94,119 @@ pub fn ClustersOverview() -> impl IntoView {
                         label="Refresh table of clusters"
                         on_action=move || {
                             refetch_cluster_descriptors.notify();
+                            refetch_cluster_deployments.notify();
                         }
                     />
                 </div>
             }
         >
+            <Transition fallback=|| ()>
+                {move || match cluster_deployments.get() {
+                    Some(Err(error)) => view! {
+                        <ErrorMessage
+                            text=error
+                            error_type=ErrorMessageType::Warning
+                        />
+                    }.into_any(),
+                    Some(Ok(_)) | None => ().into_any(),
+                }}
+            </Transition>
             <OverviewTable headings=table_headings>
                 { move || {
-                        Suspend::new(async move {
-                            let clusters = clusters.await;
-                            let deployed_clusters = cluster_deployments.await
-                                .iter()
-                                .map(|cluster_deployment| cluster_deployment.id)
-                                .collect::<Vec<_>>();
+                    Suspend::new(async move {
+                        let clusters = clusters.await;
 
-                            if clusters.is_empty() {
+                        match clusters {
+                            Ok(clusters) => {
                                 view! {
-                                    <tr>
-                                        <td colspan="999" class="has-text-centered">"No clusters have been created yet"</td>
-                                    </tr>
-                                }.into_any()
-                            } else {
-                                view! {
-                                    <For
-                                        each = move || clusters.clone()
-                                        key = |cluster| cluster.id
-                                        children = { move |cluster_descriptor: ClusterDescriptor| {
-                                            let cluster_id = cluster_descriptor.id;
-                                            view! {
-                                                <Row
-                                                    cluster_descriptor=RwSignal::new(cluster_descriptor)
-                                                    is_deployed = RwSignal::new(IsDeployed(deployed_clusters.contains(&cluster_id)))
-                                                    on_deployment_changed=move || refetch_cluster_deployments.notify()
-                                                    on_delete
-                                                />
-                                            }
-                                        }}
+                                    <ClusterOverviewTable
+                                        clusters
+                                        deployments=cluster_deployments
+                                        refetch_cluster_deployments
+                                        refetch_cluster_descriptors
                                     />
                                 }.into_any()
                             }
-                        })
-                    }}
+                            Err(error)=> {
+                                view! {
+                                    <tr>
+                                        <td colspan="999">
+                                            <ErrorMessage
+                                                text=error
+                                            />
+                                        </td>
+                                    </tr>
+                                }.into_any()
+                            }
+                        }
+                    })
+                }}
             </OverviewTable>
         </BasePageContainer>
+    }
+}
+
+#[component]
+fn ClusterOverviewTable(
+    clusters: Vec<ClusterDescriptor>,
+    deployments: LocalResource<Result<Vec<ClusterDeployment>, ErrorText>>,
+    refetch_cluster_deployments: RwSignal<()>,
+    refetch_cluster_descriptors: RwSignal<()>,
+) -> impl IntoView {
+
+    let on_deployment_change = move || {
+        refetch_cluster_deployments.notify();
+    };
+
+    let on_delete = move || {
+        refetch_cluster_descriptors.notify();
+    };
+
+
+    if clusters.is_empty() {
+        view! {
+            <tr>
+                <td colspan="999" class="has-text-centered">"No clusters have been created yet"</td>
+            </tr>
+        }.into_any()
+    } else {
+        view! {
+            <For
+                each = move || clusters.clone()
+                key = |cluster| cluster.id
+                children = { move |cluster_descriptor: ClusterDescriptor| {
+                    let cluster_id = cluster_descriptor.id;
+
+                    view! {
+                        <Transition fallback=move || view! {
+                            <tr>
+                                <td colspan="999"><LoadingSpinner /></td>
+                            </tr>
+                        }>
+                            {move || {
+                                let is_deployed = Memo::new(move |_| {
+                                    match deployments.get() {
+                                        Some(Ok(deployments)) => Some(IsDeployed(
+                                            deployments.iter().any(|deployment| deployment.id == cluster_id)
+                                        )),
+                                        Some(Err(_)) | None => None,
+                                    }
+                                });
+
+                                view! {
+                                    <Row
+                                        cluster_descriptor=RwSignal::new(cluster_descriptor.clone())
+                                        is_deployed=is_deployed.into()
+                                        refetch_cluster_deployments
+                                        on_deployment_change
+                                        on_delete
+                                    />
+                                }
+                            }}
+                        </Transition>
+                    }
+                }}
+            />
+        }.into_any()
     }
 }
