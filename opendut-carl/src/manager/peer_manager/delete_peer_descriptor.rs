@@ -34,6 +34,16 @@ impl Resources<'_> {
         if let Some(PeerMemberState::Blocked { by_cluster }) = peer_member_state {
             Err(DeletePeerDescriptorError::ClusterDeploymentExists { peer_id, cluster_id: *by_cluster })
         } else {
+            #[cfg(feature = "viper")]
+            {
+                let tests = self.list::<opendut_model::viper::ViperTestRunDescriptor>()
+                    .map_err(|source| DeletePeerDescriptorError::Persistence { peer_id, peer_name: None, source })?;
+
+                if let Some(test) = tests.values().find(|test| test.peer == peer_id) {
+                    return Err(DeletePeerDescriptorError::ViperTestExists { peer_id, test_id: test.id });
+                }
+            }
+
             debug!("Deleting peer descriptor of peer <{peer_id}>.");
 
             let peer_descriptor = self.remove::<PeerDescriptor>(peer_id)
@@ -75,6 +85,12 @@ impl Resources<'_> {
 
 #[derive(thiserror::Error, Debug)]
 pub enum DeletePeerDescriptorError {
+    #[cfg(feature = "viper")]
+    #[error("Peer <{peer_id}> could not be deleted, because a VIPER test <{test_id}> using this peer still exists!")]
+    ViperTestExists {
+        peer_id: PeerId,
+        test_id: opendut_model::viper::ViperTestId,
+    },
     #[error("Peer <{peer_id}> could not be deleted, because a peer with that id does not exist!")]
     PeerNotFound {
         peer_id: PeerId,
@@ -122,6 +138,60 @@ mod tests {
     use crate::manager::testing::ClusterFixture;
     use crate::resource::manager::ResourceManager;
     use super::*;
+
+    #[cfg(feature = "viper")]
+    #[tokio::test]
+    async fn block_deletion_of_peer_used_by_a_viper_test_without_a_deployment() -> anyhow::Result<()> {
+        let (resource_manager, _cancel) = ResourceManager::new_in_memory();
+        let test = crate::manager::testing::ViperTestFixture::create(resource_manager.clone()).await?;
+        let peer_id = test.descriptor.peer;
+        let peer_before = resource_manager.get::<PeerDescriptor>(peer_id).await?;
+
+        let result = resource_manager.resources_mut(async |resources| {
+            resources.delete_peer_descriptor(DeletePeerDescriptorParams {
+                vpn: Vpn::Disabled,
+                peer: peer_id,
+                oidc_registration_client: None,
+            }).await
+        }).await?;
+
+        let Err(DeletePeerDescriptorError::ViperTestExists { peer_id: blocked_peer, test_id }) = result
+        else { panic!("Expected ViperTestExists error!") };
+        assert_eq!(blocked_peer, peer_id);
+        assert_eq!(test_id, test.id);
+        assert!(peer_before.is_some());
+        assert_eq!(resource_manager.get::<PeerDescriptor>(peer_id).await?, peer_before);
+
+        resource_manager.remove::<opendut_model::viper::ViperTestRunDescriptor>(test.id).await?;
+        let deleted = resource_manager.resources_mut(async |resources| {
+            resources.delete_peer_descriptor(DeletePeerDescriptorParams {
+                vpn: Vpn::Disabled,
+                peer: peer_id,
+                oidc_registration_client: None,
+            }).await
+        }).await??;
+        assert_eq!(Some(deleted), peer_before);
+
+        Ok(())
+    }
+
+    #[cfg(feature = "viper")]
+    #[tokio::test]
+    async fn allow_deletion_when_viper_test_uses_another_peer() -> anyhow::Result<()> {
+        let (resource_manager, _cancel) = ResourceManager::new_in_memory();
+        crate::manager::testing::ViperTestFixture::create(resource_manager.clone()).await?;
+        let cluster = ClusterFixture::create(resource_manager.clone()).await?;
+
+        let deleted = resource_manager.resources_mut(async |resources| {
+            resources.delete_peer_descriptor(DeletePeerDescriptorParams {
+                vpn: Vpn::Disabled,
+                peer: cluster.peer_a.id,
+                oidc_registration_client: None,
+            }).await
+        }).await??;
+        assert_eq!(deleted, cluster.peer_a.descriptor);
+        Ok(())
+    }
 
     #[tokio::test]
     async fn block_deletion_of_peer_descriptor_if_a_cluster_with_this_peer_is_still_deployed() -> anyhow::Result<()> {

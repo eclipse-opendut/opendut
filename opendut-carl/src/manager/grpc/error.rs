@@ -129,6 +129,9 @@ mod peer_manager {
     impl From<peer_manager::delete_peer_descriptor::DeletePeerDescriptorError> for DeletePeerDescriptorError {
         fn from(value: peer_manager::delete_peer_descriptor::DeletePeerDescriptorError) -> Self {
             match value {
+                #[cfg(feature = "viper")]
+                peer_manager::delete_peer_descriptor::DeletePeerDescriptorError::ViperTestExists { peer_id, test_id } =>
+                    Self::ViperTestExists { peer_id, test_id },
                 peer_manager::delete_peer_descriptor::DeletePeerDescriptorError::PeerNotFound { peer_id } =>
                     Self::PeerNotFound { peer_id },
                 peer_manager::delete_peer_descriptor::DeletePeerDescriptorError::ClusterDeploymentExists { peer_id, cluster_id } =>

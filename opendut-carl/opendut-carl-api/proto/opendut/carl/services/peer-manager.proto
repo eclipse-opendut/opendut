@@ -7,6 +7,7 @@ import "opendut/model/peer/peer.proto";
 import "opendut/model/peer/state.proto";
 import "opendut/model/cleo/cleo.proto";
 import "opendut/model/cluster/cluster.proto";
+import "opendut/model/viper_test_id.proto";
 
 service PeerManager {
   rpc StorePeerDescriptor(StorePeerDescriptorRequest) returns (StorePeerDescriptorResponse) {}
@@ -89,6 +90,7 @@ message DeletePeerDescriptorFailure {
     DeletePeerDescriptorFailureIllegalPeerState illegal_peer_state = 2;
     DeletePeerDescriptorFailureInternal internal = 4;
     DeletePeerDescriptorFailureDeploymentExists deployment_exists = 5;
+    DeletePeerDescriptorFailureViperTestExists viper_test_exists = 6;
   }
 }
 
@@ -112,6 +114,11 @@ message DeletePeerDescriptorFailureInternal {
 message DeletePeerDescriptorFailureDeploymentExists {
   opendut.model.peer.PeerId peer_id = 1;
   opendut.model.cluster.ClusterId cluster_id = 2;
+}
+
+message DeletePeerDescriptorFailureViperTestExists {
+  opendut.model.peer.PeerId peer_id = 1;
+  opendut.model.viper.ViperTestId test_id = 2;
 }
 
 //
