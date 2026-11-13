@@ -12,3 +12,6 @@ theo = "ci theo run --"
 carl-viper = "ci carl run --features=viper --"
 cleo-viper = "ci cleo run --features=viper --"
 lea-viper = "ci lea run -- --features=viper"
+
+[registry]
+global-min-publish-age = "3 days"
