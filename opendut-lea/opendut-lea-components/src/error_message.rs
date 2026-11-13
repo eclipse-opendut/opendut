@@ -7,14 +7,35 @@ pub struct ErrorText {
     pub description: String,
 }
 
+#[derive(Default)]
+pub enum ErrorMessageType {
+    #[default]
+    Error,
+    Warning,
+}
+
 #[component]
-pub fn ErrorMessage(text: ErrorText) -> impl IntoView {
+pub fn ErrorMessage(
+    text: ErrorText,
+    #[prop(optional)] error_type: ErrorMessageType
+) -> impl IntoView {
+
+    let color = match error_type {
+        ErrorMessageType::Error => "is-danger",
+        ErrorMessageType::Warning => "is-warning",
+    };
+
+    let icon = match error_type {
+        ErrorMessageType::Error => "fa-solid fa-circle-xmark fa-lg",
+        ErrorMessageType::Warning => "fa-solid fa-triangle-exclamation fa-lg",
+    };
+
     view! {
-        <article class="message is-danger">
+        <article class=format!("message {color}")>
             <div class="message-body">
                 <div class="columns is-mobile is-vcentered">
                     <div class="column is-narrow">
-                        <i class="fa-solid fa-circle-xmark fa-lg"></i>
+                        <i class=icon></i>
                     </div>
                     <div class="column">
                         <p class="has-text-weight-semibold">

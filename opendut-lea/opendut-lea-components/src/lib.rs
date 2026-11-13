@@ -92,6 +92,7 @@ pub enum FontAwesomeIcon {
     Save,
     SignOut,
     TrashCan,
+    TriangleExclamation,
     XMark,
 }
 
@@ -125,6 +126,7 @@ impl FontAwesomeIcon {
             FontAwesomeIcon::Save => "fa-solid fa-save",
             FontAwesomeIcon::SignOut => "fas fa-sign-out-alt",
             FontAwesomeIcon::TrashCan => "fa-solid fa-trash-can",
+            FontAwesomeIcon::TriangleExclamation => "fa-solid fa-triangle-exclamation",
             FontAwesomeIcon::XMark => "fa-solid fa-xmark",
         }
     }
