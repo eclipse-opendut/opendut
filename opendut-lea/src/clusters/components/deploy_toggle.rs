@@ -5,7 +5,7 @@ use tracing::{debug, error};
 use opendut_carl_api::carl::ClientError;
 use opendut_carl_api::carl::cluster::{ListClusterPeerStatesResponse, StoreClusterDeploymentError};
 use opendut_lea_components::tooltip::{Tooltip, TooltipDirection};
-use opendut_lea_components::{Toggle, ToggleState};
+use opendut_lea_components::{FontAwesomeIcon, Toggle, ToggleState};
 use opendut_model::cluster::{ClusterDeployment, ClusterId};
 use opendut_model::peer::PeerId;
 use opendut_model::peer::state::PeerMemberState;
@@ -14,15 +14,15 @@ use crate::clusters::IsDeployed;
 use crate::components::{Toast, use_toaster};
 
 #[component]
-pub fn DeployToggle<OnDeploymentChanged>(
+pub fn DeployToggle<OnDeploymentChange>(
     #[prop(into)] cluster_id: Signal<ClusterId>,
     #[prop(into, default=Signal::from(false))] is_new_cluster: Signal<bool>,
-    #[prop(into)] is_deployed: Signal<IsDeployed>,
-    on_deployment_changed: OnDeploymentChanged,
+    #[prop(into)] is_deployed: Signal<Option<IsDeployed>>,
+    on_deployment_change: OnDeploymentChange,
     #[prop(optional)] tooltip_direction: TooltipDirection,
 ) -> impl IntoView
 where
-    OnDeploymentChanged: Fn() + Clone + Send + 'static,
+    OnDeploymentChange: Fn() + Clone + Send + 'static,
 {
     let globals = use_app_globals();
     let toaster = use_toaster();
@@ -30,7 +30,7 @@ where
     let on_deploy = {
         let carl = globals.client.clone();
         let toaster = Arc::clone(&toaster);
-        let on_deployment_changed = on_deployment_changed.clone();
+        let on_deployment_changed = on_deployment_change.clone();
 
         move || {
             let mut carl = carl.clone();
@@ -76,7 +76,7 @@ where
     let on_undeploy = {
         let carl = globals.client.clone();
         let toaster = Arc::clone(&toaster);
-        let on_deployment_changed = on_deployment_changed.clone();
+        let on_deployment_changed = on_deployment_change.clone();
 
         move || {
             let mut carl = carl.clone();
@@ -150,40 +150,58 @@ where
         let on_undeploy = on_undeploy.clone();
 
         Suspend::new(async move {
-            let deployment_blocker = blocked_cluster_deployment.await;
+            match is_deployed.get() {
+                Some(is_deployed) => {
+                    let is_deployed = is_deployed.0;
+                    let deployment_blocker = blocked_cluster_deployment.await;
 
-            let is_deployed = Signal::derive(move || is_deployed.get().0);
+                    let toggle_state = Signal::derive({
+                        let deployment_blocker = deployment_blocker.clone();
 
-            let toggle_state = Signal::derive({
-                let deployment_blocker = deployment_blocker.clone();
+                        move || {
+                            let is_blocked = deployment_blocker.is_some() && !is_deployed;
 
-                move || {
-                    let is_blocked = deployment_blocker.is_some() && !is_deployed.get();
-
-                    if is_new_cluster.get() || is_blocked {
-                        ToggleState::Disabled
-                    } else {
-                        ToggleState::Enabled
-                    }
-                }
-            });
-
-            let tooltip_content = Arc::new(move || {
-                view! {
-                    <DeploymentTooltipContent is_new_cluster is_deployed blocked_deployment=Clone::clone(&deployment_blocker) />
-                }.into_any()
-            });
-
-            view! {
-                <Tooltip text=tooltip_content direction=tooltip_direction>
-                    <Toggle
-                        is_active=is_deployed
-                        state=toggle_state
-                        on_action=move || {
-                            if is_deployed.get() { on_undeploy() } else { on_deploy() }
+                            if is_new_cluster.get() || is_blocked {
+                                ToggleState::Disabled
+                            } else {
+                                ToggleState::Enabled
+                            }
                         }
-                    />
-                </Tooltip>
+                    });
+
+                    let tooltip_content = Arc::new(move || {
+                        view! {
+                            <DeploymentTooltipContent is_new_cluster is_deployed blocked_deployment=Clone::clone(&deployment_blocker) />
+                        }.into_any()
+                    });
+
+                    view! {
+                        <Tooltip text=tooltip_content direction=tooltip_direction>
+                            <Toggle
+                                is_active=is_deployed
+                                state=toggle_state
+                                on_action=move || {
+                                    if is_deployed { on_undeploy() } else { on_deploy() }
+                                }
+                            />
+                        </Tooltip>
+                    }.into_any()
+                }
+                None => {
+                    let tooltip_content = Arc::new(move || {
+                        view! {
+                            Unable to load cluster deployments.
+                        }.into_any()
+                    });
+
+                    view! {
+                        <div class="is-flex is-align-items-center is-justify-content-center">
+                            <Tooltip text=tooltip_content direction=tooltip_direction>
+                                <i class=format!("has-text-danger fa-lg {}", FontAwesomeIcon::TriangleExclamation.as_class()) />
+                            </Tooltip>
+                        </div>
+                    }.into_any()
+                }
             }
         })
     }
@@ -198,7 +216,7 @@ enum DeploymentBlocker {
 #[component]
 fn DeploymentTooltipContent(
     is_new_cluster: Signal<bool>,
-    is_deployed: Signal<bool>,
+    #[prop(into)] is_deployed: Signal<bool>,
     blocked_deployment: Option<DeploymentBlocker>,
 ) -> impl IntoView {
 
@@ -247,7 +265,6 @@ fn DeploymentTooltipContent(
                     }
                 };
             }
-
 
         if is_deployed.get() {
             view! { "Deployment requested" }.into_any()

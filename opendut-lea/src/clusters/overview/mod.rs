@@ -3,6 +3,7 @@ mod row;
 use leptos::prelude::*;
 use tracing::error;
 
+use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, ErrorMessage, ErrorMessageType, ErrorText, FontAwesomeIcon, IconButton, OverviewTable, TableHeading};
 use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, InfoMessage, OverviewTable, TableHeading};
 use opendut_model::cluster::{ClusterDeployment, ClusterDescriptor};
 
@@ -103,23 +104,33 @@ pub fn ClustersOverview() -> impl IntoView {
             <InfoMessage
                 text="Clusters establish the network between Peers, allowing your connected ECUs to communicate like in one testbench."
             />
+            {move || match cluster_deployments.get() {
+                Some(Err(error)) => view! {
+                    <ErrorMessage
+                        text=error
+                        error_type=ErrorMessageType::Warning
+                    />
+                }.into_any(),
+                Some(Ok(_)) | None => ().into_any(),
+            }}
             <OverviewTable headings=table_headings>
                 { move || {
                     Suspend::new(async move {
                         let clusters = clusters.await;
                         let deployments = cluster_deployments.await;
 
-                        match (clusters, deployments) {
-                            (Ok(clusters), Ok(deployments)) => {
+                        match clusters {
+                            Ok(clusters) => {
                                 view! {
                                     <ClusterOverviewTable
                                         clusters
-                                        deployments
+                                        deployments=deployments.ok()
+                                        refetch_cluster_deployments
                                         refetch_cluster_descriptors
                                     />
                                 }.into_any()
                             }
-                            (Err(error), _) | (_, Err(error)) => {
+                            Err(error)=> {
                                 view! {
                                     <tr>
                                         <td colspan="999">
@@ -141,14 +152,16 @@ pub fn ClustersOverview() -> impl IntoView {
 #[component]
 fn ClusterOverviewTable(
     clusters: Vec<ClusterDescriptor>,
-    deployments: Vec<ClusterDeployment>,
+    deployments: Option<Vec<ClusterDeployment>>,
+    refetch_cluster_deployments: RwSignal<()>,
     refetch_cluster_descriptors: RwSignal<()>,
 ) -> impl IntoView {
-    let deployed_clusters = deployments.iter()
-        .map(|cluster_deployment| cluster_deployment.id)
-        .collect::<Vec<_>>();
 
-    let on_change = move || {
+    let on_deployment_change = move || {
+        refetch_cluster_deployments.notify();
+    };
+
+    let on_delete = move || {
         refetch_cluster_descriptors.notify();
     };
 
@@ -165,11 +178,18 @@ fn ClusterOverviewTable(
                 key = |cluster| cluster.id
                 children = { move |cluster_descriptor: ClusterDescriptor| {
                     let cluster_id = cluster_descriptor.id;
+
+                    let is_deployed = deployments.as_ref()
+                        .map(|deployments| {
+                            IsDeployed(deployments.iter().any(|deployment| deployment.id == cluster_id))
+                    });
+
                     view! {
                         <Row
                             cluster_descriptor=RwSignal::new(cluster_descriptor)
-                            is_deployed = RwSignal::new(IsDeployed(deployed_clusters.contains(&cluster_id)))
-                            on_change
+                            is_deployed=Signal::from(is_deployed)
+                            on_deployment_change
+                            on_delete
                         />
                     }
                 }}
