@@ -9,7 +9,7 @@ use crate::app::use_app_globals;
 use crate::clusters::components::CreateClusterButton;
 use crate::clusters::IsDeployed;
 use crate::clusters::overview::row::Row;
-use crate::components::{BasePageContainer, Breadcrumb};
+use crate::components::{BasePageContainer, Breadcrumb, LoadingSpinner};
 
 #[component]
 pub fn ClustersOverview() -> impl IntoView {
@@ -94,32 +94,34 @@ pub fn ClustersOverview() -> impl IntoView {
                         label="Refresh table of clusters"
                         on_action=move || {
                             refetch_cluster_descriptors.notify();
+                            refetch_cluster_deployments.notify();
                         }
                     />
                 </div>
             }
         >
-            {move || match cluster_deployments.get() {
-                Some(Err(error)) => view! {
-                    <ErrorMessage
-                        text=error
-                        error_type=ErrorMessageType::Warning
-                    />
-                }.into_any(),
-                Some(Ok(_)) | None => ().into_any(),
-            }}
+            <Transition fallback=|| ()>
+                {move || match cluster_deployments.get() {
+                    Some(Err(error)) => view! {
+                        <ErrorMessage
+                            text=error
+                            error_type=ErrorMessageType::Warning
+                        />
+                    }.into_any(),
+                    Some(Ok(_)) | None => ().into_any(),
+                }}
+            </Transition>
             <OverviewTable headings=table_headings>
                 { move || {
                     Suspend::new(async move {
                         let clusters = clusters.await;
-                        let deployments = cluster_deployments.await;
 
                         match clusters {
                             Ok(clusters) => {
                                 view! {
                                     <ClusterOverviewTable
                                         clusters
-                                        deployments=deployments.ok()
+                                        deployments=cluster_deployments
                                         refetch_cluster_deployments
                                         refetch_cluster_descriptors
                                     />
@@ -147,7 +149,7 @@ pub fn ClustersOverview() -> impl IntoView {
 #[component]
 fn ClusterOverviewTable(
     clusters: Vec<ClusterDescriptor>,
-    deployments: Option<Vec<ClusterDeployment>>,
+    deployments: LocalResource<Result<Vec<ClusterDeployment>, ErrorText>>,
     refetch_cluster_deployments: RwSignal<()>,
     refetch_cluster_descriptors: RwSignal<()>,
 ) -> impl IntoView {
@@ -175,18 +177,33 @@ fn ClusterOverviewTable(
                 children = { move |cluster_descriptor: ClusterDescriptor| {
                     let cluster_id = cluster_descriptor.id;
 
-                    let is_deployed = deployments.as_ref()
-                        .map(|deployments| {
-                            IsDeployed(deployments.iter().any(|deployment| deployment.id == cluster_id))
-                    });
-
                     view! {
-                        <Row
-                            cluster_descriptor=RwSignal::new(cluster_descriptor)
-                            is_deployed=Signal::from(is_deployed)
-                            on_deployment_change
-                            on_delete
-                        />
+                        <Transition fallback=move || view! {
+                            <tr>
+                                <td colspan="999"><LoadingSpinner /></td>
+                            </tr>
+                        }>
+                            {move || {
+                                let is_deployed = Memo::new(move |_| {
+                                    match deployments.get() {
+                                        Some(Ok(deployments)) => Some(IsDeployed(
+                                            deployments.iter().any(|deployment| deployment.id == cluster_id)
+                                        )),
+                                        Some(Err(_)) | None => None,
+                                    }
+                                });
+
+                                view! {
+                                    <Row
+                                        cluster_descriptor=RwSignal::new(cluster_descriptor.clone())
+                                        is_deployed=is_deployed.into()
+                                        refetch_cluster_deployments
+                                        on_deployment_change
+                                        on_delete
+                                    />
+                                }
+                            }}
+                        </Transition>
                     }
                 }}
             />
