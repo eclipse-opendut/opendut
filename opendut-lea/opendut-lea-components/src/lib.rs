@@ -40,7 +40,7 @@ pub use tables::multiple_selection_table::{MultipleSelectionTable, MultipleSelec
 pub use tables::selection_table::{SelectionTable, SelectionTableRow};
 pub use tables::overview_table::{TableHeading, OverviewTable, OverviewTableRow, OverviewTableCell};
 pub use tag::Tag;
-pub use error_message::{ErrorMessage, ErrorText};
+pub use error_message::{ErrorMessage, ErrorMessageType, ErrorText};
 
 pub mod health;
 pub mod tooltip;
@@ -93,6 +93,7 @@ pub enum FontAwesomeIcon {
     Save,
     SignOut,
     TrashCan,
+    TriangleExclamation,
     User,
     UserOutlined,
     Users,
@@ -130,6 +131,7 @@ impl FontAwesomeIcon {
             FontAwesomeIcon::Save => "fa-solid fa-save",
             FontAwesomeIcon::SignOut => "fas fa-sign-out-alt",
             FontAwesomeIcon::TrashCan => "fa-solid fa-trash-can",
+            FontAwesomeIcon::TriangleExclamation => "fa-solid fa-triangle-exclamation",
             FontAwesomeIcon::User => "fa-solid fa-user-large",
             FontAwesomeIcon::UserOutlined => "fa-regular fa-user",
             FontAwesomeIcon::Users =>"fa-solid fa-users",

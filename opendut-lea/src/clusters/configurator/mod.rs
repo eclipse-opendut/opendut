@@ -1,5 +1,6 @@
 use leptos::prelude::*;
 use leptos_router::hooks::use_params_map;
+use tracing::error;
 use opendut_lea_components::tabs::{Tab, Tabs};
 use crate::components::UserInputValue;
 use opendut_model::cluster::ClusterId;
@@ -113,22 +114,21 @@ fn LoadedClusterConfigurator(
             let mut carl = carl.clone();
             async move {
                 carl.cluster.list_cluster_deployments().await
-                    .expect("Failed to request the list of cluster deployments")
+                    .map_err(|error| {
+                        error!("Failed to request the list of cluster deployments: {error}");
+                    }).ok()
             }
         })
     };
 
-    let deployed_signal = Memo::new(move |_| {
+    let deployed_signal = Signal::derive(move || {
         let cluster_id = cluster_id.get();
 
-        let is_deployed = cluster_deployments.get()
-            .is_some_and(|deployments| {
-                deployments
-                    .iter()
-                    .any(|deployment| deployment.id == cluster_id)
-            });
-
-        IsDeployed(is_deployed)
+        cluster_deployments.get()
+            .flatten()
+            .map(|deployments| {
+                IsDeployed(deployments.iter().any(|deployment| deployment.id == cluster_id))
+            })
     });
 
     let subtitle = Signal::derive(move || {
@@ -157,7 +157,11 @@ fn LoadedClusterConfigurator(
             ).with_is_error(Signal::derive(move || !user_cluster_descriptor.read().valid_leader_tab())),
         ]
     });
-    
+
+    let is_disabled = Signal::derive(move || {
+        !matches!(deployed_signal.get(), Some(IsDeployed(false)))
+    });
+
     view! {
         <BasePageContainer
             title="Configure Cluster"
@@ -169,13 +173,13 @@ fn LoadedClusterConfigurator(
                         user_cluster_descriptor
                         deployed_signal
                         cluster_state=cluster_state.into()
-                        on_deployment_changed=move || refetch_cluster_deployments.notify()
+                        on_deployment_change=move || refetch_cluster_deployments.notify()
                     />
                 }
             }
         >
             <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
-                <fieldset prop:disabled=move || { deployed_signal.get().0 }>
+                <fieldset prop:disabled=move || is_disabled.get()>
                     { move || match active_tab.get() {
                         TabIdentifier::General => view! {
                             <GeneralTab user_cluster_descriptor />
@@ -184,7 +188,8 @@ fn LoadedClusterConfigurator(
                         TabIdentifier::Devices => view! {
                             <DevicesTab
                                 user_cluster_descriptor
-                                peers is_disabled=Signal::derive(move || deployed_signal.get().0)
+                                peers
+                                is_disabled
                             />
                         }.into_any(),
                         
@@ -192,7 +197,7 @@ fn LoadedClusterConfigurator(
                             <LeaderTab
                                 user_cluster_descriptor
                                 peers
-                                is_disabled=Signal::derive(move || deployed_signal.get().0)
+                                is_disabled
                             />
                         }.into_any()
                     }}
