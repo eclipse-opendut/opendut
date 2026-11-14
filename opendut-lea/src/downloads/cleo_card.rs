@@ -1,4 +1,5 @@
 use leptos::prelude::*;
+use opendut_lea_components::InfoMessage;
 use opendut_model::proto::util::VersionInfo;
 use crate::components::{GenerateSetupStringForm, GenerateSetupStringKind};
 
@@ -32,7 +33,8 @@ pub fn CleoCard(
                 <div class="card-header-title"><i class="fa-solid fa-terminal mr-1"></i>"CLEO"</div>
             </div>
             <div class="card-content">
-            "Download for different architectures:"
+                <InfoMessage text="Command-line interface for administering openDuT." />
+                "Download for different architectures:"
                 <div class="mb-2 mt-2 ml-2">
                     <a href="/api/cleo/aarch64-unknown-linux-gnu/download" download=output_name_aarch64>
                         <i class="fa-solid fa-download fa-lg pr-1" />

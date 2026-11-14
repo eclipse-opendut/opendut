@@ -59,7 +59,9 @@ pub fn GenerateSetupStringForm(kind: Signal<GenerateSetupStringKind>) -> impl In
             })}
         </Suspense>
         <br/>
-        <WarningMessage>"Please keep Setup-Strings secret and handle them with care like your passwords."</WarningMessage>
+        <WarningMessage
+            text="Please keep Setup-Strings secret and handle them with care, like your passwords."
+        />
     }
 }
 

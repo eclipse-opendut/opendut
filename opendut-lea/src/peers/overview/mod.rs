@@ -5,7 +5,7 @@ use crate::components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, 
 use crate::peers::components::CreatePeerButton;
 use leptos::prelude::*;
 use tracing::trace;
-use opendut_lea_components::{OverviewTable, TableHeading};
+use opendut_lea_components::{InfoMessage, OverviewTable, TableHeading};
 use opendut_model::cluster::ClusterDescriptor;
 use opendut_model::peer::state::PeerState;
 use opendut_model::peer::PeerDescriptor;
@@ -98,6 +98,11 @@ pub fn PeersOverview() -> impl IntoView {
                 </div>
             }
         >
+        <InfoMessage
+            text="A Peer is a participant in a Cluster. \
+                It is a computer on which EDGAR is installed and a Device you want to connect with others, \
+                like an ECU, a restbus simulation or a test harness."
+        />
         <OverviewTable headings=table_headings>
                 { move || Suspend::new(async move {
                     let peers = registered_peers.await;

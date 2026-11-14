@@ -4,6 +4,7 @@ mod text;
 
 use leptos::prelude::*;
 use opendut_carl_api::carl::viper::GetViperTestSuiteParametersError;
+use opendut_lea_components::InfoMessage;
 use opendut_model::viper::{ViperParameterDescriptor, ViperParameterDescriptors, ViperSourceId};
 use crate::viper_tests::configurator::SourceFetchError;
 use crate::viper_tests::configurator::tabs::parameters::boolean::BooleanParameterInput;
@@ -17,7 +18,7 @@ pub fn ParametersTab(
     parameter_result: Result<ViperParameterDescriptors, SourceFetchError>,
 ) -> impl IntoView {
 
-    match parameter_result {
+    let view = match parameter_result {
         Ok(parameters) => {
             view! {
                 <For
@@ -151,5 +152,12 @@ pub fn ParametersTab(
                 }
             }
         }
+    };
+
+    view! {
+        <InfoMessage
+            text="Set the parameters defined in your test code, to run with different configurations."
+        />
+        { view }
     }
 }

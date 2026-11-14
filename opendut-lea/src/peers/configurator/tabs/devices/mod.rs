@@ -1,4 +1,5 @@
 use leptos::prelude::*;
+use opendut_lea_components::InfoMessage;
 use opendut_model::topology::DeviceId;
 
 use crate::components::UserInputValue;
@@ -16,6 +17,9 @@ mod tag_input;
 pub fn DevicesTab(user_peer_descriptor: RwSignal<UserPeerDescriptor>) -> impl IntoView {
     view! {
         <div>
+            <InfoMessage
+                text="A Device is an ECU, a restbus simulation or a test harness that you want to connect via openDuT."
+            />
             <DevicesTable user_peer_descriptor />
         </div>
     }

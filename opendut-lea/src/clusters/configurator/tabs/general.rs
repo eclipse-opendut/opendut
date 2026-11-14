@@ -1,5 +1,4 @@
 use leptos::prelude::*;
-
 use crate::clusters::configurator::components::ClusterNameInput;
 use crate::clusters::configurator::types::UserClusterDescriptor;
 use crate::components::ReadOnlyInput;
