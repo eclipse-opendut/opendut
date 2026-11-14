@@ -17,7 +17,7 @@ pub fn LeaderTab(
             <InfoMessage
                 text="The Leader is a Peer that takes on a more central role in the Cluster. \
                     It performs healthchecks and for clusters with three or more peers, the communication is routed through the Leader. \
-                    As such, you should pick a peer that is physically located in the middle of the other peers, if possible."
+                    As such, you should ideally pick a peer that is physically located in the middle, relative to the other peers."
             />
             <LeaderSelector user_cluster_descriptor peers is_disabled />
         </div>

@@ -10,7 +10,7 @@ pub fn SourceTab(user_test_run_descriptor: RwSignal<UserViperTestRunDescriptor>)
 
     view! {
         <InfoMessage
-            text="" // TODO: description (Why VIPER source in VIPER test?)
+            text="Select the Source to load your test code from."
         />
         <ViperTestSourceSelector user_test_run_descriptor />
     }

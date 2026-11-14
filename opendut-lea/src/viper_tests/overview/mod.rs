@@ -69,7 +69,7 @@ pub fn ViperTestsOverview() -> impl IntoView {
             }
         >
         <InfoMessage
-            text="" // TODO: description (What is a VIPER-Test)
+            text="A VIPER Test contains the concrete configuration for how and where your test code should be executed."
         />
             <OverviewTable headings=table_headings>
                 { move || Suspend::new(async move {

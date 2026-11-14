@@ -156,7 +156,7 @@ pub fn ParametersTab(
 
     view! {
         <InfoMessage
-            text="" // TODO: description (What are VIEPR Parameters?)
+            text="Set the parameters defined in your test code, to run with different configurations."
         />
         { view }
     }
