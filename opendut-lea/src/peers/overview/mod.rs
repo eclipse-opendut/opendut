@@ -100,8 +100,8 @@ pub fn PeersOverview() -> impl IntoView {
         >
         <InfoMessage
             text="A Peer is a participant in a Cluster. \
-                It is comprised of a computer on which EDGAR is installed and a Device you want to connect with others, \
-                like an ECU, a Restbus-Simulation or a test engine."
+                It is a computer on which EDGAR is installed and a Device you want to connect with others, \
+                like an ECU, a restbus simulation or a test harness."
         />
         <OverviewTable headings=table_headings>
                 { move || Suspend::new(async move {

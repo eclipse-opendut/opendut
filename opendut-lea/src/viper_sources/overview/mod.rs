@@ -68,7 +68,7 @@ pub fn ViperSourcesOverview() -> impl IntoView {
             }
         >
         <InfoMessage
-            text="" // TODO: description (What is a VIPER-Source)
+            text="A Source defines where to load your source code from, for defining the test behaviour."
         />
             <OverviewTable headings=table_headings>
                 { move || Suspend::new(async move {

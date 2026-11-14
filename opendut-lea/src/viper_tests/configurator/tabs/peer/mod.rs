@@ -10,7 +10,7 @@ pub fn PeerTab(user_test_run_descriptor: RwSignal<UserViperTestRunDescriptor>) -
 
     view! {
         <InfoMessage
-            text="" // TODO: description (Why peer in VIPER test?)
+            text="Select the Peer to run your VIPER Test on."
         />
         <PeerSelector user_test_run_descriptor />
     }

@@ -18,7 +18,7 @@ pub fn DevicesTab(user_peer_descriptor: RwSignal<UserPeerDescriptor>) -> impl In
     view! {
         <div>
             <InfoMessage
-                text="A Device is an ECU, a Restbus-Simulation or a test engine that you want to connect via openDuT."
+                text="A Device is an ECU, a restbus simulation or a test harness that you want to connect via openDuT."
             />
             <DevicesTable user_peer_descriptor />
         </div>

@@ -88,44 +88,44 @@ pub fn ClustersOverview() -> impl IntoView {
             }
         >
             <InfoMessage
-                text="Clusters establish the communication between Peers and handle the lifecycle of the network."
+                text="Clusters establish the network between Peers, allowing your connected ECUs to communicate like in one testbench."
             />
             <OverviewTable headings=table_headings>
                 { move || {
-                        Suspend::new(async move {
-                            let clusters = clusters.await;
-                            let deployed_clusters = cluster_deployments.await
-                                .iter()
-                                .map(|cluster_deployment| cluster_deployment.id)
-                                .collect::<Vec<_>>();
+                    Suspend::new(async move {
+                        let clusters = clusters.await;
+                        let deployed_clusters = cluster_deployments.await
+                            .iter()
+                            .map(|cluster_deployment| cluster_deployment.id)
+                            .collect::<Vec<_>>();
 
-                            if clusters.is_empty() {
-                                view! {
-                                    <tr>
-                                        <td colspan="999" class="has-text-centered">"No clusters have been created yet"</td>
-                                    </tr>
-                                }.into_any()
-                            } else {
-                                view! {
-                                    <For
-                                        each = move || clusters.clone()
-                                        key = |cluster| cluster.id
-                                        children = { move |cluster_descriptor: ClusterDescriptor| {
-                                            let cluster_id = cluster_descriptor.id;
-                                            view! {
-                                                <Row
-                                                    cluster_descriptor=RwSignal::new(cluster_descriptor)
-                                                    is_deployed = RwSignal::new(IsDeployed(deployed_clusters.contains(&cluster_id)))
-                                                    on_deployment_changed=move || refetch_cluster_deployments.notify()
-                                                    on_delete
-                                                />
-                                            }
-                                        }}
-                                    />
-                                }.into_any()
-                            }
-                        })
-                    }}
+                        if clusters.is_empty() {
+                            view! {
+                                <tr>
+                                    <td colspan="999" class="has-text-centered">"No clusters have been created yet"</td>
+                                </tr>
+                            }.into_any()
+                        } else {
+                            view! {
+                                <For
+                                    each = move || clusters.clone()
+                                    key = |cluster| cluster.id
+                                    children = { move |cluster_descriptor: ClusterDescriptor| {
+                                        let cluster_id = cluster_descriptor.id;
+                                        view! {
+                                            <Row
+                                                cluster_descriptor=RwSignal::new(cluster_descriptor)
+                                                is_deployed = RwSignal::new(IsDeployed(deployed_clusters.contains(&cluster_id)))
+                                                on_deployment_changed=move || refetch_cluster_deployments.notify()
+                                                on_delete
+                                            />
+                                        }
+                                    }}
+                                />
+                            }.into_any()
+                        }
+                    })
+                }}
             </OverviewTable>
         </BasePageContainer>
     }
