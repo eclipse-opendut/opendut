@@ -1,6 +1,6 @@
 use leptos::prelude::*;
-use opendut_lea_components::{ButtonColor, OverviewTableCell};
-use opendut_model::viper::ViperTestRunDescriptor;
+use opendut_lea_components::{ButtonColor, ErrorText, OverviewTableCell};
+use opendut_model::viper::{ViperSourceDescriptor, ViperTestRunDescriptor};
 use crate::app::use_app_globals;
 use crate::components::ClickableOverviewTableRow;
 use crate::viper_tests::components::{DeleteViperTestButton, DeployViperTestButton, DuplicateViperTestButton};
@@ -8,6 +8,7 @@ use crate::viper_tests::components::{DeleteViperTestButton, DeployViperTestButto
 #[component]
 pub(crate) fn Row<OnDeleteFn>(
     viper_test_run_descriptor: RwSignal<ViperTestRunDescriptor>,
+    viper_sources: LocalResource<Result<Vec<ViperSourceDescriptor>, ErrorText>>,
     refetch_viper_tests: RwSignal<()>,
     on_delete: OnDeleteFn,
 ) -> impl IntoView
@@ -39,20 +40,6 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
         }
     );
 
-    let viper_source_descriptor = LocalResource::new({
-        let carl = globals.client.clone();
-        move || {
-            let mut carl = carl.clone();
-            let viper_source_id = viper_source_id.get();
-
-            async move {
-                carl.viper.get_viper_source_descriptor(viper_source_id).await
-                .expect("Failed to request the viper source by id.")
-            }
-        }
-
-    });
-
     let peer_descriptor = LocalResource::new({
         let carl = globals.client.clone();
         move || {
@@ -71,10 +58,16 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
     let peer_href = move || { format!("/peers/{}/configure/general", peer_id.get()) };
 
     { move || Suspend::new(async move {
-        let viper_source = viper_source_descriptor.await;
-        let viper_source_name = viper_source.name.to_string();
-
+        let viper_sources = viper_sources.await;
         let peer = peer_descriptor.await;
+
+        let source_id = viper_source_id.get();
+
+        let viper_source_name = viper_sources.as_ref()
+            .ok()
+            .and_then(|sources| sources.iter().find(|s| s.id == source_id))
+            .map_or_else(|| source_id.to_string(), |s| s.name.to_string());
+
         let peer_name = peer.name.to_string();
 
         view! {
