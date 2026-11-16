@@ -4,8 +4,8 @@ use crate::app::use_app_globals;
 use crate::components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton};
 use crate::peers::components::CreatePeerButton;
 use leptos::prelude::*;
-use tracing::trace;
-use opendut_lea_components::{InfoMessage, OverviewTable, TableHeading};
+use tracing::{error, trace};
+use opendut_lea_components::{InfoMessage, ErrorMessageTableRow, ErrorText, OverviewTable, TableHeading};
 use opendut_model::cluster::ClusterDescriptor;
 use opendut_model::peer::state::PeerState;
 use opendut_model::peer::PeerDescriptor;
@@ -19,7 +19,7 @@ pub fn PeersOverview() -> impl IntoView {
 
     let refetch_registered_peers = RwSignal::new(());
 
-    let registered_peers: LocalResource<Vec<(PeerDescriptor, PeerState)>> = {
+    let registered_peers: LocalResource<Result<Vec<(PeerDescriptor, PeerState)>, ErrorText>> = {
         let carl = carl.clone();
 
         LocalResource::new(move || {
@@ -28,7 +28,14 @@ pub fn PeersOverview() -> impl IntoView {
             let mut carl = carl.clone();
             async move {
                 let mut peers = carl.peers.list_peer_descriptors().await
-                    .expect("Failed to request the list of peers.");
+                    .map_err(|error| {
+                        error!("Failed to request the list of peers: {error}");
+
+                        ErrorText {
+                            headline: String::from("Unable to load peer descriptors"),
+                            description: String::from("The peer descriptors could not be loaded. Please check your connection and try again."),
+                        }
+                    })?;
                 
                 peers.sort_by(|peer_a, peer_b| {
                     peer_a.name.value().to_lowercase()
@@ -49,7 +56,7 @@ pub fn PeersOverview() -> impl IntoView {
                     peers_with_state.push((peer, peer_state));
                 }
 
-                peers_with_state
+                Ok(peers_with_state)
             }
         })
     };
@@ -104,39 +111,68 @@ pub fn PeersOverview() -> impl IntoView {
                 like an ECU, a restbus simulation or a test harness."
         />
         <OverviewTable headings=table_headings>
-                { move || Suspend::new(async move {
-                    let peers = registered_peers.await;
-                    let configured_clusters = configured_clusters.await;
+            { move || Suspend::new(async move {
+                let peers = registered_peers.await;
+                let configured_clusters = configured_clusters.await;
 
-                    if peers.is_empty() {
+                match peers {
+                    Ok(peers) => {
                         view! {
-                            <tr>
-                                <td colspan="999" class="has-text-centered">"No peers have been created yet"</td>
-                            </tr>
-                        }.into_any()
-                    } else {
-                        view! {
-                            <For
-                                each = move || peers.clone()
-                                key = |(peer, _)| peer.id
-                                children = { move |(peer_descriptor, peer_state)| {
-                                    let on_delete = move || {
-                                        refetch_registered_peers.notify();
-                                    };
-                                    view! {
-                                        <Row
-                                            peer_descriptor=RwSignal::new(peer_descriptor)
-                                            peer_state=RwSignal::new(peer_state)
-                                            cluster_descriptors=RwSignal::new(configured_clusters.clone())
-                                            on_delete
-                                        />
-                                    }
-                                }}
+                            <PeerOverviewTable
+                                peers
+                                refetch_registered_peers
+                                configured_clusters
                             />
                         }.into_any()
                     }
-                })}
+                    Err(error) => {
+                        view! {
+                            <ErrorMessageTableRow
+                                text=error
+                            />
+                        }.into_any()
+                    }
+                }
+            })}
             </OverviewTable>
         </BasePageContainer>
+    }
+}
+
+#[component]
+fn PeerOverviewTable(
+    peers: Vec<(PeerDescriptor, PeerState)>,
+    refetch_registered_peers: RwSignal<()>,
+    configured_clusters: Vec<ClusterDescriptor>,
+) -> impl IntoView {
+
+    view! {
+        if peers.is_empty() {
+            view! {
+                <tr>
+                    <td colspan="999" class="has-text-centered">"No peers have been created yet"</td>
+                </tr>
+            }.into_any()
+        } else {
+            view! {
+                <For
+                    each = move || peers.clone()
+                    key = |(peer, _)| peer.id
+                    children = { move |(peer_descriptor, peer_state)| {
+                        let on_delete = move || {
+                            refetch_registered_peers.notify();
+                        };
+                        view! {
+                            <Row
+                                peer_descriptor=RwSignal::new(peer_descriptor)
+                                peer_state=RwSignal::new(peer_state)
+                                cluster_descriptors=RwSignal::new(configured_clusters.clone())
+                                on_delete
+                            />
+                        }
+                    }}
+                />
+            }.into_any()
+        }
     }
 }
