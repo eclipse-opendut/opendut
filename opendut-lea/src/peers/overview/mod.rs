@@ -41,7 +41,7 @@ pub fn PeersOverview() -> impl IntoView {
         })
     };
 
-    let registered_peers: LocalResource<Result<Vec<(PeerDescriptor, Option<PeerState>)>, ErrorText>> = {
+    let peers: LocalResource<Result<Vec<PeerDescriptor>, ErrorText>> = {
         let carl = carl.clone();
 
         LocalResource::new(move || {
@@ -65,24 +65,7 @@ pub fn PeersOverview() -> impl IntoView {
                         .then(peer_a.id.to_string().cmp(&peer_b.id.to_string()))
                 });
 
-                let mut peer_states = carl.peers.list_peer_states().await
-                    .map_err(|error| {
-                        error!("Failed to request the list of peer states: {error}");
-                    }).ok();
-
-                let mut peers_with_state: Vec<(PeerDescriptor, Option<PeerState>)> = vec![];
-                for peer in peers {
-                    let peer_state = peer_states.as_mut().map(|peer_states| {
-                        peer_states.remove(&peer.id)
-                            .unwrap_or_else(|| {
-                                trace!("Did not receive PeerState for peer <{peer_id}>. Treating it as down.", peer_id=peer.id);
-                                PeerState::default()
-                            })
-                    });
-                    peers_with_state.push((peer, peer_state));
-                }
-
-                Ok(peers_with_state)
+                Ok(peers)
             }
         })
     };
@@ -147,14 +130,7 @@ pub fn PeersOverview() -> impl IntoView {
         />
         <Transition fallback=|| ()>
                 { move || {
-                    if let Some(Ok(peers)) = registered_peers.get()
-                        && peers.iter().any(|(_, state)| state.is_none())
-                    {
-                        let error = ErrorText {
-                            headline: String::from("Unable to load peer states"),
-                            description: String::from("The peer states could not be loaded. Please check your connection and try again."),
-                        };
-
+                    if let Some(Err(error)) = peer_states.get() {
                         view! {
                             <ErrorMessage
                                 text=error
@@ -176,7 +152,7 @@ pub fn PeersOverview() -> impl IntoView {
             </Transition>
         <OverviewTable headings=table_headings>
             { move || Suspend::new(async move {
-                let peers = registered_peers.await;
+                let peers = peers.await;
                 let configured_clusters = configured_clusters.await;
 
                 match peers {
@@ -184,6 +160,7 @@ pub fn PeersOverview() -> impl IntoView {
                         view! {
                             <PeerOverviewTable
                                 peers
+                                peer_states
                                 refetch_registered_peers
                                 configured_clusters
                             />
@@ -205,7 +182,8 @@ pub fn PeersOverview() -> impl IntoView {
 
 #[component]
 fn PeerOverviewTable(
-    peers: Vec<(PeerDescriptor, Option<PeerState>)>,
+    peers: Vec<PeerDescriptor>,
+    peer_states: LocalResource<Result<HashMap<PeerId, PeerState>, ErrorText>>,
     refetch_registered_peers: RwSignal<()>,
     configured_clusters: Result<Vec<ClusterDescriptor>, ErrorText>,
 ) -> impl IntoView {
@@ -220,15 +198,25 @@ fn PeerOverviewTable(
         view! {
             <For
                 each = move || peers.clone()
-                key = |(peer, _)| peer.id
-                children = { move |(peer_descriptor, peer_state)| {
+                key = |peer| peer.id
+                children = { move |peer_descriptor: PeerDescriptor| {
+                    let peer_id = peer_descriptor.id;
+                    let peer_state = Signal::derive(move || {
+                        peer_states.with(|states| match states {
+                            Some(Ok(states)) => Some(states.get(&peer_id).cloned().unwrap_or_else(|| {
+                                trace!("Did not receive PeerState for peer <{peer_id}>. Treating it as down.");
+                                PeerState::default()
+                            })),
+                            Some(Err(_)) | None => None,
+                        })
+                    });
                     let on_delete = move || {
                         refetch_registered_peers.notify();
                     };
                     view! {
                         <Row
                             peer_descriptor=RwSignal::new(peer_descriptor)
-                            peer_state=RwSignal::new(peer_state)
+                            peer_state
                             cluster_descriptors=RwSignal::new(configured_clusters.clone())
                             on_delete
                         />
