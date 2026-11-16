@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 use leptos::prelude::*;
+use tracing::error;
 use leptos_router::hooks::{use_navigate, use_params_map};
 use opendut_carl_api::carl::ClientError;
-use opendut_carl_api::carl::viper::GetViperTestSuiteParametersError;
-use opendut_lea_components::{BasePageContainer, Breadcrumb, LoadingSpinner, UserInputError, UserInputValue};
+use opendut_carl_api::carl::viper::{GetViperTestRunDescriptorError, GetViperTestSuiteParametersError};
+use opendut_lea_components::{BasePageContainer, Breadcrumb, ErrorMessage, ErrorText, LoadingSpinner, UserInputError, UserInputValue};
 use opendut_lea_components::tabs::{Tab, Tabs};
 use opendut_model::viper::{ViperParameterName, ViperTestId, ViperTestRunDescriptor};
 use crate::app::use_app_globals;
@@ -60,26 +61,41 @@ pub fn ViperTestConfigurator() -> impl IntoView {
         LocalResource::new(move || {
             let mut carl = carl.clone();
             async move {
-                if let Ok(descriptor) = carl.viper.get_viper_test_run_descriptor(viper_test_id).await {
-                    user_test_run_descriptor.update(|user_configuration| {
-                        let ViperTestRunDescriptor { id: _, name, source: viper_source, peer, parameters } = descriptor;
+                let descriptor = match carl.viper.get_viper_test_run_descriptor(viper_test_id).await {
+                    Ok(descriptor) => descriptor,
+                    Err(ClientError::UsageError(GetViperTestRunDescriptorError::TestNotFound { .. })) => {
+                        return Ok(());
+                    }
+                    Err(error) => {
+                        error!("Failed to request the VIPER test descriptor <{viper_test_id}>: {error}");
 
-                        user_configuration.name = UserInputValue::Right(name.value().to_owned());
-                        user_configuration.viper_source = SourceSelection::Right(viper_source);
-                        user_configuration.peer = PeerSelection::Right(peer);
+                        return Err(ErrorText {
+                            headline: String::from("Unable to load VIPER test descriptor"),
+                            description: String::from("The VIPER test descriptor could not be loaded. Please check your connection and try again."),
+                        });
+                    }
+                };
 
-                        let mut configured_parameters: HashMap<ViperParameterName, ViperBindingValueInput> = HashMap::new();
+                user_test_run_descriptor.update(|user_configuration| {
+                    let ViperTestRunDescriptor { id: _, name, source: viper_source, peer, parameters } = descriptor;
 
-                        for (key, value) in parameters {
-                            configured_parameters.insert(
-                                key,
-                                ViperBindingValueInput::Right(value)
-                            );
-                        }
+                    user_configuration.name = UserInputValue::Right(name.value().to_owned());
+                    user_configuration.viper_source = SourceSelection::Right(viper_source);
+                    user_configuration.peer = PeerSelection::Right(peer);
 
-                        user_configuration.parameters = configured_parameters;
-                    });
-                }
+                    let mut configured_parameters: HashMap<ViperParameterName, ViperBindingValueInput> = HashMap::new();
+
+                    for (key, value) in parameters {
+                        configured_parameters.insert(
+                            key,
+                            ViperBindingValueInput::Right(value)
+                        );
+                    }
+
+                    user_configuration.parameters = configured_parameters;
+                });
+
+                Ok(())
             }
         })
     };
@@ -202,22 +218,26 @@ pub fn ViperTestConfigurator() -> impl IntoView {
             <Suspense
                 fallback=move || view! { <LoadingSpinner /> }
             >
-                {
-                    move || Suspend::new(async move {
-                        viper_test_run_descriptor_resource.await;
-                        let parameter_result = parameters.await;
-                        view! {
-                            <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
-                                { move || match active_tab.get() {
-                                    TabIdentifier::General => view! { <GeneralTab user_test_run_descriptor /> }.into_any(),
-                                    TabIdentifier::ViperSource => view! { <SourceTab user_test_run_descriptor /> }.into_any(),
-                                    TabIdentifier::Parameters => view! { <ParametersTab user_test_run_descriptor parameter_result=parameter_result.clone() /> }.into_any(),
-                                    TabIdentifier::Peer => view! { <PeerTab user_test_run_descriptor /> }.into_any()
-                                }}
-                            </Tabs>
+                { move || Suspend::new(async move {
+                    match viper_test_run_descriptor_resource.await {
+                        Ok(()) => {
+                            let parameter_result = parameters.await;
+                            view! {
+                                <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
+                                    { move || match active_tab.get() {
+                                        TabIdentifier::General => view! { <GeneralTab user_test_run_descriptor /> }.into_any(),
+                                        TabIdentifier::ViperSource => view! { <SourceTab user_test_run_descriptor /> }.into_any(),
+                                        TabIdentifier::Parameters => view! { <ParametersTab user_test_run_descriptor parameter_result=parameter_result.clone() /> }.into_any(),
+                                        TabIdentifier::Peer => view! { <PeerTab user_test_run_descriptor /> }.into_any()
+                                    }}
+                                </Tabs>
+                            }.into_any()
                         }
-                    })
-                }
+                        Err(error) => view! {
+                            <ErrorMessage text=error />
+                        }.into_any(),
+                    }
+                })}
             </Suspense>
         </BasePageContainer>
     }
