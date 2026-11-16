@@ -104,15 +104,6 @@ pub fn ClustersOverview() -> impl IntoView {
             <InfoMessage
                 text="Clusters establish the network between Peers, allowing your connected ECUs to communicate like in one testbench."
             />
-            {move || match cluster_deployments.get() {
-                Some(Err(error)) => view! {
-                    <ErrorMessage
-                        text=error
-                        error_type=ErrorMessageType::Warning
-                    />
-                }.into_any(),
-                Some(Ok(_)) | None => ().into_any(),
-            }}
             <Transition fallback=|| ()>
                 {move || match cluster_deployments.get() {
                     Some(Err(error)) => view! {
