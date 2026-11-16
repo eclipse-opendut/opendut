@@ -54,8 +54,17 @@ in
         # range because U-Boot places the initrd/FDT right below 512 MiB, causing the
         # kernel to fall back to 5 MiB CMA and vc4 fbdev/HDMI initialization to fail
         # with -ENOMEM. 384 MiB fits cleanly below the U-Boot initrd region.
+        # Additionally, the vendor bcm2711 DTB wires HDMI audio DMA to brcm,bcm2711-dma
+        # (fe007b00.dma), which has no driver in mainline pkgs.linuxPackages, causing
+        # vc4_hdmi to defer probing forever (-517). Setting noaudio=true removes the
+        # HDMI dmas property so vc4-drm binds and brings up HDMI video output cleanly.
         configtxt.deviceTreeOverlays.all = [
-          { vc4-kms-v3d.cma-384 = true; }
+          {
+            vc4-kms-v3d = {
+              cma-384 = true;
+              noaudio = true;
+            };
+          }
         ];
       };
     };
