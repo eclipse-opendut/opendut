@@ -1,6 +1,7 @@
 use leptos::prelude::*;
 use leptos_router::hooks::use_params_map;
 use tracing::error;
+use opendut_lea_components::ErrorText;
 use opendut_lea_components::tabs::{Tab, Tabs};
 use crate::components::UserInputValue;
 use opendut_model::cluster::ClusterId;
@@ -84,7 +85,7 @@ pub fn ClusterConfigurator() -> impl IntoView {
 #[component]
 fn LoadedClusterConfigurator(
     user_cluster_descriptor: RwSignal<UserClusterDescriptor>,
-    peers: ReadSignal<Vec<PeerDescriptor>>,
+    peers: ReadSignal<Result<Vec<PeerDescriptor>, ErrorText>>,
 ) -> impl IntoView {
     let globals = use_app_globals();
     let cluster_state = RwSignal::new(ClusterState::default());
@@ -208,14 +209,21 @@ fn LoadedClusterConfigurator(
 }
 
 
-pub(super) fn get_all_peers() -> LocalResource<Vec<PeerDescriptor>> {
+pub(super) fn get_all_peers() -> LocalResource<Result<Vec<PeerDescriptor>, ErrorText>> {
     let globals = use_app_globals();
 
     LocalResource::new(move || {
         let mut carl = globals.client.clone();
         async move {
             carl.peers.list_peer_descriptors().await
-                .expect("Failed to request the list of all peers.")
+                .map_err(|error| {
+                    error!("Failed to request the list of clusters: {error}");
+
+                    ErrorText {
+                        headline: String::from("Unable to load peer descriptors"),
+                        description: String::from("The peer descriptors could not be loaded. Please check your connection and try again."),
+                    }
+                })
         }
     })
 }
