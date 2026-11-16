@@ -38,7 +38,6 @@ where
     let used_clusters_length = RwSignal::new(0);
 
     let cluster_column = move || {
-
         match cluster_descriptors.get() {
             Ok(clusters) => {
                 let devices_in_peer = peer_descriptor.get()

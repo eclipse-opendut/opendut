@@ -2,8 +2,8 @@ mod row;
 
 use leptos::prelude::*;
 use tracing::error;
-use opendut_lea_components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, ErrorMessageTableRow, ErrorText, FontAwesomeIcon, IconButton, InfoMessage, OverviewTable, TableHeading};
-use opendut_model::viper::ViperTestRunDescriptor;
+use opendut_lea_components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, ErrorMessage, ErrorMessageType, ErrorMessageTableRow, ErrorText, FontAwesomeIcon, IconButton, InfoMessage, OverviewTable, TableHeading};
+use opendut_model::viper::{ViperSourceDescriptor, ViperTestRunDescriptor};
 use crate::app::use_app_globals;
 use crate::viper_tests::components::CreateViperTestButton;
 use crate::viper_tests::overview::row::Row;
@@ -39,6 +39,27 @@ pub fn ViperTestsOverview() -> impl IntoView {
                 });
 
                 Ok(viper_tests)
+            }
+        })
+    };
+
+    let viper_sources: LocalResource<Result<Vec<ViperSourceDescriptor>, ErrorText>> = {
+        let carl = globals.client.clone();
+
+        LocalResource::new(move || {
+            refetch_viper_tests.track();
+
+            let mut carl = carl.clone();
+            async move {
+                carl.viper.list_viper_source_descriptors().await
+                    .map_err(|error| {
+                        error!("Failed to request the list of VIPER sources: {error}");
+
+                        ErrorText {
+                            headline: String::from("Unable to load VIPER sources"),
+                            description: String::from("The VIPER sources could not be loaded. Please check your connection and try again."),
+                        }
+                    })
             }
         })
     };
@@ -79,6 +100,17 @@ pub fn ViperTestsOverview() -> impl IntoView {
         <InfoMessage
             text="A VIPER Test contains the concrete configuration for how and where your test code should be executed."
         />
+            <Transition fallback=|| ()>
+                {move || match viper_sources.get() {
+                    Some(Err(error)) => view! {
+                        <ErrorMessage
+                            text=error
+                            error_type=ErrorMessageType::Warning
+                        />
+                    }.into_any(),
+                    Some(Ok(_)) | None => ().into_any(),
+                }}
+            </Transition>
             <OverviewTable headings=table_headings>
                 { move || Suspend::new(async move {
                     let viper_tests = viper_tests.await;
@@ -88,6 +120,7 @@ pub fn ViperTestsOverview() -> impl IntoView {
                             view! {
                                 <ViperTestsOverviewTable
                                     viper_tests
+                                    viper_sources
                                     refetch_viper_tests
                                 />
                             }.into_any()
@@ -107,6 +140,7 @@ pub fn ViperTestsOverview() -> impl IntoView {
 #[component]
 fn ViperTestsOverviewTable(
     viper_tests: Vec<ViperTestRunDescriptor>,
+    viper_sources: LocalResource<Result<Vec<ViperSourceDescriptor>, ErrorText>>,
     refetch_viper_tests: RwSignal<()>,
 ) -> impl IntoView {
 
@@ -129,6 +163,7 @@ fn ViperTestsOverviewTable(
                     view! {
                         <Row
                             viper_test_run_descriptor=RwSignal::new(viper_test_run_descriptor)
+                            viper_sources
                             refetch_viper_tests
                             on_delete
                         />
