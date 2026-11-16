@@ -1,4 +1,5 @@
 use leptos::prelude::*;
+use opendut_lea_components::{ErrorMessage, ErrorText};
 use opendut_lea_components::InfoMessage;
 use opendut_model::peer::PeerDescriptor;
 
@@ -8,7 +9,7 @@ use crate::clusters::configurator::types::UserClusterDescriptor;
 #[component]
 pub fn LeaderTab(
     user_cluster_descriptor: RwSignal<UserClusterDescriptor>,
-    peers: ReadSignal<Vec<PeerDescriptor>>,
+    peers: ReadSignal<Result<Vec<PeerDescriptor>, ErrorText>>,
     is_disabled: Signal<bool>,
 ) -> impl IntoView {
 
@@ -19,7 +20,21 @@ pub fn LeaderTab(
                     It performs healthchecks and for clusters with three or more peers, the communication is routed through the Leader. \
                     As such, you should ideally pick a peer that is physically located in the middle, relative to the other peers."
             />
-            <LeaderSelector user_cluster_descriptor peers is_disabled />
+            { move || match peers.get() {
+                Ok(peers) => {
+                    let peers = RwSignal::new(peers).read_only();
+                    view! {
+                        <LeaderSelector user_cluster_descriptor peers is_disabled />
+                    }.into_any()
+                }
+                Err(error)=> {
+                    view! {
+                        <ErrorMessage
+                            text=error
+                        />
+                    }.into_any()
+                }
+            }}
         </div>
     }
 }
