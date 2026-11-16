@@ -87,14 +87,23 @@ pub fn PeersOverview() -> impl IntoView {
         })
     };
 
-    let configured_clusters: LocalResource<Vec<ClusterDescriptor>> = {
+    let configured_clusters: LocalResource<Result<Vec<ClusterDescriptor>, ErrorText>> = {
         let carl = carl.clone();
 
         LocalResource::new(move || {
             let mut carl = carl.clone();
             async move {
-                carl.cluster.list_cluster_descriptors().await
-                    .expect("Failed to request the list of peers.")
+                let clusters = carl.cluster.list_cluster_descriptors().await
+                    .map_err(|error| {
+                        error!("Failed to request the list of clusters: {error}");
+
+                        ErrorText {
+                            headline: String::from("Unable to load cluster descriptors"),
+                            description: String::from("The cluster descriptors could not be loaded. Please check your connection and try again."),
+                        }
+                    })?;
+
+                Ok(clusters)
             }
         })
     };
@@ -152,9 +161,17 @@ pub fn PeersOverview() -> impl IntoView {
                                 error_type=ErrorMessageType::Warning
                             />
                         }.into_any()
-                    } else {
-                        ().into_any()
-                    }
+                    } else { ().into_any() }
+                }}
+                { move || {
+                        if let Some(Err(error)) = configured_clusters.get() {
+                        view! {
+                            <ErrorMessage
+                                text=error
+                                error_type=ErrorMessageType::Warning
+                            />
+                        }.into_any()
+                    } else { ().into_any() }
                 }}
             </Transition>
         <OverviewTable headings=table_headings>
@@ -190,7 +207,7 @@ pub fn PeersOverview() -> impl IntoView {
 fn PeerOverviewTable(
     peers: Vec<(PeerDescriptor, Option<PeerState>)>,
     refetch_registered_peers: RwSignal<()>,
-    configured_clusters: Vec<ClusterDescriptor>,
+    configured_clusters: Result<Vec<ClusterDescriptor>, ErrorText>,
 ) -> impl IntoView {
 
     if peers.is_empty() {
