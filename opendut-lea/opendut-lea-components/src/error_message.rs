@@ -60,3 +60,17 @@ pub fn ErrorMessage(
         </article>
     }
 }
+
+#[component]
+pub fn ErrorMessageTableRow(text: ErrorText) -> impl IntoView {
+    
+    view! {
+        <tr>
+            <td colspan="999">
+                <ErrorMessage
+                    text
+                />
+            </td>
+        </tr>
+    }
+}

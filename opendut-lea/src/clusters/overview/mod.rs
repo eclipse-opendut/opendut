@@ -3,8 +3,7 @@ mod row;
 use leptos::prelude::*;
 use tracing::error;
 
-use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, ErrorMessage, ErrorMessageType, ErrorText, FontAwesomeIcon, IconButton, OverviewTable, TableHeading};
-use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, InfoMessage, OverviewTable, TableHeading};
+use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, ErrorMessage, InfoMessage, ErrorMessageTableRow, ErrorMessageType, ErrorText, FontAwesomeIcon, IconButton, OverviewTable, TableHeading};
 use opendut_model::cluster::{ClusterDeployment, ClusterDescriptor};
 
 use crate::app::use_app_globals;
@@ -143,13 +142,9 @@ pub fn ClustersOverview() -> impl IntoView {
                             }
                             Err(error)=> {
                                 view! {
-                                    <tr>
-                                        <td colspan="999">
-                                            <ErrorMessage
-                                                text=error
-                                            />
-                                        </td>
-                                    </tr>
+                                    <ErrorMessageTableRow
+                                        text=error
+                                    />
                                 }.into_any()
                             }
                         }

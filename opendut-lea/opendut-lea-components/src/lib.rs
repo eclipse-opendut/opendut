@@ -17,7 +17,7 @@ pub use buttons::confirmation_button::ConfirmationButton;
 pub use buttons::doorhanger_button::DoorhangerButton;
 pub use buttons::icon_button::IconButton;
 pub use doorhanger::{Doorhanger, DoorhangerAlignment};
-pub use error_message::{ErrorMessage, ErrorText};
+pub use error_message::{ErrorMessage, ErrorMessageTableRow, ErrorText};
 pub use icon_text::IconText;
 pub use inputs::default_value::DefaultValue;
 pub use inputs::readonly_input::ReadOnlyInput;
