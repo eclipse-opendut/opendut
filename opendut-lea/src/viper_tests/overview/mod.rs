@@ -3,6 +3,7 @@ mod row;
 use leptos::prelude::*;
 use tracing::error;
 use opendut_lea_components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, ErrorMessage, ErrorMessageType, ErrorMessageTableRow, ErrorText, FontAwesomeIcon, IconButton, InfoMessage, OverviewTable, TableHeading};
+use opendut_model::peer::PeerDescriptor;
 use opendut_model::viper::{ViperSourceDescriptor, ViperTestRunDescriptor};
 use crate::app::use_app_globals;
 use crate::viper_tests::components::CreateViperTestButton;
@@ -64,6 +65,27 @@ pub fn ViperTestsOverview() -> impl IntoView {
         })
     };
 
+    let peers: LocalResource<Result<Vec<PeerDescriptor>, ErrorText>> = {
+        let carl = globals.client.clone();
+
+        LocalResource::new(move || {
+            refetch_viper_tests.track();
+
+            let mut carl = carl.clone();
+            async move {
+                carl.peers.list_peer_descriptors().await
+                    .map_err(|error| {
+                        error!("Failed to request the list of peers: {error}");
+
+                        ErrorText {
+                            headline: String::from("Unable to load peer descriptors"),
+                            description: String::from("The peer descriptors could not be loaded. Please check your connection and try again."),
+                        }
+                    })
+            }
+        })
+    };
+
     let breadcrumbs = vec![
         Breadcrumb::new("Dashboard", "/"),
         Breadcrumb::new("VIPER Tests", "/viper_tests")
@@ -101,7 +123,16 @@ pub fn ViperTestsOverview() -> impl IntoView {
             text="A VIPER Test contains the concrete configuration for how and where your test code should be executed."
         />
             <Transition fallback=|| ()>
-                {move || match viper_sources.get() {
+                { move || match viper_sources.get() {
+                    Some(Err(error)) => view! {
+                        <ErrorMessage
+                            text=error
+                            error_type=ErrorMessageType::Warning
+                        />
+                    }.into_any(),
+                    Some(Ok(_)) | None => ().into_any(),
+                }}
+                { move || match peers.get() {
                     Some(Err(error)) => view! {
                         <ErrorMessage
                             text=error
@@ -121,6 +152,7 @@ pub fn ViperTestsOverview() -> impl IntoView {
                                 <ViperTestsOverviewTable
                                     viper_tests
                                     viper_sources
+                                    peers
                                     refetch_viper_tests
                                 />
                             }.into_any()
@@ -141,6 +173,7 @@ pub fn ViperTestsOverview() -> impl IntoView {
 fn ViperTestsOverviewTable(
     viper_tests: Vec<ViperTestRunDescriptor>,
     viper_sources: LocalResource<Result<Vec<ViperSourceDescriptor>, ErrorText>>,
+    peers: LocalResource<Result<Vec<PeerDescriptor>, ErrorText>>,
     refetch_viper_tests: RwSignal<()>,
 ) -> impl IntoView {
 
@@ -164,6 +197,7 @@ fn ViperTestsOverviewTable(
                         <Row
                             viper_test_run_descriptor=RwSignal::new(viper_test_run_descriptor)
                             viper_sources
+                            peers
                             refetch_viper_tests
                             on_delete
                         />
