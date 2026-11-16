@@ -13,7 +13,7 @@ use crate::peers::components::PeerHealth;
 #[component]
 pub(crate) fn Row<OnDeleteFn>(
     peer_descriptor: RwSignal<PeerDescriptor>,
-    peer_state: RwSignal<PeerState>,
+    peer_state: RwSignal<Option<PeerState>>,
     cluster_descriptors: RwSignal<Vec<ClusterDescriptor>>,
     on_delete: OnDeleteFn,
 ) -> impl IntoView
