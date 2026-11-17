@@ -46,7 +46,6 @@ pub fn ViperSourceConfigurator() -> impl IntoView {
             name: UserInputValue::Left(UserInputError::from("Enter a valid VIPER source name.")),
             url: UserInputValue::Left(UserInputError::from("Enter a valid VIPER source url.")),
             kind: UserInputValue::Left(UserInputError::from("Select source kind")),
-            is_new: true,
         }
     );
 
