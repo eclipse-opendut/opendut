@@ -46,13 +46,6 @@ fn SaveViperTestButton(
     let globals = use_app_globals();
     let toaster = use_toaster();
 
-    let setter = create_write_slice(
-        user_test_run_descriptor,
-        |descriptor, input| {
-            descriptor.is_new = input;
-        },
-    );
-
     let all_tabs_valid = Memo::new(move |_| {
         user_test_run_descriptor.with(|descriptor| descriptor.is_valid())
     });
@@ -89,7 +82,6 @@ fn SaveViperTestButton(
                                     .simple("Successfully stored viper test configuration.")
                                     .success(),
                             );
-                            setter.set(false);
                         }
                         Err(cause) => {
                             error!("Failed to create viper test <{viper_test_id}>, due to error: {cause:?}");

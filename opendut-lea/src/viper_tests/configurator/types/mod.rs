@@ -38,7 +38,6 @@ pub struct UserViperTestRunDescriptor {
     pub viper_source: SourceSelection,
     pub peer: PeerSelection,
     pub parameters: HashMap<ViperParameterName, ViperBindingValueInput>,
-    pub is_new: bool,
 }
 
 impl TryFrom<UserViperTestRunDescriptor> for ViperTestRunDescriptor {

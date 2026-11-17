@@ -52,7 +52,6 @@ pub fn ViperTestConfigurator() -> impl IntoView {
             viper_source: SourceSelection::Left(String::from("Select a VIPER test source.")),
             peer: PeerSelection::Left(String::from("Select a peer")),
             parameters: HashMap::new(),
-            is_new: true,
         }
     );
 
