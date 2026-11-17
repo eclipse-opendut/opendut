@@ -9,7 +9,10 @@ use leptos::either::Either;
 use leptos::prelude::*;
 use opendut_model::peer::PeerId;
 use leptos_router::hooks::{use_navigate, use_params_map};
-use opendut_lea_components::LoadingSpinner;
+use tracing::error;
+use opendut_carl_api::carl::ClientError;
+use opendut_carl_api::carl::peer::GetPeerDescriptorError;
+use opendut_lea_components::{ErrorMessage, ErrorText, LoadingSpinner};
 use opendut_lea_components::tabs::{Tab, Tabs};
 use crate::peers::configurator::types::devices::UserDeviceConfiguration;
 use crate::peers::configurator::types::network::{UserNetworkInterface, UserPeerNetwork};
@@ -25,7 +28,6 @@ pub fn PeerConfigurator() -> impl IntoView {
 
     let globals = use_app_globals();
     let params = use_params_map();
-
     let active_tab = use_active_tab::<TabIdentifier>();
 
     let peer_id = {
@@ -65,47 +67,63 @@ pub fn PeerConfigurator() -> impl IntoView {
     let peer_descriptor_resource = LocalResource::new(move || {
         let mut carl = globals.client.clone();
         async move {
-            if let Ok(configuration) = carl.peers.get_peer_descriptor(peer_id).await {
-                let clusters = carl.cluster.list_cluster_descriptors().await
-                    .unwrap_or(vec![]);
+            let descriptor = match carl.peers.get_peer_descriptor(peer_id).await {
+                Ok(descriptor) => descriptor,
+                Err(ClientError::UsageError(GetPeerDescriptorError::PeerNotFound { .. })) => {
+                    return Ok(());
+                }
+                Err(error) => {
+                    error!("Failed to request the peer descriptor <{peer_id}>: {error}");
 
-                user_peer_descriptor.update(|user_configuration| {
-                    user_configuration.name = UserInputValue::Right(configuration.name.value().to_owned());
-                    user_configuration.is_new = false;
-                    user_configuration.location = UserInputValue::Right(configuration.location.unwrap_or_default().value());
-                    user_configuration.devices = configuration.topology.devices.into_iter().map(|device| {
-                        let mut configured_clusters = vec![];
+                    return Err(ErrorText {
+                        headline: String::from("Unable to load peer descriptor"),
+                        description: String::from("The peer descriptor could not be loaded. Please check your connection and try again."),
+                    });
+                }
+            };
 
-                        for cluster in &clusters {
-                            for device_id in &cluster.devices {
-                                if device.id == *device_id {
-                                    configured_clusters.push(cluster.clone());
-                                }
+            let clusters = carl.cluster.list_cluster_descriptors().await
+                .unwrap_or(vec![]);
+
+            user_peer_descriptor.update(|user_configuration| {
+                user_configuration.name = UserInputValue::Right(descriptor.name.value().to_owned());
+                user_configuration.is_new = false;
+                user_configuration.location = UserInputValue::Right(descriptor.location.unwrap_or_default().value());
+                user_configuration.devices = descriptor.topology.devices.into_iter().map(|device| {
+                    let mut configured_clusters = vec![];
+
+                    for cluster in &clusters {
+                        for device_id in &cluster.devices {
+                            if device.id == *device_id {
+                                configured_clusters.push(cluster.clone());
                             }
                         }
-                        RwSignal::new(UserDeviceConfiguration {
-                            id: device.id,
-                            name: UserInputValue::Right(device.name.to_string()),
-                            interface: Some(device.interface),
-                            description: UserInputValue::Right(device.description.unwrap_or_default().to_string()),
-                            is_collapsed: true,
-                            contained_in_clusters: configured_clusters,
-                            tags: device.tags,
-                        })
-                    }).collect::<Vec<_>>();
-                    if let Some(bridge_name) = configuration.network.bridge_name {
-                        user_configuration.network.bridge_name = UserInputValue::Right(bridge_name.name());
                     }
-                    user_configuration.network.network_interfaces = configuration.network.interfaces.into_iter()
-                        .map(|interface| {
-                            RwSignal::new(UserNetworkInterface::from(interface))
-                        })
-                        .collect();
-                });
-                if let Ok(state) = carl.peers.get_peer_state(peer_id).await {
-                    peer_state.set(state);
+                    RwSignal::new(UserDeviceConfiguration {
+                        id: device.id,
+                        name: UserInputValue::Right(device.name.to_string()),
+                        interface: Some(device.interface),
+                        description: UserInputValue::Right(device.description.unwrap_or_default().to_string()),
+                        is_collapsed: true,
+                        contained_in_clusters: configured_clusters,
+                        tags: device.tags,
+                    })
+                }).collect::<Vec<_>>();
+                if let Some(bridge_name) = descriptor.network.bridge_name {
+                    user_configuration.network.bridge_name = UserInputValue::Right(bridge_name.name());
                 }
+                user_configuration.network.network_interfaces = descriptor.network.interfaces.into_iter()
+                    .map(|interface| {
+                        RwSignal::new(UserNetworkInterface::from(interface))
+                    })
+                    .collect();
+            });
+
+            if let Ok(state) = carl.peers.get_peer_state(peer_id).await {
+                peer_state.set(state);
             }
+
+            Ok(())
         }
     });
 
@@ -208,23 +226,28 @@ pub fn PeerConfigurator() -> impl IntoView {
                 fallback=LoadingSpinner // TODO: Display errors
             >
             { move || Suspend::new(async move {
-                peer_descriptor_resource.await;
-
-                view! {
-                    <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
-                        <div class=("is-hidden", move || TabIdentifier::General != active_tab.get())>
-                            <GeneralTab user_peer_descriptor />
-                        </div>
-                        <div class=("is-hidden", move || TabIdentifier::Network != active_tab.get())>
-                            <NetworkTab user_peer_descriptor />
-                        </div>
-                        <div class=("is-hidden", move || TabIdentifier::Devices != active_tab.get())>
-                            <DevicesTab user_peer_descriptor />
-                        </div>
-                        <div class=("is-hidden", move || TabIdentifier::Setup != active_tab.get())>
-                            <SetupTab peer_configuration=user_peer_descriptor.read_only() />
-                        </div>
-                    </Tabs>
+                match peer_descriptor_resource.await {
+                    Ok(()) => {
+                        view! {
+                            <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
+                                <div class=("is-hidden", move || TabIdentifier::General != active_tab.get())>
+                                    <GeneralTab user_peer_descriptor />
+                                </div>
+                                <div class=("is-hidden", move || TabIdentifier::Network != active_tab.get())>
+                                    <NetworkTab user_peer_descriptor />
+                                </div>
+                                <div class=("is-hidden", move || TabIdentifier::Devices != active_tab.get())>
+                                    <DevicesTab user_peer_descriptor />
+                                </div>
+                                <div class=("is-hidden", move || TabIdentifier::Setup != active_tab.get())>
+                                    <SetupTab peer_configuration=user_peer_descriptor.read_only() />
+                                </div>
+                            </Tabs>
+                        }.into_any()
+                    }
+                    Err(error) => view! {
+                        <ErrorMessage text=error />
+                    }.into_any(),
                 }
             })}
             </Suspense>
