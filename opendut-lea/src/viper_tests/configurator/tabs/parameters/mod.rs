@@ -3,9 +3,8 @@ mod number;
 mod text;
 
 use leptos::prelude::*;
-use opendut_carl_api::carl::viper::GetViperTestSuiteParametersError;
-use opendut_lea_components::InfoMessage;
-use opendut_model::viper::{ViperParameterDescriptor, ViperParameterDescriptors, ViperSourceId};
+use opendut_lea_components::{ErrorMessage, InfoMessage};
+use opendut_model::viper::{ViperParameterDescriptor, ViperParameterDescriptors};
 use crate::viper_tests::configurator::SourceFetchError;
 use crate::viper_tests::configurator::tabs::parameters::boolean::BooleanParameterInput;
 use crate::viper_tests::configurator::tabs::parameters::number::NumberParameterInput;
@@ -102,55 +101,12 @@ pub fn ParametersTab(
             }.into_any()
         }
         Err(fetch_error) => {
-            match fetch_error {
-                SourceFetchError::NoSourceSelected => {
-                    view! { <p class="help has-text-danger"> "No VIPER source selected." </p> }.into_any()
-                }
-                SourceFetchError::GetParameterError(error) => {
-                    let create_source_href = move |id: &ViperSourceId| {
-                        format!("/viper_sources/{id}/configure/general")
-                    };
-                    match error {
-                        GetViperTestSuiteParametersError::SourceNotFound { .. } => {
-                            view! {
-                                <p class="help has-text-danger"> "Selected VIPER source not found." </p>
-                            }.into_any()
-                        },
-                        GetViperTestSuiteParametersError::Compilation { source_id, source_name, kind: _kind } => {
-                            // TODO: Use kind for better error handling.
-                            let source_name = source_name.to_string();
-                            let source_href = create_source_href(&source_id);
-                            view! {
-                                <p class="help has-text-danger">
-                                    "Compilation failed for the selected VIPER Source. Please check the Source "
-                                    <a href=source_href> {source_name} </a>.
-                                </p>
-                            }.into_any()
-                        },
-                        GetViperTestSuiteParametersError::ViperRuntime { source_id, source_name } => {
-                            let source_name = source_name.to_string();
-                            let source_href = create_source_href(&source_id);
-                            view! {
-                                <p class="help has-text-danger">
-                                    "Error while initializing VIPER runtime for VIPER test source "
-                                    <a href=source_href> {source_name} </a>.
-                                </p>
-                            }.into_any()
-                        },
-                        GetViperTestSuiteParametersError::Internal { source_id, cause } => {
-                            let source_href = create_source_href(&source_id);
-                            view! {
-                                <p class="help has-text-danger">
-                                    "An internal error occurred while fetching the VIPER test suite descriptor for the "
-                                    <a href=source_href> selected source </a>:
-                                    <br />
-                                    {cause}
-                                </p>
-                            }.into_any()
-                        },
-                    }
-                }
-            }
+            let error_text = fetch_error.to_error_text();
+            view! {
+                <ErrorMessage 
+                    text=error_text
+                />
+            }.into_any()
         }
     };
 

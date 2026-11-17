@@ -67,11 +67,11 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                         return Ok(());
                     }
                     Err(error) => {
-                        error!("Failed to request the VIPER test descriptor <{viper_test_id}>: {error}");
+                        error!("Failed to request the VIPER test run descriptor <{viper_test_id}>: {error}");
 
                         return Err(ErrorText {
-                            headline: String::from("Unable to load VIPER test descriptor"),
-                            description: String::from("The VIPER test descriptor could not be loaded. Please check your connection and try again."),
+                            headline: String::from("Unable to load VIPER test run descriptor"),
+                            description: String::from("The VIPER test run descriptor could not be loaded. Please check your connection and try again."),
                         });
                     }
                 };
@@ -122,11 +122,11 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                     let result = carl.viper.get_viper_test_suite_parameters(source_id).await;
 
                     match result {
-                        Ok(test_suite_descriptor) => {
+                        Ok(test_suite_parameters) => {
                             user_test_run_descriptor.update(|user_configuration| {
                                 let mut new_parameters = HashMap::new();
 
-                                for parameter in test_suite_descriptor.parameters.iter() {
+                                for parameter in test_suite_parameters.parameters.iter() {
                                     let parameter_name = parameter.name().clone();
 
                                     let value = user_configuration
@@ -146,14 +146,14 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                                 user_configuration.parameters = new_parameters;
                             });
 
-                            Ok(test_suite_descriptor.parameters)
-                        },
+                            Ok(test_suite_parameters.parameters)
+                        }
                         Err(client_error) => {
                             match client_error {
                                 ClientError::UsageError(error) => {
                                     Err(SourceFetchError::GetParameterError(error))
                                 }
-                                _ => panic!("Failed to request the viper test suite descriptor.")
+                                _ => Err(SourceFetchError::RequestFailed)
                             }
                         }
                     }
@@ -247,4 +247,52 @@ pub fn ViperTestConfigurator() -> impl IntoView {
 enum SourceFetchError {
     NoSourceSelected,
     GetParameterError(GetViperTestSuiteParametersError),
+    RequestFailed,
+}
+
+impl SourceFetchError {
+    pub fn to_error_text(&self) -> ErrorText {
+        match self {
+            SourceFetchError::NoSourceSelected => {
+                ErrorText {
+                    headline: String::from("Unable to load VIPER parameters"),
+                    description: String::from("Please select a VIPER source first."),
+                }
+            }
+            SourceFetchError::GetParameterError(parameter_error) => {
+                match parameter_error {
+                    GetViperTestSuiteParametersError::SourceNotFound { .. } => {
+                        ErrorText {
+                            headline: String::from("Unable to load VIPER parameters"),
+                            description: String::from("Selected VIPER source not found."),
+                        }
+                    }
+                    GetViperTestSuiteParametersError::Compilation { .. } => {
+                        ErrorText {
+                            headline: String::from("Unable to compile VIPER test suite"),
+                            description: String::from("Compilation failed for the selected VIPER Source. Please check the VIPER test suite."),
+                        }
+                    }
+                    GetViperTestSuiteParametersError::ViperRuntime { .. } => {
+                        ErrorText {
+                            headline: String::from("Unable to load initialize VIPER runtime"),
+                            description: String::from("Error while initializing VIPER runtime for the selected VIPER test source."),
+                        }
+                    }
+                    GetViperTestSuiteParametersError::Internal { cause, .. } => {
+                        ErrorText {
+                            headline: String::from("Unable to load VIPER parameters"),
+                            description: format!("An internal error occurred while fetching the VIPER test suite descriptor for the selected source: {cause}"),
+                        }
+                    }
+                }
+            }
+            SourceFetchError::RequestFailed => {
+                ErrorText {
+                    headline: String::from("Unable to load VIPER parameters"),
+                    description: String::from("The VIPER parameters could not be loaded. Please check your connection and try again."),
+                }
+            }
+        }
+    }
 }
