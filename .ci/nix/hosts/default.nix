@@ -21,7 +21,10 @@ let
             raspberry-pi = {
               enable = true;
               board = vars.board;
-              can.waveshare.enable = true;
+              can.waveshare = {
+                enable = true;
+                model = vars.waveshareModel;
+              };
             };
           };
         }
@@ -34,9 +37,11 @@ in
   opendut-pi-1 = mkRaspberryPiHost {
     hostname = "opendut-pi-1";
     board = "pi-4";
+    waveshareModel = "mcp251xfd";
   };
   opendut-pi-2 = mkRaspberryPiHost {
     hostname = "opendut-pi-2";
     board = "pi-4";
+    waveshareModel = "mcp2515";
   };
 }

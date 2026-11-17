@@ -85,7 +85,10 @@ You can consume this repository's flake outputs (`nixosModules.opendut` and `ove
               raspberry-pi = {
                 enable = true;
                 board = "pi-4";
-                can.waveshare.enable = true;
+                can.waveshare = {
+                  enable = true;
+                  model = "mcp251xfd";
+                };
               };
             };
 
@@ -124,5 +127,6 @@ nix build .#packages.aarch64-linux.my-opendut-pi-sd-image
 | `opendut.can.enable` | `bool` | Loads `can`, `vcan`, and `can_gw` (`max_hops=2`) kernel modules and installs `can-utils`. |
 | `opendut.raspberry-pi.enable` | `bool` | Configures Raspberry Pi bootloader, firmware, U-Boot, and VC4 CMA settings. |
 | `opendut.raspberry-pi.board` | `"pi-4"` \| `"pi-3"` | Target Raspberry Pi board model (`pi-4` supported). |
-| `opendut.raspberry-pi.can.waveshare.enable` | `bool` | Configures device tree overlays (`spi1-3cs`, dual `mcp251xfd`) and `systemd-networkd` interfaces (`can0`, `can1` at 500K bitrate) for the Waveshare 2-CH CAN HAT. |
+| `opendut.raspberry-pi.can.waveshare.enable` | `bool` | Configures device tree overlays and `systemd-networkd` interfaces (`can0`, `can1` at 500K bitrate) for the Waveshare 2-CH CAN HAT. |
+| `opendut.raspberry-pi.can.waveshare.model` | `"mcp251xfd"` \| `"mcp2515"` | Waveshare CAN HAT model (`"mcp251xfd"` by default for the [2-CH CAN FD HAT](https://www.waveshare.com/wiki/2-CH_CAN_FD_HAT), `"mcp2515"` for the [2-CH CAN HAT](https://www.waveshare.com/wiki/2-CH_CAN_HAT)). |
 | `opendut.raspberry-pi.spi.enable` | `bool` | Enables SPI device tree overlay and udev rules for `spidev0.0`. |
