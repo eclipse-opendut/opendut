@@ -3,7 +3,7 @@ mod number;
 mod text;
 
 use leptos::prelude::*;
-use opendut_lea_components::{ErrorMessage, InfoMessage};
+use opendut_lea_components::InfoMessage;
 use opendut_model::viper::{ViperParameterDescriptor, ViperParameterDescriptors};
 use crate::viper_tests::configurator::SourceFetchError;
 use crate::viper_tests::configurator::tabs::parameters::boolean::BooleanParameterInput;
@@ -101,12 +101,7 @@ pub fn ParametersTab(
             }.into_any()
         }
         Err(fetch_error) => {
-            let error_text = fetch_error.to_error_text();
-            view! {
-                <ErrorMessage 
-                    text=error_text
-                />
-            }.into_any()
+            fetch_error.to_error_text()
         }
     };
 
