@@ -6,6 +6,8 @@ use opendut_carl_api::carl::ClientError;
 use opendut_carl_api::carl::viper::{GetViperTestRunDescriptorError, GetViperTestSuiteParametersError};
 use opendut_lea_components::{BasePageContainer, Breadcrumb, ErrorMessage, ErrorText, LoadingSpinner, UserInputError, UserInputValue};
 use opendut_lea_components::tabs::{Tab, Tabs};
+use opendut_model::cluster::ClusterDescriptor;
+use opendut_model::peer::PeerDescriptor;
 use opendut_model::viper::{ViperParameterName, ViperTestId, ViperTestRunDescriptor};
 use crate::app::use_app_globals;
 use crate::components::use_active_tab;
@@ -163,6 +165,53 @@ pub fn ViperTestConfigurator() -> impl IntoView {
         })
     };
 
+    let peers: LocalResource<Result<Vec<PeerDescriptor>, ErrorText>> = {
+        let carl = globals.client.clone();
+        LocalResource::new(move || {
+            let mut carl = carl.clone();
+
+            async move {
+                let mut peers = carl.peers.list_peer_descriptors().await
+                    .map_err(|error| {
+                        error!("Failed to request the list of peers: {error}");
+
+                        ErrorText {
+                            headline: String::from("Unable to load peer descriptors"),
+                            description: String::from("The peer descriptors could not be loaded. Please check your connection and try again."),
+                        }
+                    })?;
+
+                peers
+                    .sort_by(|peer_a, peer_b| {
+                        peer_a.name.value().to_lowercase()
+                            .cmp(&peer_b.name.value().to_lowercase())
+                    });
+
+                Ok(peers)
+            }
+        })
+    };
+
+    let clusters: LocalResource<Result<Vec<ClusterDescriptor>, ErrorText>> = {
+        let carl = globals.client.clone();
+        LocalResource::new( move || {
+            let mut carl = carl.clone();
+
+            async move {
+                let clusters = carl.cluster.list_cluster_descriptors().await
+                    .map_err(|error| {
+                        error!("Failed to request the list of clusters: {error}");
+
+                        ErrorText {
+                            headline: String::from("Unable to load cluster descriptors"),
+                            description: String::from("The cluster descriptors could not be loaded. Please check your connection and try again."),
+                        }
+                    })?;
+                Ok(clusters)
+            }
+        })
+    };
+
     let viper_test_id_string = create_read_slice(user_test_run_descriptor, |config| config.id.to_string());
 
     let breadcrumbs = Signal::derive(move || {
@@ -220,6 +269,8 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                 { move || Suspend::new(async move {
                     match viper_test_run_descriptor_resource.await {
                         Ok(()) => {
+                            let peers = RwSignal::new(peers.await).read_only();
+                            let clusters = RwSignal::new(clusters.await).read_only();
                             let parameter_result = parameters.await;
                             view! {
                                 <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
@@ -227,7 +278,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                                         TabIdentifier::General => view! { <GeneralTab user_test_run_descriptor /> }.into_any(),
                                         TabIdentifier::ViperSource => view! { <SourceTab user_test_run_descriptor /> }.into_any(),
                                         TabIdentifier::Parameters => view! { <ParametersTab user_test_run_descriptor parameter_result=parameter_result.clone() /> }.into_any(),
-                                        TabIdentifier::Peer => view! { <PeerTab user_test_run_descriptor /> }.into_any()
+                                        TabIdentifier::Peer => view! { <PeerTab user_test_run_descriptor peers clusters /> }.into_any()
                                     }}
                                 </Tabs>
                             }.into_any()
