@@ -157,7 +157,8 @@ async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::
             .add_service(grpc_facades.metadata_provider_facade.into_grpc_service())
             .add_service(grpc_facades.peer_manager_facade.into_grpc_service())
             .add_service(grpc_facades.peer_messaging_broker_facade.into_grpc_service())
-            .add_service(grpc_facades.observer_messaging_broker_facade.into_grpc_service());
+            .add_service(grpc_facades.observer_messaging_broker_facade.into_grpc_service())
+            .add_service(grpc_facades.resource_search_facade.into_grpc_service());
 
         #[cfg(feature = "viper")]
         routes_builder.add_service(grpc_facades.viper_manager_facade.into_grpc_service());

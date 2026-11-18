@@ -4,7 +4,7 @@ use config::Config;
 use opendut_auth::registration::client::RegistrationClientRef;
 use opendut_auth::registration::resources::ResourceHomeUrl;
 use opendut_util::pem::Pem;
-use crate::manager::grpc::{ClusterManagerFacade, MetadataProviderFacade, ObserverMessagingBrokerFacade, PeerManagerFacade, PeerMessagingBrokerFacade};
+use crate::manager::grpc::{ClusterManagerFacade, MetadataProviderFacade, ObserverMessagingBrokerFacade, PeerManagerFacade, PeerMessagingBrokerFacade, ResourceSearchFacade};
 #[cfg(feature = "viper")]
 use crate::manager::grpc::ViperManagerFacade;
 use crate::resource::manager::ResourceManagerRef;
@@ -20,6 +20,7 @@ pub struct GrpcFacades {
     pub peer_manager_facade: PeerManagerFacade,
     pub peer_messaging_broker_facade: PeerMessagingBrokerFacade,
     pub observer_messaging_broker_facade: ObserverMessagingBrokerFacade,
+    pub resource_search_facade: ResourceSearchFacade,
     #[cfg(feature = "viper")]
     pub viper_manager_facade: ViperManagerFacade,
 }
@@ -66,6 +67,8 @@ impl GrpcFacades {
         let observer_messaging_broker = ObserverMessagingBroker::new(resource_manager.clone(), Arc::clone(&cluster_manager));
         let observer_messaging_broker_facade = ObserverMessagingBrokerFacade::new(resource_manager.clone(), Arc::clone(&observer_messaging_broker));
 
+        let resource_search_facade = ResourceSearchFacade::new(resource_manager.clone());
+
         #[cfg(feature = "viper")]
         let viper_manager_facade = ViperManagerFacade {
             resource_manager: resource_manager.clone(),
@@ -80,6 +83,7 @@ impl GrpcFacades {
             peer_manager_facade,
             peer_messaging_broker_facade,
             observer_messaging_broker_facade,
+            resource_search_facade,
             #[cfg(feature = "viper")]
             viper_manager_facade,
         })
