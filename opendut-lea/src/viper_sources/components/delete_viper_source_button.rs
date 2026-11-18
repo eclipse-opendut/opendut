@@ -1,7 +1,9 @@
+use std::sync::Arc;
 use leptos::prelude::*;
 use tracing::{error, info};
 use opendut_lea_components::{use_toaster, ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, Toast};
-use opendut_model::viper::ViperSourceId;
+use opendut_lea_components::tooltip::{Tooltip, TooltipDirection};
+use opendut_model::viper::{ViperSourceId, ViperTestId, ViperTestName};
 use crate::app::use_app_globals;
 
 #[component]
@@ -13,17 +15,48 @@ pub fn DeleteViperSourceButton<F>(
 where F: Fn() + Clone + Send + 'static {
 
     let globals = use_app_globals();
-    let pending = RwSignal::new(false);
+    let pending = RwSignal::new(true);
+    let toaster = use_toaster();
+
+    let used_by: LocalResource<Result<Vec<(ViperTestId, ViperTestName)>, String>> = {
+        let carl = globals.client.clone();
+        let toaster = toaster.clone();
+        LocalResource::new(move || {
+            let source_id = viper_source_id.get();
+            let mut carl = carl.clone();
+            let toaster = toaster.clone();
+            pending.set(true);
+
+            async move {
+                let result = carl.viper.list_viper_test_run_descriptors().await
+                    .map(|tests| tests.into_iter()
+                        .filter(|test| test.source == source_id)
+                        .map(|test| (test.id, test.name))
+                        .collect())
+                    .map_err(|cause| {
+                        error!("Failed to load tests using VIPER source <{source_id}>, due to error: {cause}");
+                        toaster.toast(Toast::builder()
+                            .simple("Failed to check VIPER source usage.")
+                            .error());
+                        cause.to_string()
+                    });
+                pending.set(false);
+                result
+            }
+        })
+    };
 
     let button_state = Signal::derive(move || {
         if pending.get() {
             ButtonState::Loading
         } else {
-            ButtonState::Enabled
+            match used_by.get() {
+                None => ButtonState::Loading,
+                Some(Ok(tests)) if tests.is_empty() => ButtonState::Enabled,
+                Some(_) => ButtonState::Disabled,
+            }
         }
     });
-
-    let toaster = use_toaster();
 
     let on_confirm = move || {
         let on_delete = on_delete.clone();
@@ -60,14 +93,59 @@ where F: Fn() + Clone + Send + 'static {
         });
     };
 
+    let hide_tooltip = Signal::derive(move || {
+        !matches!(button_state.get(), ButtonState::Disabled)
+    });
+
+    let tooltip_content = Arc::new(move || {
+        view! {
+            <TooltipContent used_by />
+        }.into_any()
+    });
+
     view! {
-        <ConfirmationButton
-            icon=FontAwesomeIcon::TrashCan
-            color=button_color
-            size=ButtonSize::Normal
-            state=button_state
-            label="Remove Viper Source?"
-            on_confirm
-        />
+        <Tooltip
+            text=tooltip_content
+            direction=TooltipDirection::Right
+            is_hidden=hide_tooltip
+        >
+            <ConfirmationButton
+                icon=FontAwesomeIcon::TrashCan
+                color=button_color
+                size=ButtonSize::Normal
+                state=button_state
+                label="Remove Viper Source?"
+                on_confirm
+            />
+        </Tooltip>
+    }
+}
+
+#[component]
+fn TooltipContent(
+    used_by: LocalResource<Result<Vec<(ViperTestId, ViperTestName)>, String>>,
+) -> impl IntoView {
+    move || match used_by.get() {
+        Some(Ok(tests)) => view! {
+            <div class="content">
+                <p>VIPER source can not be deleted while it is used by a VIPER test.</p>
+                <p>"Usage:"</p>
+                <ul>
+                    {tests.into_iter().map(|(id, name)| view! {
+                        <li title=id.to_string()>
+                            <a href=format!("/viper_tests/{id}/configure/viper_sources")>
+                                { String::from(name) }
+                            </a>
+                        </li>
+                    }).collect_view()}
+                </ul>
+            </div>
+        }.into_any(),
+        Some(Err(error)) => view! {
+                <p>
+                    {format!("VIPER source usage could not be checked, due to: {error}.")}
+                </p>
+            }.into_any(),
+        None => ().into_any(),
     }
 }
