@@ -32,7 +32,7 @@ pub use messages::warning_message::WarningMessage;
 pub use page::BasePageContainer;
 pub use tables::multiple_selection_table::{CollapsableInfo, MultipleSelectionTable, MultipleSelectionTableCell, MultipleSelectionTableRow, };
 pub use tables::overview_table::{OverviewTable, OverviewTableCell, OverviewTableRow, TableHeading, };
-pub use tables::selection_table::{SelectionTable, SelectionTableRow};
+pub use tables::selection_table::{SelectionTable, SelectionTableCell, SelectionTableRow};
 pub use tables::TableDisplayType;
 pub use tag::Tag;
 pub use toast::{use_toaster, Toast, ToastContent, ToastKind, Toaster};

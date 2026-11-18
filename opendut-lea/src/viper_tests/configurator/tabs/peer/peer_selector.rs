@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use opendut_lea_components::{ErrorText, SelectionTable, SelectionTableRow};
+use opendut_lea_components::{ErrorText, SelectionTable, SelectionTableCell, SelectionTableRow};
 use opendut_model::cluster::ClusterDescriptor;
 use opendut_model::peer::PeerDescriptor;
 use crate::util;
@@ -35,20 +35,22 @@ pub fn PeerSelector(
 
             let clusters = match clusters.get() {
                 Ok(clusters) => {
-                    util::list_configured_clusters_for_peer(devices_in_peer, clusters)
+                    let cluster_list = util::list_configured_clusters_for_peer(devices_in_peer, clusters)
                         .iter()
                         .map(|cluster| cluster.name.value().to_owned())
                         .collect::<Vec<_>>()
-                        .join(", ")
+                        .join(", ");
+                    SelectionTableCell::Text(cluster_list)
                 }
-                Err(_) => {
-                    String::from("!")
+                Err(error) => {
+                    let tip = error.headline;
+                    SelectionTableCell::Error(tip)
                 }
             };
 
             SelectionTableRow {
                 id,
-                cells: vec![name, id.to_string(), clusters]
+                cells: vec![name.into(), id.to_string().into(), clusters]
             }
         }).collect::<Vec<_>>();
 

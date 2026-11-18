@@ -45,7 +45,7 @@ pub fn ViperTestSourceSelector(user_test_run_descriptor: RwSignal<UserViperTestR
 
                 SelectionTableRow {
                     id,
-                    cells: vec![name, url]
+                    cells: vec![name.into(), url.into()]
                 }
             }).collect::<Vec<_>>();
 

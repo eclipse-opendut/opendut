@@ -75,7 +75,7 @@ pub fn LeaderSelector(
 
                 SelectionTableRow {
                     id,
-                    cells: vec![name, id.to_string(), location]
+                    cells: vec![name.into(), id.to_string().into(), location.into()]
                 }
             })
             .collect::<Vec<_>>()
