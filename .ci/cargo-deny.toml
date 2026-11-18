@@ -18,6 +18,8 @@ ignore = [
     { id = "RUSTSEC-2026-0410", reason = "`zstd` libraries are vulnerable. Tracked by issue #609." },
 
     { id = "RUSTSEC-2026-0394", reason = "`rustpython_vm` is unsafe. Tracked by issue #610." },
+
+    { id = "RUSTSEC-2026-0543", reason = "`chrono` is unmaintained. Tracked by issue #625." },
 ]
 
 [licenses]
