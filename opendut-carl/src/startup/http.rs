@@ -43,7 +43,7 @@ pub fn create_http_service(settings: &Config) -> anyhow::Result<axum::Router<Htt
 
     let router = axum::Router::new()
         .nest_service(
-            "/documentation/",
+            "/docs/",
             ServeDir::new(&documentation_dir)
                 .fallback(ServeFile::new(documentation_dir.join("index.html")))
         )

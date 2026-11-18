@@ -16,7 +16,7 @@ pub mod path {
     pub const dashboard: &str = "/";
 
     pub const about: &str = "/about";
-    pub const documentation: &str = "/documentation/";
+    pub const documentation: &str = "/docs/";
     pub const downloads: &str = "/downloads";
     pub const clusters_overview: &str = "/clusters";
     pub const error: &str = "/error";
