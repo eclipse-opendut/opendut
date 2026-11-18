@@ -10,6 +10,18 @@ pub enum SelectionTableCell {
     Error(String)
 }
 
+impl From<String> for SelectionTableCell {
+    fn from(value: String) -> Self {
+        Self::Text(value)
+    }
+}
+
+impl From<&str> for SelectionTableCell {
+    fn from(value: &str) -> Self {
+        Self::Text(value.to_owned())
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct SelectionTableRow<Id> {
     pub id: Id,
@@ -109,9 +121,11 @@ where
                                                     });
 
                                                     view! {
-                                                        <Tooltip text=tooltip_content>
-                                                            <i class=format!("has-text-danger fa-lg {}", FontAwesomeIcon::TriangleExclamation.as_class()) />
-                                                        </Tooltip>
+                                                        <td>
+                                                            <Tooltip text=tooltip_content>
+                                                                <i class=format!("has-text-danger fa-lg {}", FontAwesomeIcon::TriangleExclamation.as_class()) />
+                                                            </Tooltip>
+                                                        </td>
                                                     }.into_any()
                                                 }
                                             }
