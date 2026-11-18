@@ -63,7 +63,6 @@ pub fn ErrorMessage(
 
 #[component]
 pub fn ErrorMessageTableRow(text: ErrorText) -> impl IntoView {
-    
     view! {
         <tr>
             <td colspan="999">
