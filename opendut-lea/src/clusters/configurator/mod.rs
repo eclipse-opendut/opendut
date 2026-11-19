@@ -129,14 +129,21 @@ pub fn ClusterConfigurator() -> impl IntoView {
 
     let cluster_deployments = {
         let carl = globals.client.clone();
+
         LocalResource::new(move || {
             refetch_cluster_deployments.track();
+
             let mut carl = carl.clone();
             async move {
                 carl.cluster.list_cluster_deployments().await
                     .map_err(|error| {
                         error!("Failed to request the list of cluster deployments: {error}");
-                    }).ok()
+
+                        ErrorText {
+                            headline: String::from("Unable to load cluster deployments"),
+                            description: String::from("The cluster deployments could not be loaded. Please check your connection and try again."),
+                        }
+                    })
             }
         })
     };
@@ -144,11 +151,12 @@ pub fn ClusterConfigurator() -> impl IntoView {
     let deployed_signal = Signal::derive(move || {
         let cluster_id = cluster_id;
 
-        cluster_deployments.get()
-            .flatten()
-            .map(|deployments| {
-                IsDeployed(deployments.iter().any(|deployment| deployment.id == cluster_id))
-            })
+        match cluster_deployments.get() {
+            Some(Ok(deployments)) => {
+                Some(IsDeployed(deployments.iter().any(|deployment| deployment.id == cluster_id)))
+            }
+            Some(Err(_)) | None => None
+        }
     });
 
     let subtitle = Signal::derive(move || {
