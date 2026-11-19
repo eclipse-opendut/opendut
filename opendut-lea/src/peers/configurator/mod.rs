@@ -17,7 +17,6 @@ use opendut_lea_components::tabs::{Tab, Tabs};
 use crate::peers::configurator::types::devices::UserDeviceConfiguration;
 use crate::peers::configurator::types::network::{UserNetworkInterface, UserPeerNetwork};
 use crate::peers::configurator::types::UserPeerDescriptor;
-use opendut_model::peer::state::PeerState;
 
 mod components;
 mod tabs;
@@ -49,8 +48,6 @@ pub fn PeerConfigurator() -> impl IntoView {
             }
         }
     };
-
-    let peer_state = RwSignal::new(PeerState::default());
 
     let user_peer_descriptor = RwSignal::new(UserPeerDescriptor {
         id: peer_id,
@@ -118,10 +115,6 @@ pub fn PeerConfigurator() -> impl IntoView {
                     })
                     .collect();
             });
-
-            if let Ok(state) = carl.peers.get_peer_state(peer_id).await {
-                peer_state.set(state);
-            } // Todo: Error-Handling
 
             Ok(())
         }
@@ -219,7 +212,7 @@ pub fn PeerConfigurator() -> impl IntoView {
             title="Configure Peer"
             subtitle=subtitle
             breadcrumbs=breadcrumbs
-            controls=view! { <Controls user_peer_descriptor peer_state=peer_state.into() /> }
+            controls=view! { <Controls user_peer_descriptor /> }
         >
         <div> {cluster_column} </div>
             <Suspense

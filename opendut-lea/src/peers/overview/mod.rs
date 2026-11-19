@@ -5,7 +5,7 @@ use crate::app::use_app_globals;
 use crate::components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton};
 use crate::peers::components::CreatePeerButton;
 use leptos::prelude::*;
-use tracing::{error, trace};
+use tracing::error;
 use opendut_lea_components::{InfoMessage, ErrorMessage, ErrorMessageTableRow, ErrorMessageType, ErrorText, OverviewTable, TableHeading};
 use opendut_model::cluster::ClusterDescriptor;
 use opendut_model::peer::state::PeerState;
@@ -160,7 +160,6 @@ pub fn PeersOverview() -> impl IntoView {
                         view! {
                             <PeerOverviewTable
                                 peers
-                                peer_states
                                 refetch_registered_peers
                                 configured_clusters
                             />
@@ -183,7 +182,6 @@ pub fn PeersOverview() -> impl IntoView {
 #[component]
 fn PeerOverviewTable(
     peers: Vec<PeerDescriptor>,
-    peer_states: LocalResource<Result<HashMap<PeerId, PeerState>, ErrorText>>,
     refetch_registered_peers: RwSignal<()>,
     configured_clusters: Result<Vec<ClusterDescriptor>, ErrorText>,
 ) -> impl IntoView {
@@ -200,23 +198,12 @@ fn PeerOverviewTable(
                 each = move || peers.clone()
                 key = |peer| peer.id
                 children = { move |peer_descriptor: PeerDescriptor| {
-                    let peer_id = peer_descriptor.id;
-                    let peer_state = Signal::derive(move || {
-                        peer_states.with(|states| match states {
-                            Some(Ok(states)) => Some(states.get(&peer_id).cloned().unwrap_or_else(|| {
-                                trace!("Did not receive PeerState for peer <{peer_id}>. Treating it as down.");
-                                PeerState::default()
-                            })),
-                            Some(Err(_)) | None => None,
-                        })
-                    });
                     let on_delete = move || {
                         refetch_registered_peers.notify();
                     };
                     view! {
                         <Row
                             peer_descriptor=RwSignal::new(peer_descriptor)
-                            peer_state
                             cluster_descriptors=RwSignal::new(configured_clusters.clone())
                             on_delete
                         />
