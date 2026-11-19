@@ -8,14 +8,12 @@ use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, ErrorText, Fo
 use opendut_lea_components::tooltip::Tooltip;
 use opendut_model::cluster::ClusterDescriptor;
 use opendut_model::peer::PeerDescriptor;
-use opendut_model::peer::state::{PeerState};
 use crate::components::ClickableOverviewTableRow;
 use crate::peers::components::PeerHealth;
 
 #[component]
 pub(crate) fn Row<OnDeleteFn>(
     peer_descriptor: RwSignal<PeerDescriptor>,
-    peer_state: Signal<Option<PeerState>>,
     cluster_descriptors: RwSignal<Result<Vec<ClusterDescriptor>, ErrorText>>,
     on_delete: OnDeleteFn,
 ) -> impl IntoView
@@ -83,7 +81,7 @@ where
     view! {
         <ClickableOverviewTableRow configurator_href>
             <OverviewTableCell>
-                <PeerHealth state=peer_state />
+                <PeerHealth peer_id />
             </OverviewTableCell>
 
             <OverviewTableCell>

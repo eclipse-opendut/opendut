@@ -8,7 +8,6 @@ use tracing::{debug, error};
 use opendut_lea_components::tooltip::{Tooltip, TooltipDirection};
 use opendut_model::cluster::ClusterId;
 use opendut_model::peer::PeerDescriptor;
-use opendut_model::peer::state::PeerState;
 
 use crate::app::use_app_globals;
 use crate::components::{use_toaster, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, Toast};
@@ -21,12 +20,9 @@ use crate::util;
 #[component]
 pub fn Controls(
     user_peer_descriptor: RwSignal<UserPeerDescriptor>,
-    peer_state: Signal<PeerState>
 ) -> impl IntoView {
 
-    let peer_id = Signal::derive(move || {
-        user_peer_descriptor.get().id
-    });
+    let peer_id = create_read_slice(user_peer_descriptor, |descriptor| descriptor.id);
 
     let used_clusters_length = Signal::derive(move || {
         let mut used_clusters: HashSet<ClusterId> = HashSet::new();
@@ -48,7 +44,7 @@ pub fn Controls(
 
     view! {
         <div class="is-flex is-align-items-center">
-            <PeerHealth state=peer_state />
+            <PeerHealth peer_id />
             <div class="px-2" />
             <SavePeerButton user_peer_descriptor />
             <div class="px-1" />
