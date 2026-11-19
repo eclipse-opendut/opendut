@@ -148,9 +148,7 @@ impl RegistrationClient {
     }
     
     pub async fn list_clients(&self) -> Result<Clients, RegistrationClientError> {
-        // Append max=2147483647 to fetch all registered clients in one request.
-        // Keycloak's default cap is 100, which would silently truncate results in
-        // deployments with many peers, causing delete and UUID-lookup operations to miss clients.
+        // Keycloak returns only 100 clients by default
         let enumerate_clients_uri = self.config.issuer_admin_url.value().join("clients/?max=2147483647")
             .map_err(|cause| RegistrationClientError::InvalidConfiguration { error: format!("Invalid admin api endpoint for issuer. {cause}") })?;
         let request = self.create_http_request_with_auth_token(&enumerate_clients_uri, http::Method::GET).await?;
@@ -263,13 +261,7 @@ impl RegistrationClient {
         Ok(scopes)
     }
 
-    /// Find the Keycloak internal UUID for use in admin API paths, by its OAuth client_id.
-    ///
-    /// Uses the `?clientId=` query parameter so Keycloak returns only the matching client,
-    /// avoiding a full paginated scan regardless of deployment size.
     pub async fn find_client_uuid(&self, oauth_client_id: &str) -> Result<String, RegistrationClientError> {
-        // Keycloak admin API: GET /clients/?clientId=<exact_id>
-        // Returns a JSON array of matching clients (typically 0 or 1 elements).
         let uri = format!("clients/?clientId={oauth_client_id}");
         let url = self.config.issuer_admin_url.value().join(&uri)
             .map_err(|cause| RegistrationClientError::InvalidConfiguration {
@@ -291,7 +283,6 @@ impl RegistrationClient {
                 }
             })?;
 
-        // Keycloak's ?clientId= is a prefix/substring search, so verify exact match.
         clients.into_iter()
             .find(|c| c.client_id == oauth_client_id)
             .map(|c| c.id)

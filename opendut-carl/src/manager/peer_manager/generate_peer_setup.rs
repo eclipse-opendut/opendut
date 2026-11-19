@@ -59,12 +59,7 @@ impl Resources<'_> {
                     .map_err(|cause| GeneratePeerSetupError::Internal { peer_id, peer_name: Clone::clone(&peer_name), cause: cause.to_string() })?;
                 debug!("Successfully generated peer setup for peer '{peer_name}' <{peer_id}>. OIDC client_id='{}'.", client_credentials.client_id.clone().value());
 
-                // Only assign the scope when CARL dynamically registered a fresh client.
-                // When peer_credentials is set (static shared credentials, e.g. local dev),
-                // the client already has its scopes assigned by provision.sh, so skipping
-                // the Keycloak round-trip avoids a redundant admin API call and prevents
-                // find_client_uuid from failing if the static client_id is not discoverable
-                // via the dynamic registration listing.
+                // Static peer_credentials already have scopes from provision.sh
                 if registration_client.config.peer_credentials.is_none() {
                     let keycloak_client_uuid = registration_client.find_client_uuid(&client_credentials.client_id.clone().value())
                         .await
