@@ -83,7 +83,7 @@ pub fn PeerConfigurator() -> impl IntoView {
             };
 
             let clusters = carl.cluster.list_cluster_descriptors().await
-                .unwrap_or(vec![]);
+                .unwrap_or(vec![]); // Todo: don't unwrap!
 
             user_peer_descriptor.update(|user_configuration| {
                 user_configuration.name = UserInputValue::Right(descriptor.name.value().to_owned());
@@ -121,7 +121,7 @@ pub fn PeerConfigurator() -> impl IntoView {
 
             if let Ok(state) = carl.peers.get_peer_state(peer_id).await {
                 peer_state.set(state);
-            }
+            } // Todo: Error-Handling
 
             Ok(())
         }
