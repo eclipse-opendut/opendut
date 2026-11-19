@@ -1,25 +1,13 @@
 use leptos::prelude::*;
 use opendut_lea_components::{SelectionTable, SelectionTableRow};
 use opendut_model::viper::ViperSourceDescriptor;
-use crate::app::use_app_globals;
 use crate::viper_tests::configurator::types::{SourceSelection, UserViperTestRunDescriptor};
 
 #[component]
-pub fn ViperTestSourceSelector(user_test_run_descriptor: RwSignal<UserViperTestRunDescriptor>) -> impl IntoView {
-
-    let globals = use_app_globals();
-
-    let viper_sources = {
-        let carl = globals.client.clone();
-
-        LocalResource::new(move || {
-            let mut carl = carl.clone();
-            async move {
-                carl.viper.list_viper_source_descriptors().await
-                    .expect("Failed to request the list of VIPER sources")
-            }
-        })
-    };
+pub fn ViperTestSourceSelector(
+    user_test_run_descriptor: RwSignal<UserViperTestRunDescriptor>,
+    viper_sources: Vec<ViperSourceDescriptor>,
+) -> impl IntoView {
 
     let (getter, setter) = create_slice(user_test_run_descriptor,
         |config| {
@@ -31,34 +19,31 @@ pub fn ViperTestSourceSelector(user_test_run_descriptor: RwSignal<UserViperTestR
     );
 
     let viper_sources = Signal::derive(move || {
-        if let Some(mut viper_sources) = viper_sources.get() {
-            viper_sources.sort_by(|viper_source_a, viper_source_b| {
-                viper_source_a.name.to_string().to_lowercase()
-                    .cmp(&viper_source_b.name.to_string().to_lowercase())
-            });
+        let mut viper_sources = Clone::clone(&viper_sources);
+        viper_sources.sort_by(|viper_source_a, viper_source_b| {
+            viper_source_a.name.to_string().to_lowercase()
+                .cmp(&viper_source_b.name.to_string().to_lowercase())
+        });
 
-            let rows = viper_sources.iter().map(|viper_source_descriptor| {
-                let ViperSourceDescriptor { id, name, url, .. } = viper_source_descriptor;
-                let id = id.to_owned();
-                let name = name.to_string();
-                let url = url.to_string();
+        let rows = viper_sources.iter().map(|viper_source_descriptor| {
+            let ViperSourceDescriptor { id, name, url, .. } = viper_source_descriptor;
+            let id = id.to_owned();
+            let name = name.to_string();
+            let url = url.to_string();
 
-                SelectionTableRow {
-                    id,
-                    cells: vec![name.into(), url.into()]
-                }
-            }).collect::<Vec<_>>();
-
-            if viper_sources.is_empty() {
-                setter.set(SourceSelection::Left(String::from("No viper VIPER sources available.")));
-            } else if matches!(getter.get(), SourceSelection::Left(_)) {
-                setter.set(SourceSelection::Left(String::from("Select a VIPER source.")));
+            SelectionTableRow {
+                id,
+                cells: vec![name.into(), url.into()]
             }
+        }).collect::<Vec<_>>();
 
-            rows
-        } else {
-            Vec::new()
+        if viper_sources.is_empty() {
+            setter.set(SourceSelection::Left(String::from("No viper VIPER sources available.")));
+        } else if matches!(getter.get(), SourceSelection::Left(_)) {
+            setter.set(SourceSelection::Left(String::from("Select a VIPER source.")));
         }
+
+        rows
     });
 
     let header = vec![

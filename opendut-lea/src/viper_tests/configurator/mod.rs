@@ -8,7 +8,7 @@ use opendut_lea_components::{BasePageContainer, Breadcrumb, ErrorMessage, ErrorT
 use opendut_lea_components::tabs::{Tab, Tabs};
 use opendut_model::cluster::ClusterDescriptor;
 use opendut_model::peer::PeerDescriptor;
-use opendut_model::viper::{ViperParameterName, ViperTestId, ViperTestRunDescriptor};
+use opendut_model::viper::{ViperParameterName, ViperSourceDescriptor, ViperTestId, ViperTestRunDescriptor};
 use crate::app::use_app_globals;
 use crate::components::use_active_tab;
 use crate::routing::{navigate_to, WellKnownRoutes};
@@ -105,6 +105,27 @@ pub fn ViperTestConfigurator() -> impl IntoView {
         user_test_run_descriptor,
         |descriptor| Clone::clone(&descriptor.viper_source),
     );
+
+    let viper_sources_resource: LocalResource<Result<Vec<ViperSourceDescriptor>, ErrorText>> =  {
+        let carl = globals.client.clone();
+
+        LocalResource::new(move || {
+            let mut carl = carl.clone();
+            async move {
+                let sources = carl.viper.list_viper_source_descriptors().await
+                    .map_err(|error| {
+                        error!("Failed to request the list of peers: {error}");
+
+                        ErrorText {
+                            headline: String::from("Unable to load VIPER source descriptors"),
+                            description: String::from("The VIPER source descriptors could not be loaded. Please check your connection and try again."),
+                        }
+                    })?;
+
+                Ok(sources)
+            }
+        })
+    };
 
     let parameters = {
         let carl = globals.client.clone();
@@ -274,11 +295,12 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                             let peers = RwSignal::new(peers.await).read_only();
                             let clusters = RwSignal::new(clusters.await).read_only();
                             let parameter_result = parameters.await;
+                            let viper_sources = RwSignal::new(viper_sources_resource.await).read_only();
                             view! {
                                 <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
                                     { move || match active_tab.get() {
                                         TabIdentifier::General => view! { <GeneralTab user_test_run_descriptor /> }.into_any(),
-                                        TabIdentifier::ViperSource => view! { <SourceTab user_test_run_descriptor /> }.into_any(),
+                                        TabIdentifier::ViperSource => view! { <SourceTab user_test_run_descriptor viper_sources /> }.into_any(),
                                         TabIdentifier::Parameters => view! { <ParametersTab user_test_run_descriptor parameter_result=parameter_result.clone() /> }.into_any(),
                                         TabIdentifier::Peer => view! { <PeerTab user_test_run_descriptor peers clusters /> }.into_any()
                                     }}
