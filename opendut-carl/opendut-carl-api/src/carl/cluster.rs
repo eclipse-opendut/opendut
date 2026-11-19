@@ -53,10 +53,16 @@ pub enum DeleteClusterDescriptorError {
 }
 
 #[derive(thiserror::Error, Debug)]
-#[error("ClusterDescriptor <{cluster_id}> could not be retrieved:\n  {message}")]
-pub struct GetClusterDescriptorError {
-    pub cluster_id: ClusterId,
-    pub message: String
+pub enum GetClusterDescriptorError {
+    #[error("A cluster with id <{cluster_id}> could not be found!")]
+    ClusterNotFound {
+        cluster_id: ClusterId
+    },
+    #[error("An internal error occurred searching for a cluster with id <{cluster_id}>:\n  {cause}")]
+    Internal {
+        cluster_id: ClusterId,
+        cause: String
+    }
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -224,29 +230,23 @@ mod client {
             }
         }
 
-        pub async fn get_cluster_descriptor(&mut self, cluster_id: ClusterId) -> Result<ClusterDescriptor, GetClusterDescriptorError> {
+        pub async fn get_cluster_descriptor(&mut self, cluster_id: ClusterId) -> Result<ClusterDescriptor, ClientError<GetClusterDescriptorError>> {
+
             let request = tonic::Request::new(cluster_manager::GetClusterDescriptorRequest {
                 id: Some(cluster_id.into()),
             });
 
-            match self.inner.get_cluster_descriptor(request).await {
-                Ok(response) => {
-                    let result = response.into_inner().result
-                        .ok_or(GetClusterDescriptorError { cluster_id, message: String::from("Response contains no result!") })?;
-                    match result {
-                        cluster_manager::get_cluster_descriptor_response::Result::Failure(_) => {
-                            Err(GetClusterDescriptorError { cluster_id, message: String::from("Failed to get cluster descriptor!") })
-                        }
-                        cluster_manager::get_cluster_descriptor_response::Result::Success(cluster_manager::GetClusterDescriptorSuccess { configuration }) => {
-                            let configuration = configuration
-                                .ok_or(GetClusterDescriptorError { cluster_id, message: String::from("Response contains no cluster descriptor!") })?;
-                            ClusterDescriptor::try_from(configuration)
-                                .map_err(|_| GetClusterDescriptorError { cluster_id, message: String::from("Conversion failed for cluster descriptors!") })
-                        }
-                    }
-                },
-                Err(status) => {
-                    Err(GetClusterDescriptorError { cluster_id, message: format!("gRPC failure: {status}") })
+            let response = self.inner.get_cluster_descriptor(request).await?
+                .into_inner();
+
+            match extract!(response.result)? {
+                cluster_manager::get_cluster_descriptor_response::Result::Failure(failure) => {
+                    let error = GetClusterDescriptorError::try_from(failure)?;
+                    Err(ClientError::UsageError(error))
+                }
+                cluster_manager::get_cluster_descriptor_response::Result::Success(success) => {
+                    let cluster_descriptor = extract!(success.configuration)?;
+                    Ok(cluster_descriptor)
                 }
             }
         }
