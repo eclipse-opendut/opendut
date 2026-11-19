@@ -446,7 +446,6 @@ services:
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ID=opendut-carl-client
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_SECRET
       - OPENDUT_CARL_NETWORK_OIDC_LEA_ISSUER_URL=https://${OPENDUT_DOMAIN_AUTH}/realms/opendut/
-      # opendut-admin-api must be requested at login so CARL's scope enforcement allows LEA's gRPC calls.
       - OPENDUT_CARL_NETWORK_OIDC_LEA_SCOPES=openid,profile,email,opendut-admin-api
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_URL=https://${OPENDUT_DOMAIN_AUTH}/realms/opendut/
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_REMOTE_URL=https://${OPENDUT_DOMAIN_AUTH}/realms/opendut/

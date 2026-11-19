@@ -127,8 +127,6 @@ impl OidcConfidentialClientConfig {
         let scopes = raw_scopes_no_quotations.split(',').collect::<Vec<_>>();
         for scope in scopes.clone() {
             // Hyphens are valid in OAuth scope strings (RFC 6749).
-            // Reject spaces, punctuation, and other characters that would indicate
-            // a malformed config (e.g. accidentally space-separated instead of comma-separated).
             if !scope.chars().all(|c| c.is_ascii_alphabetic() || c.is_ascii_digit() || c == '-') {
                 panic!("Failed to parse comma-separated OIDC scopes for client_id='{client_id}'. Scopes must only contain ASCII alphabetic characters, digits, or hyphens. Found: {raw_scopes:?}. Parsed as: {scopes:?}");
             }
@@ -243,8 +241,6 @@ mod tests {
 
     #[test]
     fn test_parse_scopes_with_hyphens() {
-        // Scope names like opendut-admin-api and opendut-edge-api contain hyphens,
-        // which are valid per RFC 6749 and must not be rejected.
         let client_id = "test_client_id";
         let raw_scopes = "opendut-admin-api,opendut-edge-api";
         let scopes = OidcConfidentialClientConfig::parse_scopes(client_id, raw_scopes.to_string());
