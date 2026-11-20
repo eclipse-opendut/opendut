@@ -1,31 +1,9 @@
 use leptos::prelude::*;
 use opendut_lea_components::InfoMessage;
-use opendut_model::proto::util::VersionInfo;
 use crate::components::{GenerateSetupStringForm, GenerateSetupStringKind};
 
 #[component]
-pub fn CleoCard(
-    version_info: LocalResource<VersionInfo>
-) -> impl IntoView {
-
-    let version_name = move || {
-        match version_info.get() {
-            None => { String::new() }
-            Some(version) => {
-                format!("-{}", version.name)
-            }
-        }
-    };
-
-    let output_name_aarch64 = move || {
-        format!("opendut-cleo-aarch64-unknown-linux-gnu{}.tar.gz", version_name())
-    };
-    let output_name_armv7 = move || {
-        format!("opendut-cleo-armv7-unknown-linux-gnueabihf{}.tar.gz", version_name())
-    };
-    let output_name_x86 = move || {
-        format!("opendut-cleo-x86_64-unknown-linux-gnu{}.tar.gz", version_name())
-    };
+pub fn CleoCard() -> impl IntoView {
 
     view! {
         <div class="card">
@@ -36,19 +14,19 @@ pub fn CleoCard(
                 <InfoMessage text="Command-line interface for administering openDuT." />
                 "Download for different architectures:"
                 <div class="mb-2 mt-2 ml-2">
-                    <a href="/api/cleo/aarch64-unknown-linux-gnu/download" download=output_name_aarch64>
+                    <a href="/api/cleo/aarch64-unknown-linux-gnu/download" download>
                         <i class="fa-solid fa-download fa-lg pr-1" />
                         <span class="ml-2 is-size-6">"aarch64-gnu"</span>
                     </a>
                 </div>
                 <div class="mb-2 ml-2">
-                    <a href="/api/cleo/armv7-unknown-linux-gnueabihf/download" download=output_name_armv7>
+                    <a href="/api/cleo/armv7-unknown-linux-gnueabihf/download" download>
                         <i class="fa-solid fa-download fa-lg pr-1" />
                         <span class="ml-2 is-size-6">"armv7-gnueabihf"</span>
                     </a>
                 </div>
                 <div class="mb-2 ml-2">
-                    <a href="/api/cleo/x86_64-unknown-linux-gnu/download" download=output_name_x86>
+                    <a href="/api/cleo/x86_64-unknown-linux-gnu/download" download>
                         <i class="fa-solid fa-download fa-lg pr-1" />
                         <span class="ml-2 is-size-6">"x86_64-gnu"</span>
                     </a>
