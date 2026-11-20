@@ -1,3 +1,5 @@
+pub mod components;
+
 use leptos::prelude::*;
 use opendut_lea_components::{ErrorMessage, ErrorMessageType, ErrorText};
 use opendut_model::peer::state::PeerConnectionState;
