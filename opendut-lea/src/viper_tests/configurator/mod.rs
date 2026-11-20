@@ -1,11 +1,14 @@
 use std::collections::HashMap;
 use leptos::prelude::*;
+use tracing::error;
 use leptos_router::hooks::{use_navigate, use_params_map};
 use opendut_carl_api::carl::ClientError;
-use opendut_carl_api::carl::viper::GetViperTestSuiteParametersError;
-use opendut_lea_components::{BasePageContainer, Breadcrumb, LoadingSpinner, UserInputError, UserInputValue};
+use opendut_carl_api::carl::viper::{CompilationErrorKind, GetViperTestRunDescriptorError, GetViperTestSuiteParametersError};
+use opendut_lea_components::{BasePageContainer, Breadcrumb, ErrorMessage, ErrorText, LoadingSpinner, UserInputError, UserInputValue};
 use opendut_lea_components::tabs::{Tab, Tabs};
-use opendut_model::viper::{ViperParameterName, ViperTestId, ViperTestRunDescriptor};
+use opendut_model::cluster::ClusterDescriptor;
+use opendut_model::peer::PeerDescriptor;
+use opendut_model::viper::{ViperParameterName, ViperSourceDescriptor, ViperTestId, ViperTestRunDescriptor};
 use crate::app::use_app_globals;
 use crate::components::use_active_tab;
 use crate::routing::{navigate_to, WellKnownRoutes};
@@ -51,7 +54,6 @@ pub fn ViperTestConfigurator() -> impl IntoView {
             viper_source: SourceSelection::Left(String::from("Select a VIPER test source.")),
             peer: PeerSelection::Left(String::from("Select a peer")),
             parameters: HashMap::new(),
-            is_new: true,
         }
     );
 
@@ -60,26 +62,41 @@ pub fn ViperTestConfigurator() -> impl IntoView {
         LocalResource::new(move || {
             let mut carl = carl.clone();
             async move {
-                if let Ok(descriptor) = carl.viper.get_viper_test_run_descriptor(viper_test_id).await {
-                    user_test_run_descriptor.update(|user_configuration| {
-                        let ViperTestRunDescriptor { id: _, name, source: viper_source, peer, parameters } = descriptor;
+                let descriptor = match carl.viper.get_viper_test_run_descriptor(viper_test_id).await {
+                    Ok(descriptor) => descriptor,
+                    Err(ClientError::UsageError(GetViperTestRunDescriptorError::TestNotFound { .. })) => {
+                        return Ok(());
+                    }
+                    Err(error) => {
+                        error!("Failed to request the VIPER test run descriptor <{viper_test_id}>: {error}");
 
-                        user_configuration.name = UserInputValue::Right(name.value().to_owned());
-                        user_configuration.viper_source = SourceSelection::Right(viper_source);
-                        user_configuration.peer = PeerSelection::Right(peer);
+                        return Err(ErrorText {
+                            headline: String::from("Unable to load VIPER test run descriptor"),
+                            description: String::from("The VIPER test run descriptor could not be loaded. Please check your connection and try again."),
+                        });
+                    }
+                };
 
-                        let mut configured_parameters: HashMap<ViperParameterName, ViperBindingValueInput> = HashMap::new();
+                user_test_run_descriptor.update(|user_configuration| {
+                    let ViperTestRunDescriptor { id: _, name, source: viper_source, peer, parameters } = descriptor;
 
-                        for (key, value) in parameters {
-                            configured_parameters.insert(
-                                key,
-                                ViperBindingValueInput::Right(value)
-                            );
-                        }
+                    user_configuration.name = UserInputValue::Right(name.value().to_owned());
+                    user_configuration.viper_source = SourceSelection::Right(viper_source);
+                    user_configuration.peer = PeerSelection::Right(peer);
 
-                        user_configuration.parameters = configured_parameters;
-                    });
-                }
+                    let mut configured_parameters: HashMap<ViperParameterName, ViperBindingValueInput> = HashMap::new();
+
+                    for (key, value) in parameters {
+                        configured_parameters.insert(
+                            key,
+                            ViperBindingValueInput::Right(value)
+                        );
+                    }
+
+                    user_configuration.parameters = configured_parameters;
+                });
+
+                Ok(())
             }
         })
     };
@@ -88,6 +105,27 @@ pub fn ViperTestConfigurator() -> impl IntoView {
         user_test_run_descriptor,
         |descriptor| Clone::clone(&descriptor.viper_source),
     );
+
+    let viper_sources_resource: LocalResource<Result<Vec<ViperSourceDescriptor>, ErrorText>> =  {
+        let carl = globals.client.clone();
+
+        LocalResource::new(move || {
+            let mut carl = carl.clone();
+            async move {
+                let sources = carl.viper.list_viper_source_descriptors().await
+                    .map_err(|error| {
+                        error!("Failed to request the list of peers: {error}");
+
+                        ErrorText {
+                            headline: String::from("Unable to load VIPER source descriptors"),
+                            description: String::from("The VIPER source descriptors could not be loaded. Please check your connection and try again."),
+                        }
+                    })?;
+
+                Ok(sources)
+            }
+        })
+    };
 
     let parameters = {
         let carl = globals.client.clone();
@@ -106,11 +144,11 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                     let result = carl.viper.get_viper_test_suite_parameters(source_id).await;
 
                     match result {
-                        Ok(test_suite_descriptor) => {
+                        Ok(test_suite_parameters) => {
                             user_test_run_descriptor.update(|user_configuration| {
                                 let mut new_parameters = HashMap::new();
 
-                                for parameter in test_suite_descriptor.parameters.iter() {
+                                for parameter in test_suite_parameters.parameters.iter() {
                                     let parameter_name = parameter.name().clone();
 
                                     let value = user_configuration
@@ -130,20 +168,69 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                                 user_configuration.parameters = new_parameters;
                             });
 
-                            Ok(test_suite_descriptor.parameters)
-                        },
+                            Ok(test_suite_parameters.parameters)
+                        }
                         Err(client_error) => {
                             match client_error {
                                 ClientError::UsageError(error) => {
                                     Err(SourceFetchError::GetParameterError(error))
                                 }
-                                _ => panic!("Failed to request the viper test suite descriptor.")
+                                ClientError::TransportError(message) | ClientError::InvalidRequest(message) | ClientError::InvalidResponse(message) => {
+                                    Err(SourceFetchError::RequestFailed(message))
+                                }
                             }
                         }
                     }
                 } else {
                     Err(SourceFetchError::NoSourceSelected)
                 }
+            }
+        })
+    };
+
+    let peers: LocalResource<Result<Vec<PeerDescriptor>, ErrorText>> = {
+        let carl = globals.client.clone();
+        LocalResource::new(move || {
+            let mut carl = carl.clone();
+
+            async move {
+                let mut peers = carl.peers.list_peer_descriptors().await
+                    .map_err(|error| {
+                        error!("Failed to request the list of peers: {error}");
+
+                        ErrorText {
+                            headline: String::from("Unable to load peer descriptors"),
+                            description: String::from("The peer descriptors could not be loaded. Please check your connection and try again."),
+                        }
+                    })?;
+
+                peers
+                    .sort_by(|peer_a, peer_b| {
+                        peer_a.name.value().to_lowercase()
+                            .cmp(&peer_b.name.value().to_lowercase())
+                    });
+
+                Ok(peers)
+            }
+        })
+    };
+
+    let clusters: LocalResource<Result<Vec<ClusterDescriptor>, ErrorText>> = {
+        let carl = globals.client.clone();
+        LocalResource::new( move || {
+            let mut carl = carl.clone();
+
+            async move {
+                let clusters = carl.cluster.list_cluster_descriptors().await
+                    .map_err(|error| {
+                        error!("Failed to request the list of clusters: {error}");
+
+                        ErrorText {
+                            headline: String::from("Unable to load cluster descriptors"),
+                            description: String::from("The cluster descriptors could not be loaded. Please check your connection and try again."),
+                        }
+                    })?;
+                Ok(clusters)
             }
         })
     };
@@ -202,22 +289,29 @@ pub fn ViperTestConfigurator() -> impl IntoView {
             <Suspense
                 fallback=move || view! { <LoadingSpinner /> }
             >
-                {
-                    move || Suspend::new(async move {
-                        viper_test_run_descriptor_resource.await;
-                        let parameter_result = parameters.await;
-                        view! {
-                            <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
-                                { move || match active_tab.get() {
-                                    TabIdentifier::General => view! { <GeneralTab user_test_run_descriptor /> }.into_any(),
-                                    TabIdentifier::ViperSource => view! { <SourceTab user_test_run_descriptor /> }.into_any(),
-                                    TabIdentifier::Parameters => view! { <ParametersTab user_test_run_descriptor parameter_result=parameter_result.clone() /> }.into_any(),
-                                    TabIdentifier::Peer => view! { <PeerTab user_test_run_descriptor /> }.into_any()
-                                }}
-                            </Tabs>
+                { move || Suspend::new(async move {
+                    match viper_test_run_descriptor_resource.await {
+                        Ok(()) => {
+                            let peers = RwSignal::new(peers.await).read_only();
+                            let clusters = RwSignal::new(clusters.await).read_only();
+                            let parameter_result = parameters.await;
+                            let viper_sources = RwSignal::new(viper_sources_resource.await).read_only();
+                            view! {
+                                <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
+                                    { move || match active_tab.get() {
+                                        TabIdentifier::General => view! { <GeneralTab user_test_run_descriptor /> }.into_any(),
+                                        TabIdentifier::ViperSource => view! { <SourceTab user_test_run_descriptor viper_sources /> }.into_any(),
+                                        TabIdentifier::Parameters => view! { <ParametersTab user_test_run_descriptor parameter_result=parameter_result.clone() /> }.into_any(),
+                                        TabIdentifier::Peer => view! { <PeerTab user_test_run_descriptor peers clusters /> }.into_any()
+                                    }}
+                                </Tabs>
+                            }.into_any()
                         }
-                    })
-                }
+                        Err(error) => view! {
+                            <ErrorMessage text=error />
+                        }.into_any(),
+                    }
+                })}
             </Suspense>
         </BasePageContainer>
     }
@@ -227,4 +321,96 @@ pub fn ViperTestConfigurator() -> impl IntoView {
 enum SourceFetchError {
     NoSourceSelected,
     GetParameterError(GetViperTestSuiteParametersError),
+    RequestFailed(String),
+}
+
+impl SourceFetchError {
+    pub fn to_error_text(&self) -> AnyView {
+        match self {
+            SourceFetchError::NoSourceSelected => {
+                view! {
+                    <p class="help has-text-danger"> "Select a VIPER source first." </p>
+                }.into_any()
+            }
+            SourceFetchError::GetParameterError(parameter_error) => {
+                match parameter_error {
+                    GetViperTestSuiteParametersError::SourceNotFound { source_id: _id } => {
+                        let error_text = ErrorText {
+                            headline: String::from("Unable to load VIPER parameters"),
+                            description: String::from("Selected VIPER source not found."),
+                        };
+                        view!(<ErrorMessage text=error_text />).into_any()
+                    }
+                    GetViperTestSuiteParametersError::Compilation { source_id: _id, source_name: _name, kind } => {
+                        match kind {
+                            CompilationErrorKind::NoSuitableSourceLoader { url } => {
+                                let error_text = ErrorText {
+                                    headline: String::from("Unable to compile VIPER test suite"),
+                                    description: format!("The source URL ({}) is not supported. Check the selected source configuration.", url.as_str())
+                                };
+                                view!(<ErrorMessage text=error_text />).into_any()
+                            }
+                            CompilationErrorKind::FailedLoading { url: _url, message } => {
+                                let error_text = ErrorText {
+                                    headline: String::from("Unable to load the selected test source"),
+                                    description: message.to_string(),
+                                };
+                                view!(<ErrorMessage text=error_text />).into_any()
+                            }
+                            CompilationErrorKind::InvalidSource { message } => {
+                                let error_text = ErrorText {
+                                    headline: String::from("Unable to load VIPER parameters"),
+                                    description: message.to_owned()
+                                };
+                                view!(<ErrorMessage text=error_text/>).into_any()
+                            }
+                            CompilationErrorKind::FailedInspection { message } => {
+                                let error_text = ErrorText {
+                                    headline: String::from("Unable to load VIPER parameters"),
+                                    description: message.to_owned()
+                                };
+                                view!(<ErrorMessage text=error_text />).into_any()
+                            }
+                            CompilationErrorKind::PythonCompilationError { message } => {
+                                let error_text = ErrorText {
+                                    headline: String::from("The selected test code could not be compiled."),
+                                    description: message.to_owned()
+                                };
+                                view!(<ErrorMessage text=error_text />).into_any()
+                            }
+                            CompilationErrorKind::Internal { message } => {
+                                let error_text = ErrorText {
+                                    headline: String::from("Unable to load VIPER parameters"),
+                                    description: message.to_owned()
+                                };
+                                view!(<ErrorMessage text=error_text />).into_any()
+                            }
+                        }
+                    }
+                    GetViperTestSuiteParametersError::ViperRuntime { source_id: _id, source_name: _name } => {
+                        let error_text = ErrorText {
+                            headline: String::from("Unable to load VIPER parameters"),
+                            description: String::from("An error occurred while initializing the VIPER runtime for the selected VIPER source."),
+                        };
+                        view!(<ErrorMessage text=error_text />).into_any()
+                    }
+                    GetViperTestSuiteParametersError::Internal { source_id: _id, cause } => {
+                        let error_text = ErrorText {
+                            headline: String::from("An internal error occured"),
+                            description: cause.to_owned(),
+                        };
+                        view!(<ErrorMessage text=error_text />).into_any()
+                    }
+                }
+            }
+            SourceFetchError::RequestFailed(message) => {
+                let error_text = ErrorText {
+                    headline: String::from("Unable to load VIPER parameters"),
+                    description: message.to_owned(),
+                };
+
+                view!(<ErrorMessage text=error_text />).into_any()
+            }
+        }
+    }
 }

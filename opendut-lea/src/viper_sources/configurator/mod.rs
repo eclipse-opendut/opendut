@@ -4,7 +4,10 @@ mod tabs;
 
 use leptos::prelude::*;
 use leptos_router::hooks::{use_navigate, use_params_map};
-use opendut_lea_components::{BasePageContainer, Breadcrumb, LoadingSpinner, UserInputError, UserInputValue};
+use tracing::error;
+use opendut_carl_api::carl::ClientError;
+use opendut_carl_api::carl::viper::GetViperSourceDescriptorError;
+use opendut_lea_components::{BasePageContainer, Breadcrumb, ErrorMessage, ErrorText, LoadingSpinner, UserInputError, UserInputValue};
 use opendut_lea_components::tabs::{Tab, Tabs};
 use opendut_model::viper::ViperSourceId;
 use crate::app::use_app_globals;
@@ -46,23 +49,37 @@ pub fn ViperSourceConfigurator() -> impl IntoView {
             name: UserInputValue::Left(UserInputError::from("Enter a valid VIPER source name.")),
             url: UserInputValue::Left(UserInputError::from("Enter a valid VIPER source url.")),
             kind: UserInputValue::Left(UserInputError::from("Select source kind")),
-            is_new: true,
         }
     );
 
     let viper_source_descriptor_resource = LocalResource::new(move || {
         let mut carl = globals.client.clone();
         async move {
-            if let Ok(configuration) = carl.viper.get_viper_source_descriptor(viper_source_id).await {
-                user_source_descriptor.update(|user_configuration| {
-                    user_configuration.name = UserInputValue::Right(configuration.name.to_string());
-                    user_configuration.url = UserInputValue::Right(configuration.url.to_string());
-                    user_configuration.kind = UserInputValue::Right(match configuration.kind {
-                        opendut_model::viper::ViperSourceKind::Git => String::from("Git"),
-                        opendut_model::viper::ViperSourceKind::Http => String::from("HTTP"),
+            let descriptor = match carl.viper.get_viper_source_descriptor(viper_source_id).await {
+                Ok(descriptor) => descriptor,
+                Err(ClientError::UsageError(GetViperSourceDescriptorError::SourceNotFound { .. })) => {
+                    return Ok(());
+                }
+                Err(error) => {
+                    error!("Failed to request the VIPER source descriptor <{viper_source_id}>: {error}");
+
+                    return Err(ErrorText {
+                        headline: String::from("Unable to load VIPER source descriptor"),
+                        description: String::from("The VIPER source descriptor could not be loaded. Please check your connection and try again."),
                     });
-                })
-            }
+                }
+            };
+
+            user_source_descriptor.update(|user_configuration| {
+                user_configuration.name = UserInputValue::Right(descriptor.name.to_string());
+                user_configuration.url = UserInputValue::Right(descriptor.url.to_string());
+                user_configuration.kind = UserInputValue::Right(match descriptor.kind {
+                    opendut_model::viper::ViperSourceKind::Git => String::from("Git"),
+                    opendut_model::viper::ViperSourceKind::Http => String::from("HTTP"),
+                });
+            });
+
+            Ok(())
         }
     });
 
@@ -105,19 +122,22 @@ pub fn ViperSourceConfigurator() -> impl IntoView {
             <Suspense
                 fallback=move || view! { <LoadingSpinner /> }
             >
-                {
-                    move || Suspend::new(async move {
-                        viper_source_descriptor_resource.await;
-
-                        view! {
-                            <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
-                                { move || match active_tab.get() {
-                                    TabIdentifier::General => view! { <GeneralTab user_source_descriptor /> }
-                                }}
-                            </Tabs>
+                { move || Suspend::new(async move {
+                    match viper_source_descriptor_resource.await {
+                        Ok(()) => {
+                            view! {
+                                <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
+                                    { move || match active_tab.get() {
+                                        TabIdentifier::General => view! { <GeneralTab user_source_descriptor /> }
+                                    }}
+                                </Tabs>
+                            }.into_any()
                         }
-                    })
-                }
+                        Err(error) => view! {
+                            <ErrorMessage text=error />
+                        }.into_any(),
+                    }
+                })}
             </Suspense>
         </BasePageContainer>
     }

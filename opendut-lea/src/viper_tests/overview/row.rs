@@ -1,19 +1,19 @@
 use leptos::prelude::*;
-use opendut_lea_components::{ButtonColor, OverviewTableCell};
-use opendut_model::viper::ViperTestRunDescriptor;
-use crate::app::use_app_globals;
+use opendut_lea_components::{ButtonColor, ErrorText, OverviewTableCell};
+use opendut_model::peer::PeerDescriptor;
+use opendut_model::viper::{ViperSourceDescriptor, ViperTestRunDescriptor};
 use crate::components::ClickableOverviewTableRow;
 use crate::viper_tests::components::{DeleteViperTestButton, DeployViperTestButton, DuplicateViperTestButton};
 
 #[component]
 pub(crate) fn Row<OnDeleteFn>(
     viper_test_run_descriptor: RwSignal<ViperTestRunDescriptor>,
+    viper_sources: LocalResource<Result<Vec<ViperSourceDescriptor>, ErrorText>>,
+    peers: LocalResource<Result<Vec<PeerDescriptor>, ErrorText>>,
     refetch_viper_tests: RwSignal<()>,
     on_delete: OnDeleteFn,
 ) -> impl IntoView
 where OnDeleteFn: Fn() + Copy + Send + 'static, {
-
-    let globals = use_app_globals();
 
     let viper_test_id = create_read_slice(viper_test_run_descriptor,
         |viper_test_run_descriptor| {
@@ -39,43 +39,26 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
         }
     );
 
-    let viper_source_descriptor = LocalResource::new({
-        let carl = globals.client.clone();
-        move || {
-            let mut carl = carl.clone();
-            let viper_source_id = viper_source_id.get();
-
-            async move {
-                carl.viper.get_viper_source_descriptor(viper_source_id).await
-                .expect("Failed to request the viper source by id.")
-            }
-        }
-
-    });
-
-    let peer_descriptor = LocalResource::new({
-        let carl = globals.client.clone();
-        move || {
-            let mut carl = carl.clone();
-            let peer_id = peer_id.get();
-
-            async move {
-                carl.peers.get_peer_descriptor(peer_id).await
-                    .expect("Failed to request the peer by id.")
-            }
-        }
-    });
-
     let configurator_href = Signal::derive(move || { format!("/viper_tests/{}/configure/general", viper_test_id.get()) });
     let viper_source_configurator_href = move || { format!("/viper_sources/{}/configure/general", viper_source_id.get()) };
     let peer_href = move || { format!("/peers/{}/configure/general", peer_id.get()) };
 
     { move || Suspend::new(async move {
-        let viper_source = viper_source_descriptor.await;
-        let viper_source_name = viper_source.name.to_string();
+        let viper_sources = viper_sources.await;
+        let peers = peers.await;
 
-        let peer = peer_descriptor.await;
-        let peer_name = peer.name.to_string();
+        let source_id = viper_source_id.get();
+
+        let viper_source_name = viper_sources.as_ref()
+            .ok()
+            .and_then(|sources| sources.iter().find(|s| s.id == source_id))
+            .map_or_else(|| source_id.to_string(), |s| s.name.to_string());
+
+        let peer_id = peer_id.get();
+        let peer_name = peers.as_ref()
+            .ok()
+            .and_then(|peers| peers.iter().find(|peer| peer.id == peer_id))
+            .map_or_else(|| peer_id.to_string(), |peer| peer.name.to_string());
 
         view! {
             <ClickableOverviewTableRow configurator_href>

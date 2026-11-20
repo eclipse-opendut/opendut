@@ -1,20 +1,20 @@
+use std::sync::Arc;
 use crate::peers::components::DeletePeerButton;
 use crate::util;
 use leptos::html::Div;
 use leptos::prelude::*;
 use leptos_use::on_click_outside;
-use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, OverviewTableCell};
+use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, ErrorText, FontAwesomeIcon, IconButton, OverviewTableCell};
+use opendut_lea_components::tooltip::Tooltip;
 use opendut_model::cluster::ClusterDescriptor;
 use opendut_model::peer::PeerDescriptor;
-use opendut_model::peer::state::{PeerState};
 use crate::components::ClickableOverviewTableRow;
 use crate::peers::components::PeerHealth;
 
 #[component]
 pub(crate) fn Row<OnDeleteFn>(
     peer_descriptor: RwSignal<PeerDescriptor>,
-    peer_state: RwSignal<PeerState>,
-    cluster_descriptors: RwSignal<Vec<ClusterDescriptor>>,
+    cluster_descriptors: RwSignal<Result<Vec<ClusterDescriptor>, ErrorText>>,
     on_delete: OnDeleteFn,
 ) -> impl IntoView
 where
@@ -36,33 +36,52 @@ where
     let used_clusters_length = RwSignal::new(0);
 
     let cluster_column = move || {
-        let devices_in_peer = peer_descriptor.get()
-            .topology
-            .devices
-            .iter()
-            .map(|device| device.id)
-            .collect::<Vec<_>>();
-        let configured_clusters_for_peer = util::list_configured_clusters_for_peer(devices_in_peer, cluster_descriptors.get());
+        match cluster_descriptors.get() {
+            Ok(clusters) => {
+                let devices_in_peer = peer_descriptor.get()
+                    .topology
+                    .devices
+                    .iter()
+                    .map(|device| device.id)
+                    .collect::<Vec<_>>();
+                let configured_clusters_for_peer = util::list_configured_clusters_for_peer(devices_in_peer, clusters);
 
-        let cluster_view_list: Vec<View<_>> = configured_clusters_for_peer.into_iter()
-            .map(|ClusterDescriptor { id, name, .. }| {
-                let name = move || name.to_string();
-                let configurator_href = move || format!("/clusters/{id}/configure/general");
-                view! {
+                let cluster_view_list: Vec<View<_>> = configured_clusters_for_peer.into_iter()
+                    .map(|ClusterDescriptor { id, name, .. }| {
+                        let name = move || name.to_string();
+                        let configurator_href = move || format!("/clusters/{id}/configure/general");
+                        view! {
                     <a href=configurator_href on:click=|e| e.stop_propagation() on:mousedown=|e| e.stop_propagation()> { name } </a>
                 }
-            })
-            .collect();
+                    })
+                    .collect();
 
-        used_clusters_length.set(cluster_view_list.len());
+                used_clusters_length.set(cluster_view_list.len());
 
-        util::view::join_with_comma_spans(cluster_view_list)
+                util::view::join_with_comma_spans(cluster_view_list)
+            }
+            Err(_) => {
+                let tooltip_content = Arc::new(move || {
+                    view! {
+                        Unable to load clusters.
+                    }.into_any()
+                });
+
+                view! {
+                    <div>
+                        <Tooltip text=tooltip_content>
+                            <i class=format!("has-text-danger fa-lg {}", FontAwesomeIcon::TriangleExclamation.as_class()) />
+                        </Tooltip>
+                    </div>
+                }.into_any()
+            }
+        }
     };
 
     view! {
         <ClickableOverviewTableRow configurator_href>
             <OverviewTableCell>
-                <PeerHealth state=peer_state />
+                <PeerHealth peer_id />
             </OverviewTableCell>
 
             <OverviewTableCell>

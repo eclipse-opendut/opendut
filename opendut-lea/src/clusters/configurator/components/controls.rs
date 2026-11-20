@@ -18,9 +18,9 @@ use crate::util;
 #[component]
 pub fn Controls<OnDeploymentChanged>(
     user_cluster_descriptor: RwSignal<UserClusterDescriptor>,
-    deployed_signal: Memo<IsDeployed>,
+    deployed_signal: Signal<Option<IsDeployed>>,
     cluster_state: Signal<ClusterState>,
-    on_deployment_changed: OnDeploymentChanged,
+    on_deployment_change: OnDeploymentChanged,
 ) -> impl IntoView
 where
     OnDeploymentChanged: Fn() + Clone + Send + 'static,
@@ -51,7 +51,7 @@ where
                     cluster_id
                     is_new_cluster
                     is_deployed=deployed_signal
-                    on_deployment_changed
+                    on_deployment_change
                     tooltip_direction
                 />
             </div>
@@ -76,7 +76,7 @@ where
 #[component]
 fn SaveClusterButton(
     user_cluster_descriptor: RwSignal<UserClusterDescriptor>,
-    deployed_signal: Memo<IsDeployed>
+    deployed_signal: Signal<Option<IsDeployed>>,
 ) -> impl IntoView {
 
     let globals = use_app_globals();
@@ -93,10 +93,12 @@ fn SaveClusterButton(
         user_cluster_descriptor.with(|descriptor| descriptor.is_valid())
     });
 
+    let is_deployed = !matches!(deployed_signal.get(), Some(IsDeployed(false)));
+
     let pending = RwSignal::new(false);
 
     let button_state = Signal::derive(move || {
-        if deployed_signal.get().0 || !all_tabs_valid.get() {
+        if is_deployed || !all_tabs_valid.get() {
             ButtonState::Disabled
         } else if pending.get() {
             ButtonState::Loading
@@ -145,13 +147,13 @@ fn SaveClusterButton(
     };
 
     let hide_tooltip = Signal::derive(move || {
-        all_tabs_valid.get() && !deployed_signal.get().0
+        all_tabs_valid.get() && is_deployed
     });
 
     let tooltip_content = Arc::new(move || {
         if !all_tabs_valid.get() {
             util::view::tooltip_content_for_configurator_errors("Cluster")
-        } else if deployed_signal.get().0 {
+        } else if is_deployed {
             view! {
                 Cluster can not be updated while it is deployed.
             }.into_any()

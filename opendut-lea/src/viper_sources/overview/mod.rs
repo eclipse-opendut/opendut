@@ -1,7 +1,8 @@
 mod row;
 
 use leptos::prelude::*;
-use opendut_lea_components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, InfoMessage, OverviewTable, TableHeading};
+use tracing::error;
+use opendut_lea_components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, ErrorMessageTableRow, ErrorText, FontAwesomeIcon, IconButton, InfoMessage, OverviewTable, TableHeading};
 use opendut_model::viper::ViperSourceDescriptor;
 use crate::app::use_app_globals;
 use crate::viper_sources::components::CreateViperSourceButton;
@@ -14,7 +15,7 @@ pub fn ViperSourcesOverview() -> impl IntoView {
 
     let refetch_viper_sources = RwSignal::new(());
 
-    let viper_sources: LocalResource<Vec<ViperSourceDescriptor>> = {
+    let viper_sources: LocalResource<Result<Vec<ViperSourceDescriptor>, ErrorText>> = {
         let carl = globals.client.clone();
 
         LocalResource::new(move || {
@@ -24,14 +25,21 @@ pub fn ViperSourcesOverview() -> impl IntoView {
 
             async move {
                 let mut viper_sources = carl.viper.list_viper_source_descriptors().await
-                    .expect("Failed to request the list of VIPER sources");
+                    .map_err(|error| {
+                        error!("Failed to request the list of VIPER sources: {error}");
+
+                        ErrorText {
+                            headline: String::from("Unable to load VIPER sources"),
+                            description: String::from("The VIPER sources could not be loaded. Please check your connection and try again."),
+                        }
+                    })?;
 
                 viper_sources.sort_by(|viper_source_a, viper_source_b| {
                     viper_source_a.name.to_string().to_lowercase()
                         .cmp(&viper_source_b.name.to_string().to_lowercase())
                 });
 
-                viper_sources
+                Ok(viper_sources)
             }
         })
     };
@@ -74,35 +82,61 @@ pub fn ViperSourcesOverview() -> impl IntoView {
                 { move || Suspend::new(async move {
                     let viper_sources = viper_sources.await;
 
-                    if viper_sources.is_empty() {
-                        view! {
-                            <tr>
-                                <td colspan="999" class="has-text-centered">"No VIPER sources have been created yet"</td>
-                            </tr>
-                        }.into_any()
-                    } else {
-                        view! {
-                            <For
-                                each = move || viper_sources.clone()
-                                key = |viper_source| viper_source.id
-                                children = { move |viper_source_descriptor| {
-
-                                    let on_delete = move || {
-                                        refetch_viper_sources.notify();
-                                    };
-
-                                    view! {
-                                        <Row
-                                            viper_source_descriptor=RwSignal::new(viper_source_descriptor)
-                                            on_delete
-                                        />
-                                    }
-                                }}
-                            />
-                        }.into_any()
+                    match viper_sources {
+                        Ok(viper_sources) => {
+                            view! {
+                                <ViperSourceOverviewTable
+                                    viper_sources
+                                    refetch_viper_sources
+                                />
+                            }.into_any()
+                        }
+                        Err(error) => {
+                            view! {
+                                <ErrorMessageTableRow
+                                    text=error
+                                />
+                            }.into_any()
+                        }
                     }
+
                 })}
             </OverviewTable>
         </BasePageContainer>
+    }
+}
+
+#[component]
+fn ViperSourceOverviewTable(
+    viper_sources: Vec<ViperSourceDescriptor>,
+    refetch_viper_sources: RwSignal<()>,
+) -> impl IntoView {
+
+    if viper_sources.is_empty() {
+        view! {
+            <tr>
+                <td colspan="999" class="has-text-centered">"No VIPER sources have been created yet"</td>
+            </tr>
+        }.into_any()
+    } else {
+        view! {
+            <For
+                each = move || viper_sources.clone()
+                key = |viper_source| viper_source.id
+                children = { move |viper_source_descriptor| {
+
+                    let on_delete = move || {
+                        refetch_viper_sources.notify();
+                    };
+
+                    view! {
+                        <Row
+                            viper_source_descriptor=RwSignal::new(viper_source_descriptor)
+                            on_delete
+                        />
+                    }
+                }}
+            />
+        }.into_any()
     }
 }

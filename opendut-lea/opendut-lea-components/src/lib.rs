@@ -17,6 +17,7 @@ pub use buttons::confirmation_button::ConfirmationButton;
 pub use buttons::doorhanger_button::DoorhangerButton;
 pub use buttons::icon_button::IconButton;
 pub use doorhanger::{Doorhanger, DoorhangerAlignment};
+pub use error_message::{ErrorMessage, ErrorMessageTableRow, ErrorText, ErrorMessageType};
 pub use icon_text::IconText;
 pub use inputs::default_value::DefaultValue;
 pub use inputs::readonly_input::ReadOnlyInput;
@@ -31,7 +32,7 @@ pub use messages::warning_message::WarningMessage;
 pub use page::BasePageContainer;
 pub use tables::multiple_selection_table::{CollapsableInfo, MultipleSelectionTable, MultipleSelectionTableCell, MultipleSelectionTableRow, };
 pub use tables::overview_table::{OverviewTable, OverviewTableCell, OverviewTableRow, TableHeading, };
-pub use tables::selection_table::{SelectionTable, SelectionTableRow};
+pub use tables::selection_table::{SelectionTable, SelectionTableCell, SelectionTableRow};
 pub use tables::TableDisplayType;
 pub use tag::Tag;
 pub use toast::{use_toaster, Toast, ToastContent, ToastKind, Toaster};
@@ -48,6 +49,7 @@ pub mod tooltip;
 mod breadcrumbs;
 mod buttons;
 mod doorhanger;
+mod error_message;
 mod icon_text;
 mod inputs;
 mod loading_spinner;
@@ -86,9 +88,11 @@ pub enum FontAwesomeIcon {
     Peers,
     Play,
     Plus,
+    Retry,
     Save,
     SignOut,
     TrashCan,
+    TriangleExclamation,
     XMark,
 }
 
@@ -118,9 +122,11 @@ impl FontAwesomeIcon {
             FontAwesomeIcon::Peers => "fa-solid fa-microchip",
             FontAwesomeIcon::Play => "fa-solid fa-play",
             FontAwesomeIcon::Plus => "fa-solid fa-plus",
+            FontAwesomeIcon::Retry => "fa-solid fa-rotate-right",
             FontAwesomeIcon::Save => "fa-solid fa-save",
             FontAwesomeIcon::SignOut => "fas fa-sign-out-alt",
             FontAwesomeIcon::TrashCan => "fa-solid fa-trash-can",
+            FontAwesomeIcon::TriangleExclamation => "fa-solid fa-triangle-exclamation",
             FontAwesomeIcon::XMark => "fa-solid fa-xmark",
         }
     }

@@ -1,11 +1,31 @@
 use std::hash::Hash;
+use std::sync::Arc;
 use leptos::prelude::*;
-use crate::{Ior, NON_BREAKING_SPACE};
+use crate::{FontAwesomeIcon, Ior, NON_BREAKING_SPACE};
+use crate::tooltip::Tooltip;
+
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+pub enum SelectionTableCell {
+    Text(String),
+    Error(String)
+}
+
+impl From<String> for SelectionTableCell {
+    fn from(value: String) -> Self {
+        Self::Text(value)
+    }
+}
+
+impl From<&str> for SelectionTableCell {
+    fn from(value: &str) -> Self {
+        Self::Text(value.to_owned())
+    }
+}
 
 #[derive(Clone, Debug)]
 pub struct SelectionTableRow<Id> {
     pub id: Id,
-    pub cells: Vec<String>,
+    pub cells: Vec<SelectionTableCell>,
 }
 
 #[component]
@@ -89,8 +109,25 @@ where
                                         each=move || Clone::clone(&cells)
                                         key=|cell| cell.to_owned()
                                         children=move |cell| {
-                                            view! {
-                                                <td> { cell } </td>
+                                            match cell {
+                                                SelectionTableCell::Text(text) => {
+                                                    view! {
+                                                        <td> { text } </td>
+                                                    }.into_any()
+                                                }
+                                                SelectionTableCell::Error(error) => {
+                                                    let tooltip_content = Arc::new(move || {
+                                                        view!({error.clone()}).into_any()
+                                                    });
+
+                                                    view! {
+                                                        <td>
+                                                            <Tooltip text=tooltip_content>
+                                                                <i class=format!("has-text-danger fa-lg {}", FontAwesomeIcon::TriangleExclamation.as_class()) />
+                                                            </Tooltip>
+                                                        </td>
+                                                    }.into_any()
+                                                }
                                             }
                                         }
                                     />

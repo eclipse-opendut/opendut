@@ -1,30 +1,16 @@
 use leptos::prelude::*;
-use opendut_lea_components::{SelectionTable, SelectionTableRow};
+use opendut_lea_components::{ErrorText, SelectionTable, SelectionTableCell, SelectionTableRow};
+use opendut_model::cluster::ClusterDescriptor;
 use opendut_model::peer::PeerDescriptor;
-use crate::app::use_app_globals;
 use crate::util;
 use crate::viper_tests::configurator::types::{PeerSelection, UserViperTestRunDescriptor};
 
 #[component]
-pub fn PeerSelector(user_test_run_descriptor: RwSignal<UserViperTestRunDescriptor>) -> impl IntoView {
-
-    let globals = use_app_globals();
-
-    let peers_and_clusters = {
-        let carl = globals.client.clone();
-
-        LocalResource::new(move || {
-            let mut carl = carl.clone();
-            async move {
-                let peers = carl.peers.list_peer_descriptors().await
-                    .expect("Failed to request the list of peers");
-                let clusters = carl.cluster.list_cluster_descriptors().await
-                    .expect("Failed to request the list of clusters.");
-
-                (peers, clusters)
-            }
-        })
-    };
+pub fn PeerSelector(
+    user_test_run_descriptor: RwSignal<UserViperTestRunDescriptor>,
+    peers: ReadSignal<Vec<PeerDescriptor>>,
+    clusters: ReadSignal<Result<Vec<ClusterDescriptor>, ErrorText>>,
+) -> impl IntoView {
 
     let (getter, setter) = create_slice(user_test_run_descriptor,
         |config| {
@@ -35,48 +21,47 @@ pub fn PeerSelector(user_test_run_descriptor: RwSignal<UserViperTestRunDescripto
         }
     );
 
-    let peers = Signal::derive(move || {
-        if let Some((mut peers, clusters)) = peers_and_clusters.get() {
-            peers
-                .sort_by(|peer_a, peer_b| {
-                    peer_a.name.value().to_lowercase()
-                        .cmp(&peer_b.name.value().to_lowercase())
-                });
+    let rows = Signal::derive(move || {
+        let peers = peers.get().iter().map(|peer_descriptor| {
+            let PeerDescriptor { id, name, location: _location, network: _network, topology } = peer_descriptor;
+            let id = id.to_owned();
+            let name = name.value().to_owned();
 
-            let rows = peers.iter().map(|peer_descriptor| {
-                let PeerDescriptor { id, name, location: _location, network: _network, topology } = peer_descriptor;
-                let id = id.to_owned();
-                let name = name.value().to_owned();
+            let devices_in_peer = topology
+                .devices
+                .iter()
+                .map(|device| device.id)
+                .collect::<Vec<_>>();
 
-                let devices_in_peer = topology
-                    .devices
-                    .iter()
-                    .map(|device| device.id)
-                    .collect::<Vec<_>>();
-
-                let clusters = util::list_configured_clusters_for_peer(devices_in_peer, Clone::clone(&clusters))
-                    .iter()
-                    .map(|cluster| cluster.name.value().to_owned())
-                    .collect::<Vec<_>>()
-                    .join(", ");
-
-                SelectionTableRow {
-                    id,
-                    cells: vec![name, id.to_string(), clusters]
+            let clusters = match clusters.get() {
+                Ok(clusters) => {
+                    let cluster_list = util::list_configured_clusters_for_peer(devices_in_peer, clusters)
+                        .iter()
+                        .map(|cluster| cluster.name.value().to_owned())
+                        .collect::<Vec<_>>()
+                        .join(", ");
+                    SelectionTableCell::Text(cluster_list)
                 }
-            }).collect::<Vec<_>>();
+                Err(error) => {
+                    let tip = error.headline;
+                    SelectionTableCell::Error(tip)
+                }
+            };
 
-            if peers.is_empty() {
-                setter.set(PeerSelection::Left(String::from("No peers available.")));
-            } else if matches!(getter.get(), PeerSelection::Left(_)) {
-                setter.set(PeerSelection::Left(String::from("Select a peer.")));
+            SelectionTableRow {
+                id,
+                cells: vec![name.into(), id.to_string().into(), clusters]
             }
+        }).collect::<Vec<_>>();
 
-            rows
-        } else {
-            Vec::new()
+        if peers.is_empty() {
+            setter.set(PeerSelection::Left(String::from("No peers available.")));
+        } else if matches!(getter.get(), PeerSelection::Left(_)) {
+            setter.set(PeerSelection::Left(String::from("Select a peer.")));
         }
-    });
+
+        peers
+     });
 
     let header = vec![
         String::new(),
@@ -88,7 +73,7 @@ pub fn PeerSelector(user_test_run_descriptor: RwSignal<UserViperTestRunDescripto
     view! {
         <SelectionTable
             header
-            rows=peers
+            rows
             getter
             setter
         />

@@ -1,11 +1,13 @@
 use leptos::prelude::*;
-use leptos_router::hooks::use_params_map;
+use leptos_router::hooks::{use_navigate, use_params_map};
+use tracing::error;
+use opendut_carl_api::carl::ClientError;
+use opendut_carl_api::carl::cluster::GetClusterDescriptorError;
+use opendut_lea_components::{ErrorMessage, ErrorText};
 use opendut_lea_components::tabs::{Tab, Tabs};
 use crate::components::UserInputValue;
 use opendut_model::cluster::ClusterId;
-use opendut_model::peer::PeerDescriptor;
 use opendut_model::cluster::state::ClusterState;
-
 use crate::app::use_app_globals;
 use crate::clusters::configurator::components::{DeviceSelection, DeviceSelector, LeaderSelection};
 use crate::clusters::configurator::components::Controls;
@@ -13,6 +15,7 @@ use crate::clusters::configurator::tabs::{DevicesTab, GeneralTab, LeaderTab, Tab
 use types::UserClusterDescriptor;
 use crate::clusters::IsDeployed;
 use crate::components::{use_active_tab, BasePageContainer, Breadcrumb, LoadingSpinner};
+use crate::routing::{navigate_to, WellKnownRoutes};
 
 mod tabs;
 mod components;
@@ -22,15 +25,31 @@ mod types;
 pub fn ClusterConfigurator() -> impl IntoView {
     let globals = use_app_globals();
     let params = use_params_map();
+    let active_tab = use_active_tab::<TabIdentifier>();
 
-    let cluster_id = Memo::new(move |_| params.with(|params| {
-        params.get("id")
-            .and_then(|id| ClusterId::try_from(id.as_str()).ok())
-    }).unwrap_or_else(ClusterId::random));
+    let cluster_id = {
+        let cluster_id = params.with_untracked(|params| {
+            params.get("id").and_then(|id| ClusterId::try_from(id.as_str()).ok())
+        });
+        match cluster_id {
+            None => {
+                let use_navigate = use_navigate();
+                navigate_to(WellKnownRoutes::ErrorPage {
+                    title: String::from("Invalid ClusterId"),
+                    text: String::from("Could not parse the provided value as ClusterId!"),
+                    details: None,
+                }, use_navigate);
+                ClusterId::random()
+            }
+            Some(cluster_id) => {
+                cluster_id
+            }
+        }
+    };
 
     let user_cluster_descriptor = RwSignal::new(
         UserClusterDescriptor {
-            id: cluster_id.get_untracked(),
+            id: cluster_id,
             name: UserInputValue::Left(String::from("Enter a valid cluster name.")),
             devices: DeviceSelection::Left(String::from("Select at least two devices.")),
             leader: LeaderSelection::Left(String::from("Select a leader.")),
@@ -38,64 +57,66 @@ pub fn ClusterConfigurator() -> impl IntoView {
         }
     );
 
-    {
+    let cluster_resource: LocalResource<Result<(), ErrorText>> = {
         let carl = globals.client.clone();
 
         LocalResource::new(move || {
-            let cluster_id = cluster_id.get();
             let mut carl = carl.clone();
 
             async move {
-                if let Ok(configuration) = carl.cluster.get_cluster_descriptor(cluster_id).await {
-                    user_cluster_descriptor.set(
-                        UserClusterDescriptor {
-                            id: cluster_id,
-                            name: UserInputValue::Right(configuration.name.value().to_owned()),
-                            devices: DeviceSelection::Right(configuration.devices),
-                            leader: LeaderSelection::Right(configuration.leader),
-                            is_new: false,
-                        }
-                    )
-                } else {
-                    tracing::debug!("Could not find cluster with ID <{cluster_id}> in backend. Showing empty configurator to create new cluster.");
-                }
+                let descriptor = match carl.cluster.get_cluster_descriptor(cluster_id).await {
+                    Ok(descriptor) => descriptor,
+                    Err(ClientError::UsageError(GetClusterDescriptorError::ClusterNotFound { .. })) => {
+                        return Ok(());
+                    }
+                    Err(error) => {
+                        error!("Failed to request the cluster descriptor for cluster <{cluster_id}>: {error}");
+
+                        return Err(ErrorText {
+                            headline: String::from("Unable to load cluster descriptor"),
+                            description: String::from("The cluster descriptor could not be loaded. Please check your connection and try again."),
+                        });
+                    }
+                };
+
+                user_cluster_descriptor.set(
+                    UserClusterDescriptor {
+                        id: cluster_id,
+                        name: UserInputValue::Right(descriptor.name.value().to_owned()),
+                        devices: DeviceSelection::Right(descriptor.devices),
+                        leader: LeaderSelection::Right(descriptor.leader),
+                        is_new: false,
+                    }
+                );
+
+                Ok(())
             }
-        });
-    }
+        })
+    };
 
-    let peer_descriptors = get_all_peers();
-
-    view! {
-        <Transition
-            fallback=LoadingSpinner
-        >
-        {move || Suspend::new(async move {
-            let peers = RwSignal::new(peer_descriptors.await).read_only();
-
-            view! {
-                <LoadedClusterConfigurator user_cluster_descriptor peers />
-            }
-        })}
-        </Transition>
-    }
-}
-
-#[component]
-fn LoadedClusterConfigurator(
-    user_cluster_descriptor: RwSignal<UserClusterDescriptor>,
-    peers: ReadSignal<Vec<PeerDescriptor>>,
-) -> impl IntoView {
-    let globals = use_app_globals();
     let cluster_state = RwSignal::new(ClusterState::default());
-    let active_tab = use_active_tab::<TabIdentifier>();
 
-    let cluster_id = create_read_slice(
-        user_cluster_descriptor,
-        |descriptor| descriptor.id,
-    );
+    let peers_resource = {
+        let carl = globals.client.clone();
+
+        LocalResource::new(move || {
+            let mut carl = carl.clone();
+            async move {
+                carl.peers.list_peer_descriptors().await
+                    .map_err(|error| {
+                        error!("Failed to request the list of peers: {error}");
+
+                        ErrorText {
+                            headline: String::from("Unable to load peer descriptors"),
+                            description: String::from("The peer descriptors could not be loaded. Please check your connection and try again."),
+                        }
+                    })
+            }
+        })
+    };
 
     let breadcrumbs = Signal::derive(move || {
-        let cluster_id = cluster_id.get().uuid.to_string();
+        let cluster_id = cluster_id.uuid.to_string();
         let active_tab = active_tab.get();
         vec![
             Breadcrumb::new("Dashboard", "/"),
@@ -108,27 +129,34 @@ fn LoadedClusterConfigurator(
 
     let cluster_deployments = {
         let carl = globals.client.clone();
+
         LocalResource::new(move || {
             refetch_cluster_deployments.track();
+
             let mut carl = carl.clone();
             async move {
                 carl.cluster.list_cluster_deployments().await
-                    .expect("Failed to request the list of cluster deployments")
+                    .map_err(|error| {
+                        error!("Failed to request the list of cluster deployments: {error}");
+
+                        ErrorText {
+                            headline: String::from("Unable to load cluster deployments"),
+                            description: String::from("The cluster deployments could not be loaded. Please check your connection and try again."),
+                        }
+                    })
             }
         })
     };
 
-    let deployed_signal = Memo::new(move |_| {
-        let cluster_id = cluster_id.get();
+    let deployed_signal = Signal::derive(move || {
+        let cluster_id = cluster_id;
 
-        let is_deployed = cluster_deployments.get()
-            .is_some_and(|deployments| {
-                deployments
-                    .iter()
-                    .any(|deployment| deployment.id == cluster_id)
-            });
-
-        IsDeployed(is_deployed)
+        match cluster_deployments.get() {
+            Some(Ok(deployments)) => {
+                Some(IsDeployed(deployments.iter().any(|deployment| deployment.id == cluster_id)))
+            }
+            Some(Err(_)) | None => None
+        }
     });
 
     let subtitle = Signal::derive(move || {
@@ -142,7 +170,7 @@ fn LoadedClusterConfigurator(
     let tabs = Signal::derive(move || {
         vec![
             Tab::from_title_and_href(
-                String::from("General"), 
+                String::from("General"),
                 TabIdentifier::General.as_str().to_owned()
             ).with_is_error(Signal::derive(move || !user_cluster_descriptor.read().valid_general_tab())),
 
@@ -157,7 +185,11 @@ fn LoadedClusterConfigurator(
             ).with_is_error(Signal::derive(move || !user_cluster_descriptor.read().valid_leader_tab())),
         ]
     });
-    
+
+    let is_disabled = Signal::derive(move || {
+        !matches!(deployed_signal.get(), Some(IsDeployed(false)))
+    });
+
     view! {
         <BasePageContainer
             title="Configure Cluster"
@@ -169,48 +201,52 @@ fn LoadedClusterConfigurator(
                         user_cluster_descriptor
                         deployed_signal
                         cluster_state=cluster_state.into()
-                        on_deployment_changed=move || refetch_cluster_deployments.notify()
+                        on_deployment_change=move || refetch_cluster_deployments.notify()
                     />
                 }
             }
         >
-            <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
-                <fieldset prop:disabled=move || { deployed_signal.get().0 }>
-                    { move || match active_tab.get() {
-                        TabIdentifier::General => view! {
-                            <GeneralTab user_cluster_descriptor />
-                        }.into_any(),
+            <Suspense
+                fallback=move || view! { <LoadingSpinner /> }
+            >
+                { move || Suspend::new(async move {
+                    let peers = RwSignal::new(peers_resource.await).read_only();
+                    match cluster_resource.await {
+                        Ok(()) => {
+                            view! {
+                                <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
+                                    <fieldset prop:disabled=move || is_disabled.get()>
+                                        { move || match active_tab.get() {
+                                            TabIdentifier::General => view! {
+                                                <GeneralTab user_cluster_descriptor />
+                                            }.into_any(),
 
-                        TabIdentifier::Devices => view! {
-                            <DevicesTab
-                                user_cluster_descriptor
-                                peers is_disabled=Signal::derive(move || deployed_signal.get().0)
-                            />
+                                            TabIdentifier::Devices => view! {
+                                                <DevicesTab
+                                                    user_cluster_descriptor
+                                                    peers=peers
+                                                    is_disabled
+                                                />
+                                            }.into_any(),
+
+                                            TabIdentifier::Leader => view! {
+                                                <LeaderTab
+                                                    user_cluster_descriptor
+                                                    peers=peers
+                                                    is_disabled
+                                                />
+                                            }.into_any()
+                                        }}
+                                    </fieldset>
+                                </Tabs>
+                            }.into_any()
+                        }
+                        Err(error) => view! {
+                            <ErrorMessage text=error />
                         }.into_any(),
-                        
-                        TabIdentifier::Leader => view! {
-                            <LeaderTab
-                                user_cluster_descriptor
-                                peers
-                                is_disabled=Signal::derive(move || deployed_signal.get().0)
-                            />
-                        }.into_any()
-                    }}
-                </fieldset>
-            </Tabs>
+                    }
+                })}
+            </Suspense>
         </BasePageContainer>
     }
-}
-
-
-pub(super) fn get_all_peers() -> LocalResource<Vec<PeerDescriptor>> {
-    let globals = use_app_globals();
-
-    LocalResource::new(move || {
-        let mut carl = globals.client.clone();
-        async move {
-            carl.peers.list_peer_descriptors().await
-                .expect("Failed to request the list of all peers.")
-        }
-    })
 }

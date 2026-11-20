@@ -21,7 +21,6 @@ pub struct UserViperSourceConfiguration {
     pub name: UserInputValue,
     pub url: UserInputValue,
     pub kind: UserInputValue,
-    pub is_new: bool,
 }
 
 impl TryFrom<UserViperSourceConfiguration> for ViperSourceDescriptor {

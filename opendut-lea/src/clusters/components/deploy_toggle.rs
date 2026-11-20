@@ -5,7 +5,7 @@ use tracing::{debug, error};
 use opendut_carl_api::carl::ClientError;
 use opendut_carl_api::carl::cluster::{ListClusterPeerStatesResponse, StoreClusterDeploymentError};
 use opendut_lea_components::tooltip::{Tooltip, TooltipDirection};
-use opendut_lea_components::{Toggle, ToggleState};
+use opendut_lea_components::{FontAwesomeIcon, Toggle, ToggleState};
 use opendut_model::cluster::{ClusterDeployment, ClusterId};
 use opendut_model::peer::PeerId;
 use opendut_model::peer::state::PeerMemberState;
@@ -14,15 +14,16 @@ use crate::clusters::IsDeployed;
 use crate::components::{Toast, use_toaster};
 
 #[component]
-pub fn DeployToggle<OnDeploymentChanged>(
+pub fn DeployToggle<OnDeploymentChange>(
     #[prop(into)] cluster_id: Signal<ClusterId>,
     #[prop(into, default=Signal::from(false))] is_new_cluster: Signal<bool>,
-    #[prop(into)] is_deployed: Signal<IsDeployed>,
-    on_deployment_changed: OnDeploymentChanged,
+    #[prop(into)] is_deployed: Signal<Option<IsDeployed>>,
+    #[prop(into, default=Signal::from(()))] refetch_peer_states: Signal<()>,
+    on_deployment_change: OnDeploymentChange,
     #[prop(optional)] tooltip_direction: TooltipDirection,
 ) -> impl IntoView
 where
-    OnDeploymentChanged: Fn() + Clone + Send + 'static,
+    OnDeploymentChange: Fn() + Clone + Send + 'static,
 {
     let globals = use_app_globals();
     let toaster = use_toaster();
@@ -30,7 +31,7 @@ where
     let on_deploy = {
         let carl = globals.client.clone();
         let toaster = Arc::clone(&toaster);
-        let on_deployment_changed = on_deployment_changed.clone();
+        let on_deployment_changed = on_deployment_change.clone();
 
         move || {
             let mut carl = carl.clone();
@@ -76,7 +77,7 @@ where
     let on_undeploy = {
         let carl = globals.client.clone();
         let toaster = Arc::clone(&toaster);
-        let on_deployment_changed = on_deployment_changed.clone();
+        let on_deployment_changed = on_deployment_change.clone();
 
         move || {
             let mut carl = carl.clone();
@@ -112,31 +113,34 @@ where
             let mut carl = carl.clone();
             let is_new_cluster = is_new_cluster.get();
             let _ = is_deployed.get();
+            refetch_peer_states.get();
 
             async move {
                 if is_new_cluster {
                     return None;
                 }
 
-                let states = carl.cluster.list_cluster_peer_states(cluster_id).await
-                    .expect("Failed to request the list of cluster's peer state.");
+                let states = carl.cluster.list_cluster_peer_states(cluster_id).await;
+
                 match states {
-                    ListClusterPeerStatesResponse::Success { peer_states } => {
-                        let invalid_peers = peer_states.iter()
+                    Ok(ListClusterPeerStatesResponse::Success { peer_states }) => {
+                        let blocked_peers = peer_states.iter()
                             .filter(|(_, peer_state)| {
                                 matches!(&peer_state.member, PeerMemberState::Blocked { .. })
                             })
                             .map(|(peer_id, _)| peer_id.to_owned())
                             .collect::<Vec<_>>();
 
-                        if invalid_peers.is_empty() {
-                            None
-                        } else {
-                            Some(BlockedDeployment::Peers(invalid_peers))
-                        }
+                        (!blocked_peers.is_empty())
+                            .then_some(DeploymentBlocker::Peers(blocked_peers))
                     }
-                    ListClusterPeerStatesResponse::Failure { message } => {
-                        Some(BlockedDeployment::Message(message))
+                    Ok(ListClusterPeerStatesResponse::Failure { message }) => {
+                        Some(DeploymentBlocker::Message(message))
+                    }
+                    Err(_) => {
+                        Some(DeploymentBlocker::Message(String::from(
+                            "Failed to request the list of cluster's peer states."
+                        )))
                     }
                 }
             }
@@ -148,46 +152,65 @@ where
         let on_undeploy = on_undeploy.clone();
 
         Suspend::new(async move {
-            let blocked_deployment = blocked_cluster_deployment.await;
+            match is_deployed.get() {
+                Some(is_deployed) => {
+                    let is_deployed = is_deployed.0;
+                    let deployment_blocker = blocked_cluster_deployment.await;
 
-            let is_deployed = Signal::derive(move || is_deployed.get().0);
+                    let toggle_state = Signal::derive({
+                        let deployment_blocker = deployment_blocker.clone();
 
-            let show_error = Signal::derive({
-                let blocked_deployment = blocked_deployment.clone();
-                move || blocked_deployment.is_some() && !is_deployed.get()
-            });
+                        move || {
+                            let is_blocked = deployment_blocker.is_some() && !is_deployed;
 
-            let toggle_state = Signal::derive(move || {
-                if show_error.get() || is_new_cluster.get() {
-                    ToggleState::Disabled
-                } else {
-                    ToggleState::Enabled
-                }
-            });
-
-            let tooltip_content = Arc::new(move || {
-                view! {
-                    <DeploymentTooltipContent is_new_cluster is_deployed blocked_deployment=Clone::clone(&blocked_deployment) />
-                }.into_any()
-            });
-
-            view! {
-                <Tooltip text=tooltip_content direction=tooltip_direction>
-                    <Toggle
-                        is_active=is_deployed
-                        state=toggle_state
-                        on_action=move || {
-                            if is_deployed.get() { on_undeploy() } else { on_deploy() }
+                            if is_new_cluster.get() || is_blocked {
+                                ToggleState::Disabled
+                            } else {
+                                ToggleState::Enabled
+                            }
                         }
-                    />
-                </Tooltip>
+                    });
+
+                    let tooltip_content = Arc::new(move || {
+                        view! {
+                            <DeploymentTooltipContent is_new_cluster is_deployed blocked_deployment=Clone::clone(&deployment_blocker) />
+                        }.into_any()
+                    });
+
+                    view! {
+                        <Tooltip text=tooltip_content direction=tooltip_direction>
+                            <Toggle
+                                is_active=is_deployed
+                                state=toggle_state
+                                on_action=move || {
+                                    if is_deployed { on_undeploy() } else { on_deploy() }
+                                }
+                            />
+                        </Tooltip>
+                    }.into_any()
+                }
+                None => {
+                    let tooltip_content = Arc::new(move || {
+                        view! {
+                            Unable to load cluster deployments.
+                        }.into_any()
+                    });
+
+                    view! {
+                        <div class="is-flex is-align-items-center is-justify-content-center">
+                            <Tooltip text=tooltip_content direction=tooltip_direction>
+                                <i class=format!("has-text-danger fa-lg {}", FontAwesomeIcon::TriangleExclamation.as_class()) />
+                            </Tooltip>
+                        </div>
+                    }.into_any()
+                }
             }
         })
     }
 }
 
 #[derive(Clone)]
-enum BlockedDeployment {
+enum DeploymentBlocker {
     Peers(Vec<PeerId>),
     Message(String),
 }
@@ -195,8 +218,8 @@ enum BlockedDeployment {
 #[component]
 fn DeploymentTooltipContent(
     is_new_cluster: Signal<bool>,
-    is_deployed: Signal<bool>,
-    blocked_deployment: Option<BlockedDeployment>,
+    #[prop(into)] is_deployed: Signal<bool>,
+    blocked_deployment: Option<DeploymentBlocker>,
 ) -> impl IntoView {
 
     move || {
@@ -209,7 +232,7 @@ fn DeploymentTooltipContent(
         if !is_deployed.get()
             && let Some(blocked_deployment) = blocked_deployment.as_ref() {
                 return match blocked_deployment {
-                    BlockedDeployment::Peers(peers) => {
+                    DeploymentBlocker::Peers(peers) => {
                         let amount = peers.len();
 
                         let message = if amount == 1 {
@@ -239,12 +262,11 @@ fn DeploymentTooltipContent(
                             .into_any()
                     }
 
-                    BlockedDeployment::Message(message) => {
+                    DeploymentBlocker::Message(message) => {
                         view! { { message.to_owned() } }.into_any()
                     }
                 };
             }
-
 
         if is_deployed.get() {
             view! { "Deployment requested" }.into_any()
