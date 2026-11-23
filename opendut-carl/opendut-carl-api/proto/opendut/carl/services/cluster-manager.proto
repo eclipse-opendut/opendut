@@ -296,7 +296,15 @@ message ListClusterDeploymentsSuccess {
   repeated opendut.model.cluster.ClusterDeployment deployments = 1;
 }
 
-message ListClusterDeploymentsFailure {}
+message ListClusterDeploymentsFailure {
+  oneof error {
+    ListClusterDeploymentsFailureInternal internal = 1;
+  }
+}
+
+message ListClusterDeploymentsFailureInternal {
+  string cause = 1;
+}
 
 
 //

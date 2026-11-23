@@ -239,17 +239,20 @@ impl ClusterManagerService for ClusterManagerFacade {
     async fn list_cluster_deployments(&self, _: Request<ListClusterDeploymentsRequest>) -> Result<Response<ListClusterDeploymentsResponse>, Status> {
         trace!("Received request to list cluster deployments.");
 
-        let deployments = self.cluster_manager.lock().await.list_cluster_deployment().await
+        let result = self.cluster_manager.lock().await.list_cluster_deployment().await
             .log_api_err()
-            .map_err(|cause| Status::internal(cause.to_string()))?;
+            .map_err(opendut_carl_api::carl::cluster::ListClusterDeploymentsError::from);
 
-        Ok(Response::new(ListClusterDeploymentsResponse {
-            result: Some(list_cluster_deployments_response::Result::Success(
+        let result = match result {
+            Ok(deployments) => list_cluster_deployments_response::Result::Success(
                 ListClusterDeploymentsSuccess {
-                    deployments: deployments.into_iter().map(std::convert::Into::into).collect::<Vec<_>>()
+                    deployments: deployments.into_iter().map(Into::into).collect(),
                 }
-            ))
-        }))
+            ),
+            Err(error) => list_cluster_deployments_response::Result::Failure(error.into()),
+        };
+
+        Ok(Response::new(ListClusterDeploymentsResponse { result: Some(result) }))
     }
 
     async fn list_cluster_peer_states(&self, request: Request<ListClusterPeerStatesRequest>) -> Result<Response<ListClusterPeerStatesResponse>, Status> {

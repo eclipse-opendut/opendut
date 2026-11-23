@@ -121,9 +121,9 @@ pub enum GetClusterDeploymentError {
 }
 
 #[derive(thiserror::Error, Debug)]
-#[error("{message}")]
-pub struct ListClusterDeploymentsError {
-    pub message: String,
+pub enum ListClusterDeploymentsError {
+    #[error("An internal error occurred while listing cluster deployments:\n  {cause}")]
+    Internal { cause: String },
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -334,31 +334,25 @@ mod client {
             }
         }
 
-        pub async fn list_cluster_deployments(&mut self) -> Result<Vec<ClusterDeployment>, ListClusterDeploymentsError> {
+        pub async fn list_cluster_deployments(&mut self) -> Result<Vec<ClusterDeployment>, ClientError<ListClusterDeploymentsError>> {
             let request = tonic::Request::new(cluster_manager::ListClusterDeploymentsRequest {});
 
-            match self.inner.list_cluster_deployments(request).await {
-                Ok(response) => {
-                    let result = response.into_inner().result
-                        .ok_or(ListClusterDeploymentsError { message: String::from("Response contains no result!") })?;
-                    match result {
-                        cluster_manager::list_cluster_deployments_response::Result::Failure(_) => {
-                            Err(ListClusterDeploymentsError { message: String::from("Failed to list clusters!") })
-                        }
-                        cluster_manager::list_cluster_deployments_response::Result::Success(cluster_manager::ListClusterDeploymentsSuccess { deployments }) => {
-                            deployments.into_iter()
-                                .map(ClusterDeployment::try_from)
-                                .collect::<Result<Vec<ClusterDeployment>, _>>()
-                                .map_err(|_| ListClusterDeploymentsError { message: String::from("Conversion failed for list of cluster deployments!") })
-                        }
-                    }
-                },
-                Err(status) => {
-                    Err(ListClusterDeploymentsError { message: format!("gRPC failure: {status}") })
+            let response = self.inner.list_cluster_deployments(request).await?
+                .into_inner();
+
+            match extract!(response.result)? {
+                cluster_manager::list_cluster_deployments_response::Result::Failure(failure) => {
+                    let error = ListClusterDeploymentsError::try_from(failure)?;
+                    Err(ClientError::UsageError(error))
+                }
+                cluster_manager::list_cluster_deployments_response::Result::Success(success) => {
+                    Ok(success.deployments.into_iter()
+                        .map(ClusterDeployment::try_from)
+                        .collect::<Result<Vec<_>, _>>()?)
                 }
             }
         }
-        
+
         pub async fn list_cluster_peer_states(&mut self, cluster_id: ClusterId) -> Result<ListClusterPeerStatesResponse, ListClusterPeersError> {
             
             let request = tonic::Request::new(cluster_manager::ListClusterPeerStatesRequest { cluster_id: Some(cluster_id.into()) });

@@ -1,5 +1,5 @@
 use crate::carl;
-use crate::carl::cluster::{CreateClusterDescriptorError, DeleteClusterDeploymentError, DeleteClusterDescriptorError, GetClusterDescriptorError, GetClusterDeploymentError, ListClusterDescriptorsError, StoreClusterDeploymentError};
+use crate::carl::cluster::{CreateClusterDescriptorError, DeleteClusterDeploymentError, DeleteClusterDescriptorError, GetClusterDescriptorError, GetClusterDeploymentError, ListClusterDescriptorsError, ListClusterDeploymentsError, StoreClusterDeploymentError};
 use opendut_model::cluster::state::ClusterState;
 use opendut_model::cluster::{ClusterId, ClusterName};
 use opendut_model::proto;
@@ -558,5 +558,33 @@ impl TryFrom<GetClusterDeploymentFailureInternal> for GetClusterDeploymentError 
             .ok_or_else(|| ErrorBuilder::field_not_set("cluster_id"))?
             .try_into()?;
         Ok(Self::Internal { cluster_id, cause: failure.cause })
+    }
+}
+
+impl From<ListClusterDeploymentsError> for ListClusterDeploymentsFailure {
+    fn from(error: ListClusterDeploymentsError) -> Self {
+        let error = match error {
+            ListClusterDeploymentsError::Internal { cause } => {
+                list_cluster_deployments_failure::Error::Internal(ListClusterDeploymentsFailureInternal { cause })
+            }
+        };
+        Self { error: Some(error) }
+    }
+}
+
+impl TryFrom<ListClusterDeploymentsFailure> for ListClusterDeploymentsError {
+    type Error = ConversionError;
+    fn try_from(failure: ListClusterDeploymentsFailure) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<ListClusterDeploymentsFailure, ListClusterDeploymentsError>;
+        match failure.error.ok_or_else(|| ErrorBuilder::field_not_set("error"))? {
+            list_cluster_deployments_failure::Error::Internal(error) => error.try_into(),
+        }
+    }
+}
+
+impl TryFrom<ListClusterDeploymentsFailureInternal> for ListClusterDeploymentsError {
+    type Error = ConversionError;
+    fn try_from(failure: ListClusterDeploymentsFailureInternal) -> Result<Self, Self::Error> {
+        Ok(Self::Internal { cause: failure.cause })
     }
 }
