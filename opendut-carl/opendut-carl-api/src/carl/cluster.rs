@@ -66,9 +66,9 @@ pub enum GetClusterDescriptorError {
 }
 
 #[derive(thiserror::Error, Debug)]
-#[error("{message}")]
-pub struct ListClusterDescriptorsError {
-    pub message: String,
+pub enum ListClusterDescriptorsError {
+    #[error("An internal error occurred while listing cluster descriptors:\n  {cause}")]
+    Internal { cause: String },
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -251,27 +251,21 @@ mod client {
             }
         }
 
-        pub async fn list_cluster_descriptors(&mut self) -> Result<Vec<ClusterDescriptor>, ListClusterDescriptorsError> {
+        pub async fn list_cluster_descriptors(&mut self) -> Result<Vec<ClusterDescriptor>, ClientError<ListClusterDescriptorsError>> {
             let request = tonic::Request::new(cluster_manager::ListClusterDescriptorsRequest {});
 
-            match self.inner.list_cluster_descriptors(request).await {
-                Ok(response) => {
-                    let result = response.into_inner().result
-                        .ok_or(ListClusterDescriptorsError { message: String::from("Response contains no result!") })?;
-                    match result {
-                        cluster_manager::list_cluster_descriptors_response::Result::Failure(_) => {
-                            Err(ListClusterDescriptorsError { message: String::from("Failed to list clusters!") })
-                        }
-                        cluster_manager::list_cluster_descriptors_response::Result::Success(cluster_manager::ListClusterDescriptorsSuccess { configurations }) => {
-                            configurations.into_iter()
-                                .map(ClusterDescriptor::try_from)
-                                .collect::<Result<Vec<ClusterDescriptor>, _>>()
-                                .map_err(|_| ListClusterDescriptorsError { message: String::from("Conversion failed for list of cluster descriptors!") })
-                        }
-                    }
-                },
-                Err(status) => {
-                    Err(ListClusterDescriptorsError { message: format!("gRPC failure: {status}") })
+            let response = self.inner.list_cluster_descriptors(request).await?
+                .into_inner();
+
+            match extract!(response.result)? {
+                cluster_manager::list_cluster_descriptors_response::Result::Failure(failure) => {
+                    let error = ListClusterDescriptorsError::try_from(failure)?;
+                    Err(ClientError::UsageError(error))
+                }
+                cluster_manager::list_cluster_descriptors_response::Result::Success(success) => {
+                    Ok(success.configurations.into_iter()
+                        .map(ClusterDescriptor::try_from)
+                        .collect::<Result<Vec<_>, _>>()?)
                 }
             }
         }

@@ -134,17 +134,20 @@ impl ClusterManagerService for ClusterManagerFacade {
     async fn list_cluster_descriptors(&self, _: Request<ListClusterDescriptorsRequest>) -> Result<Response<ListClusterDescriptorsResponse>, Status> {
         trace!("Received request to list cluster descriptors.");
 
-        let configurations = self.cluster_manager.lock().await.list_cluster_descriptor().await
+        let result = self.cluster_manager.lock().await.list_cluster_descriptor().await
             .log_api_err()
-            .map_err(|cause| Status::internal(cause.to_string()))?;
+            .map_err(opendut_carl_api::carl::cluster::ListClusterDescriptorsError::from);
 
-        Ok(Response::new(ListClusterDescriptorsResponse {
-            result: Some(list_cluster_descriptors_response::Result::Success(
+        let result = match result {
+            Ok(configurations) => list_cluster_descriptors_response::Result::Success(
                 ListClusterDescriptorsSuccess {
-                    configurations: configurations.into_iter().map(std::convert::Into::into).collect::<Vec<_>>()
+                    configurations: configurations.into_iter().map(Into::into).collect(),
                 }
-            ))
-        }))
+            ),
+            Err(error) => list_cluster_descriptors_response::Result::Failure(error.into()),
+        };
+
+        Ok(Response::new(ListClusterDescriptorsResponse { result: Some(result) }))
     }
 
     #[tracing::instrument(skip_all, level="trace")]

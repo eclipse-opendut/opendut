@@ -155,7 +155,15 @@ message ListClusterDescriptorsSuccess {
   repeated opendut.model.cluster.ClusterDescriptor configurations = 1;
 }
 
-message ListClusterDescriptorsFailure {}
+message ListClusterDescriptorsFailure {
+  oneof error {
+    ListClusterDescriptorsFailureInternal internal = 1;
+  }
+}
+
+message ListClusterDescriptorsFailureInternal {
+  string cause = 1;
+}
 
 //
 // StoreClusterDeployment

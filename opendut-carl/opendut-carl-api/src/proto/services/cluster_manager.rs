@@ -1,5 +1,5 @@
 use crate::carl;
-use crate::carl::cluster::{CreateClusterDescriptorError, DeleteClusterDeploymentError, DeleteClusterDescriptorError, GetClusterDescriptorError, StoreClusterDeploymentError};
+use crate::carl::cluster::{CreateClusterDescriptorError, DeleteClusterDeploymentError, DeleteClusterDescriptorError, GetClusterDescriptorError, ListClusterDescriptorsError, StoreClusterDeploymentError};
 use opendut_model::cluster::state::ClusterState;
 use opendut_model::cluster::{ClusterId, ClusterName};
 use opendut_model::proto;
@@ -53,6 +53,34 @@ conversion! {
             }
         };
         Ok(result)
+    }
+}
+
+impl From<ListClusterDescriptorsError> for ListClusterDescriptorsFailure {
+    fn from(error: ListClusterDescriptorsError) -> Self {
+        let error = match error {
+            ListClusterDescriptorsError::Internal { cause } => {
+                list_cluster_descriptors_failure::Error::Internal(ListClusterDescriptorsFailureInternal { cause })
+            }
+        };
+        Self { error: Some(error) }
+    }
+}
+
+impl TryFrom<ListClusterDescriptorsFailure> for ListClusterDescriptorsError {
+    type Error = ConversionError;
+    fn try_from(failure: ListClusterDescriptorsFailure) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<ListClusterDescriptorsFailure, ListClusterDescriptorsError>;
+        match failure.error.ok_or_else(|| ErrorBuilder::field_not_set("error"))? {
+            list_cluster_descriptors_failure::Error::Internal(error) => error.try_into(),
+        }
+    }
+}
+
+impl TryFrom<ListClusterDescriptorsFailureInternal> for ListClusterDescriptorsError {
+    type Error = ConversionError;
+    fn try_from(failure: ListClusterDescriptorsFailureInternal) -> Result<Self, Self::Error> {
+        Ok(Self::Internal { cause: failure.cause })
     }
 }
 

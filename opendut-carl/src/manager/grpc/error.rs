@@ -17,7 +17,15 @@ impl<T, E: Error> LogApiErr for Result<T, E> {
 
 mod cluster_manager {
     use crate::manager::cluster_manager;
-    use opendut_carl_api::carl::cluster::{CreateClusterDescriptorError, DeleteClusterDescriptorError, DeleteClusterDeploymentError, StoreClusterDeploymentError};
+    use opendut_carl_api::carl::cluster::{CreateClusterDescriptorError, DeleteClusterDescriptorError, DeleteClusterDeploymentError, ListClusterDescriptorsError, StoreClusterDeploymentError};
+
+    impl From<cluster_manager::error::ListClusterDescriptorsError> for ListClusterDescriptorsError {
+        fn from(_error: cluster_manager::error::ListClusterDescriptorsError) -> Self {
+            Self::Internal {
+                cause: String::from("Error when accessing persistence while listing cluster descriptors"),
+            }
+        }
+    }
 
     impl From<cluster_manager::CreateClusterDescriptorError> for CreateClusterDescriptorError {
         fn from(value: cluster_manager::CreateClusterDescriptorError) -> Self {
