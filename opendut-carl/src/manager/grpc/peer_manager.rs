@@ -2,7 +2,7 @@ use opendut_auth::registration::client::RegistrationClientRef;
 use opendut_auth::registration::resources::UserId;
 use opendut_carl_api::proto;
 use opendut_carl_api::proto::services::peer_manager::peer_manager_server::{PeerManager as PeerManagerService, PeerManagerServer};
-use opendut_carl_api::proto::services::peer_manager::{StorePeerDescriptorRequest, StorePeerDescriptorResponse, store_peer_descriptor_response, StorePeerDescriptorSuccess, DeletePeerDescriptorRequest, DeletePeerDescriptorResponse, DeletePeerDescriptorSuccess, delete_peer_descriptor_response, GetPeerDescriptorRequest, GetPeerDescriptorResponse, get_peer_descriptor_response, GetPeerDescriptorSuccess, ListPeerDescriptorsRequest, ListPeerDescriptorsResponse, list_peer_descriptors_response, ListPeerDescriptorsSuccess, GetPeerStateRequest, GetPeerStateResponse, get_peer_state_response, GetPeerStateSuccess, ListPeerStatesRequest, ListPeerStatesResponse, list_peer_states_response, ListPeerStatesSuccess, ListPeerStatesEntry, ListDevicesRequest, ListDevicesResponse, GeneratePeerSetupRequest, GeneratePeerSetupResponse, GenerateCleoSetupRequest, GenerateCleoSetupResponse, generate_cleo_setup_response, GenerateCleoSetupSuccess, generate_peer_setup_response, GeneratePeerSetupSuccess};
+use opendut_carl_api::proto::services::peer_manager::{StorePeerDescriptorRequest, StorePeerDescriptorResponse, store_peer_descriptor_response, StorePeerDescriptorSuccess, DeletePeerDescriptorRequest, DeletePeerDescriptorResponse, DeletePeerDescriptorSuccess, delete_peer_descriptor_response, GetPeerDescriptorRequest, GetPeerDescriptorResponse, get_peer_descriptor_response, GetPeerDescriptorSuccess, ListPeerDescriptorsRequest, ListPeerDescriptorsResponse, list_peer_descriptors_response, ListPeerDescriptorsSuccess, GetPeerStateRequest, GetPeerStateResponse, get_peer_state_response, GetPeerStateSuccess, ListPeerStatesRequest, ListPeerStatesResponse, list_peer_states_response, ListPeerStatesSuccess, ListPeerStatesEntry, ListDevicesRequest, ListDevicesResponse, list_devices_response, ListDevicesSuccess, GeneratePeerSetupRequest, GeneratePeerSetupResponse, GenerateCleoSetupRequest, GenerateCleoSetupResponse, generate_cleo_setup_response, GenerateCleoSetupSuccess, generate_peer_setup_response, GeneratePeerSetupSuccess};
 use opendut_model::cleo::CleoId;
 use opendut_model::peer::{PeerDescriptor, PeerId};
 use tonic::{Request, Response, Status};
@@ -265,20 +265,25 @@ impl PeerManagerService for PeerManagerFacade {
 
         trace!("Received request to list devices.");
 
-        let devices = self.resource_manager.resources(async |resources|
+        let result = self.resource_manager.resources(async |resources|
             resources.list_devices()
         ).await
             .map_err_to_inner(|source| ListDevicesError::Persistence {
-                source: source.context("Persistence error in transaction for listing peer states"),
+                source: source.context("Persistence error in transaction for listing devices"),
             })
             .inspect_err(|error| error!("Error while listing devices: {error}"))
-            .map_err(|_| Status::internal("Internal error when listing devices"))?;
+            .map_err(opendut_carl_api::carl::peer::ListDevicesError::from);
 
-        let devices = devices.into_iter()
-            .map(From::from)
-            .collect();
+        let reply = match result {
+            Ok(devices) => list_devices_response::Reply::Success(
+                ListDevicesSuccess {
+                    devices: devices.into_iter().map(From::from).collect(),
+                }
+            ),
+            Err(error) => list_devices_response::Reply::Failure(error.into()),
+        };
 
-        Ok(Response::new(ListDevicesResponse { devices }))
+        Ok(Response::new(ListDevicesResponse { reply: Some(reply) }))
     }
 
     #[tracing::instrument(skip_all, level="trace")]

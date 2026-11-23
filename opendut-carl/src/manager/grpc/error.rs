@@ -182,6 +182,16 @@ mod peer_manager {
         }
     }
 
+    impl From<peer_manager::list_devices::ListDevicesError> for opendut_carl_api::carl::peer::ListDevicesError {
+        fn from(error: peer_manager::list_devices::ListDevicesError) -> Self {
+            match error {
+                peer_manager::list_devices::ListDevicesError::Persistence { source: _ } => Self::Internal {
+                    cause: String::from("Error when accessing persistence while listing devices"),
+                },
+            }
+        }
+    }
+
     impl From<peer_manager::GeneratePeerSetupError> for CreatePeerSetupError {
         fn from(error: peer_manager::GeneratePeerSetupError) -> Self {
             match error {

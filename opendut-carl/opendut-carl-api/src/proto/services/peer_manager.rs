@@ -3,7 +3,7 @@ use opendut_model::peer::{PeerId, PeerName};
 use opendut_model::topology::DeviceId;
 use opendut_util::conversion;
 use opendut_util::proto::{ConversionError, ConversionErrorBuilder, ConversionResult};
-use crate::carl::peer::{CreatePeerSetupError, CreateCleoSetupError, DeletePeerDescriptorError, GetPeerDescriptorError, GetPeerStateError, ListPeerDescriptorsError, ListPeerStatesError, StorePeerDescriptorError};
+use crate::carl::peer::{CreatePeerSetupError, CreateCleoSetupError, DeletePeerDescriptorError, GetPeerDescriptorError, GetPeerStateError, ListPeerDescriptorsError, ListPeerStatesError, ListDevicesError, StorePeerDescriptorError};
 
 tonic::include_proto!("opendut.carl.services.peer_manager");
 
@@ -434,6 +434,34 @@ impl TryFrom<ListPeerStatesFailureInternal> for ListPeerStatesError {
     }
 }
 
+impl From<ListDevicesError> for ListDevicesFailure {
+    fn from(error: ListDevicesError) -> Self {
+        let error = match error {
+            ListDevicesError::Internal { cause } => {
+                list_devices_failure::Error::Internal(ListDevicesFailureInternal { cause })
+            }
+        };
+        Self { error: Some(error) }
+    }
+}
+
+impl TryFrom<ListDevicesFailure> for ListDevicesError {
+    type Error = ConversionError;
+    fn try_from(failure: ListDevicesFailure) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<ListDevicesFailure, ListDevicesError>;
+        match failure.error.ok_or_else(|| ErrorBuilder::field_not_set("error"))? {
+            list_devices_failure::Error::Internal(error) => error.try_into(),
+        }
+    }
+}
+
+impl TryFrom<ListDevicesFailureInternal> for ListDevicesError {
+    type Error = ConversionError;
+    fn try_from(failure: ListDevicesFailureInternal) -> Result<Self, Self::Error> {
+        Ok(Self::Internal { cause: failure.cause })
+    }
+}
+
 impl From<CreatePeerSetupError> for GeneratePeerSetupFailure {
     fn from(error: CreatePeerSetupError) -> Self {
         let error = match error {
@@ -442,7 +470,7 @@ impl From<CreatePeerSetupError> for GeneratePeerSetupFailure {
             }),
             CreatePeerSetupError::Internal { peer_id, cause } => generate_peer_setup_failure::Error::Internal(GeneratePeerSetupFailureInternal {
                 peer_id: Some(peer_id.into()),
-                cause: cause,
+                cause,
             }),
         };
         Self { error: Some(error) }
@@ -486,7 +514,7 @@ impl From<CreateCleoSetupError> for GenerateCleoSetupFailure {
     fn from(error: CreateCleoSetupError) -> Self {
         let error = match error {
             CreateCleoSetupError::Internal { cause } => generate_cleo_setup_failure::Error::Internal(GenerateCleoSetupFailureInternal {
-                cause: cause,
+                cause,
             }),
         };
         Self { error: Some(error) }

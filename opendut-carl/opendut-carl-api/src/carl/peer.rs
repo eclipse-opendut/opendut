@@ -368,20 +368,22 @@ mod client {
             }
         }
 
-        pub async fn list_devices(&mut self) -> Result<Vec<DeviceDescriptor>, ListDevicesError> {
+        pub async fn list_devices(&mut self) -> Result<Vec<DeviceDescriptor>, ClientError<ListDevicesError>> {
             let request = tonic::Request::new(peer_manager::ListDevicesRequest {});
 
-            match self.inner.list_devices(request).await {
-                Ok(response) => {
-                    response.into_inner().devices
-                        .into_iter()
+            let response = self.inner.list_devices(request).await?
+                .into_inner();
+
+            match extract!(response.reply)? {
+                peer_manager::list_devices_response::Reply::Failure(failure) => {
+                    let error = ListDevicesError::try_from(failure)?;
+                    Err(ClientError::UsageError(error))
+                }
+                peer_manager::list_devices_response::Reply::Success(success) => {
+                    Ok(success.devices.into_iter()
                         .map(DeviceDescriptor::try_from)
-                        .collect::<Result<_, _>>()
-                        .map_err(|cause| ListDevicesError::Internal { cause: cause.to_string() })
-                },
-                Err(status) => {
-                    Err(ListDevicesError::Internal { cause: format!("gRPC failure: {status}") })
-                },
+                        .collect::<Result<Vec<_>, _>>()?)
+                }
             }
         }
     }

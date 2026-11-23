@@ -309,7 +309,24 @@ message GenerateCleoSetupFailureInternal {
 message ListDevicesRequest {}
 
 message ListDevicesResponse {
+  oneof reply {
+    ListDevicesSuccess success = 2;
+    ListDevicesFailure failure = 3;
+  }
+}
+
+message ListDevicesSuccess {
   repeated opendut.model.topology.DeviceDescriptor devices = 1;
+}
+
+message ListDevicesFailure {
+  oneof error {
+    ListDevicesFailureInternal internal = 1;
+  }
+}
+
+message ListDevicesFailureInternal {
+  string cause = 1;
 }
 
 message IllegalDevicesError {
