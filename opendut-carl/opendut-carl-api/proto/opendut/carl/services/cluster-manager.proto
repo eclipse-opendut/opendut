@@ -123,7 +123,21 @@ message GetClusterDescriptorSuccess {
   opendut.model.cluster.ClusterDescriptor configuration = 1;
 }
 
-message GetClusterDescriptorFailure {}
+message GetClusterDescriptorFailure {
+  oneof error {
+    GetClusterDescriptorFailureClusterNotFound cluster_not_found = 1;
+    GetClusterDescriptorFailureInternal internal = 2;
+  }
+}
+
+message GetClusterDescriptorFailureClusterNotFound {
+  opendut.model.cluster.ClusterId cluster_id = 1;
+}
+
+message GetClusterDescriptorFailureInternal {
+  opendut.model.cluster.ClusterId cluster_id = 1;
+  string cause = 2;
+}
 
 //
 // ListClusterDescriptors
