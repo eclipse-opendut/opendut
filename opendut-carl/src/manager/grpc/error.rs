@@ -17,7 +17,7 @@ impl<T, E: Error> LogApiErr for Result<T, E> {
 
 mod cluster_manager {
     use crate::manager::cluster_manager;
-    use opendut_carl_api::carl::cluster::{CreateClusterDescriptorError, DeleteClusterDescriptorError, DeleteClusterDeploymentError, ListClusterDescriptorsError, StoreClusterDeploymentError};
+    use opendut_carl_api::carl::cluster::{CreateClusterDescriptorError, DeleteClusterDescriptorError, DeleteClusterDeploymentError, GetClusterDeploymentError, ListClusterDescriptorsError, StoreClusterDeploymentError};
 
     impl From<cluster_manager::error::ListClusterDescriptorsError> for ListClusterDescriptorsError {
         fn from(_error: cluster_manager::error::ListClusterDescriptorsError) -> Self {
@@ -104,6 +104,17 @@ mod cluster_manager {
                         cluster_name: Some(cluster_name),
                         cause: String::from("Error when tearing down VPN while deleting cluster deployment"),
                     }
+            }
+        }
+    }
+
+    impl From<cluster_manager::error::GetClusterDeploymentError> for GetClusterDeploymentError {
+        fn from(error: cluster_manager::error::GetClusterDeploymentError) -> Self {
+            match error {
+                cluster_manager::error::GetClusterDeploymentError::Persistence { cluster_id, source: _ } => Self::Internal {
+                    cluster_id,
+                    cause: String::from("Error when accessing persistence while getting cluster deployment"),
+                },
             }
         }
     }

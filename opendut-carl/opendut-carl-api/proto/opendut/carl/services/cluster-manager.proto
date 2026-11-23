@@ -263,7 +263,21 @@ message GetClusterDeploymentSuccess {
   optional opendut.model.cluster.ClusterDeployment deployment = 1;
 }
 
-message GetClusterDeploymentFailure {}
+message GetClusterDeploymentFailure {
+  oneof error {
+    GetClusterDeploymentFailureDeploymentNotFound deployment_not_found = 1;
+    GetClusterDeploymentFailureInternal internal = 2;
+  }
+}
+
+message GetClusterDeploymentFailureDeploymentNotFound {
+  opendut.model.cluster.ClusterId cluster_id = 1;
+}
+
+message GetClusterDeploymentFailureInternal {
+  opendut.model.cluster.ClusterId cluster_id = 1;
+  string cause = 2;
+}
 
 
 //

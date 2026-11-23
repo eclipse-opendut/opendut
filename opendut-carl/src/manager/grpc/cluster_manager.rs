@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use opendut_carl_api::proto::services::cluster_manager::cluster_manager_server::{ClusterManager as ClusterManagerService, ClusterManagerServer};
-use opendut_carl_api::proto::services::cluster_manager::{CreateClusterDescriptorRequest, CreateClusterDescriptorResponse, create_cluster_descriptor_response, CreateClusterDescriptorSuccess, DeleteClusterDescriptorRequest, DeleteClusterDescriptorResponse, delete_cluster_descriptor_response, DeleteClusterDescriptorSuccess, GetClusterDescriptorRequest, GetClusterDescriptorResponse, get_cluster_descriptor_response, GetClusterDescriptorSuccess, ListClusterDescriptorsRequest, ListClusterDescriptorsResponse, list_cluster_descriptors_response, ListClusterDescriptorsSuccess, StoreClusterDeploymentRequest, StoreClusterDeploymentResponse, store_cluster_deployment_response, StoreClusterDeploymentSuccess, DeleteClusterDeploymentRequest, DeleteClusterDeploymentResponse, delete_cluster_deployment_response, DeleteClusterDeploymentSuccess, GetClusterDeploymentRequest, GetClusterDeploymentResponse, get_cluster_deployment_response, GetClusterDeploymentSuccess, GetClusterDeploymentFailure, ListClusterDeploymentsRequest, ListClusterDeploymentsResponse, list_cluster_deployments_response, ListClusterDeploymentsSuccess, ListClusterPeerStatesRequest, ListClusterPeerStatesResponse, list_cluster_peer_states_response, ListClusterPeerStatesSuccess};
+use opendut_carl_api::proto::services::cluster_manager::{CreateClusterDescriptorRequest, CreateClusterDescriptorResponse, create_cluster_descriptor_response, CreateClusterDescriptorSuccess, DeleteClusterDescriptorRequest, DeleteClusterDescriptorResponse, delete_cluster_descriptor_response, DeleteClusterDescriptorSuccess, GetClusterDescriptorRequest, GetClusterDescriptorResponse, get_cluster_descriptor_response, GetClusterDescriptorSuccess, ListClusterDescriptorsRequest, ListClusterDescriptorsResponse, list_cluster_descriptors_response, ListClusterDescriptorsSuccess, StoreClusterDeploymentRequest, StoreClusterDeploymentResponse, store_cluster_deployment_response, StoreClusterDeploymentSuccess, DeleteClusterDeploymentRequest, DeleteClusterDeploymentResponse, delete_cluster_deployment_response, DeleteClusterDeploymentSuccess, GetClusterDeploymentRequest, GetClusterDeploymentResponse, get_cluster_deployment_response, GetClusterDeploymentSuccess, ListClusterDeploymentsRequest, ListClusterDeploymentsResponse, list_cluster_deployments_response, ListClusterDeploymentsSuccess, ListClusterPeerStatesRequest, ListClusterPeerStatesResponse, list_cluster_peer_states_response, ListClusterPeerStatesSuccess};
 use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId};
 use tonic::{Request, Response, Status};
 use tracing::{error, trace};
@@ -218,24 +218,21 @@ impl ClusterManagerService for ClusterManagerFacade {
 
         trace!("Received request to get cluster deployment for cluster <{cluster_id}>.");
 
-        let deployment = self.cluster_manager.lock().await.get_cluster_deployment(cluster_id).await
+        let result = self.cluster_manager.lock().await.get_cluster_deployment(cluster_id).await
             .log_api_err()
-            .map_err(|cause| Status::internal(cause.to_string()))?;
+            .map_err(opendut_carl_api::carl::cluster::GetClusterDeploymentError::from);
 
-        match deployment {
-            Some(configuration) => Ok(Response::new(GetClusterDeploymentResponse {
-                result: Some(get_cluster_deployment_response::Result::Success(
-                    GetClusterDeploymentSuccess {
-                        deployment: Some(configuration.into())
-                    }
-                ))
-            })),
-            None => Ok(Response::new(GetClusterDeploymentResponse {
-                result: Some(get_cluster_deployment_response::Result::Failure(
-                    GetClusterDeploymentFailure {}
-                ))
-            }))
-        }
+        let result = match result {
+            Ok(Some(deployment)) => get_cluster_deployment_response::Result::Success(
+                GetClusterDeploymentSuccess { deployment: Some(deployment.into()) }
+            ),
+            Ok(None) => get_cluster_deployment_response::Result::Failure(
+                opendut_carl_api::carl::cluster::GetClusterDeploymentError::DeploymentNotFound { cluster_id }.into()
+            ),
+            Err(error) => get_cluster_deployment_response::Result::Failure(error.into()),
+        };
+
+        Ok(Response::new(GetClusterDeploymentResponse { result: Some(result) }))
     }
 
     #[tracing::instrument(skip_all, level="trace")]

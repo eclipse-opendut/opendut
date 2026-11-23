@@ -1,5 +1,5 @@
 use crate::carl;
-use crate::carl::cluster::{CreateClusterDescriptorError, DeleteClusterDeploymentError, DeleteClusterDescriptorError, GetClusterDescriptorError, ListClusterDescriptorsError, StoreClusterDeploymentError};
+use crate::carl::cluster::{CreateClusterDescriptorError, DeleteClusterDeploymentError, DeleteClusterDescriptorError, GetClusterDescriptorError, GetClusterDeploymentError, ListClusterDescriptorsError, StoreClusterDeploymentError};
 use opendut_model::cluster::state::ClusterState;
 use opendut_model::cluster::{ClusterId, ClusterName};
 use opendut_model::proto;
@@ -506,5 +506,57 @@ impl TryFrom<DeleteClusterDeploymentFailureInternal> for DeleteClusterDeployment
             .map(TryInto::try_into)
             .transpose()?;
         Ok(DeleteClusterDeploymentError::Internal { cluster_id, cluster_name, cause: failure.cause })
+    }
+}
+
+impl From<GetClusterDeploymentError> for GetClusterDeploymentFailure {
+    fn from(error: GetClusterDeploymentError) -> Self {
+        let error = match error {
+            GetClusterDeploymentError::DeploymentNotFound { cluster_id } => {
+                get_cluster_deployment_failure::Error::DeploymentNotFound(GetClusterDeploymentFailureDeploymentNotFound {
+                    cluster_id: Some(cluster_id.into()),
+                })
+            }
+            GetClusterDeploymentError::Internal { cluster_id, cause } => {
+                get_cluster_deployment_failure::Error::Internal(GetClusterDeploymentFailureInternal {
+                    cluster_id: Some(cluster_id.into()),
+                    cause,
+                })
+            }
+        };
+        Self { error: Some(error) }
+    }
+}
+
+impl TryFrom<GetClusterDeploymentFailure> for GetClusterDeploymentError {
+    type Error = ConversionError;
+    fn try_from(failure: GetClusterDeploymentFailure) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<GetClusterDeploymentFailure, GetClusterDeploymentError>;
+        match failure.error.ok_or_else(|| ErrorBuilder::field_not_set("error"))? {
+            get_cluster_deployment_failure::Error::DeploymentNotFound(error) => error.try_into(),
+            get_cluster_deployment_failure::Error::Internal(error) => error.try_into(),
+        }
+    }
+}
+
+impl TryFrom<GetClusterDeploymentFailureDeploymentNotFound> for GetClusterDeploymentError {
+    type Error = ConversionError;
+    fn try_from(failure: GetClusterDeploymentFailureDeploymentNotFound) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<GetClusterDeploymentFailureDeploymentNotFound, GetClusterDeploymentError>;
+        let cluster_id = failure.cluster_id
+            .ok_or_else(|| ErrorBuilder::field_not_set("cluster_id"))?
+            .try_into()?;
+        Ok(Self::DeploymentNotFound { cluster_id })
+    }
+}
+
+impl TryFrom<GetClusterDeploymentFailureInternal> for GetClusterDeploymentError {
+    type Error = ConversionError;
+    fn try_from(failure: GetClusterDeploymentFailureInternal) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<GetClusterDeploymentFailureInternal, GetClusterDeploymentError>;
+        let cluster_id = failure.cluster_id
+            .ok_or_else(|| ErrorBuilder::field_not_set("cluster_id"))?
+            .try_into()?;
+        Ok(Self::Internal { cluster_id, cause: failure.cause })
     }
 }
