@@ -118,13 +118,26 @@ pub enum IllegalDevicesError {
     }
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum CreatePeerSetupError {
+    #[error("A PeerSetup for peer <{peer_id}> could not be created, because a peer with that ID does not exist!")]
+    PeerNotFound { peer_id: PeerId },
+    #[error("An internal error occurred while creating a PeerSetup for peer <{peer_id}>:\n  {cause}")]
+    Internal { peer_id: PeerId, cause: String },
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum CreateCleoSetupError {
+    #[error("An internal error occurred while creating a CleoSetup:\n  {cause}")]
+    Internal { cause: String },
+}
+
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 mod client {
     use super::*;
 
     use std::collections::HashMap;
     use tonic::codegen::{Body, Bytes, http, InterceptedService, StdError};
-    use tracing::error;
     use opendut_model::cleo::CleoSetup;
 
     use opendut_model::peer::{PeerDescriptor, PeerId, PeerSetup};
@@ -312,63 +325,45 @@ mod client {
             }
         }
         
-        pub async fn create_peer_setup(&mut self, peer_id: PeerId, user_id: String) -> Result<PeerSetup, CreateSetupError> {
-            let request = tonic::Request::new(
-                peer_manager::GeneratePeerSetupRequest {
-                    peer: Some(peer_id.into()),
-                    user_id,
-                }
-            );
+        pub async fn create_peer_setup(&mut self, peer_id: PeerId, user_id: String) -> Result<PeerSetup, ClientError<CreatePeerSetupError>> {
+            let request = tonic::Request::new(peer_manager::GeneratePeerSetupRequest {
+                peer: Some(peer_id.into()),
+                user_id,
+            });
 
-            match self.inner.generate_peer_setup(request).await {
-                Ok(response) => {
-                    match response.into_inner().reply {
-                        Some(peer_manager::generate_peer_setup_response::Reply::Success(peer_manager::GeneratePeerSetupSuccess { setup, .. })) => {
-                            setup
-                                .ok_or(CreateSetupError { message: format!("Failed to create setup-string for peer <{peer_id}>! Got no PeerSetup!") })
-                                .and_then(|setup| PeerSetup::try_from(setup)
-                                    .map_err(|cause| CreateSetupError { message: cause.to_string() })
-                                )
-                        }
-                        _ => {
-                            let error = CreateSetupError { message: format!("Failed to create setup-string for peer <{peer_id}>!") };
-                            error!("{}", error);
-                            Err(error)
-                        }
-                    }
+            let response = self.inner.generate_peer_setup(request).await?
+                .into_inner();
+
+            match extract!(response.reply)? {
+                peer_manager::generate_peer_setup_response::Reply::Failure(failure) => {
+                    let error = CreatePeerSetupError::try_from(failure)?;
+                    Err(ClientError::UsageError(error))
                 }
-                Err(status) => {
-                    Err(CreateSetupError { message: format!("gRPC failure: {status}") })
+                peer_manager::generate_peer_setup_response::Reply::Success(success) => {
+                    let setup = extract!(success.setup)?;
+                    Ok(setup)
                 }
             }
         }
 
-        pub async fn create_cleo_setup(&mut self, user_id: String) -> Result<CleoSetup, CreateSetupError> {
+        pub async fn create_cleo_setup(&mut self, user_id: String) -> Result<CleoSetup, ClientError<CreateCleoSetupError>> {
             let request = tonic::Request::new(
                 peer_manager::GenerateCleoSetupRequest {
                     user_id
                 }
             );
 
-            match self.inner.generate_cleo_setup(request).await {
-                Ok(response) => {
-                    match response.into_inner().reply {
-                        Some(peer_manager::generate_cleo_setup_response::Reply::Success(peer_manager::GenerateCleoSetupSuccess { setup, .. })) => {
-                            setup
-                                .ok_or(CreateSetupError { message: "Failed to create setup-string for CLEO! Got no CleoSetup!".to_owned() })
-                                .and_then(|setup| CleoSetup::try_from(setup)
-                                    .map_err(|cause| CreateSetupError { message: cause.to_string() })
-                                )
-                        }
-                        _ => {
-                            let error = CreateSetupError { message: "Failed to create setup-string for CLEO!".to_owned() };
-                            error!("{}", error);
-                            Err(error)
-                        }
-                    }
+            let response = self.inner.generate_cleo_setup(request).await?
+                .into_inner();
+
+            match extract!(response.reply)? {
+                peer_manager::generate_cleo_setup_response::Reply::Failure(failure) => {
+                    let error = CreateCleoSetupError::try_from(failure)?;
+                    Err(ClientError::UsageError(error))
                 }
-                Err(status) => {
-                    Err(CreateSetupError { message: format!("gRPC failure: {status}") })
+                peer_manager::generate_cleo_setup_response::Reply::Success(success) => {
+                    let setup = extract!(success.setup)?;
+                    Ok(setup)
                 }
             }
         }
@@ -391,9 +386,4 @@ mod client {
         }
     }
 
-    #[derive(thiserror::Error, Debug)]
-    #[error("{message}")]
-    pub struct CreateSetupError {
-        message: String,
-    }
 }

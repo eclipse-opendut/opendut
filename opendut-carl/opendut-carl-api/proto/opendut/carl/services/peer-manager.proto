@@ -259,6 +259,19 @@ message GeneratePeerSetupSuccess {
 }
 
 message GeneratePeerSetupFailure {
+  oneof error {
+    GeneratePeerSetupFailurePeerNotFound peer_not_found = 1;
+    GeneratePeerSetupFailureInternal internal = 2;
+  }
+}
+
+message GeneratePeerSetupFailurePeerNotFound {
+  opendut.model.peer.PeerId peer_id = 1;
+}
+
+message GeneratePeerSetupFailureInternal {
+  opendut.model.peer.PeerId peer_id = 1;
+  string cause = 2;
 }
 
 //
@@ -281,6 +294,13 @@ message GenerateCleoSetupSuccess {
 }
 
 message GenerateCleoSetupFailure {
+  oneof error {
+    GenerateCleoSetupFailureInternal internal = 1;
+  }
+}
+
+message GenerateCleoSetupFailureInternal {
+  string cause = 1;
 }
 
 //

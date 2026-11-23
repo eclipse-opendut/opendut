@@ -102,7 +102,7 @@ mod cluster_manager {
 }
 
 mod peer_manager {
-    use opendut_carl_api::carl::peer::{DeletePeerDescriptorError, GetPeerStateError, ListPeerStatesError, StorePeerDescriptorError};
+    use opendut_carl_api::carl::peer::{CreatePeerSetupError, CreateCleoSetupError, DeletePeerDescriptorError, GetPeerStateError, ListPeerStatesError, StorePeerDescriptorError};
     use crate::manager::peer_manager;
 
     impl From<peer_manager::store_peer_descriptor::StorePeerDescriptorError> for StorePeerDescriptorError {
@@ -181,6 +181,28 @@ mod peer_manager {
             }
         }
     }
+
+    impl From<peer_manager::GeneratePeerSetupError> for CreatePeerSetupError {
+        fn from(error: peer_manager::GeneratePeerSetupError) -> Self {
+            match error {
+                peer_manager::GeneratePeerSetupError::PeerNotFound(peer_id) => Self::PeerNotFound { peer_id },
+                peer_manager::GeneratePeerSetupError::Persistence { peer_id, source: _ } => Self::Internal {
+                    peer_id,
+                    cause: String::from("Error when accessing persistence while creating peer setup"),
+                },
+                peer_manager::GeneratePeerSetupError::Internal { peer_id, peer_name: _, cause } => Self::Internal { peer_id, cause },
+            }
+        }
+    }
+
+    impl From<peer_manager::GenerateCleoSetupError> for CreateCleoSetupError {
+        fn from(error: peer_manager::GenerateCleoSetupError) -> Self {
+            match error {
+                peer_manager::GenerateCleoSetupError::Internal { cause } => Self::Internal { cause },
+            }
+        }
+    }
+
 }
 
 #[cfg(feature = "viper")]

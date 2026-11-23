@@ -1,9 +1,8 @@
 use opendut_auth::registration::client::RegistrationClientRef;
 use opendut_auth::registration::resources::UserId;
 use opendut_carl_api::proto;
-use opendut_carl_api::proto::services;
 use opendut_carl_api::proto::services::peer_manager::peer_manager_server::{PeerManager as PeerManagerService, PeerManagerServer};
-use opendut_carl_api::proto::services::peer_manager::{StorePeerDescriptorRequest, StorePeerDescriptorResponse, store_peer_descriptor_response, StorePeerDescriptorSuccess, DeletePeerDescriptorRequest, DeletePeerDescriptorResponse, DeletePeerDescriptorSuccess, delete_peer_descriptor_response, GetPeerDescriptorRequest, GetPeerDescriptorResponse, get_peer_descriptor_response, GetPeerDescriptorSuccess, ListPeerDescriptorsRequest, ListPeerDescriptorsResponse, list_peer_descriptors_response, ListPeerDescriptorsSuccess, GetPeerStateRequest, GetPeerStateResponse, get_peer_state_response, GetPeerStateSuccess, ListPeerStatesRequest, ListPeerStatesResponse, list_peer_states_response, ListPeerStatesSuccess, ListPeerStatesEntry, ListDevicesRequest, ListDevicesResponse, GeneratePeerSetupRequest, GeneratePeerSetupResponse, GenerateCleoSetupRequest, GenerateCleoSetupResponse, generate_cleo_setup_response, GenerateCleoSetupSuccess};
+use opendut_carl_api::proto::services::peer_manager::{StorePeerDescriptorRequest, StorePeerDescriptorResponse, store_peer_descriptor_response, StorePeerDescriptorSuccess, DeletePeerDescriptorRequest, DeletePeerDescriptorResponse, DeletePeerDescriptorSuccess, delete_peer_descriptor_response, GetPeerDescriptorRequest, GetPeerDescriptorResponse, get_peer_descriptor_response, GetPeerDescriptorSuccess, ListPeerDescriptorsRequest, ListPeerDescriptorsResponse, list_peer_descriptors_response, ListPeerDescriptorsSuccess, GetPeerStateRequest, GetPeerStateResponse, get_peer_state_response, GetPeerStateSuccess, ListPeerStatesRequest, ListPeerStatesResponse, list_peer_states_response, ListPeerStatesSuccess, ListPeerStatesEntry, ListDevicesRequest, ListDevicesResponse, GeneratePeerSetupRequest, GeneratePeerSetupResponse, GenerateCleoSetupRequest, GenerateCleoSetupResponse, generate_cleo_setup_response, GenerateCleoSetupSuccess, generate_peer_setup_response, GeneratePeerSetupSuccess};
 use opendut_model::cleo::CleoId;
 use opendut_model::peer::{PeerDescriptor, PeerId};
 use tonic::{Request, Response, Status};
@@ -290,8 +289,7 @@ impl PeerManagerService for PeerManagerFacade {
         let peer_id: PeerId = extract!(request.peer)?;
         let user_id = UserId { value: request.user_id };
 
-        let setup =
-            self.resource_manager.resources(async |resources|
+        let result = self.resource_manager.resources(async |resources| {
                 resources.generate_peer_setup(GeneratePeerSetupParams {
                     peer: peer_id,
                     carl_url: Clone::clone(&self.carl_url),
@@ -300,18 +298,21 @@ impl PeerManagerService for PeerManagerFacade {
                     oidc_registration_client: self.oidc_registration_client.clone(),
                     user_id,
                 }).await
-            ).await
+            }).await
             .map_err_to_inner(|source| GeneratePeerSetupError::Persistence {
                 peer_id,
                 source: source.context("Persistence error in transaction for getting peer state"),
             })
             .log_api_err()
-            .map_err(|_| Status::internal("Peer setup could not be created"))?;
+            .map_err(opendut_carl_api::carl::peer::CreatePeerSetupError::from);
 
-        let response = services::peer_manager::generate_peer_setup_response::Reply::Success(services::peer_manager::GeneratePeerSetupSuccess {
-            peer: Some(peer_id.into()),
-            setup: Some(setup.into()),
-        });
+        let response = match result {
+            Ok(setup) => generate_peer_setup_response::Reply::Success(GeneratePeerSetupSuccess {
+                peer: Some(peer_id.into()),
+                setup: Some(setup.into()),
+            }),
+            Err(error) => generate_peer_setup_response::Reply::Failure(error.into()),
+        };
 
         Ok(Response::new(GeneratePeerSetupResponse { reply: Some(response) }))
     }
@@ -323,8 +324,7 @@ impl PeerManagerService for PeerManagerFacade {
         let request = request.into_inner();
         
         let cleo_id = CleoId::random();
-        let setup =
-            peer_manager::generate_cleo_setup(GenerateCleoSetupParams {
+        let result = peer_manager::generate_cleo_setup(GenerateCleoSetupParams {
                 cleo: cleo_id,
                 carl_url: Clone::clone(&self.carl_url),
                 ca: Clone::clone(&self.ca),
@@ -332,12 +332,15 @@ impl PeerManagerService for PeerManagerFacade {
                 user_id: UserId { value: request.user_id },
             }).await
             .log_api_err()
-            .map_err(|_| Status::internal("CLEO Setup could not be created"))?;
-        
-        let response = generate_cleo_setup_response::Reply::Success(GenerateCleoSetupSuccess { 
-            cleo: Some(cleo_id.into()), 
-            setup: Some(setup.into()) 
-        });
+            .map_err(opendut_carl_api::carl::peer::CreateCleoSetupError::from);
+
+        let response = match result {
+            Ok(setup) => generate_cleo_setup_response::Reply::Success(GenerateCleoSetupSuccess {
+                cleo: Some(cleo_id.into()),
+                setup: Some(setup.into())
+            }),
+            Err(error) => generate_cleo_setup_response::Reply::Failure(error.into()),
+        };
 
         Ok(Response::new(GenerateCleoSetupResponse { reply: Some(response) }))
     }

@@ -3,7 +3,7 @@ use opendut_model::peer::{PeerId, PeerName};
 use opendut_model::topology::DeviceId;
 use opendut_util::conversion;
 use opendut_util::proto::{ConversionError, ConversionErrorBuilder, ConversionResult};
-use crate::carl::peer::{DeletePeerDescriptorError, GetPeerDescriptorError, GetPeerStateError, ListPeerDescriptorsError, ListPeerStatesError, StorePeerDescriptorError};
+use crate::carl::peer::{CreatePeerSetupError, CreateCleoSetupError, DeletePeerDescriptorError, GetPeerDescriptorError, GetPeerStateError, ListPeerDescriptorsError, ListPeerStatesError, StorePeerDescriptorError};
 
 tonic::include_proto!("opendut.carl.services.peer_manager");
 
@@ -431,5 +431,81 @@ impl TryFrom<ListPeerStatesFailureInternal> for ListPeerStatesError {
     type Error = ConversionError;
     fn try_from(failure: ListPeerStatesFailureInternal) -> Result<Self, Self::Error> {
         Ok(ListPeerStatesError::Internal{ cause: failure.cause})
+    }
+}
+
+impl From<CreatePeerSetupError> for GeneratePeerSetupFailure {
+    fn from(error: CreatePeerSetupError) -> Self {
+        let error = match error {
+            CreatePeerSetupError::PeerNotFound { peer_id } => generate_peer_setup_failure::Error::PeerNotFound(GeneratePeerSetupFailurePeerNotFound {
+                peer_id: Some(peer_id.into()),
+            }),
+            CreatePeerSetupError::Internal { peer_id, cause } => generate_peer_setup_failure::Error::Internal(GeneratePeerSetupFailureInternal {
+                peer_id: Some(peer_id.into()),
+                cause: cause,
+            }),
+        };
+        Self { error: Some(error) }
+    }
+}
+
+impl TryFrom<GeneratePeerSetupFailure> for CreatePeerSetupError {
+    type Error = ConversionError;
+    fn try_from(failure: GeneratePeerSetupFailure) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<GeneratePeerSetupFailure, CreatePeerSetupError>;
+        match failure.error.ok_or_else(|| ErrorBuilder::field_not_set("error"))? {
+            generate_peer_setup_failure::Error::PeerNotFound(error) => error.try_into(),
+            generate_peer_setup_failure::Error::Internal(error) => error.try_into(),
+        }
+    }
+}
+
+impl TryFrom<GeneratePeerSetupFailurePeerNotFound> for CreatePeerSetupError {
+    type Error = ConversionError;
+    fn try_from(failure: GeneratePeerSetupFailurePeerNotFound) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<GeneratePeerSetupFailurePeerNotFound, CreatePeerSetupError>;
+        let peer_id = failure.peer_id
+            .ok_or_else(|| ErrorBuilder::field_not_set("peer_id"))?
+            .try_into()?;
+        Ok(Self::PeerNotFound { peer_id })
+    }
+}
+
+impl TryFrom<GeneratePeerSetupFailureInternal> for CreatePeerSetupError {
+    type Error = ConversionError;
+    fn try_from(failure: GeneratePeerSetupFailureInternal) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<GeneratePeerSetupFailureInternal, CreatePeerSetupError>;
+        let peer_id = failure.peer_id
+            .ok_or_else(|| ErrorBuilder::field_not_set("peer_id"))?
+            .try_into()?;
+        Ok(Self::Internal { peer_id, cause: failure.cause })
+    }
+}
+
+impl From<CreateCleoSetupError> for GenerateCleoSetupFailure {
+    fn from(error: CreateCleoSetupError) -> Self {
+        let error = match error {
+            CreateCleoSetupError::Internal { cause } => generate_cleo_setup_failure::Error::Internal(GenerateCleoSetupFailureInternal {
+                cause: cause,
+            }),
+        };
+        Self { error: Some(error) }
+    }
+}
+
+impl TryFrom<GenerateCleoSetupFailure> for CreateCleoSetupError {
+    type Error = ConversionError;
+    fn try_from(failure: GenerateCleoSetupFailure) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<GenerateCleoSetupFailure, CreateCleoSetupError>;
+        match failure.error.ok_or_else(|| ErrorBuilder::field_not_set("error"))? {
+            generate_cleo_setup_failure::Error::Internal(error) => error.try_into(),
+        }
+    }
+}
+
+impl TryFrom<GenerateCleoSetupFailureInternal> for CreateCleoSetupError {
+    type Error = ConversionError;
+    fn try_from(failure: GenerateCleoSetupFailureInternal) -> Result<Self, Self::Error> {
+        Ok(Self::Internal { cause: failure.cause })
     }
 }
