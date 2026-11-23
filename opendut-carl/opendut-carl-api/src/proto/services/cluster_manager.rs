@@ -1,60 +1,10 @@
-use crate::carl;
-use crate::carl::cluster::{CreateClusterDescriptorError, DeleteClusterDeploymentError, DeleteClusterDescriptorError, GetClusterDescriptorError, GetClusterDeploymentError, ListClusterDescriptorsError, ListClusterDeploymentsError, StoreClusterDeploymentError};
+use crate::carl::cluster::{CreateClusterDescriptorError, DeleteClusterDeploymentError, DeleteClusterDescriptorError, GetClusterDescriptorError, GetClusterDeploymentError, ListClusterPeersError, ListClusterDescriptorsError, ListClusterDeploymentsError, StoreClusterDeploymentError};
 use opendut_model::cluster::state::ClusterState;
 use opendut_model::cluster::{ClusterId, ClusterName};
 use opendut_model::proto;
-use std::collections::HashMap;
-use opendut_util::conversion;
-use opendut_util::proto::{ConversionError, ConversionErrorBuilder, ConversionResult};
+use opendut_util::proto::{ConversionError, ConversionErrorBuilder};
 
 tonic::include_proto!("opendut.carl.services.cluster_manager");
-
-conversion! {
-    type Model = carl::cluster::ListClusterPeerStatesResponse;
-    type Proto = ListClusterPeerStatesResponse;
-
-    fn from(value: Model) -> Proto {
-        let result = match value {
-            Model::Success { peer_states  } => {
-                list_cluster_peer_states_response::Result::Success(ListClusterPeerStatesSuccess {
-                    peer_states: peer_states.into_iter().map(|(peer_id, peer_state)| (peer_id.uuid.to_string(), peer_state.into())).collect(),
-                })
-            }
-            Model::Failure { message  } => {
-                list_cluster_peer_states_response::Result::Failure(ListClusterPeerStatesFailure {
-                    cause: message
-                })
-            }
-        };
-        Proto {
-            result: Some(result),
-        }
-    }
-    fn try_from(value: Proto) -> ConversionResult<Model> {
-        let result = extract!(value.result)?;
-        let result = match result {
-            list_cluster_peer_states_response::Result::Success(ListClusterPeerStatesSuccess { peer_states}) => {
-                let peer_states = peer_states.into_iter().map(|(peer_id, peer_state)| {
-                    let peer_id = opendut_model::peer::PeerId::try_from(peer_id.as_str());
-                    let peer_state = opendut_model::peer::state::PeerState::try_from(peer_state);
-                    match (peer_id, peer_state) {
-                        (Ok(peer_id), Ok(peer_state)) => {
-                            Ok((peer_id, peer_state))
-                        }
-                        (_, _) => {
-                            Err(ErrorBuilder::message("Invalid peer state"))
-                        }
-                    }
-                }).collect::<Result<HashMap<_, _>, ConversionError>>()?;
-                Model::Success { peer_states }
-            }
-            list_cluster_peer_states_response::Result::Failure(ListClusterPeerStatesFailure { cause}) => {
-                Model::Failure { message: cause }
-            }
-        };
-        Ok(result)
-    }
-}
 
 impl From<ListClusterDescriptorsError> for ListClusterDescriptorsFailure {
     fn from(error: ListClusterDescriptorsError) -> Self {
@@ -586,5 +536,37 @@ impl TryFrom<ListClusterDeploymentsFailureInternal> for ListClusterDeploymentsEr
     type Error = ConversionError;
     fn try_from(failure: ListClusterDeploymentsFailureInternal) -> Result<Self, Self::Error> {
         Ok(Self::Internal { cause: failure.cause })
+    }
+}
+
+impl From<ListClusterPeersError> for ListClusterPeerStatesFailure {
+    fn from(error: ListClusterPeersError) -> Self {
+        let error = match error {
+            ListClusterPeersError::Internal { cluster_id, cause } => {
+                list_cluster_peer_states_failure::Error::Internal(ListClusterPeerStatesFailureInternal {
+                    cluster_id: Some(cluster_id.into()), cause,
+                })
+            }
+        };
+        Self { error: Some(error) }
+    }
+}
+
+impl TryFrom<ListClusterPeerStatesFailure> for ListClusterPeersError {
+    type Error = ConversionError;
+    fn try_from(failure: ListClusterPeerStatesFailure) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<ListClusterPeerStatesFailure, ListClusterPeersError>;
+        match failure.error.ok_or_else(|| ErrorBuilder::field_not_set("error"))? {
+            list_cluster_peer_states_failure::Error::Internal(error) => error.try_into(),
+        }
+    }
+}
+
+impl TryFrom<ListClusterPeerStatesFailureInternal> for ListClusterPeersError {
+    type Error = ConversionError;
+    fn try_from(failure: ListClusterPeerStatesFailureInternal) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<ListClusterPeerStatesFailureInternal, ListClusterPeersError>;
+        let cluster_id = failure.cluster_id.ok_or_else(|| ErrorBuilder::field_not_set("cluster_id"))?.try_into()?;
+        Ok(Self::Internal { cluster_id, cause: failure.cause })
     }
 }

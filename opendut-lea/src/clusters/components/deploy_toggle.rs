@@ -3,7 +3,7 @@ use std::sync::Arc;
 use leptos::prelude::*;
 use tracing::{debug, error};
 use opendut_carl_api::carl::ClientError;
-use opendut_carl_api::carl::cluster::{ListClusterPeerStatesResponse, StoreClusterDeploymentError};
+use opendut_carl_api::carl::cluster::StoreClusterDeploymentError;
 use opendut_lea_components::tooltip::{Tooltip, TooltipDirection};
 use opendut_lea_components::{Toggle, ToggleState};
 use opendut_model::cluster::{ClusterDeployment, ClusterId};
@@ -118,10 +118,9 @@ where
                     return None;
                 }
 
-                let states = carl.cluster.list_cluster_peer_states(cluster_id).await
-                    .expect("Failed to request the list of cluster's peer state.");
+                let states = carl.cluster.list_cluster_peer_states(cluster_id).await;
                 match states {
-                    ListClusterPeerStatesResponse::Success { peer_states } => {
+                    Ok(peer_states) => {
                         let invalid_peers = peer_states.iter()
                             .filter(|(_, peer_state)| {
                                 matches!(&peer_state.member, PeerMemberState::Blocked { .. })
@@ -135,8 +134,8 @@ where
                             Some(BlockedDeployment::Peers(invalid_peers))
                         }
                     }
-                    ListClusterPeerStatesResponse::Failure { message } => {
-                        Some(BlockedDeployment::Message(message))
+                    Err(error) => {
+                        Some(BlockedDeployment::Message(error.to_string()))
                     }
                 }
             }

@@ -326,5 +326,12 @@ message ListClusterPeerStatesSuccess {
 }
 
 message ListClusterPeerStatesFailure {
-  string cause = 1;
+  oneof error {
+    ListClusterPeerStatesFailureInternal internal = 2;
+  }
+}
+
+message ListClusterPeerStatesFailureInternal {
+  opendut.model.cluster.ClusterId cluster_id = 1;
+  string cause = 2;
 }

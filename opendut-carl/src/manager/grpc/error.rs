@@ -17,7 +17,7 @@ impl<T, E: Error> LogApiErr for Result<T, E> {
 
 mod cluster_manager {
     use crate::manager::cluster_manager;
-    use opendut_carl_api::carl::cluster::{CreateClusterDescriptorError, DeleteClusterDescriptorError, DeleteClusterDeploymentError, GetClusterDeploymentError, ListClusterDescriptorsError, ListClusterDeploymentsError, StoreClusterDeploymentError};
+    use opendut_carl_api::carl::cluster::{CreateClusterDescriptorError, DeleteClusterDescriptorError, DeleteClusterDeploymentError, GetClusterDeploymentError, ListClusterPeersError, ListClusterDescriptorsError, ListClusterDeploymentsError, StoreClusterDeploymentError};
 
     impl From<cluster_manager::error::ListClusterDescriptorsError> for ListClusterDescriptorsError {
         fn from(_error: cluster_manager::error::ListClusterDescriptorsError) -> Self {
@@ -122,6 +122,23 @@ mod cluster_manager {
                 cluster_manager::error::GetClusterDeploymentError::Persistence { cluster_id, source: _ } => Self::Internal {
                     cluster_id,
                     cause: String::from("Error when accessing persistence while getting cluster deployment"),
+                },
+            }
+        }
+    }
+
+    impl From<cluster_manager::list_cluster_peer_states::ListClusterPeerStatesError> for ListClusterPeersError {
+        fn from(error: cluster_manager::list_cluster_peer_states::ListClusterPeerStatesError) -> Self {
+            use cluster_manager::list_cluster_peer_states::ListClusterPeerStatesError;
+            match error {
+                ListClusterPeerStatesError::ListClusterPeers { cluster_id, .. } => Self::Internal {
+                    cluster_id, cause: String::from("Error while determining cluster peers"),
+                },
+                ListClusterPeerStatesError::ListPeerStates { cluster_id, .. } => Self::Internal {
+                    cluster_id, cause: String::from("Error while listing peer states"),
+                },
+                ListClusterPeerStatesError::Persistence { cluster_id, .. } => Self::Internal {
+                    cluster_id, cause: String::from("Error when accessing persistence while listing cluster peer states"),
                 },
             }
         }

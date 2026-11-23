@@ -127,18 +127,9 @@ pub enum ListClusterDeploymentsError {
 }
 
 #[derive(thiserror::Error, Debug)]
-#[error("{message}")]
-pub struct ListClusterPeersError {
-    pub message: String,
-}
-
-pub enum ListClusterPeerStatesResponse {
-    Success {
-        peer_states: HashMap<PeerId, PeerState>,
-    },
-    Failure {
-        message: String,
-    }
+pub enum ListClusterPeersError {
+    #[error("An internal error occurred while listing peer states for cluster <{cluster_id}>:\n  {cause}")]
+    Internal { cluster_id: ClusterId, cause: String },
 }
 
 #[cfg(any(feature = "client", feature = "wasm-client"))]
@@ -353,21 +344,27 @@ mod client {
             }
         }
 
-        pub async fn list_cluster_peer_states(&mut self, cluster_id: ClusterId) -> Result<ListClusterPeerStatesResponse, ListClusterPeersError> {
-            
+        pub async fn list_cluster_peer_states(&mut self, cluster_id: ClusterId) -> Result<HashMap<PeerId, PeerState>, ClientError<ListClusterPeersError>> {
             let request = tonic::Request::new(cluster_manager::ListClusterPeerStatesRequest { cluster_id: Some(cluster_id.into()) });
-            match self.inner.list_cluster_peer_states(request).await {
-                Ok(response) => {
-                    let response = response.into_inner();
-                    let response: ListClusterPeerStatesResponse = response.try_into()
-                        .map_err(|error| ListClusterPeersError { message: format!("Failed to convert response: {error}") } )?;
-                    Ok(response)
+            let response = self.inner.list_cluster_peer_states(request).await?
+                .into_inner();
+
+            match extract!(response.result)? {
+                cluster_manager::list_cluster_peer_states_response::Result::Failure(failure) => {
+                    let error = ListClusterPeersError::try_from(failure)?;
+                    Err(ClientError::UsageError(error))
                 }
-                Err(status) => {
-                    Err(ListClusterPeersError { message: format!("gRPC failure: {status}") })
+                cluster_manager::list_cluster_peer_states_response::Result::Success(success) => {
+                    success.peer_states.into_iter().map(|(peer_id, peer_state)| {
+                        let peer_id = PeerId::try_from(peer_id.as_str())
+                            .map_err(|cause| ClientError::InvalidResponse(format!("Invalid peer ID: {cause}")))?;
+                        let peer_state = PeerState::try_from(peer_state)?;
+                        Ok((peer_id, peer_state))
+                    }).collect()
                 }
             }
         }
+
     }
 
 }

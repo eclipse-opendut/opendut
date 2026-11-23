@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use opendut_carl_api::proto::services::cluster_manager::cluster_manager_server::{ClusterManager as ClusterManagerService, ClusterManagerServer};
 use opendut_carl_api::proto::services::cluster_manager::{CreateClusterDescriptorRequest, CreateClusterDescriptorResponse, create_cluster_descriptor_response, CreateClusterDescriptorSuccess, DeleteClusterDescriptorRequest, DeleteClusterDescriptorResponse, delete_cluster_descriptor_response, DeleteClusterDescriptorSuccess, GetClusterDescriptorRequest, GetClusterDescriptorResponse, get_cluster_descriptor_response, GetClusterDescriptorSuccess, ListClusterDescriptorsRequest, ListClusterDescriptorsResponse, list_cluster_descriptors_response, ListClusterDescriptorsSuccess, StoreClusterDeploymentRequest, StoreClusterDeploymentResponse, store_cluster_deployment_response, StoreClusterDeploymentSuccess, DeleteClusterDeploymentRequest, DeleteClusterDeploymentResponse, delete_cluster_deployment_response, DeleteClusterDeploymentSuccess, GetClusterDeploymentRequest, GetClusterDeploymentResponse, get_cluster_deployment_response, GetClusterDeploymentSuccess, ListClusterDeploymentsRequest, ListClusterDeploymentsResponse, list_cluster_deployments_response, ListClusterDeploymentsSuccess, ListClusterPeerStatesRequest, ListClusterPeerStatesResponse, list_cluster_peer_states_response, ListClusterPeerStatesSuccess};
 use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId};
@@ -6,7 +5,7 @@ use tonic::{Request, Response, Status};
 use tracing::{error, trace};
 
 use crate::manager::cluster_manager::delete_cluster_deployment::DeleteClusterDeploymentParams;
-use crate::manager::cluster_manager::{ClusterManagerRef, ClusterPeerStates, CreateClusterDescriptorError, CreateClusterDescriptorParams, DeleteClusterDescriptorError, DeleteClusterDescriptorParams, DeleteClusterDeploymentError};
+use crate::manager::cluster_manager::{ClusterManagerRef, CreateClusterDescriptorError, CreateClusterDescriptorParams, DeleteClusterDescriptorError, DeleteClusterDescriptorParams, DeleteClusterDeploymentError};
 use crate::manager::grpc::error::LogApiErr;
 use crate::manager::grpc::extract;
 use crate::resource::manager::ResourceManagerRef;
@@ -259,21 +258,20 @@ impl ClusterManagerService for ClusterManagerFacade {
         let request = request.into_inner();
         let cluster_id: ClusterId = extract!(request.cluster_id)?;
         trace!("Received request to list cluster peers for cluster <{cluster_id}>.");
-        let result: ClusterPeerStates = self.resource_manager.resources_mut(async |resources| {
+        let result = self.resource_manager.resources_mut(async |resources| {
             resources.list_cluster_peer_states(cluster_id).await
         }).await
-            .map_err(|cause| Status::internal(cause.to_string()))?
-            .map_err(|cause| Status::internal(cause.to_string()))?;
-        
-        let peer_states = result.peer_states.iter().map(|(peer_id, peer_state)| (peer_id.uuid.to_string(), peer_state.clone())).collect::<HashMap<_, _>>();
-        
-        let response = Response::new(ListClusterPeerStatesResponse {
-            result: Some(list_cluster_peer_states_response::Result::Success(
-                ListClusterPeerStatesSuccess {
-                    peer_states: peer_states.into_iter().map(|(peer_id, peer_state)| (peer_id, peer_state.into())).collect::<HashMap<_, _>>(),
-                }
-            )),
-        });
-        Ok(response)
+            .map_err_to_inner(|source| crate::manager::cluster_manager::list_cluster_peer_states::ListClusterPeerStatesError::Persistence { cluster_id, source })
+            .log_api_err()
+            .map_err(opendut_carl_api::carl::cluster::ListClusterPeersError::from);
+
+        let result = match result {
+            Ok(states) => list_cluster_peer_states_response::Result::Success(ListClusterPeerStatesSuccess {
+                peer_states: states.peer_states.into_iter()
+                    .map(|(peer_id, peer_state)| (peer_id.uuid.to_string(), peer_state.into())).collect(),
+            }),
+            Err(error) => list_cluster_peer_states_response::Result::Failure(error.into()),
+        };
+        Ok(Response::new(ListClusterPeerStatesResponse { result: Some(result) }))
     }
 }
