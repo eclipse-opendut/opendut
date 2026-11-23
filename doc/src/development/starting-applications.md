@@ -4,21 +4,22 @@
     ```sh
     cargo carl
     ```
-You can then open the UI by going to https://localhost:8080/ in your web browser.
+    You can then open the UI by going to <https://localhost:8080/> in your web browser.
+
+    You can additionally push sample data into the running CARL instance with:
+    ```sh
+    cargo ci carl push-samples
+    ```
 
 * Run CLEO (CLI for managing CARL):
     ```sh
     cargo cleo
     ```
 
-* Run EDGAR (edge software):
-    ```sh
-    cargo edgar service
-    ```
-> [!CAUTION]
-> Mind that this is in a somewhat broken state and may be removed in the future,  
-> as it's normally necessary to add the peer in CARL and then go through `edgar setup`.  
-> For a more realistic environment, see [test-environment](testenv/index.md).
+* Run EDGAR (edge software):  
+    You cannot currently run EDGAR directly like the other applications,
+    as it's necessary to create a peer in CARL and go through `opendut-edgar setup`.  
+    To test EDGAR, see [test-environment](testenv/index.md).
 
 
 ## UI Development
