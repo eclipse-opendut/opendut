@@ -25,7 +25,7 @@ enabled = false
 [network.oidc.client]
 id = "opendut-edgar-client"
 issuer.url = "https://auth.opendut.local/realms/opendut/"
-scopes = "openid,profile,email"
+scopes = "openid,profile,email,opendut-edge-api"
 secret = "<tbd>"
 
 [network.oidc.client.tls]

@@ -154,6 +154,7 @@ async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::
         };
 
         let mut routes_builder = Routes::builder();
+
         routes_builder
             .add_service(grpc_facades.cluster_manager_facade.into_grpc_service())
             .add_service(grpc_facades.metadata_provider_facade.into_grpc_service())
@@ -165,7 +166,6 @@ async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::
         routes_builder.add_service(grpc_facades.viper_manager_facade.into_grpc_service());
 
         let reqwest_client = reqwest_client::oidc::create_from_config(&settings)?;
-
         routes_builder
             .routes()
             .into_axum_router()
