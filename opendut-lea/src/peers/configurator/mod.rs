@@ -1,3 +1,4 @@
+use crate::util::client_error_description;
 use crate::app::use_app_globals;
 use crate::components::use_active_tab;
 use crate::components::{BasePageContainer, Breadcrumb, UserInputError, UserInputValue};
@@ -72,10 +73,10 @@ pub fn PeerConfigurator() -> impl IntoView {
                 Err(error) => {
                     error!("Failed to request the peer descriptor for peer <{peer_id}>: {error}");
 
-                    let error_description = match error {
-                        ClientError::UsageError(error) => error.to_string(),
-                        _ => String::from("The peer descriptor could not be loaded. Please check your connection and try again."),
-                    };
+                    let error_description = client_error_description(
+                        &error,
+                        "The peer descriptor could not be loaded. Please check your connection and try again.",
+                    );
                     
                     return Err(ErrorText {
                         headline: String::from("Unable to load peer descriptor"),

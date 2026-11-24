@@ -54,3 +54,20 @@ pub fn list_configured_clusters_for_peer(devices_in_peer: Vec<DeviceId>, cluster
 
     clusters
 }
+
+pub use error::client_error_description;
+
+mod error {
+    use std::fmt::Display;
+    use opendut_carl_api::carl::ClientError;
+
+    pub fn client_error_description<A: Display>(
+        error: &ClientError<A>,
+        fallback: &str,
+    ) -> String {
+        match error {
+            ClientError::UsageError(error) => error.to_string(),
+            _ => fallback.to_owned(),
+        }
+    }
+}

@@ -1,3 +1,4 @@
+use crate::util::client_error_description;
 use leptos::prelude::*;
 use leptos_router::hooks::{use_navigate, use_params_map};
 use tracing::error;
@@ -72,10 +73,10 @@ pub fn ClusterConfigurator() -> impl IntoView {
                     Err(error) => {
                         error!("Failed to request the cluster descriptor for cluster <{cluster_id}>: {error}");
 
-                        let error_description = match error {
-                            ClientError::UsageError(error) => error.to_string(),
-                            _ => String::from("The cluster descriptor could not be loaded. Please check your connection and try again."),
-                        };
+                        let error_description = client_error_description(
+                            &error,
+                            "The cluster descriptor could not be loaded. Please check your connection and try again.",
+                        );
 
                         return Err(ErrorText {
                             headline: String::from("Unable to load cluster descriptor"),
@@ -111,10 +112,10 @@ pub fn ClusterConfigurator() -> impl IntoView {
                     .map_err(|error| {
                         error!("Failed to request the list of peers: {error}");
 
-                        let error_description = match error {
-                            ClientError::UsageError(error) => error.to_string(),
-                            _ => String::from("The peer descriptors could not be loaded. Please check your connection and try again."),
-                        };
+                        let error_description = client_error_description(
+                            &error,
+                            "The peer descriptors could not be loaded. Please check your connection and try again.",
+                        );
 
                         ErrorText {
                             headline: String::from("Unable to load peer descriptors"),
@@ -149,10 +150,10 @@ pub fn ClusterConfigurator() -> impl IntoView {
                     .map_err(|error| {
                         error!("Failed to request the list of cluster deployments: {error}");
 
-                        let error_description = match error {
-                            ClientError::UsageError(error) => error.to_string(),
-                            _ => String::from("The cluster deployments could not be loaded. Please check your connection and try again."),
-                        };
+                        let error_description = client_error_description(
+                            &error,
+                            "The cluster deployments could not be loaded. Please check your connection and try again.",
+                        );
 
                         ErrorText {
                             headline: String::from("Unable to load cluster deployments"),

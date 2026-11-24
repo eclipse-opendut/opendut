@@ -1,3 +1,4 @@
+use crate::util::client_error_description;
 mod row;
 
 use std::collections::HashMap;
@@ -6,7 +7,6 @@ use crate::components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, 
 use crate::peers::components::CreatePeerButton;
 use leptos::prelude::*;
 use tracing::error;
-use opendut_carl_api::carl::ClientError;
 use opendut_lea_components::{InfoMessage, ErrorMessage, ErrorMessageTableRow, ErrorMessageType, ErrorText, OverviewTable, TableHeading};
 use opendut_model::cluster::ClusterDescriptor;
 use opendut_model::peer::state::PeerState;
@@ -33,10 +33,10 @@ pub fn PeersOverview() -> impl IntoView {
                     .map_err(|error| {
                         error!("Failed to request the list of peer states: {error}");
 
-                        let error_description = match error {
-                            ClientError::UsageError(error) => error.to_string(),
-                            _ => String::from("The peer states could not be loaded. Please check your connection and try again."),
-                        };
+                        let error_description = client_error_description(
+                            &error,
+                            "The peer states could not be loaded. Please check your connection and try again.",
+                        );
 
                         ErrorText {
                             headline: String::from("Unable to load peer states"),
@@ -59,10 +59,10 @@ pub fn PeersOverview() -> impl IntoView {
                     .map_err(|error| {
                         error!("Failed to request the list of peers: {error}");
 
-                        let error_description = match error {
-                            ClientError::UsageError(error) => error.to_string(),
-                            _ => String::from("The peer descriptors could not be loaded. Please check your connection and try again."),
-                        };
+                        let error_description = client_error_description(
+                            &error,
+                            "The peer descriptors could not be loaded. Please check your connection and try again.",
+                        );
 
                         ErrorText {
                             headline: String::from("Unable to load peer descriptors"),
@@ -91,10 +91,10 @@ pub fn PeersOverview() -> impl IntoView {
                     .map_err(|error| {
                         error!("Failed to request the list of clusters: {error}");
 
-                        let error_description = match error {
-                            ClientError::UsageError(error) => error.to_string(),
-                            _ => String::from("The cluster descriptors could not be loaded. Please check your connection and try again."),
-                        };
+                        let error_description = client_error_description(
+                            &error,
+                            "The cluster descriptors could not be loaded. Please check your connection and try again.",
+                        );
 
                         ErrorText {
                             headline: String::from("Unable to load cluster descriptors"),

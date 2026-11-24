@@ -1,8 +1,8 @@
+use crate::util::client_error_description;
 mod row;
 
 use leptos::prelude::*;
 use tracing::error;
-use opendut_carl_api::carl::ClientError;
 use opendut_lea_components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, ErrorMessage, ErrorMessageType, ErrorMessageTableRow, ErrorText, FontAwesomeIcon, IconButton, InfoMessage, OverviewTable, TableHeading};
 use opendut_model::peer::PeerDescriptor;
 use opendut_model::viper::{ViperSourceDescriptor, ViperTestRunDescriptor};
@@ -29,10 +29,10 @@ pub fn ViperTestsOverview() -> impl IntoView {
                     .map_err(|error| {
                         error!("Failed to request the list of VIPER test descriptors: {error}");
 
-                        let error_description = match error {
-                            ClientError::UsageError(error) => error.to_string(),
-                            _ => String::from("The VIPER test descriptors could not be loaded. Please check your connection and try again."),
-                        };
+                        let error_description = client_error_description(
+                            &error,
+                            "The VIPER test descriptors could not be loaded. Please check your connection and try again.",
+                        );
 
                         ErrorText {
                             headline: String::from("Unable to load VIPER test descriptors"),
@@ -62,10 +62,10 @@ pub fn ViperTestsOverview() -> impl IntoView {
                     .map_err(|error| {
                         error!("Failed to request the list of VIPER sources: {error}");
 
-                        let error_description = match error {
-                            ClientError::UsageError(error) => error.to_string(),
-                            _ => String::from("The VIPER sources could not be loaded. Please check your connection and try again."),
-                        };
+                        let error_description = client_error_description(
+                            &error,
+                            "The VIPER sources could not be loaded. Please check your connection and try again.",
+                        );
 
                         ErrorText {
                             headline: String::from("Unable to load VIPER sources"),
@@ -88,10 +88,10 @@ pub fn ViperTestsOverview() -> impl IntoView {
                     .map_err(|error| {
                         error!("Failed to request the list of peers: {error}");
 
-                        let error_description = match error {
-                            ClientError::UsageError(error) => error.to_string(),
-                            _ => String::from("The peer descriptors could not be loaded. Please check your connection and try again."),
-                        };
+                        let error_description = client_error_description(
+                            &error,
+                            "The peer descriptors could not be loaded. Please check your connection and try again.",
+                        );
 
                         ErrorText {
                             headline: String::from("Unable to load peer descriptors"),

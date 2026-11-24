@@ -1,3 +1,4 @@
+use crate::util::client_error_description;
 use std::collections::HashMap;
 use leptos::prelude::*;
 use tracing::error;
@@ -70,10 +71,10 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                     Err(error) => {
                         error!("Failed to request the VIPER test run descriptor <{viper_test_id}>: {error}");
 
-                        let error_description = match error {
-                            ClientError::UsageError(error) => error.to_string(),
-                            _ => String::from("The VIPER test run descriptor could not be loaded. Please check your connection and try again."),
-                        };
+                        let error_description = client_error_description(
+                            &error,
+                            "The VIPER test run descriptor could not be loaded. Please check your connection and try again.",
+                        );
 
                         return Err(ErrorText {
                             headline: String::from("Unable to load VIPER test run descriptor"),
@@ -121,10 +122,10 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                     .map_err(|error| {
                         error!("Failed to request the list of peers: {error}");
 
-                        let error_description = match error {
-                            ClientError::UsageError(error) => error.to_string(),
-                            _ => String::from("The VIPER source descriptors could not be loaded. Please check your connection and try again."),
-                        };
+                        let error_description = client_error_description(
+                            &error,
+                            "The VIPER source descriptors could not be loaded. Please check your connection and try again.",
+                        );
 
                         ErrorText {
                             headline: String::from("Unable to load VIPER source descriptors"),
@@ -208,10 +209,10 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                     .map_err(|error| {
                         error!("Failed to request the list of peers: {error}");
 
-                        let error_description = match error {
-                            ClientError::UsageError(error) => error.to_string(),
-                            _ => String::from("The peer descriptors could not be loaded. Please check your connection and try again."),
-                        };
+                        let error_description = client_error_description(
+                            &error,
+                            "The peer descriptors could not be loaded. Please check your connection and try again.",
+                        );
 
                         ErrorText {
                             headline: String::from("Unable to load peer descriptors"),
@@ -240,10 +241,10 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                     .map_err(|error| {
                         error!("Failed to request the list of clusters: {error}");
 
-                        let error_description = match error {
-                            ClientError::UsageError(error) => error.to_string(),
-                            _ => String::from("The cluster descriptors could not be loaded. Please check your connection and try again."),
-                        };
+                        let error_description = client_error_description(
+                            &error,
+                            "The cluster descriptors could not be loaded. Please check your connection and try again.",
+                        );
 
                         ErrorText {
                             headline: String::from("Unable to load cluster descriptors"),

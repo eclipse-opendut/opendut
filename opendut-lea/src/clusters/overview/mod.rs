@@ -1,8 +1,8 @@
+use crate::util::client_error_description;
 mod row;
 
 use leptos::prelude::*;
 use tracing::error;
-use opendut_carl_api::carl::ClientError;
 use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, ErrorMessage, InfoMessage, ErrorMessageTableRow, ErrorMessageType, ErrorText, FontAwesomeIcon, IconButton, OverviewTable, TableHeading};
 use opendut_model::cluster::{ClusterDeployment, ClusterDescriptor};
 
@@ -32,10 +32,10 @@ pub fn ClustersOverview() -> impl IntoView {
                     .map_err(|error| {
                         error!("Failed to request the list of clusters: {error}");
 
-                        let error_description = match error {
-                            ClientError::UsageError(error) => error.to_string(),
-                            _ => String::from("The cluster descriptors could not be loaded. Please check your connection and try again."),
-                        };
+                        let error_description = client_error_description(
+                            &error,
+                            "The cluster descriptors could not be loaded. Please check your connection and try again.",
+                        );
 
                         ErrorText {
                             headline: String::from("Unable to load cluster descriptors"),
@@ -64,10 +64,10 @@ pub fn ClustersOverview() -> impl IntoView {
                     .map_err(|error| {
                         error!("Failed to request the list of cluster deployments: {error}");
 
-                        let error_description = match error {
-                            ClientError::UsageError(error) => error.to_string(),
-                            _ => String::from("The cluster deployments could not be loaded. Please check your connection and try again."),
-                        };
+                        let error_description = client_error_description(
+                            &error,
+                            "The cluster deployments could not be loaded. Please check your connection and try again.",
+                        );
 
                         ErrorText {
                             headline: String::from("Unable to load cluster deployments"),

@@ -1,3 +1,4 @@
+use crate::util::client_error_description;
 mod types;
 mod components;
 mod tabs;
@@ -63,10 +64,10 @@ pub fn ViperSourceConfigurator() -> impl IntoView {
                 Err(error) => {
                     error!("Failed to request the VIPER source descriptor <{viper_source_id}>: {error}");
 
-                    let error_description = match error {
-                        ClientError::UsageError(error) => error.to_string(),
-                        _ => String::from("The VIPER source descriptor could not be loaded. Please check your connection and try again."),
-                    };
+                    let error_description = client_error_description(
+                        &error,
+                        "The VIPER source descriptor could not be loaded. Please check your connection and try again.",
+                    );
 
                     return Err(ErrorText {
                         headline: String::from("Unable to load VIPER source descriptor"),

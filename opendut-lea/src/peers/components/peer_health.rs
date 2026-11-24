@@ -1,7 +1,7 @@
+use crate::util::client_error_description;
 use std::sync::Arc;
 use leptos::prelude::*;
 use tracing::error;
-use opendut_carl_api::carl::ClientError;
 use opendut_lea_components::{ErrorText, FontAwesomeIcon, LoadingSpinner};
 use opendut_lea_components::health::{self, Health};
 use opendut_lea_components::tooltip::Tooltip;
@@ -24,10 +24,10 @@ pub fn PeerHealth(
                 .map_err(|error| {
                     error!("Failed to request the peer state for peer <{peer_id}>: {error}");
 
-                    let error_description = match error {
-                        ClientError::UsageError(error) => error.to_string(),
-                        _ => String::from("The peer state could not be loaded. Please check your connection and try again."),
-                    };
+                    let error_description = client_error_description(
+                        &error,
+                        "The peer state could not be loaded. Please check your connection and try again.",
+                    );
 
                     ErrorText {
                         headline: String::from("Unable to load peer state"),

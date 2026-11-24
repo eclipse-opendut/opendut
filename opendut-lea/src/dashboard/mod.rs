@@ -1,7 +1,7 @@
 pub mod components;
 
 use leptos::prelude::*;
-use opendut_carl_api::carl::ClientError;
+use crate::util::client_error_description;
 use opendut_lea_components::{ErrorMessage, ErrorMessageType, ErrorText};
 use opendut_model::peer::state::PeerConnectionState;
 use crate::app::use_app_globals;
@@ -33,10 +33,10 @@ pub fn Dashboard() -> impl IntoView {
         async move {
             let peer_states = carl.peers.list_peer_states().await
                 .map_err(|error| {
-                    let description = match error {
-                        ClientError::UsageError(error) => error.to_string(),
-                        _ => String::from("The peer states could not be loaded. Please check your connection and try again.")
-                    };
+                    let description = client_error_description(
+                        &error,
+                        "The peer states could not be loaded. Please check your connection and try again.",
+                    );
                     ErrorText {
                         headline: String::from("Unable to load peer states"),
                         description,
@@ -61,10 +61,10 @@ pub fn Dashboard() -> impl IntoView {
         async move {
             let configured = carl.cluster.list_cluster_descriptors().await
                 .map_err(|error| {
-                    let description = match error {
-                        ClientError::UsageError(error) => error.to_string(),
-                        _ => String::from("The cluster descriptors could not be loaded. Please check your connection and try again.")
-                    };
+                    let description = client_error_description(
+                        &error,
+                        "The cluster descriptors could not be loaded. Please check your connection and try again.",
+                    );
                     ErrorText {
                         headline: String::from("Unable to load cluster descriptors"),
                         description
@@ -74,10 +74,10 @@ pub fn Dashboard() -> impl IntoView {
 
             let deployed = carl.cluster.list_cluster_deployments().await
                 .map_err(|error| {
-                    let description = match error {
-                        ClientError::UsageError(error) => error.to_string(),
-                        _ => String::from("The cluster deployments could not be loaded. Please check your connection and try again.")
-                    };
+                    let description = client_error_description(
+                        &error,
+                        "The cluster deployments could not be loaded. Please check your connection and try again.",
+                    );
                     ErrorText {
                         headline: String::from("Unable to load cluster deployments"),
                         description
