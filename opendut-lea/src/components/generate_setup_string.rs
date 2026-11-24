@@ -1,4 +1,5 @@
 use leptos::{either::Either, prelude::*};
+use opendut_carl_api::carl::ClientError;
 use opendut_lea_components::{ButtonSize, ErrorMessage, ErrorText, FontAwesomeIcon, IconButton};
 use crate::components::{use_toaster, ButtonColor, ButtonState, SimpleButton, Toast, WarningMessage};
 use opendut_model::peer::PeerId;
@@ -25,25 +26,37 @@ pub fn GenerateSetupStringForm(kind: Signal<GenerateSetupStringKind>) -> impl In
                 let setup_string = match kind {
                     GenerateSetupStringKind::Edgar(peer_id) => {
                         let setup = carl.peers.create_peer_setup(peer_id, user_id.clone()).await
-                            .map_err(|error| ErrorText {
-                                headline: String::from("Could not generate Setup-String"),
-                                description: error.to_string()
+                            .map_err(|error| {
+                                let error_description = match error {
+                                    ClientError::UsageError(error) => error.to_string(),
+                                    _ => String::from("The Setup-String for that peer could not be generated. Please check your connection and try again.")
+                                };
+                                ErrorText {
+                                    headline: String::from("Could not generate Setup-String"),
+                                    description: error_description
+                                }
                             })?;
                         setup.encode()
                             .map_err(|error| ErrorText {
-                                headline: String::from("Could not generate Setup-String"),
+                                headline: String::from("Could not encode Setup-String"),
                                 description: error.to_string()
                             })?
                     },
                     GenerateSetupStringKind::Cleo => {
                         let setup = carl.peers.create_cleo_setup(user_id.clone()).await
-                            .map_err(|error| ErrorText {
-                                headline: String::from("Could not generate Setup-String"),
-                                description: error.to_string()
+                            .map_err(|error| {
+                                let error_description = match error {
+                                    ClientError::UsageError(error) => error.to_string(),
+                                    _ => String::from("The Setup-String for CLEO could not be generated. Please check your connection and try again.")
+                                };
+                                ErrorText {
+                                    headline: String::from("Could not generate Setup-String"),
+                                    description: error_description
+                                }
                             })?;
                         setup.encode()
                             .map_err(|error| ErrorText {
-                                headline: String::from("Could not generate Setup-String"),
+                                headline: String::from("Could not encode Setup-String"),
                                 description: error.to_string()
                             })?
                     }
