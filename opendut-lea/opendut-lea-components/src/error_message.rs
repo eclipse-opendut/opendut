@@ -41,7 +41,7 @@ pub fn ErrorMessage(
                         <p class="has-text-weight-semibold">
                             {text.headline}
                         </p>
-                        <p>{ text.description }</p>
+                        <p style="white-space: pre-line;">{ text.description }</p>
                     </div>
                     <div class="column is-narrow">
                         <IconButton
