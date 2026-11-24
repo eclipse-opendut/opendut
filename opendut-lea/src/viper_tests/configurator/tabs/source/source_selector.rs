@@ -18,6 +18,25 @@ pub fn ViperTestSourceSelector(
         }
     );
 
+    let has_sources = !viper_sources.is_empty();
+    Effect::new(move || {
+        let selection = getter.get();
+        let error = if !has_sources {
+            Some("No VIPER sources available.")
+        } else if matches!(selection, SourceSelection::Left(_)) {
+            Some("Select a VIPER source.")
+        } else {
+            None
+        };
+
+        if let Some(error) = error {
+            let validated_selection = SourceSelection::Left(String::from(error));
+            if selection != validated_selection {
+                setter.set(validated_selection);
+            }
+        }
+    });
+
     let viper_sources = Signal::derive(move || {
         let mut viper_sources = Clone::clone(&viper_sources);
         viper_sources.sort_by(|viper_source_a, viper_source_b| {
@@ -25,7 +44,7 @@ pub fn ViperTestSourceSelector(
                 .cmp(&viper_source_b.name.to_string().to_lowercase())
         });
 
-        let rows = viper_sources.iter().map(|viper_source_descriptor| {
+        viper_sources.iter().map(|viper_source_descriptor| {
             let ViperSourceDescriptor { id, name, url, .. } = viper_source_descriptor;
             let id = id.to_owned();
             let name = name.to_string();
@@ -35,15 +54,7 @@ pub fn ViperTestSourceSelector(
                 id,
                 cells: vec![name.into(), url.into()]
             }
-        }).collect::<Vec<_>>();
-
-        if viper_sources.is_empty() {
-            setter.set(SourceSelection::Left(String::from("No viper VIPER sources available.")));
-        } else if matches!(getter.get(), SourceSelection::Left(_)) {
-            setter.set(SourceSelection::Left(String::from("Select a VIPER source.")));
-        }
-
-        rows
+        }).collect::<Vec<_>>()
     });
 
     let header = vec![

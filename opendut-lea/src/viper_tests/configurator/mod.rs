@@ -385,7 +385,7 @@ impl SourceFetchError {
                 GetViperTestSuiteParametersError::Compilation { kind, .. } => {
                     match kind {
                         CompilationErrorKind::FailedLoading { message, .. }
-                        | CompilationErrorKind::InvalidSource { message, .. }
+                        | CompilationErrorKind::InvalidSource { message }
                         | CompilationErrorKind::FailedInspection { message }
                         | CompilationErrorKind::PythonCompilationError { message }
                         | CompilationErrorKind::Internal { message } => {

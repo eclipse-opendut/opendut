@@ -21,8 +21,26 @@ pub fn PeerSelector(
         }
     );
 
+    Effect::new(move || {
+        let selection = getter.get();
+        let error = if peers.with(Vec::is_empty) {
+            Some("No peers available.")
+        } else if matches!(selection, PeerSelection::Left(_)) {
+            Some("Select a peer.")
+        } else {
+            None
+        };
+
+        if let Some(error) = error {
+            let validated_selection = PeerSelection::Left(String::from(error));
+            if selection != validated_selection {
+                setter.set(validated_selection);
+            }
+        }
+    });
+
     let rows = Signal::derive(move || {
-        let peers = peers.get().iter().map(|peer_descriptor| {
+        peers.get().iter().map(|peer_descriptor| {
             let PeerDescriptor { id, name, location: _location, network: _network, topology } = peer_descriptor;
             let id = id.to_owned();
             let name = name.value().to_owned();
@@ -52,16 +70,8 @@ pub fn PeerSelector(
                 id,
                 cells: vec![name.into(), id.to_string().into(), clusters]
             }
-        }).collect::<Vec<_>>();
-
-        if peers.is_empty() {
-            setter.set(PeerSelection::Left(String::from("No peers available.")));
-        } else if matches!(getter.get(), PeerSelection::Left(_)) {
-            setter.set(PeerSelection::Left(String::from("Select a peer.")));
-        }
-
-        peers
-     });
+        }).collect::<Vec<_>>()
+    });
 
     let header = vec![
         String::new(),

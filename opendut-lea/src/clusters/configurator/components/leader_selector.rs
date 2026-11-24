@@ -1,9 +1,6 @@
-use std::collections::HashSet;
-
 use leptos::prelude::*;
 use opendut_lea_components::{SelectionTable, SelectionTableRow};
 use opendut_model::peer::{PeerDescriptor, PeerId};
-use opendut_model::topology::DeviceId;
 
 use crate::clusters::configurator::components::get_all_selected_devices;
 use crate::clusters::configurator::types::UserClusterDescriptor;
@@ -31,10 +28,37 @@ pub fn LeaderSelector(
         },
     );
 
-    let selected_devices = move || get_all_selected_devices(getter_selected_devices);
+    let selected_devices = Signal::derive(move || get_all_selected_devices(getter_selected_devices));
+
+    Effect::new(move || {
+        let selected_devices = selected_devices.get();
+        let selection = getter.get();
+        let error = if selected_devices.len() < 2 {
+            Some("Please select at least two devices first.")
+        } else {
+            let has_eligible_leader = match &selection {
+                LeaderSelection::Right(leader) => peers.with(|peers| {
+                    peers.iter().any(|peer| {
+                        peer.id == *leader && peer.topology.devices.iter()
+                            .any(|device| selected_devices.contains(&device.id))
+                    })
+                }),
+                LeaderSelection::Left(_) | LeaderSelection::Both(_, _) => false,
+            };
+
+            (!has_eligible_leader).then_some("Select a leader.")
+        };
+
+        if let Some(error) = error {
+            let validated_selection = LeaderSelection::Left(String::from(error));
+            if selection != validated_selection {
+                setter.set(validated_selection);
+            }
+        }
+    });
 
     let peers = Signal::derive(move || {
-        let selected_devices = selected_devices();
+        let selected_devices = selected_devices.get();
         let mut peers = peers.get();
 
         peers.sort_by(|a, b| {
@@ -42,32 +66,10 @@ pub fn LeaderSelector(
                 .cmp(&b.name.value().to_lowercase())
         });
 
-        peers.clone().into_iter()
+        peers.into_iter()
             .filter(|peer_descriptor| {
-                let mut peer_devices: HashSet<DeviceId> = HashSet::new();
-
-                for device in &peer_descriptor.topology.devices {
-                    peer_devices.insert(device.id);
-                }
-
-                if selected_devices.len() < 2 {
-                    setter.set(LeaderSelection::Left(String::from("Please select at least two devices first.")));
-                }
-                else {
-                    let leader_not_selected = match getter.get() {
-                        LeaderSelection::Left(_) | LeaderSelection::Both(_, _) => true,
-                        LeaderSelection::Right(leader) => {
-                            // Deselecting a previously selected peer leader in case all devices belonging to the peer were also deselected
-                            peer_devices.is_disjoint(&selected_devices) && peer_descriptor.id == leader
-                        }
-                    };
-
-                    if leader_not_selected {
-                        setter.set(LeaderSelection::Left(String::from("Select a leader.")));
-                    }
-                }
-
-                !peer_devices.is_disjoint(&selected_devices)
+                peer_descriptor.topology.devices.iter()
+                    .any(|device| selected_devices.contains(&device.id))
             }).map(|peer_descriptor| {
                 let PeerDescriptor { id, name, location, .. } = peer_descriptor;
                 let name = name.value().to_owned();
