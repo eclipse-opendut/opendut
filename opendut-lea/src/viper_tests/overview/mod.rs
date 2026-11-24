@@ -143,6 +143,7 @@ pub fn ViperTestsOverview() -> impl IntoView {
                     Some(Err(error)) => view! {
                         <ErrorMessage
                             text=error
+                            on_retry=move || viper_sources.refetch()
                             error_type=ErrorMessageType::Warning
                         />
                     }.into_any(),
@@ -152,6 +153,7 @@ pub fn ViperTestsOverview() -> impl IntoView {
                     Some(Err(error)) => view! {
                         <ErrorMessage
                             text=error
+                            on_retry=move || peers.refetch()
                             error_type=ErrorMessageType::Warning
                         />
                     }.into_any(),
@@ -160,9 +162,9 @@ pub fn ViperTestsOverview() -> impl IntoView {
             </Transition>
             <OverviewTable headings=table_headings>
                 { move || Suspend::new(async move {
-                    let viper_tests = viper_tests.await;
+                    let viper_tests_result = viper_tests.await;
 
-                    match viper_tests {
+                    match viper_tests_result {
                         Ok(viper_tests) => {
                             view! {
                                 <ViperTestsOverviewTable
@@ -175,7 +177,10 @@ pub fn ViperTestsOverview() -> impl IntoView {
                         }
                         Err(error) => {
                             view! {
-                                <ErrorMessageTableRow text=error />
+                                <ErrorMessageTableRow
+                                    text=error
+                                    on_retry=move || viper_tests.refetch()
+                                />
                             }.into_any()
                         }
                     }

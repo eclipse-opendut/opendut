@@ -11,6 +11,7 @@ pub fn LeaderTab(
     user_cluster_descriptor: RwSignal<UserClusterDescriptor>,
     peers: ReadSignal<Result<Vec<PeerDescriptor>, ErrorText>>,
     is_disabled: Signal<bool>,
+    #[prop(into)] on_retry: Callback<()>,
 ) -> impl IntoView {
 
     view! {
@@ -24,13 +25,16 @@ pub fn LeaderTab(
                 Ok(peers) => {
                     let peers = RwSignal::new(peers).read_only();
                     view! {
-                        <LeaderSelector user_cluster_descriptor peers is_disabled />
+                        <fieldset prop:disabled=move || is_disabled.get()>
+                            <LeaderSelector user_cluster_descriptor peers is_disabled />
+                        </fieldset>
                     }.into_any()
                 }
                 Err(error)=> {
                     view! {
                         <ErrorMessage
                             text=error
+                            on_retry
                         />
                     }.into_any()
                 }

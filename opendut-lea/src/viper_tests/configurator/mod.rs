@@ -300,6 +300,9 @@ pub fn ViperTestConfigurator() -> impl IntoView {
         ]
     });
     
+    let on_retry_peers = Callback::new(move |()| peers.refetch());
+    let on_retry_clusters = Callback::new(move |()| clusters.refetch());
+
     view! {
         <BasePageContainer
             title="Configure VIPER Test"
@@ -321,15 +324,38 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                                 <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
                                     { move || match active_tab.get() {
                                         TabIdentifier::General => view! { <GeneralTab user_test_run_descriptor /> }.into_any(),
-                                        TabIdentifier::ViperSource => view! { <SourceTab user_test_run_descriptor viper_sources /> }.into_any(),
-                                        TabIdentifier::Parameters => view! { <ParametersTab user_test_run_descriptor parameter_result=parameter_result.clone() /> }.into_any(),
-                                        TabIdentifier::Peer => view! { <PeerTab user_test_run_descriptor peers clusters /> }.into_any()
+                                        TabIdentifier::ViperSource => view! {
+                                            <SourceTab
+                                                user_test_run_descriptor
+                                                viper_sources
+                                                on_retry=move || viper_sources_resource.refetch()
+                                            />
+                                        }.into_any(),
+                                        TabIdentifier::Parameters => view! {
+                                            <ParametersTab
+                                                user_test_run_descriptor
+                                                parameter_result=parameter_result.clone()
+                                                on_retry=move || parameters.refetch()
+                                            />
+                                        }.into_any(),
+                                        TabIdentifier::Peer => view! {
+                                            <PeerTab
+                                                user_test_run_descriptor
+                                                peers
+                                                clusters
+                                                on_retry_peers
+                                                on_retry_clusters
+                                            />
+                                        }.into_any()
                                     }}
                                 </Tabs>
                             }.into_any()
                         }
                         Err(error) => view! {
-                            <ErrorMessage text=error />
+                            <ErrorMessage
+                                text=error
+                                on_retry=move || viper_test_run_descriptor_resource.refetch()
+                            />
                         }.into_any(),
                     }
                 })}
@@ -346,7 +372,7 @@ enum SourceFetchError {
 }
 
 impl SourceFetchError {
-    pub fn to_error_view(&self) -> AnyView {
+    pub fn to_error_view(&self, on_retry: Callback<()>) -> AnyView {
         let description = match self {
             Self::NoSourceSelected => {
                 return view! {
@@ -380,6 +406,6 @@ impl SourceFetchError {
             description,
         };
 
-        view! { <ErrorMessage text=error_text /> }.into_any()
+        view! { <ErrorMessage text=error_text on_retry /> }.into_any()
     }
 }

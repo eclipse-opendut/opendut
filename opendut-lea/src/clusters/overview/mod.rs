@@ -119,6 +119,7 @@ pub fn ClustersOverview() -> impl IntoView {
                     Some(Err(error)) => view! {
                         <ErrorMessage
                             text=error
+                            on_retry=move || cluster_deployments.refetch()
                             error_type=ErrorMessageType::Warning
                         />
                     }.into_any(),
@@ -128,9 +129,9 @@ pub fn ClustersOverview() -> impl IntoView {
             <OverviewTable headings=table_headings>
                 { move || {
                     Suspend::new(async move {
-                        let clusters = clusters.await;
+                        let clusters_result = clusters.await;
 
-                        match clusters {
+                        match clusters_result {
                             Ok(clusters) => {
                                 view! {
                                     <ClusterOverviewTable
@@ -145,6 +146,7 @@ pub fn ClustersOverview() -> impl IntoView {
                                 view! {
                                     <ErrorMessageTableRow
                                         text=error
+                                        on_retry=move || clusters.refetch()
                                     />
                                 }.into_any()
                             }

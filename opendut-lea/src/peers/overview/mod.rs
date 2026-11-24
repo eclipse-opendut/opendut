@@ -150,6 +150,7 @@ pub fn PeersOverview() -> impl IntoView {
                         view! {
                             <ErrorMessage
                                 text=error
+                                on_retry=move || peer_states.refetch()
                                 error_type=ErrorMessageType::Warning
                             />
                         }.into_any()
@@ -160,6 +161,7 @@ pub fn PeersOverview() -> impl IntoView {
                         view! {
                             <ErrorMessage
                                 text=error
+                                on_retry=move || configured_clusters.refetch()
                                 error_type=ErrorMessageType::Warning
                             />
                         }.into_any()
@@ -168,16 +170,16 @@ pub fn PeersOverview() -> impl IntoView {
             </Transition>
         <OverviewTable headings=table_headings>
             { move || Suspend::new(async move {
-                let peers = peers.await;
-                let configured_clusters = configured_clusters.await;
+                let peers_result = peers.await;
+                let configured_clusters_result = configured_clusters.await;
 
-                match peers {
+                match peers_result {
                     Ok(peers) => {
                         view! {
                             <PeerOverviewTable
                                 peers
                                 refetch_registered_peers
-                                configured_clusters
+                                configured_clusters=configured_clusters_result
                             />
                         }.into_any()
                     }
@@ -185,6 +187,7 @@ pub fn PeersOverview() -> impl IntoView {
                         view! {
                             <ErrorMessageTableRow
                                 text=error
+                                on_retry=move || peers.refetch()
                             />
                         }.into_any()
                     }

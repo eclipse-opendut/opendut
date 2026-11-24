@@ -98,6 +98,7 @@ pub fn Dashboard() -> impl IntoView {
                 view! {
                     <ErrorMessage
                         text=error
+                        on_retry=move || peers.refetch()
                         error_type=ErrorMessageType::Warning
                     />
                 }.into_any()
@@ -108,6 +109,7 @@ pub fn Dashboard() -> impl IntoView {
                 view! {
                     <ErrorMessage
                         text=error
+                        on_retry=move || clusters.refetch()
                         error_type=ErrorMessageType::Warning
                     />
                 }.into_any()

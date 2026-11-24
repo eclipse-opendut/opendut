@@ -17,6 +17,7 @@ pub enum ErrorMessageType {
 #[component]
 pub fn ErrorMessage(
     text: ErrorText,
+    #[prop(into)] on_retry: Callback<()>,
     #[prop(optional)] error_type: ErrorMessageType
 ) -> impl IntoView {
 
@@ -49,10 +50,8 @@ pub fn ErrorMessage(
                             color=ButtonColor::White
                             size=ButtonSize::Normal
                             state=ButtonState::Enabled
-                            label="Reload Page"
-                            on_action=move || {
-                                let _ = window().location().reload(); // TODO: Maybe just refetch the data instead of reloading the whole page (-> causes rerendering)
-                            }
+                            label="Retry"
+                            on_action=move || on_retry.run(())
                         />
                     </div>
                 </div>
@@ -62,12 +61,16 @@ pub fn ErrorMessage(
 }
 
 #[component]
-pub fn ErrorMessageTableRow(text: ErrorText) -> impl IntoView {
+pub fn ErrorMessageTableRow(
+    text: ErrorText,
+    #[prop(into)] on_retry: Callback<()>,
+) -> impl IntoView {
     view! {
         <tr>
             <td colspan="999">
                 <ErrorMessage
                     text
+                    on_retry
                 />
             </td>
         </tr>

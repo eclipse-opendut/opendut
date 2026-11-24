@@ -12,6 +12,8 @@ pub fn PeerTab(
     user_test_run_descriptor: RwSignal<UserViperTestRunDescriptor>,
     peers: ReadSignal<Result<Vec<PeerDescriptor>, ErrorText>>,
     clusters: ReadSignal<Result<Vec<ClusterDescriptor>, ErrorText>>,
+    #[prop(into)] on_retry_peers: Callback<()>,
+    #[prop(into)] on_retry_clusters: Callback<()>,
 ) -> impl IntoView {
 
     view! {
@@ -23,6 +25,7 @@ pub fn PeerTab(
                 <ErrorMessage
                     text=error
                     error_type=ErrorMessageType::Warning
+                    on_retry=on_retry_clusters
                 />
             }.into_any()
         } else { ().into_any() }}
@@ -38,6 +41,7 @@ pub fn PeerTab(
                 view! {
                     <ErrorMessage
                         text=error
+                        on_retry=on_retry_peers
                     />
                 }.into_any()
             }

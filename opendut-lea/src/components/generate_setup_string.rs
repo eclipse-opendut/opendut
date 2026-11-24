@@ -187,7 +187,7 @@ fn GenerateSetupStringButtonForm(
     view! {
         <div>
             <label class="label">Setup-String</label>
-            {error.map(|error| view! { <ErrorMessage text=error /> })}
+            {error.map(|error| view! { <ErrorMessage text=error on_retry=move || trigger_setup_generation.notify() /> })}
             <Show when=move || !has_error>
                 <div class="control is-flex is-flex-direction-column">
                     <div class="is-flex is-justify-content-center">

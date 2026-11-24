@@ -86,9 +86,9 @@ pub fn ViperSourcesOverview() -> impl IntoView {
         />
             <OverviewTable headings=table_headings>
                 { move || Suspend::new(async move {
-                    let viper_sources = viper_sources.await;
+                    let viper_sources_result = viper_sources.await;
 
-                    match viper_sources {
+                    match viper_sources_result {
                         Ok(viper_sources) => {
                             view! {
                                 <ViperSourceOverviewTable
@@ -101,6 +101,7 @@ pub fn ViperSourcesOverview() -> impl IntoView {
                             view! {
                                 <ErrorMessageTableRow
                                     text=error
+                                    on_retry=move || viper_sources.refetch()
                                 />
                             }.into_any()
                         }

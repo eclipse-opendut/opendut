@@ -10,6 +10,7 @@ pub mod source_selector;
 pub fn SourceTab(
     user_test_run_descriptor: RwSignal<UserViperTestRunDescriptor>,
     viper_sources: ReadSignal<Result<Vec<ViperSourceDescriptor>, ErrorText>>,
+    #[prop(into)] on_retry: Callback<()>,
 ) -> impl IntoView {
 
     view! {
@@ -23,7 +24,7 @@ pub fn SourceTab(
                 }.into_any()
             }
             Err(error)=> {
-                view!(<ErrorMessage text=error />).into_any()
+                view!(<ErrorMessage text=error on_retry />).into_any()
             }
         }}
     }

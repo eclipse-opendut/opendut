@@ -231,34 +231,39 @@ pub fn ClusterConfigurator() -> impl IntoView {
                         Ok(()) => {
                             view! {
                                 <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
-                                    <fieldset prop:disabled=move || is_disabled.get()>
-                                        { move || match active_tab.get() {
-                                            TabIdentifier::General => view! {
+                                    { move || match active_tab.get() {
+                                        TabIdentifier::General => view! {
+                                            <fieldset prop:disabled=move || is_disabled.get()>
                                                 <GeneralTab user_cluster_descriptor />
-                                            }.into_any(),
+                                            </fieldset>
+                                        }.into_any(),
 
-                                            TabIdentifier::Devices => view! {
-                                                <DevicesTab
-                                                    user_cluster_descriptor
-                                                    peers=peers
-                                                    is_disabled
-                                                />
-                                            }.into_any(),
+                                        TabIdentifier::Devices => view! {
+                                            <DevicesTab
+                                                user_cluster_descriptor
+                                                peers=peers
+                                                on_retry=move || peers_resource.refetch()
+                                                is_disabled
+                                            />
+                                        }.into_any(),
 
-                                            TabIdentifier::Leader => view! {
-                                                <LeaderTab
-                                                    user_cluster_descriptor
-                                                    peers=peers
-                                                    is_disabled
-                                                />
-                                            }.into_any()
-                                        }}
-                                    </fieldset>
+                                        TabIdentifier::Leader => view! {
+                                            <LeaderTab
+                                                user_cluster_descriptor
+                                                peers=peers
+                                                on_retry=move || peers_resource.refetch()
+                                                is_disabled
+                                            />
+                                        }.into_any()
+                                    }}
                                 </Tabs>
                             }.into_any()
                         }
                         Err(error) => view! {
-                            <ErrorMessage text=error />
+                            <ErrorMessage
+                                text=error
+                                on_retry=move || cluster_resource.refetch()
+                            />
                         }.into_any(),
                     }
                 })}

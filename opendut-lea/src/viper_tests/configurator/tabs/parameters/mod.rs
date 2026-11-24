@@ -15,6 +15,7 @@ use crate::viper_tests::configurator::types::{UserViperTestRunDescriptor, ViperB
 pub fn ParametersTab(
     user_test_run_descriptor: RwSignal<UserViperTestRunDescriptor>,
     parameter_result: Result<ViperParameterDescriptors, SourceFetchError>,
+    #[prop(into)] on_retry: Callback<()>,
 ) -> impl IntoView {
 
     let view = match parameter_result {
@@ -107,7 +108,7 @@ pub fn ParametersTab(
             }
         }
         Err(fetch_error) => {
-            fetch_error.to_error_view()
+            fetch_error.to_error_view(on_retry)
         }
     };
 

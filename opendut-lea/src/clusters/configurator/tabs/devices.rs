@@ -12,6 +12,7 @@ pub fn DevicesTab(
     user_cluster_descriptor: RwSignal<UserClusterDescriptor>,
     peers: ReadSignal<Result<Vec<PeerDescriptor>, ErrorText>>,
     is_disabled: Signal<bool>,
+    #[prop(into)] on_retry: Callback<()>,
 ) -> impl IntoView {
 
     view! {
@@ -21,13 +22,16 @@ pub fn DevicesTab(
                 Ok(peers) => {
                     let peers = RwSignal::new(peers).read_only();
                     view! {
-                        <DeviceSelector user_cluster_descriptor peers is_disabled />
+                        <fieldset prop:disabled=move || is_disabled.get()>
+                            <DeviceSelector user_cluster_descriptor peers is_disabled />
+                        </fieldset>
                     }.into_any()
                 }
                 Err(error)=> {
                     view! {
                         <ErrorMessage
                             text=error
+                            on_retry
                         />
                     }.into_any()
                 }

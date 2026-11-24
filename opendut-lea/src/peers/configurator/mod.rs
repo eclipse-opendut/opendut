@@ -245,7 +245,10 @@ pub fn PeerConfigurator() -> impl IntoView {
                         }.into_any()
                     }
                     Err(error) => view! {
-                        <ErrorMessage text=error />
+                        <ErrorMessage
+                            text=error
+                            on_retry=move || peer_descriptor_resource.refetch()
+                        />
                     }.into_any(),
                 }
             })}

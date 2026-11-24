@@ -140,7 +140,10 @@ pub fn ViperSourceConfigurator() -> impl IntoView {
                             }.into_any()
                         }
                         Err(error) => view! {
-                            <ErrorMessage text=error />
+                            <ErrorMessage
+                                text=error
+                                on_retry=move || viper_source_descriptor_resource.refetch()
+                            />
                         }.into_any(),
                     }
                 })}
