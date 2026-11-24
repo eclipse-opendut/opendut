@@ -109,6 +109,11 @@ async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::
     let oidc_registration_client = RegistrationClient::from_settings(&settings).await
         .expect("Failed to load OIDC registration client!");
 
+    startup::migration::migrate_oidc_client_scopes(
+        resource_manager.clone(),
+        oidc_registration_client.clone(),
+    ).await?;
+
     let grpc_facades = startup::grpc::GrpcFacades::create(
         resource_manager,
         &carl_url,

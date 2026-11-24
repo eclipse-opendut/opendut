@@ -31,6 +31,16 @@ The following OpenID Connect (OIDC) flows are implemented:
   * OpenDuT-EDGAR
   * OpenDuT-CLEO
 
+### API Access Control via OAuth Scopes
+
+CARL enforces OAuth scopes on each gRPC endpoint to restrict which clients can access which APIs:
+
+* `opendut-admin-api`: Required to access the management API (cluster manager, peer manager). Assigned to CLEO and LEA clients.
+* `opendut-edge-api`: Required to access the edge API (peer messaging broker). Assigned to EDGAR clients.
+
+These scopes are created and assigned to clients automatically during provisioning (`provision.sh`) and at client registration time (CARL startup migration for existing clients).
+
+
 ### Client applications
 
 * OpenDuT-LEA (public client)

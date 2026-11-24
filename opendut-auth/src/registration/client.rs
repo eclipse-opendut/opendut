@@ -338,7 +338,8 @@ impl Clients {
 pub struct Client {
     pub id: String,
     pub client_id: String,
-    base_url: Option<String>,
+    pub base_url: Option<String>,
+    pub default_client_scopes: Option<Vec<String>>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
