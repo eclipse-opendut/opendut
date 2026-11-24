@@ -1,11 +1,9 @@
-use std::sync::Arc;
 use crate::peers::components::DeletePeerButton;
 use crate::util;
 use leptos::html::Div;
 use leptos::prelude::*;
 use leptos_use::on_click_outside;
-use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, ErrorText, FontAwesomeIcon, IconButton, OverviewTableCell};
-use opendut_lea_components::tooltip::Tooltip;
+use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, ErrorIndicator, ErrorText, FontAwesomeIcon, IconButton, OverviewTableCell};
 use opendut_model::cluster::ClusterDescriptor;
 use opendut_model::peer::PeerDescriptor;
 use crate::components::ClickableOverviewTableRow;
@@ -60,19 +58,9 @@ where
 
                 util::view::join_with_comma_spans(cluster_view_list)
             }
-            Err(_) => {
-                let tooltip_content = Arc::new(move || {
-                    view! {
-                        Unable to load clusters.
-                    }.into_any()
-                });
-
+            Err(error) => {
                 view! {
-                    <div>
-                        <Tooltip text=tooltip_content>
-                            <i class=format!("has-text-danger fa-lg {}", FontAwesomeIcon::TriangleExclamation.as_class()) />
-                        </Tooltip>
-                    </div>
+                    <ErrorIndicator text=error />
                 }.into_any()
             }
         }

@@ -5,7 +5,7 @@ use tracing::{debug, error};
 use opendut_carl_api::carl::ClientError;
 use opendut_carl_api::carl::cluster::StoreClusterDeploymentError;
 use opendut_lea_components::tooltip::{Tooltip, TooltipDirection};
-use opendut_lea_components::{FontAwesomeIcon, Toggle, ToggleState};
+use opendut_lea_components::{ErrorIndicator, ErrorText, Toggle, ToggleState};
 use opendut_model::cluster::{ClusterDeployment, ClusterId};
 use opendut_model::peer::PeerId;
 use opendut_model::peer::state::PeerMemberState;
@@ -187,17 +187,15 @@ where
                     }.into_any()
                 }
                 None => {
-                    let tooltip_content = Arc::new(move || {
-                        view! {
-                            Unable to load cluster deployments.
-                        }.into_any()
-                    });
-
                     view! {
                         <div class="is-flex is-align-items-center is-justify-content-center">
-                            <Tooltip text=tooltip_content direction=tooltip_direction>
-                                <i class=format!("has-text-danger fa-lg {}", FontAwesomeIcon::TriangleExclamation.as_class()) />
-                            </Tooltip>
+                            <ErrorIndicator
+                                text=ErrorText {
+                                    headline: String::from("Unable to load cluster deployments."),
+                                    description: String::new(),
+                                }
+                                direction=tooltip_direction
+                            />
                         </div>
                     }.into_any()
                 }

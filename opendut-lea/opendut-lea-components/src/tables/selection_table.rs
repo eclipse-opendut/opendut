@@ -1,8 +1,6 @@
 use std::hash::Hash;
-use std::sync::Arc;
 use leptos::prelude::*;
-use crate::{FontAwesomeIcon, Ior, NON_BREAKING_SPACE};
-use crate::tooltip::Tooltip;
+use crate::{ErrorIndicator, ErrorText, Ior, NON_BREAKING_SPACE};
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum SelectionTableCell {
@@ -116,15 +114,12 @@ where
                                                     }.into_any()
                                                 }
                                                 SelectionTableCell::Error(error) => {
-                                                    let tooltip_content = Arc::new(move || {
-                                                        view!({error.clone()}).into_any()
-                                                    });
-
                                                     view! {
                                                         <td>
-                                                            <Tooltip text=tooltip_content>
-                                                                <i class=format!("has-text-danger fa-lg {}", FontAwesomeIcon::TriangleExclamation.as_class()) />
-                                                            </Tooltip>
+                                                            <ErrorIndicator text=ErrorText {
+                                                                headline: error,
+                                                                description: String::new(),
+                                                            } />
                                                         </td>
                                                     }.into_any()
                                                 }

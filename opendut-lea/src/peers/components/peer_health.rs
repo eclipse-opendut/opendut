@@ -1,10 +1,8 @@
 use crate::util::client_error_description;
-use std::sync::Arc;
 use leptos::prelude::*;
 use tracing::error;
-use opendut_lea_components::{ErrorText, FontAwesomeIcon, LoadingSpinner};
+use opendut_lea_components::{ErrorIndicator, ErrorText, LoadingSpinner};
 use opendut_lea_components::health::{self, Health};
-use opendut_lea_components::tooltip::Tooltip;
 use opendut_model::peer::PeerId;
 use opendut_model::peer::state::{PeerConnectionState, PeerState};
 use crate::app::use_app_globals;
@@ -56,18 +54,10 @@ pub fn PeerHealth(
                 <Health state=health_state />
             }.into_any()
         }
-        Some(Err(_)) => {
-            let tooltip_content = Arc::new(move || {
-                view! {
-                    Unable to load peer states.
-                }.into_any()
-            });
-
+        Some(Err(error)) => {
             view! {
                 <div class="is-flex is-align-items-center is-justify-content-center">
-                    <Tooltip text=tooltip_content>
-                        <i class=format!("has-text-danger fa-lg {}", FontAwesomeIcon::TriangleExclamation.as_class()) />
-                    </Tooltip>
+                    <ErrorIndicator text=error />
                 </div>
             }.into_any()
         }
