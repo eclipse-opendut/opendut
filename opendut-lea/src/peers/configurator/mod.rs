@@ -72,10 +72,15 @@ pub fn PeerConfigurator() -> impl IntoView {
                 Err(error) => {
                     error!("Failed to request the peer descriptor for peer <{peer_id}>: {error}");
 
+                    let error_description = match error {
+                        ClientError::UsageError(error) => error.to_string(),
+                        _ => String::from("The peer descriptor could not be loaded. Please check your connection and try again."),
+                    };
+                    
                     return Err(ErrorText {
                         headline: String::from("Unable to load peer descriptor"),
-                        description: String::from("The peer descriptor could not be loaded. Please check your connection and try again."),
-                    });
+                        description: error_description
+                    })
                 }
             };
 
