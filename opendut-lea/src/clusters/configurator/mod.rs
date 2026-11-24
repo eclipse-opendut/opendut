@@ -72,10 +72,15 @@ pub fn ClusterConfigurator() -> impl IntoView {
                     Err(error) => {
                         error!("Failed to request the cluster descriptor for cluster <{cluster_id}>: {error}");
 
+                        let error_description = match error {
+                            ClientError::UsageError(error) => error.to_string(),
+                            _ => String::from("The cluster descriptor could not be loaded. Please check your connection and try again."),
+                        };
+
                         return Err(ErrorText {
                             headline: String::from("Unable to load cluster descriptor"),
-                            description: String::from("The cluster descriptor could not be loaded. Please check your connection and try again."),
-                        });
+                            description: error_description,
+                        })
                     }
                 };
 
@@ -106,9 +111,14 @@ pub fn ClusterConfigurator() -> impl IntoView {
                     .map_err(|error| {
                         error!("Failed to request the list of peers: {error}");
 
+                        let error_description = match error {
+                            ClientError::UsageError(error) => error.to_string(),
+                            _ => String::from("The peer descriptors could not be loaded. Please check your connection and try again."),
+                        };
+
                         ErrorText {
                             headline: String::from("Unable to load peer descriptors"),
-                            description: String::from("The peer descriptors could not be loaded. Please check your connection and try again."),
+                            description: error_description,
                         }
                     })
             }
@@ -139,9 +149,14 @@ pub fn ClusterConfigurator() -> impl IntoView {
                     .map_err(|error| {
                         error!("Failed to request the list of cluster deployments: {error}");
 
+                        let error_description = match error {
+                            ClientError::UsageError(error) => error.to_string(),
+                            _ => String::from("The cluster deployments could not be loaded. Please check your connection and try again."),
+                        };
+
                         ErrorText {
                             headline: String::from("Unable to load cluster deployments"),
-                            description: String::from("The cluster deployments could not be loaded. Please check your connection and try again."),
+                            description: error_description,
                         }
                     })
             }
