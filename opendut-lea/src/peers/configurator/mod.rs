@@ -86,7 +86,17 @@ pub fn PeerConfigurator() -> impl IntoView {
             };
 
             let clusters = carl.cluster.list_cluster_descriptors().await
-                .unwrap_or(vec![]); // Todo: don't unwrap!
+                .map_err(|error| {
+                    error!("Failed to request the list of clusters for peer <{peer_id}>: {error}");
+
+                    ErrorText {
+                        headline: String::from("Unable to load cluster descriptors"),
+                        description: client_error_description(
+                            &error,
+                            "The cluster descriptors could not be loaded. Please check your connection and try again.",
+                        ),
+                    }
+                })?;
 
             user_peer_descriptor.update(|user_configuration| {
                 user_configuration.name = UserInputValue::Right(descriptor.name.value().to_owned());
@@ -220,7 +230,9 @@ pub fn PeerConfigurator() -> impl IntoView {
             breadcrumbs=breadcrumbs
             controls=view! { <Controls user_peer_descriptor /> }
         >
-        <div> {cluster_column} </div>
+            <Show when=move || matches!(peer_descriptor_resource.get(), Some(Ok(())))>
+                <div> {cluster_column} </div>
+            </Show>
             <Suspense
                 fallback=LoadingSpinner // TODO: Display errors
             >
