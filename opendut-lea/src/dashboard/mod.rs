@@ -93,28 +93,30 @@ pub fn Dashboard() -> impl IntoView {
     });
 
     view! {
-        { move || {
-            if let Some(Err(error)) = peers.get() {
-                view! {
-                    <ErrorMessage
-                        text=error
-                        on_retry=move || peers.refetch()
-                        error_type=ErrorMessageType::Warning
-                    />
-                }.into_any()
-            } else { ().into_any() }
-        }}
-        { move || {
-            if let Some(Err(error)) = clusters.get() {
-                view! {
-                    <ErrorMessage
-                        text=error
-                        on_retry=move || clusters.refetch()
-                        error_type=ErrorMessageType::Warning
-                    />
-                }.into_any()
-            } else { ().into_any() }
-        }}
+        <div class="container is-fluid">
+            { move || {
+                if let Some(Err(error)) = peers.get() {
+                    view! {
+                        <ErrorMessage
+                            text=error
+                            on_retry=move || peers.refetch()
+                            error_type=ErrorMessageType::Warning
+                        />
+                    }.into_any()
+                } else { ().into_any() }
+            }}
+            { move || {
+                if let Some(Err(error)) = clusters.get() {
+                    view! {
+                        <ErrorMessage
+                            text=error
+                            on_retry=move || clusters.refetch()
+                            error_type=ErrorMessageType::Warning
+                        />
+                    }.into_any()
+                } else { ().into_any() }
+            }}
+        </div>
 
         <div class="mt-6">
             <div class="columns is-full">
