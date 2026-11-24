@@ -70,9 +70,14 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                     Err(error) => {
                         error!("Failed to request the VIPER test run descriptor <{viper_test_id}>: {error}");
 
+                        let error_description = match error {
+                            ClientError::UsageError(error) => error.to_string(),
+                            _ => String::from("The VIPER test run descriptor could not be loaded. Please check your connection and try again."),
+                        };
+
                         return Err(ErrorText {
                             headline: String::from("Unable to load VIPER test run descriptor"),
-                            description: String::from("The VIPER test run descriptor could not be loaded. Please check your connection and try again."),
+                            description: error_description,
                         });
                     }
                 };
@@ -116,9 +121,14 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                     .map_err(|error| {
                         error!("Failed to request the list of peers: {error}");
 
+                        let error_description = match error {
+                            ClientError::UsageError(error) => error.to_string(),
+                            _ => String::from("The VIPER source descriptors could not be loaded. Please check your connection and try again."),
+                        };
+
                         ErrorText {
                             headline: String::from("Unable to load VIPER source descriptors"),
-                            description: String::from("The VIPER source descriptors could not be loaded. Please check your connection and try again."),
+                            description: error_description,
                         }
                     })?;
 
@@ -175,8 +185,8 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                                 ClientError::UsageError(error) => {
                                     Err(SourceFetchError::GetParameterError(error))
                                 }
-                                ClientError::TransportError(message) | ClientError::InvalidRequest(message) | ClientError::InvalidResponse(message) => {
-                                    Err(SourceFetchError::RequestFailed(message))
+                                _ => {
+                                    Err(SourceFetchError::RequestFailed(String::from("The VIPER test suite parameters could not be loaded. Please check your connection and try again."),))
                                 }
                             }
                         }
@@ -198,9 +208,14 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                     .map_err(|error| {
                         error!("Failed to request the list of peers: {error}");
 
+                        let error_description = match error {
+                            ClientError::UsageError(error) => error.to_string(),
+                            _ => String::from("The peer descriptors could not be loaded. Please check your connection and try again."),
+                        };
+
                         ErrorText {
                             headline: String::from("Unable to load peer descriptors"),
-                            description: String::from("The peer descriptors could not be loaded. Please check your connection and try again."),
+                            description: error_description,
                         }
                     })?;
 
@@ -225,9 +240,14 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                     .map_err(|error| {
                         error!("Failed to request the list of clusters: {error}");
 
+                        let error_description = match error {
+                            ClientError::UsageError(error) => error.to_string(),
+                            _ => String::from("The cluster descriptors could not be loaded. Please check your connection and try again."),
+                        };
+
                         ErrorText {
                             headline: String::from("Unable to load cluster descriptors"),
-                            description: String::from("The cluster descriptors could not be loaded. Please check your connection and try again."),
+                            description: error_description,
                         }
                     })?;
                 Ok(clusters)
@@ -325,92 +345,40 @@ enum SourceFetchError {
 }
 
 impl SourceFetchError {
-    pub fn to_error_text(&self) -> AnyView {
-        match self {
-            SourceFetchError::NoSourceSelected => {
-                view! {
-                    <p class="help has-text-danger"> "Select a VIPER source first." </p>
-                }.into_any()
+    pub fn to_error_view(&self) -> AnyView {
+        let description = match self {
+            Self::NoSourceSelected => {
+                return view! {
+                    <p class="help has-text-danger">
+                        "Select a VIPER source first."
+                    </p>
+                }.into_any();
             }
-            SourceFetchError::GetParameterError(parameter_error) => {
-                match parameter_error {
-                    GetViperTestSuiteParametersError::SourceNotFound { source_id: _id } => {
-                        let error_text = ErrorText {
-                            headline: String::from("Unable to load VIPER parameters"),
-                            description: String::from("Selected VIPER source not found."),
-                        };
-                        view!(<ErrorMessage text=error_text />).into_any()
-                    }
-                    GetViperTestSuiteParametersError::Compilation { source_id: _id, source_name: _name, kind } => {
-                        match kind {
-                            CompilationErrorKind::NoSuitableSourceLoader { url } => {
-                                let error_text = ErrorText {
-                                    headline: String::from("Unable to compile VIPER test suite"),
-                                    description: format!("The source URL ({}) is not supported. Check the selected source configuration.", url.as_str())
-                                };
-                                view!(<ErrorMessage text=error_text />).into_any()
-                            }
-                            CompilationErrorKind::FailedLoading { url: _url, message } => {
-                                let error_text = ErrorText {
-                                    headline: String::from("Unable to load the selected test source"),
-                                    description: message.to_string(),
-                                };
-                                view!(<ErrorMessage text=error_text />).into_any()
-                            }
-                            CompilationErrorKind::InvalidSource { message } => {
-                                let error_text = ErrorText {
-                                    headline: String::from("Unable to load VIPER parameters"),
-                                    description: message.to_owned()
-                                };
-                                view!(<ErrorMessage text=error_text/>).into_any()
-                            }
-                            CompilationErrorKind::FailedInspection { message } => {
-                                let error_text = ErrorText {
-                                    headline: String::from("Unable to load VIPER parameters"),
-                                    description: message.to_owned()
-                                };
-                                view!(<ErrorMessage text=error_text />).into_any()
-                            }
-                            CompilationErrorKind::PythonCompilationError { message } => {
-                                let error_text = ErrorText {
-                                    headline: String::from("The selected test code could not be compiled."),
-                                    description: message.to_owned()
-                                };
-                                view!(<ErrorMessage text=error_text />).into_any()
-                            }
-                            CompilationErrorKind::Internal { message } => {
-                                let error_text = ErrorText {
-                                    headline: String::from("Unable to load VIPER parameters"),
-                                    description: message.to_owned()
-                                };
-                                view!(<ErrorMessage text=error_text />).into_any()
-                            }
+            Self::GetParameterError(error) => match error {
+                GetViperTestSuiteParametersError::Compilation { kind, .. } => {
+                    match kind {
+                        CompilationErrorKind::FailedLoading { message, .. }
+                        | CompilationErrorKind::InvalidSource { message, .. }
+                        | CompilationErrorKind::FailedInspection { message }
+                        | CompilationErrorKind::PythonCompilationError { message }
+                        | CompilationErrorKind::Internal { message } => {
+                            format!("{error}: \n {message}")
+                        }
+                        CompilationErrorKind::NoSuitableSourceLoader { .. } => {
+                            error.to_string()
                         }
                     }
-                    GetViperTestSuiteParametersError::ViperRuntime { source_id: _id, source_name: _name } => {
-                        let error_text = ErrorText {
-                            headline: String::from("Unable to load VIPER parameters"),
-                            description: String::from("An error occurred while initializing the VIPER runtime for the selected VIPER source."),
-                        };
-                        view!(<ErrorMessage text=error_text />).into_any()
-                    }
-                    GetViperTestSuiteParametersError::Internal { source_id: _id, cause } => {
-                        let error_text = ErrorText {
-                            headline: String::from("An internal error occured"),
-                            description: cause.to_owned(),
-                        };
-                        view!(<ErrorMessage text=error_text />).into_any()
-                    }
                 }
+                _ => error.to_string(),
             }
-            SourceFetchError::RequestFailed(message) => {
-                let error_text = ErrorText {
-                    headline: String::from("Unable to load VIPER parameters"),
-                    description: message.to_owned(),
-                };
+            Self::RequestFailed(message) => message.to_owned(),
+        };
 
-                view!(<ErrorMessage text=error_text />).into_any()
-            }
-        }
+        let error_text = ErrorText {
+            headline: String::from("Unable to load VIPER parameters"),
+            description,
+        };
+
+        view! { <ErrorMessage text=error_text /> }.into_any()
     }
 }

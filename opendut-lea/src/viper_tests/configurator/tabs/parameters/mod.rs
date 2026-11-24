@@ -107,7 +107,7 @@ pub fn ParametersTab(
             }
         }
         Err(fetch_error) => {
-            fetch_error.to_error_text()
+            fetch_error.to_error_view()
         }
     };
 
