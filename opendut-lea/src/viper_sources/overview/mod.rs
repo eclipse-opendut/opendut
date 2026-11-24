@@ -2,6 +2,7 @@ mod row;
 
 use leptos::prelude::*;
 use tracing::error;
+use opendut_carl_api::carl::ClientError;
 use opendut_lea_components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, ErrorMessageTableRow, ErrorText, FontAwesomeIcon, IconButton, InfoMessage, OverviewTable, TableHeading};
 use opendut_model::viper::ViperSourceDescriptor;
 use crate::app::use_app_globals;
@@ -28,9 +29,14 @@ pub fn ViperSourcesOverview() -> impl IntoView {
                     .map_err(|error| {
                         error!("Failed to request the list of VIPER sources: {error}");
 
+                        let error_description = match error {
+                            ClientError::UsageError(error) => error.to_string(),
+                            _ => String::from("The VIPER sources could not be loaded. Please check your connection and try again."),
+                        };
+
                         ErrorText {
                             headline: String::from("Unable to load VIPER sources"),
-                            description: String::from("The VIPER sources could not be loaded. Please check your connection and try again."),
+                            description: error_description,
                         }
                     })?;
 
