@@ -26,7 +26,7 @@ x-default-edgar-params: &default-edgar-params
     - OPENDUT_CLEO_NETWORK_OIDC_CLIENT_ID=opendut-cleo-client
     - OPENDUT_CLEO_NETWORK_OIDC_CLIENT_SECRET
     - OPENDUT_CLEO_NETWORK_OIDC_CLIENT_ISSUER_URL=https://auth.opendut.local/realms/opendut/
-    - OPENDUT_CLEO_NETWORK_OIDC_CLIENT_SCOPES=
+    - OPENDUT_CLEO_NETWORK_OIDC_CLIENT_SCOPES=opendut-admin-api
 
     # EDGAR
     - OPENDUT_EDGAR_NETWORK_CARL_HOST=opendut.local
@@ -37,7 +37,7 @@ x-default-edgar-params: &default-edgar-params
     - OPENDUT_EDGAR_NETWORK_OIDC_CLIENT_ID=opendut-edgar-client
     - OPENDUT_EDGAR_NETWORK_OIDC_CLIENT_SECRET
     - OPENDUT_EDGAR_NETWORK_OIDC_CLIENT_ISSUER_URL=https://auth.opendut.local/realms/opendut/
-    - OPENDUT_EDGAR_NETWORK_OIDC_CLIENT_SCOPES=
+    - OPENDUT_EDGAR_NETWORK_OIDC_CLIENT_SCOPES=opendut-edge-api
     - OPENDUT_EDGAR_OPENTELEMETRY_ENABLED=true
     - OPENDUT_EDGAR_OPENTELEMETRY_COLLECTOR_ENDPOINT=https://opentelemetry.opendut.local
 

@@ -18,7 +18,7 @@ enabled = false
 [network.oidc.client]
 id = "opendut-cleo-client"
 issuer.url = "https://auth.opendut.local/realms/opendut/"
-scopes = "openid,profile,email"
+scopes = "openid,profile,email,opendut-admin-api"
 secret = "<tbd>"
 
 [network.oidc.client.tls]

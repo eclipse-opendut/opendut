@@ -25,6 +25,10 @@ Always create a database backup before upgrading CARL.
   * Added `cargo theo testenv audit` subcommand to list resolved Localenv container images and scan them for vulnerabilities using Trivy.
 * Documentation:
   * Added chapters on configuring authentication, mTLS, hardware setup examples, EDGAR monitoring dashboard troubleshooting, and the Localenv vulnerability scanner.
+* CARL, CLEO, EDGAR: Restrict access of EDGAR to the edge API (peer messaging broker) via OAuth scopes.
+  Two new Keycloak client scopes are introduced: `opendut-admin-api` (for CLEO and LEA) and `opendut-edge-api` (for EDGAR).
+  CARL enforces the required scope on each gRPC endpoint at startup.
+  Existing EDGAR and CLEO clients registered before this change are automatically migrated on the next CARL startup.
 
 ### Fixed
 * CARL / Localenv: Fixed the CARL Docker healthcheck to use mTLS client certificates when mTLS is enabled.
@@ -52,7 +56,6 @@ Always create a database backup before upgrading CARL.
 
 ### Removed
 * Removed the legacy `Executor` feature from openDuT (replaced by VIPER) along with the `nginx-webdav` container from Localenv and Testenv.
-
 
 ## [v0.10.2] - 2026-06-11
 

@@ -121,7 +121,7 @@ config:
           remote:
             url: https://keycloak/realms/opendut/
       lea:
-        scopes: openid,profile,email
+        scopes: openid,profile,email,opendut-admin-api
         client:
           id: opendut-lea-client
         issuer:

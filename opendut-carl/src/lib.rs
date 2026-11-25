@@ -109,6 +109,11 @@ async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::
     let oidc_registration_client = RegistrationClient::from_settings(&settings).await
         .expect("Failed to load OIDC registration client!");
 
+    startup::migration::migrate_oidc_client_scopes(
+        resource_manager.clone(),
+        oidc_registration_client.clone(),
+    ).await?;
+
     let grpc_facades = startup::grpc::GrpcFacades::create(
         resource_manager,
         &carl_url,
@@ -116,6 +121,9 @@ async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::
         oidc_registration_client.clone(),
         &settings
     ).await?;
+
+    #[derive(Clone)]
+    struct GrpcPath(String);
 
     let http = {
         let carl_installation_directory = CarlInstallDirectory::determine()
@@ -166,8 +174,25 @@ async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::
         routes_builder
             .routes()
             .into_axum_router()
-            .layer(async_interceptor(move |request| {
-                Clone::clone(&grpc_auth_layer).auth_interceptor(request, reqwest_client.clone())
+            .layer(async_interceptor(move |request: tonic::Request<()>| {
+                let path = request
+                    .extensions()
+                    .get::<GrpcPath>()
+                    .map(|p| p.0.as_str().to_owned())
+                    .unwrap_or_default();
+
+                let is_edge = path.starts_with("/opendut.carl.services.peer_messaging_broker.");
+
+                let is_metadata_provider = path.starts_with("/opendut.carl.services.metadata_provider.");
+
+                let accepted_scopes: &'static [&'static str] = if is_metadata_provider {
+                    &[opendut_auth::types::SCOPE_EDGE_API, opendut_auth::types::SCOPE_ADMIN_API]
+                } else if is_edge {
+                    &[opendut_auth::types::SCOPE_EDGE_API]
+                } else {
+                    &[opendut_auth::types::SCOPE_ADMIN_API]
+                };
+                Clone::clone(&grpc_auth_layer).auth_interceptor(request, reqwest_client.clone(), accepted_scopes)
             }))
     };
 
@@ -184,7 +209,10 @@ async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::
         usize::from(is_grpc)
     })
     .map_request(|request: ::http::Request<hyper::body::Incoming>| -> ::http::Request<axum::body::Body> {
-        request.map(axum::body::Body::new)
+        let (mut parts, body) = request.into_parts();
+        let path = parts.uri.path().to_owned();
+        parts.extensions.insert(GrpcPath(path));
+        ::http::Request::from_parts(parts, axum::body::Body::new(body))
     });
 
 
