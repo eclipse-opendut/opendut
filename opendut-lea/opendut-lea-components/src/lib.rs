@@ -16,6 +16,7 @@ pub use buttons::collapse_button::CollapseButton;
 pub use buttons::confirmation_button::ConfirmationButton;
 pub use buttons::doorhanger_button::DoorhangerButton;
 pub use buttons::icon_button::IconButton;
+pub use divider::Divider;
 pub use doorhanger::{Doorhanger, DoorhangerAlignment};
 pub use error_indicator::ErrorIndicator;
 pub use error_message::{ErrorMessage, ErrorMessageTableRow, ErrorText, ErrorMessageType};
@@ -50,6 +51,7 @@ pub mod tooltip;
 
 mod breadcrumbs;
 mod buttons;
+mod divider;
 mod doorhanger;
 mod error_indicator;
 mod error_message;
