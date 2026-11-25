@@ -20,7 +20,7 @@ pub use divider::Divider;
 pub use doorhanger::{Doorhanger, DoorhangerAlignment};
 pub use error_indicator::ErrorIndicator;
 pub use error_message::{ErrorMessage, ErrorMessageTableRow, ErrorText, ErrorMessageType};
-pub use icon_text::IconText;
+pub use icon_text::{IconText, IconTextDistance};
 pub use intials_avatar::{ProfilePicture, ProfilePictureSize};
 pub use inputs::default_value::DefaultValue;
 pub use inputs::readonly_input::ReadOnlyInput;
