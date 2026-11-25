@@ -13,6 +13,12 @@ mod components;
 
 pub const UNAUTHENTICATED_USER: &str = "unknown-user";
 const DEFAULT_TOKEN_AUDIENCE: &str = "account";
+const DEFAULT_KEYCLOAK_ROLES: [&str; 4] = [
+    "offline_access",
+    "uma_authorization",
+    "managerrole",
+    "testrole",
+];
 
 #[derive(Debug, Clone, Default)]
 pub enum AuthenticationConfigSwitch {

@@ -1,7 +1,7 @@
 use leptos::either::EitherOf3;
 use leptos::prelude::*;
 use crate::user::{UserAuthentication, UserAuthenticationSignal};
-use crate::user::components::{AbsentUserTableView, PresentUserTableView};
+use crate::user::components::UserTableView;
 
 #[component]
 pub fn UserOverview() -> impl IntoView {
@@ -10,16 +10,19 @@ pub fn UserOverview() -> impl IntoView {
     { move || { 
         match user.get() {
             UserAuthentication::Loading | UserAuthentication::Disabled | UserAuthentication::Unauthenticated => {
-                EitherOf3::A(view!{ <AbsentUserTableView /> })
+                EitherOf3::A(view!{ <UserTableView /> })
             }
             UserAuthentication::Authenticated(data) => {
                 match data.token {
                     None => {
-                        EitherOf3::B(view! { <AbsentUserTableView /> })
+                        EitherOf3::B(view! { <UserTableView /> })
                     }
                     Some(auth_data) => {
                         let claims = auth_data.claims;
-                        EitherOf3::C(view! { <PresentUserTableView claims /> })
+
+                        EitherOf3::C(view! {
+                            <UserTableView claims />
+                        })
                     }
                 }
             }
