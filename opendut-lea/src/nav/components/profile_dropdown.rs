@@ -2,7 +2,7 @@ use leptos::html::Div;
 use leptos::prelude::*;
 use leptos_oidc::LogoutLink;
 use leptos_use::on_click_outside;
-use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, Doorhanger, DoorhangerAlignment, FontAwesomeIcon, Hsl, IconButton, IconText, ProfilePictureColors, ToggleSignal};
+use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, Doorhanger, DoorhangerAlignment, FontAwesomeIcon, IconButton, IconText, ProfilePicture, ProfilePictureSize, ToggleSignal};
 use crate::routing;
 use crate::user::UserAuthenticationSignal;
 
@@ -27,21 +27,6 @@ pub fn ProfileDropdown() -> impl IntoView {
         dropdown_visible.set(false)
     });
 
-    let initials = Signal::derive(move || {
-        fullname.get()
-            .split_whitespace()
-            .filter_map(|word| word.get(0..1))
-            .take(2)
-            .collect::<String>()
-            .to_uppercase()
-    });
-    let hsl = Signal::derive(move || {
-        let hsl_colors = ProfilePictureColors::get_vec();
-        let sum: u32 = fullname.get().chars().map(|c| c as u32).sum();
-        let index = (sum % hsl_colors.len() as u32) as usize;
-        hsl_colors[index].get_hsl()
-    });
-
     view! {
         <div node_ref=profile_button_area>
             <Doorhanger
@@ -51,7 +36,7 @@ pub fn ProfileDropdown() -> impl IntoView {
                     move || {
                         view! {
                             <button class="button dut-profile-picture-button is-text p-0" on:click=move |_| dropdown_visible.toggle()>
-                                <ProfilePicture initials size=ProfilePictureSize::Small hsl />
+                                <ProfilePicture name=fullname size=ProfilePictureSize::Small />
                             </button>
                         }.into_any()
                     }
@@ -60,11 +45,11 @@ pub fn ProfileDropdown() -> impl IntoView {
             >
                 <div class="columns m-0">
                     <div class="column is-narrow">
-                        <ProfilePicture initials size=ProfilePictureSize::Large hsl />
+                        <ProfilePicture name=fullname size=ProfilePictureSize::Large />
                     </div>
                     <div class="column">
                         <div class="is-flex pb-2">
-                            <p class="dut-fullname-text pr-2"> { fullname }</p>
+                            <p class="dut-fullname-text pr-2"> { fullname } </p>
                             <p class="dut-username-text"> { username } </p>
                         </div>
                         <div class="dut-profile-information">
@@ -93,47 +78,5 @@ pub fn ProfileDropdown() -> impl IntoView {
                 </LogoutLink>
             </Doorhanger>
         </div>
-    }
-}
-
-enum ProfilePictureSize {
-    Small,
-    Large
-}
-
-impl ProfilePictureSize {
-    pub fn get_size(&self) -> u32 {
-        match self {
-            ProfilePictureSize::Small => 38,
-            ProfilePictureSize::Large => 64
-        }
-    }
-}
-
-#[component]
-fn ProfilePicture(
-    #[prop(into)] initials: Signal<String>,
-    size: ProfilePictureSize,
-    #[prop(into)] hsl: Signal<Hsl>,
-) -> impl IntoView {
-
-    let h = move || hsl.read().0;
-    let s = move || hsl.read().1;
-    let l = move || hsl.read().2;
-
-    let text_color = move || {
-        format!("hsl({},{}%,{}%)", h(), s(), l())
-    };
-    let background_color = move || format!("hsla({},{}%,{}%, 0.1)", h(), s(), l());
-
-    let size = size.get_size();
-
-    view! {
-        <svg xmlns="http://www.w3.org/2000/svg" width=size height=size viewBox="0 0 64 64">
-            <circle cx="32" cy="32" r="32" fill= move || background_color />
-            <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" font-size="24" fill= move || text_color font-weight="500">
-                { initials }
-            </text>
-        </svg>
     }
 }

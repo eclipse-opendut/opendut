@@ -1,12 +1,27 @@
 use leptos::prelude::*;
 use crate::FontAwesomeIcon;
 
+#[derive(Default)]
+pub enum IconTextDistance {
+    #[default]
+    Normal,
+    Wide
+}
+
 #[component]
 pub fn IconText(
     #[prop(into)] icon: Signal<FontAwesomeIcon>,
     #[prop(into)] text: Signal<String>,
+    #[prop(optional)] distance: IconTextDistance,
     #[prop(into, optional)] href: Option<Signal<String>>,
 ) -> impl IntoView {
+
+    let span_class = format!("icon {}",
+        match distance {
+            IconTextDistance::Normal => "pr-2",
+            IconTextDistance::Wide => "pr-5"
+        }
+    );
 
     let displayed_text = match href {
         Some(link) => {
@@ -27,7 +42,7 @@ pub fn IconText(
 
     view! {
         <div class="is-flex is-align-content-center">
-            <span class="icon pr-2">
+            <span class=span_class>
                 <i class=icon.read().as_class() />
             </span>
             { displayed_text }

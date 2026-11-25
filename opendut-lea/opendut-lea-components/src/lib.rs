@@ -16,10 +16,12 @@ pub use buttons::collapse_button::CollapseButton;
 pub use buttons::confirmation_button::ConfirmationButton;
 pub use buttons::doorhanger_button::DoorhangerButton;
 pub use buttons::icon_button::IconButton;
+pub use divider::Divider;
 pub use doorhanger::{Doorhanger, DoorhangerAlignment};
 pub use error_indicator::ErrorIndicator;
 pub use error_message::{ErrorMessage, ErrorMessageTableRow, ErrorText, ErrorMessageType};
-pub use icon_text::IconText;
+pub use icon_text::{IconText, IconTextDistance};
+pub use intials_avatar::{ProfilePicture, ProfilePictureSize};
 pub use inputs::default_value::DefaultValue;
 pub use inputs::readonly_input::ReadOnlyInput;
 pub use inputs::user_input::UserInput;
@@ -36,6 +38,7 @@ pub use tables::overview_table::{OverviewTable, OverviewTableCell, OverviewTable
 pub use tables::selection_table::{SelectionTable, SelectionTableCell, SelectionTableRow};
 pub use tables::TableDisplayType;
 pub use tag::Tag;
+pub use tag_from_list::TagFromList;
 pub use toast::{use_toaster, Toast, ToastContent, ToastKind, Toaster};
 pub use toggle::{Toggle, ToggleState};
 pub use util::ior::Ior;
@@ -49,16 +52,19 @@ pub mod tooltip;
 
 mod breadcrumbs;
 mod buttons;
+mod divider;
 mod doorhanger;
 mod error_indicator;
 mod error_message;
 mod icon_text;
+mod intials_avatar;
 mod inputs;
 mod loading_spinner;
 mod messages;
 mod page;
 mod tables;
 mod tag;
+mod tag_from_list;
 mod toast;
 mod toggle;
 mod util;
@@ -69,6 +75,7 @@ pub const NON_BREAKING_SPACE: &str = "\u{a0}";
 #[allow(dead_code)]
 pub enum FontAwesomeIcon {
     ArrowsRotate,
+    At,
     Bars,
     Check,
     ChevronDown,
@@ -85,6 +92,7 @@ pub enum FontAwesomeIcon {
     EllipsisVertical,
     Email,
     ExternalLink,
+    Group,
     Link,
     OpenPage,
     Peers,
@@ -92,6 +100,7 @@ pub enum FontAwesomeIcon {
     Plus,
     Retry,
     Save,
+    Shield,
     SignOut,
     TrashCan,
     TriangleExclamation,
@@ -103,6 +112,7 @@ impl FontAwesomeIcon {
     pub fn as_class(&self) -> &'static str {
         match self {
             FontAwesomeIcon::ArrowsRotate => "fa-solid fa-arrows-rotate",
+            FontAwesomeIcon::At => "fa-solid fa-at",
             FontAwesomeIcon::Bars => "fa-solid fa-bars",
             FontAwesomeIcon::Check => "fa-solid fa-check",
             FontAwesomeIcon::ChevronDown => "fa-solid fa-chevron-down",
@@ -119,6 +129,7 @@ impl FontAwesomeIcon {
             FontAwesomeIcon::EllipsisVertical => "fa-solid fa-ellipsis-vertical",
             FontAwesomeIcon::Email => "fa-regular fa-envelope",
             FontAwesomeIcon::ExternalLink => "fa-solid fa-arrow-up-right-from-square",
+            FontAwesomeIcon::Group => "fa-solid fa-users",
             FontAwesomeIcon::Link => "fa-solid fa-link",
             FontAwesomeIcon::OpenPage => "fa-solid fa-arrow-up-right-from-square",
             FontAwesomeIcon::Peers => "fa-solid fa-microchip",
@@ -126,6 +137,7 @@ impl FontAwesomeIcon {
             FontAwesomeIcon::Plus => "fa-solid fa-plus",
             FontAwesomeIcon::Retry => "fa-solid fa-rotate-right",
             FontAwesomeIcon::Save => "fa-solid fa-save",
+            FontAwesomeIcon::Shield => "fa-solid fa-shield-halved",
             FontAwesomeIcon::SignOut => "fas fa-sign-out-alt",
             FontAwesomeIcon::TrashCan => "fa-solid fa-trash-can",
             FontAwesomeIcon::TriangleExclamation => "fa-solid fa-triangle-exclamation",

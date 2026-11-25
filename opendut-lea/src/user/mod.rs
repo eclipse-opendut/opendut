@@ -6,10 +6,19 @@ use opendut_auth::types::Claims;
 pub use overview::UserOverview;
 use crate::routing::{navigate_to, WellKnownRoutes};
 use leptos_oidc::AuthenticatedData as LeptosOidcAuthenticatedData;
+
+mod overview;
+mod components;
+
 /// In case authentication is disabled the user identity is not known
 pub const UNAUTHENTICATED_USER: &str = "unknown-user";
-mod overview;
 const DEFAULT_TOKEN_AUDIENCE: &str = "account";
+const DEFAULT_KEYCLOAK_ROLES: [&str; 4] = [
+    "offline_access",
+    "uma_authorization",
+    "managerrole",
+    "testrole",
+];
 
 #[derive(Debug, Clone, Default)]
 pub enum AuthenticationConfigSwitch {
@@ -169,10 +178,7 @@ pub(crate) fn provide_authentication_signals_in_context() -> AuthSignal {
                         );
                     }
                 }
-            
-                
             }
-
         }
     });
     
