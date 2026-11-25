@@ -7,8 +7,11 @@ pub use overview::UserOverview;
 use crate::routing::{navigate_to, WellKnownRoutes};
 use leptos_oidc::AuthenticatedData as LeptosOidcAuthenticatedData;
 /// In case authentication is disabled the user identity is not known
-pub const UNAUTHENTICATED_USER: &str = "unknown-user";
+
 mod overview;
+mod components;
+
+pub const UNAUTHENTICATED_USER: &str = "unknown-user";
 const DEFAULT_TOKEN_AUDIENCE: &str = "account";
 
 #[derive(Debug, Clone, Default)]
@@ -169,10 +172,7 @@ pub(crate) fn provide_authentication_signals_in_context() -> AuthSignal {
                         );
                     }
                 }
-            
-                
             }
-
         }
     });
     
