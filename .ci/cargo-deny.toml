@@ -20,6 +20,8 @@ ignore = [
     { id = "RUSTSEC-2026-0394", reason = "`rustpython_vm` is unsafe. Tracked by issue #610." },
 
     { id = "RUSTSEC-2026-0543", reason = "`chrono` is unmaintained. Tracked by issue #625." },
+
+    # Add entries here when a problem cannot be fixed immediately, and create an issue to track it.
 ]
 
 [licenses]
