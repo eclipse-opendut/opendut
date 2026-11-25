@@ -1,10 +1,8 @@
-use std::collections::HashMap;
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 pub use client::*;
 use opendut_model::cluster::{ClusterDisplay, ClusterId, ClusterName};
 use opendut_model::cluster::state::ClusterState;
 use opendut_model::peer::PeerId;
-use opendut_model::peer::state::PeerState;
 use opendut_model::ShortName;
 
 #[derive(thiserror::Error, Debug)]
@@ -134,8 +132,10 @@ pub enum ListClusterPeersError {
 
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 mod client {
+    use std::collections::HashMap;
     use tonic::codegen::{Body, Bytes, http, InterceptedService, StdError};
     use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId};
+    use opendut_model::peer::state::PeerState;
     use crate::carl::{ClientError, extract};
     use crate::proto::services::cluster_manager;
     use crate::proto::services::cluster_manager::cluster_manager_client::ClusterManagerClient;
