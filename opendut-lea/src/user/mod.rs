@@ -6,11 +6,11 @@ use opendut_auth::types::Claims;
 pub use overview::UserOverview;
 use crate::routing::{navigate_to, WellKnownRoutes};
 use leptos_oidc::AuthenticatedData as LeptosOidcAuthenticatedData;
-/// In case authentication is disabled the user identity is not known
 
 mod overview;
 mod components;
 
+/// In case authentication is disabled the user identity is not known
 pub const UNAUTHENTICATED_USER: &str = "unknown-user";
 const DEFAULT_TOKEN_AUDIENCE: &str = "account";
 const DEFAULT_KEYCLOAK_ROLES: [&str; 4] = [
