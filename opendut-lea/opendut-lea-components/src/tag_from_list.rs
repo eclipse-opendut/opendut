@@ -3,7 +3,6 @@ use crate::Tag;
 
 #[component]
 pub fn TagFromList(items: Vec<String>) -> impl IntoView {
-
     view! {
         {
             if items.is_empty() {

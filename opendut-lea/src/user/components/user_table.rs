@@ -59,32 +59,39 @@ pub fn UserTableView(
             breadcrumbs=breadcrumbs
             controls=view! { <> }
         >
-            <div class="columns is-mobile m-0">
-                <div class="column is-narrow">
-                    <ProfilePicture
-                        name=Clone::clone(&name)
-                        size=ProfilePictureSize::Large
-                    />
+            <div class="is-inline-block">
+                <div class="columns is-mobile m-0 pr-5">
+                    <div class="column is-narrow">
+                        <ProfilePicture
+                            name=Clone::clone(&name)
+                            size=ProfilePictureSize::Large
+                        />
+                    </div>
+                    <div class="column is-flex is-flex-direction-column is-justify-content-center">
+                        <p class="title is-4 mb-0"> { name } </p>
+                        <p class="has-text-grey">
+                            <IconText
+                                icon=FontAwesomeIcon::At
+                                text=preferred_username
+                            />
+                        </p>
+                    </div>
                 </div>
-                <div class="column is-flex is-flex-direction-column is-justify-content-center">
-                    <p class="title is-4"> { name } </p>
-                    <p class="subtitle is-6 has-text-grey"> { preferred_username } </p>
-                </div>
+                <Divider />
+                <table class="table is-fullwidth">
+                    <tbody>
+                        <UserTableRow icon=FontAwesomeIcon::Email label="Email">
+                            { email }
+                        </UserTableRow>
+                        <UserTableRow icon=FontAwesomeIcon::Shield label="Roles">
+                            <TagFromList items=roles />
+                        </UserTableRow>
+                        <UserTableRow icon=FontAwesomeIcon::Group label="Groups">
+                            <TagFromList items=groups />
+                        </UserTableRow>
+                    </tbody>
+                </table>
             </div>
-            <Divider />
-            <table class="table is-align-self-flex-start">
-                <tbody>
-                    <UserTableRow icon=FontAwesomeIcon::Email label="Email">
-                        { email }
-                    </UserTableRow>
-                    <UserTableRow icon=FontAwesomeIcon::Shield label="Roles">
-                        <TagFromList items=roles />
-                    </UserTableRow>
-                    <UserTableRow icon=FontAwesomeIcon::Group label="Groups">
-                        <TagFromList items=groups />
-                    </UserTableRow>
-                </tbody>
-            </table>
         </BasePageContainer>
     }
 }
@@ -97,10 +104,10 @@ fn UserTableRow(
 ) -> impl IntoView {
     view! {
         <tr>
-            <td class="has-text-grey is-narrow">
-                <div class="pl-4 py-2">
+            <td class="has-text-grey">
+                <div class="px-4 py-2">
                     <IconText
-                        icon=icon
+                        icon
                         text=label
                         distance=IconTextDistance::Wide
                     />

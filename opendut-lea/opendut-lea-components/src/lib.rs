@@ -75,6 +75,7 @@ pub const NON_BREAKING_SPACE: &str = "\u{a0}";
 #[allow(dead_code)]
 pub enum FontAwesomeIcon {
     ArrowsRotate,
+    At,
     Bars,
     Check,
     ChevronDown,
@@ -111,6 +112,7 @@ impl FontAwesomeIcon {
     pub fn as_class(&self) -> &'static str {
         match self {
             FontAwesomeIcon::ArrowsRotate => "fa-solid fa-arrows-rotate",
+            FontAwesomeIcon::At => "fa-solid fa-at",
             FontAwesomeIcon::Bars => "fa-solid fa-bars",
             FontAwesomeIcon::Check => "fa-solid fa-check",
             FontAwesomeIcon::ChevronDown => "fa-solid fa-chevron-down",
