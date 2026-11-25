@@ -38,6 +38,7 @@ pub use tables::overview_table::{OverviewTable, OverviewTableCell, OverviewTable
 pub use tables::selection_table::{SelectionTable, SelectionTableCell, SelectionTableRow};
 pub use tables::TableDisplayType;
 pub use tag::Tag;
+pub use tag_from_list::TagFromList;
 pub use toast::{use_toaster, Toast, ToastContent, ToastKind, Toaster};
 pub use toggle::{Toggle, ToggleState};
 pub use util::ior::Ior;
@@ -63,6 +64,7 @@ mod messages;
 mod page;
 mod tables;
 mod tag;
+mod tag_from_list;
 mod toast;
 mod toggle;
 mod util;

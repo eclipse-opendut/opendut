@@ -1,7 +1,7 @@
 use std::ops::Not;
 use leptos::prelude::*;
 use opendut_auth::types::Claims;
-use opendut_lea_components::{BasePageContainer, Breadcrumb, Divider, FontAwesomeIcon, IconText, IconTextDistance, ProfilePicture, ProfilePictureSize, Tag};
+use opendut_lea_components::{BasePageContainer, Breadcrumb, Divider, FontAwesomeIcon, IconText, IconTextDistance, ProfilePicture, ProfilePictureSize, TagFromList};
 use crate::user::DEFAULT_KEYCLOAK_ROLES;
 
 struct UserData {
@@ -74,86 +74,41 @@ pub fn UserTableView(
             <Divider />
             <table class="table is-align-self-flex-start">
                 <tbody>
-                    <tr>
-                        <td class="has-text-grey is-narrow">
-                            <div class="pl-4 py-2">
-                                <IconText
-                                    icon=FontAwesomeIcon::Email
-                                    text="Email"
-                                    distance=IconTextDistance::Wide
-                                />
-                            </div>
-                        </td>
-                        <td>
-                            <div class="py-2">
-                                { email }
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="has-text-grey">
-                            <div class="pl-4 py-2">
-                                <IconText
-                                    icon=FontAwesomeIcon::Shield
-                                    text="Roles"
-                                    distance=IconTextDistance::Wide
-                                />
-                            </div>
-                        </td>
-                        <td>
-                            <div class="py-2">
-                                {
-                                    if roles.is_empty() {
-                                        view! ("-").into_any()
-                                    } else { ().into_any() }
-                                }
-                                <For
-                                    each=move || roles.clone()
-                                    key=|role| role.to_string()
-                                    children=move |role| {
-                                        view! {
-                                            <span class="pr-3">
-                                                <Tag text=role />
-                                            </span>
-                                        }
-                                    }
-                                />
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="has-text-grey">
-                            <div class="pl-4 py-2">
-                                <IconText
-                                    icon=FontAwesomeIcon::Group
-                                    text="Groups"
-                                    distance=IconTextDistance::Wide
-                                />
-                            </div>
-                        </td>
-                        <td>
-                            <div class="py-2">
-                                {
-                                    if groups.is_empty() {
-                                        view! ("-").into_any()
-                                    } else { ().into_any() }
-                                }
-                                <For
-                                    each=move || groups.clone()
-                                    key=|group| group.to_string()
-                                    children=move |group| {
-                                        view! {
-                                            <span class="pr-3">
-                                                <Tag text=group />
-                                            </span>
-                                        }
-                                    }
-                                />
-                            </div>
-                        </td>
-                    </tr>
+                    <UserTableRow icon=FontAwesomeIcon::Email label="Email">
+                        { email }
+                    </UserTableRow>
+                    <UserTableRow icon=FontAwesomeIcon::Shield label="Roles">
+                        <TagFromList items=roles />
+                    </UserTableRow>
+                    <UserTableRow icon=FontAwesomeIcon::Group label="Groups">
+                        <TagFromList items=groups />
+                    </UserTableRow>
                 </tbody>
             </table>
         </BasePageContainer>
+    }
+}
+
+#[component]
+fn UserTableRow(
+    icon: FontAwesomeIcon,
+    label: &'static str,
+    children: Children,
+) -> impl IntoView {
+    view! {
+        <tr>
+            <td class="has-text-grey is-narrow">
+                <div class="pl-4 py-2">
+                    <IconText
+                        icon=icon
+                        text=label
+                        distance=IconTextDistance::Wide
+                    />
+                </div>
+            </td>
+            <td>
+                <div class="py-2">{ children() }</div>
+            </td>
+        </tr>
     }
 }
