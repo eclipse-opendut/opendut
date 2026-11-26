@@ -1,17 +1,13 @@
-use crate::util::client_error_description;
 mod types;
 mod components;
 mod tabs;
 
 use leptos::prelude::*;
 use leptos_router::hooks::{use_navigate, use_params_map};
-use tracing::error;
-use opendut_carl_api::carl::ClientError;
-use opendut_carl_api::carl::viper::GetViperSourceDescriptorError;
-use opendut_lea_components::{BasePageContainer, Breadcrumb, ErrorMessage, ErrorText, LoadingSpinner, UserInputError, UserInputValue};
+use opendut_lea_components::{BasePageContainer, Breadcrumb, ErrorMessage, LoadingSpinner, UserInputError, UserInputValue};
 use opendut_lea_components::tabs::{Tab, Tabs};
 use opendut_model::viper::ViperSourceId;
-use crate::app::use_app_globals;
+use crate::api::viper::get_viper_source_descriptor;
 use crate::components::use_active_tab;
 use crate::routing::{navigate_to, WellKnownRoutes};
 use crate::viper_sources::configurator::components::Controls;
@@ -20,7 +16,6 @@ use crate::viper_sources::configurator::types::UserViperSourceConfiguration;
 
 #[component(transparent)]
 pub fn ViperSourceConfigurator() -> impl IntoView {
-    let globals = use_app_globals();
     let params = use_params_map();
     let active_tab = use_active_tab::<TabIdentifier>();
     
@@ -53,39 +48,11 @@ pub fn ViperSourceConfigurator() -> impl IntoView {
         }
     );
 
-    let viper_source_descriptor_resource = LocalResource::new(move || {
-        let mut carl = globals.client.clone();
-        async move {
-            let descriptor = match carl.viper.get_viper_source_descriptor(viper_source_id).await {
-                Ok(descriptor) => descriptor,
-                Err(ClientError::UsageError(GetViperSourceDescriptorError::SourceNotFound { .. })) => {
-                    return Ok(());
-                }
-                Err(error) => {
-                    error!("Failed to request the VIPER source descriptor <{viper_source_id}>: {error}");
+    let viper_source_descriptor = get_viper_source_descriptor(Signal::from(viper_source_id), None);
 
-                    let error_description = client_error_description(
-                        &error,
-                        "The VIPER source descriptor could not be loaded. Please check your connection and try again.",
-                    );
-
-                    return Err(ErrorText {
-                        headline: String::from("Unable to load VIPER source descriptor"),
-                        description: error_description,
-                    });
-                }
-            };
-
-            user_source_descriptor.update(|user_configuration| {
-                user_configuration.name = UserInputValue::Right(descriptor.name.to_string());
-                user_configuration.url = UserInputValue::Right(descriptor.url.to_string());
-                user_configuration.kind = UserInputValue::Right(match descriptor.kind {
-                    opendut_model::viper::ViperSourceKind::Git => String::from("Git"),
-                    opendut_model::viper::ViperSourceKind::Http => String::from("HTTP"),
-                });
-            });
-
-            Ok(())
+    Effect::new(move |_| {
+        if let Some(Ok(Some(descriptor))) = viper_source_descriptor.get() {
+            user_source_descriptor.update(|user_descriptor| user_descriptor.apply_descriptor(descriptor));
         }
     });
 
@@ -129,8 +96,8 @@ pub fn ViperSourceConfigurator() -> impl IntoView {
                 fallback=move || view! { <LoadingSpinner /> }
             >
                 { move || Suspend::new(async move {
-                    match viper_source_descriptor_resource.await {
-                        Ok(()) => {
+                    match viper_source_descriptor.await {
+                        Ok(_) => {
                             view! {
                                 <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
                                     { move || match active_tab.get() {
@@ -142,7 +109,7 @@ pub fn ViperSourceConfigurator() -> impl IntoView {
                         Err(error) => view! {
                             <ErrorMessage
                                 text=error
-                                on_retry=move || viper_source_descriptor_resource.refetch()
+                                on_retry=move || viper_source_descriptor.refetch()
                             />
                         }.into_any(),
                     }

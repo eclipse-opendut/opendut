@@ -46,3 +46,15 @@ impl TryFrom<UserClusterDescriptor> for ClusterDescriptor {
         })
     }
 }
+
+impl From<ClusterDescriptor> for UserClusterDescriptor {
+    fn from(descriptor: ClusterDescriptor) -> Self {
+        Self {
+            id: descriptor.id,
+            name: UserInputValue::Right(descriptor.name.value().to_owned()),
+            devices: DeviceSelection::Right(descriptor.devices),
+            leader: LeaderSelection::Right(descriptor.leader),
+            is_new: false,
+        }
+    }
+}

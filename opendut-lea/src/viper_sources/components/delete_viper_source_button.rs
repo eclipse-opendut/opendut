@@ -1,3 +1,4 @@
+use crate::api::viper::list_viper_test_descriptors;
 use std::sync::Arc;
 use leptos::prelude::*;
 use tracing::{error, info};
@@ -19,26 +20,24 @@ where F: Fn() + Clone + Send + 'static {
     let toaster = use_toaster();
 
     let used_by: LocalResource<Result<Vec<(ViperTestId, ViperTestName)>, String>> = {
-        let carl = globals.client.clone();
+        let viper_tests = list_viper_test_descriptors(None);
         let toaster = toaster.clone();
         LocalResource::new(move || {
             let source_id = viper_source_id.get();
-            let mut carl = carl.clone();
             let toaster = toaster.clone();
             pending.set(true);
 
             async move {
-                let result = carl.viper.list_viper_test_run_descriptors().await
+                let result = viper_tests.await
                     .map(|tests| tests.into_iter()
                         .filter(|test| test.source == source_id)
                         .map(|test| (test.id, test.name))
                         .collect())
                     .map_err(|cause| {
-                        error!("Failed to load tests using VIPER source <{source_id}>, due to error: {cause}");
                         toaster.toast(Toast::builder()
                             .simple("Failed to check VIPER source usage.")
                             .error());
-                        cause.to_string()
+                        cause.description
                     });
                 pending.set(false);
                 result
@@ -133,7 +132,7 @@ fn TooltipContent(
                 <ul>
                     {tests.into_iter().map(|(id, name)| view! {
                         <li title=id.to_string()>
-                            <a href=format!("/viper_tests/{id}/configure/viper_sources")>
+                            <a href=format!("/viper_tests/{id}/configure/viper_source")>
                                 { String::from(name) }
                             </a>
                         </li>

@@ -93,12 +93,12 @@ fn SaveClusterButton(
         user_cluster_descriptor.with(|descriptor| descriptor.is_valid())
     });
 
-    let is_deployed = !matches!(deployed_signal.get(), Some(IsDeployed(false)));
+    let is_deployed = Signal::derive(move || !matches!(deployed_signal.get(), Some(IsDeployed(false))));
 
     let pending = RwSignal::new(false);
 
     let button_state = Signal::derive(move || {
-        if is_deployed || !all_tabs_valid.get() {
+        if is_deployed.get() || !all_tabs_valid.get() {
             ButtonState::Disabled
         } else if pending.get() {
             ButtonState::Loading
@@ -147,13 +147,13 @@ fn SaveClusterButton(
     };
 
     let hide_tooltip = Signal::derive(move || {
-        all_tabs_valid.get() && is_deployed
+        all_tabs_valid.get() && !is_deployed.get()
     });
 
     let tooltip_content = Arc::new(move || {
         if !all_tabs_valid.get() {
             util::view::tooltip_content_for_configurator_errors("Cluster")
-        } else if is_deployed {
+        } else if is_deployed.get() {
             view! {
                 Cluster can not be updated while it is deployed.
             }.into_any()

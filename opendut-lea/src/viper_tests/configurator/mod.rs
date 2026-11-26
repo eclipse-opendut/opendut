@@ -1,16 +1,12 @@
-use crate::util::client_error_description;
+use crate::api::viper::{get_viper_test_run_descriptor, get_viper_test_suite_parameters, list_viper_source_descriptors};
 use std::collections::HashMap;
 use leptos::prelude::*;
-use tracing::error;
 use leptos_router::hooks::{use_navigate, use_params_map};
-use opendut_carl_api::carl::ClientError;
-use opendut_carl_api::carl::viper::{CompilationErrorKind, GetViperTestRunDescriptorError, GetViperTestSuiteParametersError};
 use opendut_lea_components::{BasePageContainer, Breadcrumb, ErrorMessage, ErrorText, LoadingSpinner, UserInputError, UserInputValue};
 use opendut_lea_components::tabs::{Tab, Tabs};
-use opendut_model::cluster::ClusterDescriptor;
-use opendut_model::peer::PeerDescriptor;
-use opendut_model::viper::{ViperParameterName, ViperSourceDescriptor, ViperTestId, ViperTestRunDescriptor};
-use crate::app::use_app_globals;
+use opendut_model::viper::{ViperTestId};
+use crate::api::clusters::list_cluster_descriptors;
+use crate::api::peers::list_peer_descriptors;
 use crate::components::use_active_tab;
 use crate::routing::{navigate_to, WellKnownRoutes};
 use crate::viper_tests::configurator::components::Controls;
@@ -24,7 +20,6 @@ mod components;
 #[component(transparent)]
 pub fn ViperTestConfigurator() -> impl IntoView {
 
-    let globals = use_app_globals();
     let params = use_params_map();
     let active_tab = use_active_tab::<TabIdentifier>();
 
@@ -58,203 +53,68 @@ pub fn ViperTestConfigurator() -> impl IntoView {
         }
     );
 
-    let viper_test_run_descriptor_resource = {
-        let carl = globals.client.clone();
-        LocalResource::new(move || {
-            let mut carl = carl.clone();
-            async move {
-                let descriptor = match carl.viper.get_viper_test_run_descriptor(viper_test_id).await {
-                    Ok(descriptor) => descriptor,
-                    Err(ClientError::UsageError(GetViperTestRunDescriptorError::TestNotFound { .. })) => {
-                        return Ok(());
-                    }
-                    Err(error) => {
-                        error!("Failed to request the VIPER test run descriptor <{viper_test_id}>: {error}");
+    let viper_test_run_descriptor = get_viper_test_run_descriptor(Signal::from(viper_test_id), None);
 
-                        let error_description = client_error_description(
-                            &error,
-                            "The VIPER test run descriptor could not be loaded. Please check your connection and try again.",
-                        );
-
-                        return Err(ErrorText {
-                            headline: String::from("Unable to load VIPER test run descriptor"),
-                            description: error_description,
-                        });
-                    }
-                };
-
-                user_test_run_descriptor.update(|user_configuration| {
-                    let ViperTestRunDescriptor { id: _, name, source: viper_source, peer, parameters } = descriptor;
-
-                    user_configuration.name = UserInputValue::Right(name.value().to_owned());
-                    user_configuration.viper_source = SourceSelection::Right(viper_source);
-                    user_configuration.peer = PeerSelection::Right(peer);
-
-                    let mut configured_parameters: HashMap<ViperParameterName, ViperBindingValueInput> = HashMap::new();
-
-                    for (key, value) in parameters {
-                        configured_parameters.insert(
-                            key,
-                            ViperBindingValueInput::Right(value)
-                        );
-                    }
-
-                    user_configuration.parameters = configured_parameters;
-                });
-
-                Ok(())
-            }
-        })
-    };
+    Effect::new(move |_| {
+        if let Some(Ok(Some(descriptor))) = viper_test_run_descriptor.get() {
+            user_test_run_descriptor.update(|configuration| configuration.apply_descriptor(descriptor));
+        }
+    });
 
     let viper_source = create_read_slice(
         user_test_run_descriptor,
         |descriptor| Clone::clone(&descriptor.viper_source),
     );
 
-    let viper_sources_resource: LocalResource<Result<Vec<ViperSourceDescriptor>, ErrorText>> =  {
-        let carl = globals.client.clone();
+    let viper_sources_resource = list_viper_source_descriptors(None);
 
-        LocalResource::new(move || {
-            let mut carl = carl.clone();
-            async move {
-                let sources = carl.viper.list_viper_source_descriptors().await
-                    .map_err(|error| {
-                        error!("Failed to request the list of peers: {error}");
-
-                        let error_description = client_error_description(
-                            &error,
-                            "The VIPER source descriptors could not be loaded. Please check your connection and try again.",
-                        );
-
-                        ErrorText {
-                            headline: String::from("Unable to load VIPER source descriptors"),
-                            description: error_description,
-                        }
-                    })?;
-
-                Ok(sources)
-            }
-        })
-    };
+    let test_suite_parameters = get_viper_test_suite_parameters(
+        Signal::derive(move || match viper_source.get() {
+            SourceSelection::Left(_) => None,
+            SourceSelection::Right(source_id) | SourceSelection::Both(_, source_id) => Some(source_id),
+        }),
+        None,
+    );
 
     let parameters = {
-        let carl = globals.client.clone();
-
         LocalResource::new(move || {
-            let mut carl = carl.clone();
-            let viper_source = viper_source.get();
-
-            let source_id = match viper_source {
-                SourceSelection::Left(_) => None,
-                SourceSelection::Right(source_id) | SourceSelection::Both(_, source_id) => Some(source_id),
-            };
-
             async move {
-                if let Some(source_id) = source_id {
-                    let result = carl.viper.get_viper_test_suite_parameters(source_id).await;
+                match test_suite_parameters.await {
+                    Ok(Some(test_suite_parameters)) => {
+                        user_test_run_descriptor.update(|user_configuration| {
+                            let mut new_parameters = HashMap::new();
 
-                    match result {
-                        Ok(test_suite_parameters) => {
-                            user_test_run_descriptor.update(|user_configuration| {
-                                let mut new_parameters = HashMap::new();
+                            for parameter in test_suite_parameters.parameters.iter() {
+                                let parameter_name = parameter.name().clone();
 
-                                for parameter in test_suite_parameters.parameters.iter() {
-                                    let parameter_name = parameter.name().clone();
+                                let value = user_configuration
+                                    .parameters
+                                    .get(&parameter_name)
+                                    .cloned()
+                                    .unwrap_or_else(|| {
+                                        if parameter.has_default_value() {
+                                            ViperBindingValueInput::Right(None)
+                                        } else {
+                                            ViperBindingValueInput::Left(String::from("Please enter a value."))
+                                        }
+                                    });
 
-                                    let value = user_configuration
-                                        .parameters
-                                        .get(&parameter_name)
-                                        .cloned()
-                                        .unwrap_or_else(|| {
-                                            if parameter.has_default_value() {
-                                                ViperBindingValueInput::Right(None)
-                                            } else {
-                                                ViperBindingValueInput::Left(String::from("Please enter a value."))
-                                            }
-                                        });
-
-                                    new_parameters.insert(parameter_name, value);
-                                }
-                                user_configuration.parameters = new_parameters;
-                            });
-
-                            Ok(test_suite_parameters.parameters)
-                        }
-                        Err(client_error) => {
-                            match client_error {
-                                ClientError::UsageError(error) => {
-                                    Err(SourceFetchError::GetParameterError(error))
-                                }
-                                _ => {
-                                    Err(SourceFetchError::RequestFailed(String::from("The VIPER test suite parameters could not be loaded. Please check your connection and try again."),))
-                                }
+                                new_parameters.insert(parameter_name, value);
                             }
-                        }
+                            user_configuration.parameters = new_parameters;
+                        });
+
+                        Ok(test_suite_parameters.parameters)
                     }
-                } else {
-                    Err(SourceFetchError::NoSourceSelected)
+                    Err(error) => Err(SourceFetchError::RequestFailed(error)),
+                    Ok(None) => Err(SourceFetchError::NoSourceSelected),
                 }
             }
         })
     };
 
-    let peers: LocalResource<Result<Vec<PeerDescriptor>, ErrorText>> = {
-        let carl = globals.client.clone();
-        LocalResource::new(move || {
-            let mut carl = carl.clone();
-
-            async move {
-                let mut peers = carl.peers.list_peer_descriptors().await
-                    .map_err(|error| {
-                        error!("Failed to request the list of peers: {error}");
-
-                        let error_description = client_error_description(
-                            &error,
-                            "The peer descriptors could not be loaded. Please check your connection and try again.",
-                        );
-
-                        ErrorText {
-                            headline: String::from("Unable to load peer descriptors"),
-                            description: error_description,
-                        }
-                    })?;
-
-                peers
-                    .sort_by(|peer_a, peer_b| {
-                        peer_a.name.value().to_lowercase()
-                            .cmp(&peer_b.name.value().to_lowercase())
-                    });
-
-                Ok(peers)
-            }
-        })
-    };
-
-    let clusters: LocalResource<Result<Vec<ClusterDescriptor>, ErrorText>> = {
-        let carl = globals.client.clone();
-        LocalResource::new( move || {
-            let mut carl = carl.clone();
-
-            async move {
-                let clusters = carl.cluster.list_cluster_descriptors().await
-                    .map_err(|error| {
-                        error!("Failed to request the list of clusters: {error}");
-
-                        let error_description = client_error_description(
-                            &error,
-                            "The cluster descriptors could not be loaded. Please check your connection and try again.",
-                        );
-
-                        ErrorText {
-                            headline: String::from("Unable to load cluster descriptors"),
-                            description: error_description,
-                        }
-                    })?;
-                Ok(clusters)
-            }
-        })
-    };
+    let peers = list_peer_descriptors(None);
+    let clusters = list_cluster_descriptors(None);
 
     let viper_test_id_string = create_read_slice(user_test_run_descriptor, |config| config.id.to_string());
 
@@ -314,8 +174,8 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                 fallback=move || view! { <LoadingSpinner /> }
             >
                 { move || Suspend::new(async move {
-                    match viper_test_run_descriptor_resource.await {
-                        Ok(()) => {
+                    match viper_test_run_descriptor.await {
+                        Ok(_) => {
                             let peers = RwSignal::new(peers.await).read_only();
                             let clusters = RwSignal::new(clusters.await).read_only();
                             let parameter_result = parameters.await;
@@ -335,7 +195,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                                             <ParametersTab
                                                 user_test_run_descriptor
                                                 parameter_result=parameter_result.clone()
-                                                on_retry=move || parameters.refetch()
+                                                on_retry=move || test_suite_parameters.refetch()
                                             />
                                         }.into_any(),
                                         TabIdentifier::Peer => view! {
@@ -354,7 +214,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                         Err(error) => view! {
                             <ErrorMessage
                                 text=error
-                                on_retry=move || viper_test_run_descriptor_resource.refetch()
+                                on_retry=move || viper_test_run_descriptor.refetch()
                             />
                         }.into_any(),
                     }
@@ -367,45 +227,20 @@ pub fn ViperTestConfigurator() -> impl IntoView {
 #[derive(Debug, Clone)]
 enum SourceFetchError {
     NoSourceSelected,
-    GetParameterError(GetViperTestSuiteParametersError),
-    RequestFailed(String),
+    RequestFailed(ErrorText),
 }
 
 impl SourceFetchError {
     pub fn to_error_view(&self, on_retry: Callback<()>) -> AnyView {
-        let description = match self {
-            Self::NoSourceSelected => {
-                return view! {
-                    <p class="help has-text-danger">
-                        "Select a VIPER source first."
-                    </p>
-                }.into_any();
-            }
-            Self::GetParameterError(error) => match error {
-                GetViperTestSuiteParametersError::Compilation { kind, .. } => {
-                    match kind {
-                        CompilationErrorKind::FailedLoading { message, .. }
-                        | CompilationErrorKind::InvalidSource { message }
-                        | CompilationErrorKind::FailedInspection { message }
-                        | CompilationErrorKind::PythonCompilationError { message }
-                        | CompilationErrorKind::Internal { message } => {
-                            format!("{error}: \n {message}")
-                        }
-                        CompilationErrorKind::NoSuitableSourceLoader { .. } => {
-                            error.to_string()
-                        }
-                    }
-                }
-                _ => error.to_string(),
-            }
-            Self::RequestFailed(message) => message.to_owned(),
-        };
-
-        let error_text = ErrorText {
-            headline: String::from("Unable to load VIPER parameters"),
-            description,
-        };
-
-        view! { <ErrorMessage text=error_text on_retry /> }.into_any()
+        match self {
+            Self::NoSourceSelected => view! {
+                <p class="help has-text-danger">
+                    "Select a VIPER source first."
+                </p>
+            }.into_any(),
+            Self::RequestFailed(error) => view! {
+                <ErrorMessage text=error.clone() on_retry />
+            }.into_any(),
+        }
     }
 }

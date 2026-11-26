@@ -16,9 +16,7 @@ pub fn Controls(
     user_source_descriptor: RwSignal<UserViperSourceConfiguration>,
 ) -> impl IntoView {
 
-    let viper_source_id = Signal::derive(move || {
-        user_source_descriptor.get().id
-    });
+    let viper_source_id = create_read_slice(user_source_descriptor, |descriptor| descriptor.id);
 
     let use_navigate = use_navigate();
     let on_delete = { move || {

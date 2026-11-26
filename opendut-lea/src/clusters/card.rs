@@ -6,7 +6,7 @@ use crate::clusters::components::CreateClusterButton;
 use crate::routing;
 
 #[component]
-pub fn ClustersCard(clusters: LocalResource<Result<Clusters, ErrorText>>) -> impl IntoView {
+pub fn ClustersCard(clusters: Signal<Option<Result<Clusters, ErrorText>>>) -> impl IntoView {
 
     let deployed = Signal::derive(move || {
         clusters.get().map(|result| result.map(|clusters| clusters.deployed))

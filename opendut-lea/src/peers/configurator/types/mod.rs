@@ -1,3 +1,4 @@
+use crate::peers::configurator::types::network::UserNetworkInterface;
 use leptos::prelude::*;
 use opendut_lea_components::UserInputValue;
 use opendut_model::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
@@ -89,5 +90,53 @@ impl TryFrom<UserPeerDescriptor> for PeerDescriptor {
             network: PeerNetworkDescriptor::new(network_interfaces, bridge_name),
             topology: Topology::new(devices),
         })
+    }
+}
+
+impl UserPeerDescriptor {
+    pub fn apply_descriptor(
+        &mut self,
+        descriptor: PeerDescriptor,
+        clusters: Vec<opendut_model::cluster::ClusterDescriptor>,
+    ) {
+        self.name = UserInputValue::Right(descriptor.name.value().to_owned());
+        self.is_new = false;
+        self.location = UserInputValue::Right(descriptor.location.unwrap_or_default().value());
+        self.devices = descriptor
+            .topology
+            .devices
+            .into_iter()
+            .map(|device| {
+                let mut configured_clusters = vec![];
+
+                for cluster in &clusters {
+                    for device_id in &cluster.devices {
+                        if device.id == *device_id {
+                            configured_clusters.push(cluster.clone());
+                        }
+                    }
+                }
+                RwSignal::new(UserDeviceConfiguration {
+                    id: device.id,
+                    name: UserInputValue::Right(device.name.to_string()),
+                    interface: Some(device.interface),
+                    description: UserInputValue::Right(
+                        device.description.unwrap_or_default().to_string(),
+                    ),
+                    is_collapsed: true,
+                    contained_in_clusters: configured_clusters,
+                    tags: device.tags,
+                })
+            })
+            .collect::<Vec<_>>();
+        if let Some(bridge_name) = descriptor.network.bridge_name {
+            self.network.bridge_name = UserInputValue::Right(bridge_name.name());
+        }
+        self.network.network_interfaces = descriptor
+            .network
+            .interfaces
+            .into_iter()
+            .map(|interface| RwSignal::new(UserNetworkInterface::from(interface)))
+            .collect();
     }
 }

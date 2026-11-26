@@ -6,7 +6,7 @@ use crate::peers::components::CreatePeerButton;
 use crate::routing;
 
 #[component]
-pub fn PeersCard(peers: LocalResource<Result<Peers, ErrorText>>) -> impl IntoView {
+pub fn PeersCard(peers: Signal<Option<Result<Peers, ErrorText>>>) -> impl IntoView {
 
     let online = Signal::derive(move || {
         peers.get().map(|result| result.map(|peers| peers.online))

@@ -64,3 +64,14 @@ impl TryFrom<UserViperSourceConfiguration> for ViperSourceDescriptor {
         )
     }
 }
+
+impl UserViperSourceConfiguration {
+    pub fn apply_descriptor(&mut self, descriptor: ViperSourceDescriptor) {
+        self.name = UserInputValue::Right(descriptor.name.to_string());
+        self.url = UserInputValue::Right(descriptor.url.to_string());
+        self.kind = UserInputValue::Right(match descriptor.kind {
+            opendut_model::viper::ViperSourceKind::Git => String::from("Git"),
+            opendut_model::viper::ViperSourceKind::Http => String::from("HTTP"),
+        });
+    }
+}

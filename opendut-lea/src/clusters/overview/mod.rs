@@ -1,12 +1,10 @@
-use crate::util::client_error_description;
+use crate::api::clusters::list_cluster_deployments;
 mod row;
 
 use leptos::prelude::*;
-use tracing::error;
 use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, ErrorMessage, InfoMessage, ErrorMessageTableRow, ErrorMessageType, ErrorText, FontAwesomeIcon, IconButton, OverviewTable, TableHeading};
 use opendut_model::cluster::{ClusterDeployment, ClusterDescriptor};
-
-use crate::app::use_app_globals;
+use crate::api::clusters::list_cluster_descriptors;
 use crate::clusters::components::CreateClusterButton;
 use crate::clusters::IsDeployed;
 use crate::clusters::overview::row::Row;
@@ -15,68 +13,13 @@ use crate::components::{BasePageContainer, Breadcrumb, LoadingSpinner};
 #[component]
 pub fn ClustersOverview() -> impl IntoView {
 
-    let globals = use_app_globals();
-    let carl = globals.client;
-
     let refetch_cluster_descriptors = RwSignal::new(());
 
-    let clusters = {
-        let carl = carl.clone();
-
-        LocalResource::new(move || {
-            refetch_cluster_descriptors.track();
-
-            let mut carl = carl.clone();
-            async move {
-                let mut clusters = carl.cluster.list_cluster_descriptors().await
-                    .map_err(|error| {
-                        error!("Failed to request the list of clusters: {error}");
-
-                        let error_description = client_error_description(
-                            &error,
-                            "The cluster descriptors could not be loaded. Please check your connection and try again.",
-                        );
-
-                        ErrorText {
-                            headline: String::from("Unable to load cluster descriptors"),
-                            description: error_description,
-                        }
-                    })?;
-
-                clusters.sort_by_key(|cluster| cluster.name.value().to_lowercase());
-
-                Ok::<_, ErrorText>(clusters)
-            }
-        })
-    };
+    let clusters = list_cluster_descriptors(Some(refetch_cluster_descriptors.into()));
 
     let refetch_cluster_deployments = RwSignal::new(());
 
-    let cluster_deployments = {
-        let carl = carl.clone();
-
-        LocalResource::new(move || {
-            refetch_cluster_deployments.track();
-
-            let mut carl = carl.clone();
-            async move {
-                carl.cluster.list_cluster_deployments().await
-                    .map_err(|error| {
-                        error!("Failed to request the list of cluster deployments: {error}");
-
-                        let error_description = client_error_description(
-                            &error,
-                            "The cluster deployments could not be loaded. Please check your connection and try again.",
-                        );
-
-                        ErrorText {
-                            headline: String::from("Unable to load cluster deployments"),
-                            description: error_description,
-                        }
-                    })
-            }
-        })
-    };
+    let cluster_deployments = list_cluster_deployments(Some(refetch_cluster_deployments.into()));
 
     let breadcrumbs = vec![
         Breadcrumb::new("Dashboard", "/"),
