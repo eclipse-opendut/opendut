@@ -17,7 +17,7 @@ pub fn PeersOverview() -> impl IntoView {
 
     let peer_states = list_peer_states(Some(refetch_registered_peers.into()));
     let peers = list_peer_descriptors(Some(refetch_registered_peers.into()));
-    let configured_clusters = list_cluster_descriptors(None);
+    let configured_clusters = list_cluster_descriptors(Some(refetch_registered_peers.into()));
     
     let breadcrumbs = vec![
         Breadcrumb::new("Dashboard", "/"),
