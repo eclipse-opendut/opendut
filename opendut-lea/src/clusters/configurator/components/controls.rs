@@ -147,7 +147,7 @@ fn SaveClusterButton(
     };
 
     let hide_tooltip = Signal::derive(move || {
-        all_tabs_valid.get() && is_deployed.get()
+        all_tabs_valid.get() && !is_deployed.get()
     });
 
     let tooltip_content = Arc::new(move || {
