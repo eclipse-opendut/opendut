@@ -1,10 +1,6 @@
 use crate::api::clusters::{get_cluster_descriptor, list_cluster_deployments};
-use crate::util::client_error_description;
 use leptos::prelude::*;
 use leptos_router::hooks::{use_navigate, use_params_map};
-use tracing::error;
-use opendut_carl_api::carl::ClientError;
-use opendut_carl_api::carl::cluster::GetClusterDescriptorError;
 use opendut_lea_components::{ErrorMessage, ErrorText};
 use opendut_lea_components::tabs::{Tab, Tabs};
 use crate::components::UserInputValue;
@@ -63,24 +59,8 @@ pub fn ClusterConfigurator() -> impl IntoView {
     let cluster_resource: LocalResource<Result<(), ErrorText>> = {
         LocalResource::new(move || {
             async move {
-                let descriptor = match cluster_descriptor.await {
-                    Ok(descriptor) => descriptor,
-                    Err(error) if matches!(error.as_ref(), ClientError::UsageError(GetClusterDescriptorError::ClusterNotFound { .. })) => {
-                        return Ok(());
-                    }
-                    Err(error) => {
-                        error!("Failed to request the cluster descriptor for cluster <{cluster_id}>: {error}");
-
-                        let error_description = client_error_description(
-                            error.as_ref(),
-                            "The cluster descriptor could not be loaded. Please check your connection and try again.",
-                        );
-
-                        return Err(ErrorText {
-                            headline: String::from("Unable to load cluster descriptor"),
-                            description: error_description,
-                        })
-                    }
+                let Some(descriptor) = cluster_descriptor.await? else {
+                    return Ok(());
                 };
 
                 user_cluster_descriptor.set(

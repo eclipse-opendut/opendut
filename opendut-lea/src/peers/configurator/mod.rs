@@ -1,4 +1,3 @@
-use crate::util::client_error_description;
 use crate::api::peers::get_peer_descriptor;
 use crate::api::clusters::list_cluster_descriptors;
 use crate::components::use_active_tab;
@@ -11,10 +10,7 @@ use leptos::either::Either;
 use leptos::prelude::*;
 use opendut_model::peer::PeerId;
 use leptos_router::hooks::{use_navigate, use_params_map};
-use tracing::error;
-use opendut_carl_api::carl::ClientError;
-use opendut_carl_api::carl::peer::GetPeerDescriptorError;
-use opendut_lea_components::{ErrorMessage, ErrorText, LoadingSpinner};
+use opendut_lea_components::{ErrorMessage, LoadingSpinner};
 use opendut_lea_components::tabs::{Tab, Tabs};
 use crate::peers::configurator::types::devices::UserDeviceConfiguration;
 use crate::peers::configurator::types::network::{UserNetworkInterface, UserPeerNetwork};
@@ -68,24 +64,8 @@ pub fn PeerConfigurator() -> impl IntoView {
 
     let peer_descriptor_resource = LocalResource::new(move || {
         async move {
-            let descriptor = match peer_descriptor.await {
-                Ok(descriptor) => descriptor,
-                Err(error) if matches!(error.as_ref(), ClientError::UsageError(GetPeerDescriptorError::PeerNotFound { .. })) => {
-                    return Ok(());
-                }
-                Err(error) => {
-                    error!("Failed to request the peer descriptor for peer <{peer_id}>: {error}");
-
-                    let error_description = client_error_description(
-                        error.as_ref(),
-                        "The peer descriptor could not be loaded. Please check your connection and try again.",
-                    );
-                    
-                    return Err(ErrorText {
-                        headline: String::from("Unable to load peer descriptor"),
-                        description: error_description
-                    })
-                }
+            let Some(descriptor) = peer_descriptor.await? else {
+                return Ok(());
             };
 
             let clusters = cluster_descriptors.await?;

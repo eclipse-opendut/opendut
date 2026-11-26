@@ -1,14 +1,10 @@
-use crate::util::client_error_description;
 mod types;
 mod components;
 mod tabs;
 
 use leptos::prelude::*;
 use leptos_router::hooks::{use_navigate, use_params_map};
-use tracing::error;
-use opendut_carl_api::carl::ClientError;
-use opendut_carl_api::carl::viper::GetViperSourceDescriptorError;
-use opendut_lea_components::{BasePageContainer, Breadcrumb, ErrorMessage, ErrorText, LoadingSpinner, UserInputError, UserInputValue};
+use opendut_lea_components::{BasePageContainer, Breadcrumb, ErrorMessage, LoadingSpinner, UserInputError, UserInputValue};
 use opendut_lea_components::tabs::{Tab, Tabs};
 use opendut_model::viper::ViperSourceId;
 use crate::api::viper::get_viper_source_descriptor;
@@ -56,24 +52,8 @@ pub fn ViperSourceConfigurator() -> impl IntoView {
 
     let viper_source_descriptor_resource = LocalResource::new(move || {
         async move {
-            let descriptor = match viper_source_descriptor.await {
-                Ok(descriptor) => descriptor,
-                Err(error) if matches!(error.as_ref(), ClientError::UsageError(GetViperSourceDescriptorError::SourceNotFound { .. })) => {
-                    return Ok(());
-                }
-                Err(error) => {
-                    error!("Failed to request the VIPER source descriptor <{viper_source_id}>: {error}");
-
-                    let error_description = client_error_description(
-                        error.as_ref(),
-                        "The VIPER source descriptor could not be loaded. Please check your connection and try again.",
-                    );
-
-                    return Err(ErrorText {
-                        headline: String::from("Unable to load VIPER source descriptor"),
-                        description: error_description,
-                    });
-                }
+            let Some(descriptor) = viper_source_descriptor.await? else {
+                return Ok(());
             };
 
             user_source_descriptor.update(|user_configuration| {

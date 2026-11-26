@@ -1,7 +1,5 @@
-use crate::util::client_error_description;
 use leptos::prelude::*;
-use tracing::error;
-use opendut_lea_components::{ErrorIndicator, ErrorText, LoadingSpinner};
+use opendut_lea_components::{ErrorIndicator, LoadingSpinner};
 use opendut_lea_components::health::{self, Health};
 use opendut_model::peer::PeerId;
 use opendut_model::peer::state::PeerConnectionState;
@@ -34,14 +32,6 @@ pub fn PeerHealth(
             }.into_any()
         }
         Some(Err(error)) => {
-            error!("Failed to request the peer state: {error}");
-            let error = ErrorText {
-                headline: String::from("Unable to load peer state"),
-                description: client_error_description(
-                    error.as_ref(),
-                    "The peer state could not be loaded. Please check your connection and try again.",
-                ),
-            };
             view! {
                 <div class="is-flex is-align-items-center is-justify-content-center">
                     <ErrorIndicator text=error />

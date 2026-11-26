@@ -1,6 +1,5 @@
-use std::sync::Arc;
 use opendut_carl_api::carl::ClientError;
-use opendut_carl_api::carl::viper::{GetViperSourceDescriptorError, GetViperTestRunDescriptorError, GetViperTestSuiteParametersError};
+use opendut_carl_api::carl::viper::{CompilationErrorKind, GetViperSourceDescriptorError, GetViperTestRunDescriptorError, GetViperTestSuiteParametersError};
 use opendut_model::viper::{ViperSourceId, ViperTestId, ViperTestSuiteParameters};
 use leptos::prelude::{Get, LocalResource, RwSignal, Signal, Track};
 use opendut_lea_components::ErrorText;
@@ -83,7 +82,7 @@ pub fn list_viper_test_descriptors(
 pub fn get_viper_source_descriptor(
     id: impl Into<Signal<ViperSourceId>>,
     refetch_signal: Option<RwSignal<()>>,
-) -> LocalResource<Result<ViperSourceDescriptor, Arc<ClientError<GetViperSourceDescriptorError>>>> {
+) -> LocalResource<Result<Option<ViperSourceDescriptor>, ErrorText>> {
     let id = id.into();
     let carl = use_app_globals().client;
 
@@ -93,7 +92,20 @@ pub fn get_viper_source_descriptor(
 
         let mut carl = carl.clone();
         async move {
-            carl.viper.get_viper_source_descriptor(id).await.map_err(Arc::new)
+            match carl.viper.get_viper_source_descriptor(id).await {
+                Ok(descriptor) => Ok(Some(descriptor)),
+                Err(ClientError::UsageError(GetViperSourceDescriptorError::SourceNotFound { .. })) => Ok(None),
+                Err(error) => {
+                    error!("Unable to load VIPER source descriptor: {error}");
+                    Err(ErrorText {
+                        headline: String::from("Unable to load VIPER source descriptor"),
+                        description: client_error_description(
+                            &error,
+                            "The VIPER source descriptor could not be loaded. Please check your connection and try again.",
+                        ),
+                    })
+                }
+            }
         }
     })
 }
@@ -101,7 +113,7 @@ pub fn get_viper_source_descriptor(
 pub fn get_viper_test_run_descriptor(
     id: impl Into<Signal<ViperTestId>>,
     refetch_signal: Option<RwSignal<()>>,
-) -> LocalResource<Result<ViperTestRunDescriptor, Arc<ClientError<GetViperTestRunDescriptorError>>>> {
+) -> LocalResource<Result<Option<ViperTestRunDescriptor>, ErrorText>> {
     let id = id.into();
     let carl = use_app_globals().client;
 
@@ -111,7 +123,20 @@ pub fn get_viper_test_run_descriptor(
 
         let mut carl = carl.clone();
         async move {
-            carl.viper.get_viper_test_run_descriptor(id).await.map_err(Arc::new)
+            match carl.viper.get_viper_test_run_descriptor(id).await {
+                Ok(descriptor) => Ok(Some(descriptor)),
+                Err(ClientError::UsageError(GetViperTestRunDescriptorError::TestNotFound { .. })) => Ok(None),
+                Err(error) => {
+                    error!("Unable to load VIPER test run descriptor: {error}");
+                    Err(ErrorText {
+                        headline: String::from("Unable to load VIPER test run descriptor"),
+                        description: client_error_description(
+                            &error,
+                            "The VIPER test run descriptor could not be loaded. Please check your connection and try again.",
+                        ),
+                    })
+                }
+            }
         }
     })
 }
@@ -119,7 +144,7 @@ pub fn get_viper_test_run_descriptor(
 pub fn get_viper_test_suite_parameters(
     id: impl Into<Signal<Option<ViperSourceId>>>,
     refetch_signal: Option<RwSignal<()>>,
-) -> LocalResource<Result<Option<ViperTestSuiteParameters>, Arc<ClientError<GetViperTestSuiteParametersError>>>> {
+) -> LocalResource<Result<Option<ViperTestSuiteParameters>, ErrorText>> {
     let id = id.into();
     let carl = use_app_globals().client;
 
@@ -133,7 +158,29 @@ pub fn get_viper_test_suite_parameters(
                 return Ok(None);
             };
 
-            carl.viper.get_viper_test_suite_parameters(id).await.map(Some).map_err(Arc::new)
+            carl.viper.get_viper_test_suite_parameters(id).await.map(Some).map_err(|error| {
+                error!("Unable to load VIPER parameters: {error}");
+                let mut text = ErrorText {
+                    headline: String::from("Unable to load VIPER parameters"),
+                    description: client_error_description(
+                        &error,
+                        "The VIPER test suite parameters could not be loaded. Please check your connection and try again.",
+                    ),
+                };
+                if let ClientError::UsageError(GetViperTestSuiteParametersError::Compilation { kind, .. }) = &error {
+                    match kind {
+                        CompilationErrorKind::FailedLoading { message, .. }
+                        | CompilationErrorKind::InvalidSource { message }
+                        | CompilationErrorKind::FailedInspection { message }
+                        | CompilationErrorKind::PythonCompilationError { message }
+                        | CompilationErrorKind::Internal { message } => {
+                            text.description = format!("{}: \n {message}", text.description);
+                        }
+                        CompilationErrorKind::NoSuitableSourceLoader { .. } => {}
+                    }
+                }
+                text
+            })
         }
     })
 }

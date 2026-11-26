@@ -1,6 +1,5 @@
-use std::sync::Arc;
 use opendut_carl_api::carl::ClientError;
-use opendut_carl_api::carl::peer::{GetPeerDescriptorError, GetPeerStateError};
+use opendut_carl_api::carl::peer::GetPeerDescriptorError;
 use std::collections::HashMap;
 use leptos::prelude::{Get, LocalResource, RwSignal, Signal, Track};
 use tracing::error;
@@ -75,7 +74,7 @@ pub fn list_peer_states(refetch_signal: Option<RwSignal<()>>) -> LocalResource<R
 pub fn get_peer_descriptor(
     id: impl Into<Signal<PeerId>>,
     refetch_signal: Option<RwSignal<()>>,
-) -> LocalResource<Result<PeerDescriptor, Arc<ClientError<GetPeerDescriptorError>>>> {
+) -> LocalResource<Result<Option<PeerDescriptor>, ErrorText>> {
     let id = id.into();
     let carl = use_app_globals().client;
 
@@ -85,7 +84,20 @@ pub fn get_peer_descriptor(
 
         let mut carl = carl.clone();
         async move {
-            carl.peers.get_peer_descriptor(id).await.map_err(Arc::new)
+            match carl.peers.get_peer_descriptor(id).await {
+                Ok(descriptor) => Ok(Some(descriptor)),
+                Err(ClientError::UsageError(GetPeerDescriptorError::PeerNotFound { .. })) => Ok(None),
+                Err(error) => {
+                    error!("Unable to load peer descriptor: {error}");
+                    Err(ErrorText {
+                        headline: String::from("Unable to load peer descriptor"),
+                        description: client_error_description(
+                            &error,
+                            "The peer descriptor could not be loaded. Please check your connection and try again.",
+                        ),
+                    })
+                }
+            }
         }
     })
 }
@@ -93,7 +105,7 @@ pub fn get_peer_descriptor(
 pub fn get_peer_state(
     id: impl Into<Signal<PeerId>>,
     refetch_signal: Option<RwSignal<()>>,
-) -> LocalResource<Result<PeerState, Arc<ClientError<GetPeerStateError>>>> {
+) -> LocalResource<Result<PeerState, ErrorText>> {
     let id = id.into();
     let carl = use_app_globals().client;
 
@@ -103,7 +115,16 @@ pub fn get_peer_state(
 
         let mut carl = carl.clone();
         async move {
-            carl.peers.get_peer_state(id).await.map_err(Arc::new)
+            carl.peers.get_peer_state(id).await.map_err(|error| {
+                error!("Unable to load peer state: {error}");
+                ErrorText {
+                    headline: String::from("Unable to load peer state"),
+                    description: client_error_description(
+                        &error,
+                        "The peer state could not be loaded. Please check your connection and try again.",
+                    ),
+                }
+            })
         }
     })
 }

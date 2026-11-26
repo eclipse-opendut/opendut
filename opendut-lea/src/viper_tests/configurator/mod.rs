@@ -1,11 +1,7 @@
 use crate::api::viper::{get_viper_test_run_descriptor, get_viper_test_suite_parameters, list_viper_source_descriptors};
-use crate::util::client_error_description;
 use std::collections::HashMap;
 use leptos::prelude::*;
-use tracing::error;
 use leptos_router::hooks::{use_navigate, use_params_map};
-use opendut_carl_api::carl::ClientError;
-use opendut_carl_api::carl::viper::{CompilationErrorKind, GetViperTestRunDescriptorError, GetViperTestSuiteParametersError};
 use opendut_lea_components::{BasePageContainer, Breadcrumb, ErrorMessage, ErrorText, LoadingSpinner, UserInputError, UserInputValue};
 use opendut_lea_components::tabs::{Tab, Tabs};
 use opendut_model::viper::{ViperParameterName, ViperTestId, ViperTestRunDescriptor};
@@ -62,24 +58,8 @@ pub fn ViperTestConfigurator() -> impl IntoView {
     let viper_test_run_descriptor_resource = {
         LocalResource::new(move || {
             async move {
-                let descriptor = match viper_test_run_descriptor.await {
-                    Ok(descriptor) => descriptor,
-                    Err(error) if matches!(error.as_ref(), ClientError::UsageError(GetViperTestRunDescriptorError::TestNotFound { .. })) => {
-                        return Ok(());
-                    }
-                    Err(error) => {
-                        error!("Failed to request the VIPER test run descriptor <{viper_test_id}>: {error}");
-
-                        let error_description = client_error_description(
-                            error.as_ref(),
-                            "The VIPER test run descriptor could not be loaded. Please check your connection and try again.",
-                        );
-
-                        return Err(ErrorText {
-                            headline: String::from("Unable to load VIPER test run descriptor"),
-                            description: error_description,
-                        });
-                    }
+                let Some(descriptor) = viper_test_run_descriptor.await? else {
+                    return Ok(());
                 };
 
                 user_test_run_descriptor.update(|user_configuration| {
@@ -151,16 +131,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
 
                         Ok(test_suite_parameters.parameters)
                     }
-                    Err(client_error) => {
-                        match client_error.as_ref() {
-                            ClientError::UsageError(error) => {
-                                Err(SourceFetchError::GetParameterError(error.clone()))
-                            }
-                            _ => {
-                                Err(SourceFetchError::RequestFailed(String::from("The VIPER test suite parameters could not be loaded. Please check your connection and try again."),))
-                            }
-                        }
-                    }
+                    Err(error) => Err(SourceFetchError::RequestFailed(error)),
                     Ok(None) => Err(SourceFetchError::NoSourceSelected),
                 }
             }
@@ -281,45 +252,20 @@ pub fn ViperTestConfigurator() -> impl IntoView {
 #[derive(Debug, Clone)]
 enum SourceFetchError {
     NoSourceSelected,
-    GetParameterError(GetViperTestSuiteParametersError),
-    RequestFailed(String),
+    RequestFailed(ErrorText),
 }
 
 impl SourceFetchError {
     pub fn to_error_view(&self, on_retry: Callback<()>) -> AnyView {
-        let description = match self {
-            Self::NoSourceSelected => {
-                return view! {
-                    <p class="help has-text-danger">
-                        "Select a VIPER source first."
-                    </p>
-                }.into_any();
-            }
-            Self::GetParameterError(error) => match error {
-                GetViperTestSuiteParametersError::Compilation { kind, .. } => {
-                    match kind {
-                        CompilationErrorKind::FailedLoading { message, .. }
-                        | CompilationErrorKind::InvalidSource { message }
-                        | CompilationErrorKind::FailedInspection { message }
-                        | CompilationErrorKind::PythonCompilationError { message }
-                        | CompilationErrorKind::Internal { message } => {
-                            format!("{error}: \n {message}")
-                        }
-                        CompilationErrorKind::NoSuitableSourceLoader { .. } => {
-                            error.to_string()
-                        }
-                    }
-                }
-                _ => error.to_string(),
-            }
-            Self::RequestFailed(message) => message.to_owned(),
-        };
-
-        let error_text = ErrorText {
-            headline: String::from("Unable to load VIPER parameters"),
-            description,
-        };
-
-        view! { <ErrorMessage text=error_text on_retry /> }.into_any()
+        match self {
+            Self::NoSourceSelected => view! {
+                <p class="help has-text-danger">
+                    "Select a VIPER source first."
+                </p>
+            }.into_any(),
+            Self::RequestFailed(error) => view! {
+                <ErrorMessage text=error.clone() on_retry />
+            }.into_any(),
+        }
     }
 }

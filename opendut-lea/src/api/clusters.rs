@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use opendut_model::peer::{PeerId, state::PeerState};
-use std::sync::Arc;
 use opendut_carl_api::carl::ClientError;
 use opendut_carl_api::carl::cluster::{GetClusterDescriptorError};
 use opendut_model::cluster::ClusterId;
@@ -76,7 +75,7 @@ pub fn list_cluster_deployments(
 pub fn get_cluster_descriptor(
     id: impl Into<Signal<ClusterId>>,
     refetch_signal: Option<RwSignal<()>>,
-) -> LocalResource<Result<ClusterDescriptor, Arc<ClientError<GetClusterDescriptorError>>>> {
+) -> LocalResource<Result<Option<ClusterDescriptor>, ErrorText>> {
     let id = id.into();
     let carl = use_app_globals().client;
 
@@ -86,7 +85,20 @@ pub fn get_cluster_descriptor(
 
         let mut carl = carl.clone();
         async move {
-            carl.cluster.get_cluster_descriptor(id).await.map_err(Arc::new)
+            match carl.cluster.get_cluster_descriptor(id).await {
+                Ok(descriptor) => Ok(Some(descriptor)),
+                Err(ClientError::UsageError(GetClusterDescriptorError::ClusterNotFound { .. })) => Ok(None),
+                Err(error) => {
+                    error!("Unable to load cluster descriptor: {error}");
+                    Err(ErrorText {
+                        headline: String::from("Unable to load cluster descriptor"),
+                        description: client_error_description(
+                            &error,
+                            "The cluster descriptor could not be loaded. Please check your connection and try again.",
+                        ),
+                    })
+                }
+            }
         }
     })
 }
