@@ -5,6 +5,8 @@ use crate::util::client_error_description;
 use opendut_lea_components::{ErrorMessage, ErrorMessageType, ErrorText};
 use opendut_model::peer::state::PeerConnectionState;
 use crate::app::use_app_globals;
+use crate::api::peers::list_peer_states;
+use crate::api::clusters::list_cluster_descriptors;
 use crate::clusters::ClustersCard;
 use crate::peers::PeersCard;
 
@@ -28,50 +30,26 @@ pub fn Dashboard() -> impl IntoView {
     let globals = use_app_globals();
     let cluster_client = globals.client.clone();
 
-    let peers: LocalResource<Result<Peers, ErrorText>> = LocalResource::new(move || {
-        let mut carl = globals.client.clone();
-        async move {
-            let peer_states = carl.peers.list_peer_states().await
-                .map_err(|error| {
-                    let description = client_error_description(
-                        &error,
-                        "The peer states could not be loaded. Please check your connection and try again.",
-                    );
-                    ErrorText {
-                        headline: String::from("Unable to load peer states"),
-                        description,
-                    }
-                })?;
-
+    let peer_states = list_peer_states(None);
+    let peers = Signal::derive(move || {
+        peer_states.get().map(|result| result.map(|peer_states| {
             let (online, offline): (Vec<_>, Vec<_>) = peer_states.values()
                 .partition(|peer_state| match peer_state.connection {
                     PeerConnectionState::Online { .. } => true,
                     PeerConnectionState::Offline => false,
                 });
 
-            Ok(Peers {
+            Peers {
                 offline: offline.len(),
                 online: online.len(),
-            })
-        }
+            }
+        }))
     });
 
-    let clusters: LocalResource<Result<Clusters, ErrorText>> = LocalResource::new(move || {
+    let cluster_descriptors = list_cluster_descriptors();
+    let cluster_deployments = LocalResource::new(move || {
         let mut carl = cluster_client.clone();
         async move {
-            let configured = carl.cluster.list_cluster_descriptors().await
-                .map_err(|error| {
-                    let description = client_error_description(
-                        &error,
-                        "The cluster descriptors could not be loaded. Please check your connection and try again.",
-                    );
-                    ErrorText {
-                        headline: String::from("Unable to load cluster descriptors"),
-                        description
-                    }
-                })?
-                .len();
-
             let deployed = carl.cluster.list_cluster_deployments().await
                 .map_err(|error| {
                     let description = client_error_description(
@@ -85,10 +63,18 @@ pub fn Dashboard() -> impl IntoView {
                 })?
                 .len();
 
-            Ok(Clusters {
+            Ok(deployed)
+        }
+    });
+
+    let clusters = Signal::derive(move || {
+        match (cluster_descriptors.get(), cluster_deployments.get()) {
+            (Some(Err(error)), _) | (_, Some(Err(error))) => Some(Err(error)),
+            (Some(Ok(descriptors)), Some(Ok(deployed))) => Some(Ok(Clusters {
                 deployed,
-                undeployed: configured.saturating_sub(deployed)
-            })
+                undeployed: descriptors.len().saturating_sub(deployed),
+            })),
+            _ => None,
         }
     });
 
@@ -99,7 +85,7 @@ pub fn Dashboard() -> impl IntoView {
                     view! {
                         <ErrorMessage
                             text=error
-                            on_retry=move || peers.refetch()
+                            on_retry=move || peer_states.refetch()
                             error_type=ErrorMessageType::Warning
                         />
                     }.into_any()
@@ -110,7 +96,10 @@ pub fn Dashboard() -> impl IntoView {
                     view! {
                         <ErrorMessage
                             text=error
-                            on_retry=move || clusters.refetch()
+                            on_retry=move || {
+                                cluster_descriptors.refetch();
+                                cluster_deployments.refetch();
+                            }
                             error_type=ErrorMessageType::Warning
                         />
                     }.into_any()

@@ -6,6 +6,7 @@ use tracing::error;
 use opendut_lea_components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, ErrorMessage, ErrorMessageType, ErrorMessageTableRow, ErrorText, FontAwesomeIcon, IconButton, InfoMessage, OverviewTable, TableHeading};
 use opendut_model::peer::PeerDescriptor;
 use opendut_model::viper::{ViperSourceDescriptor, ViperTestRunDescriptor};
+use crate::api::peers::list_peer_descriptors;
 use crate::app::use_app_globals;
 use crate::viper_tests::components::CreateViperTestButton;
 use crate::viper_tests::overview::row::Row;
@@ -76,31 +77,7 @@ pub fn ViperTestsOverview() -> impl IntoView {
         })
     };
 
-    let peers: LocalResource<Result<Vec<PeerDescriptor>, ErrorText>> = {
-        let carl = globals.client.clone();
-
-        LocalResource::new(move || {
-            refetch_viper_tests.track();
-
-            let mut carl = carl.clone();
-            async move {
-                carl.peers.list_peer_descriptors().await
-                    .map_err(|error| {
-                        error!("Failed to request the list of peers: {error}");
-
-                        let error_description = client_error_description(
-                            &error,
-                            "The peer descriptors could not be loaded. Please check your connection and try again.",
-                        );
-
-                        ErrorText {
-                            headline: String::from("Unable to load peer descriptors"),
-                            description: error_description,
-                        }
-                    })
-            }
-        })
-    };
+    let peers = list_peer_descriptors(Some(refetch_viper_tests));
 
     let breadcrumbs = vec![
         Breadcrumb::new("Dashboard", "/"),

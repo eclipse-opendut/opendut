@@ -10,6 +10,8 @@ use opendut_lea_components::tabs::{Tab, Tabs};
 use opendut_model::cluster::ClusterDescriptor;
 use opendut_model::peer::PeerDescriptor;
 use opendut_model::viper::{ViperParameterName, ViperSourceDescriptor, ViperTestId, ViperTestRunDescriptor};
+use crate::api::clusters::list_cluster_descriptors;
+use crate::api::peers::{list_peer_descriptors, list_peer_states};
 use crate::app::use_app_globals;
 use crate::components::use_active_tab;
 use crate::routing::{navigate_to, WellKnownRoutes};
@@ -199,62 +201,8 @@ pub fn ViperTestConfigurator() -> impl IntoView {
         })
     };
 
-    let peers: LocalResource<Result<Vec<PeerDescriptor>, ErrorText>> = {
-        let carl = globals.client.clone();
-        LocalResource::new(move || {
-            let mut carl = carl.clone();
-
-            async move {
-                let mut peers = carl.peers.list_peer_descriptors().await
-                    .map_err(|error| {
-                        error!("Failed to request the list of peers: {error}");
-
-                        let error_description = client_error_description(
-                            &error,
-                            "The peer descriptors could not be loaded. Please check your connection and try again.",
-                        );
-
-                        ErrorText {
-                            headline: String::from("Unable to load peer descriptors"),
-                            description: error_description,
-                        }
-                    })?;
-
-                peers
-                    .sort_by(|peer_a, peer_b| {
-                        peer_a.name.value().to_lowercase()
-                            .cmp(&peer_b.name.value().to_lowercase())
-                    });
-
-                Ok(peers)
-            }
-        })
-    };
-
-    let clusters: LocalResource<Result<Vec<ClusterDescriptor>, ErrorText>> = {
-        let carl = globals.client.clone();
-        LocalResource::new( move || {
-            let mut carl = carl.clone();
-
-            async move {
-                let clusters = carl.cluster.list_cluster_descriptors().await
-                    .map_err(|error| {
-                        error!("Failed to request the list of clusters: {error}");
-
-                        let error_description = client_error_description(
-                            &error,
-                            "The cluster descriptors could not be loaded. Please check your connection and try again.",
-                        );
-
-                        ErrorText {
-                            headline: String::from("Unable to load cluster descriptors"),
-                            description: error_description,
-                        }
-                    })?;
-                Ok(clusters)
-            }
-        })
-    };
+    let peers = list_peer_descriptors(None);
+    let clusters = list_cluster_descriptors();
 
     let viper_test_id_string = create_read_slice(user_test_run_descriptor, |config| config.id.to_string());
 

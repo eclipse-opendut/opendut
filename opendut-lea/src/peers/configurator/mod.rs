@@ -1,5 +1,6 @@
 use crate::util::client_error_description;
 use crate::app::use_app_globals;
+use crate::api::clusters::list_cluster_descriptors;
 use crate::components::use_active_tab;
 use crate::components::{BasePageContainer, Breadcrumb, UserInputError, UserInputValue};
 use crate::peers::configurator::components::Controls;
@@ -62,6 +63,8 @@ pub fn PeerConfigurator() -> impl IntoView {
         is_new: true,
     });
 
+    let cluster_descriptors = list_cluster_descriptors();
+
     let peer_descriptor_resource = LocalResource::new(move || {
         let mut carl = globals.client.clone();
         async move {
@@ -85,18 +88,7 @@ pub fn PeerConfigurator() -> impl IntoView {
                 }
             };
 
-            let clusters = carl.cluster.list_cluster_descriptors().await
-                .map_err(|error| {
-                    error!("Failed to request the list of clusters for peer <{peer_id}>: {error}");
-
-                    ErrorText {
-                        headline: String::from("Unable to load cluster descriptors"),
-                        description: client_error_description(
-                            &error,
-                            "The cluster descriptors could not be loaded. Please check your connection and try again.",
-                        ),
-                    }
-                })?;
+            let clusters = cluster_descriptors.await?;
 
             user_peer_descriptor.update(|user_configuration| {
                 user_configuration.name = UserInputValue::Right(descriptor.name.value().to_owned());
@@ -259,7 +251,10 @@ pub fn PeerConfigurator() -> impl IntoView {
                     Err(error) => view! {
                         <ErrorMessage
                             text=error
-                            on_retry=move || peer_descriptor_resource.refetch()
+                            on_retry=move || {
+                                cluster_descriptors.refetch();
+                                peer_descriptor_resource.refetch();
+                            }
                         />
                     }.into_any(),
                 }

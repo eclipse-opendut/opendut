@@ -1,111 +1,23 @@
-use crate::util::client_error_description;
 mod row;
 
-use std::collections::HashMap;
-use crate::app::use_app_globals;
 use crate::components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton};
 use crate::peers::components::CreatePeerButton;
 use leptos::prelude::*;
-use tracing::error;
 use opendut_lea_components::{InfoMessage, ErrorMessage, ErrorMessageTableRow, ErrorMessageType, ErrorText, OverviewTable, TableHeading};
 use opendut_model::cluster::ClusterDescriptor;
-use opendut_model::peer::state::PeerState;
-use opendut_model::peer::{PeerDescriptor, PeerId};
+use opendut_model::peer::PeerDescriptor;
+use crate::api::clusters::list_cluster_descriptors;
+use crate::api::peers::{list_peer_descriptors, list_peer_states};
 use crate::peers::overview::row::Row;
 
 #[component(transparent)]
 pub fn PeersOverview() -> impl IntoView {
 
-    let globals = use_app_globals();
-    let carl = globals.client;
-
     let refetch_registered_peers = RwSignal::new(());
 
-    let peer_states: LocalResource<Result<HashMap<PeerId, PeerState>, ErrorText>> = {
-        let carl = carl.clone();
-
-        LocalResource::new(move || {
-            refetch_registered_peers.track();
-
-            let mut carl = carl.clone();
-            async move {
-                carl.peers.list_peer_states().await
-                    .map_err(|error| {
-                        error!("Failed to request the list of peer states: {error}");
-
-                        let error_description = client_error_description(
-                            &error,
-                            "The peer states could not be loaded. Please check your connection and try again.",
-                        );
-
-                        ErrorText {
-                            headline: String::from("Unable to load peer states"),
-                            description: error_description,
-                        }
-                    })
-            }
-        })
-    };
-
-    let peers: LocalResource<Result<Vec<PeerDescriptor>, ErrorText>> = {
-        let carl = carl.clone();
-
-        LocalResource::new(move || {
-            refetch_registered_peers.track();
-            
-            let mut carl = carl.clone();
-            async move {
-                let mut peers = carl.peers.list_peer_descriptors().await
-                    .map_err(|error| {
-                        error!("Failed to request the list of peers: {error}");
-
-                        let error_description = client_error_description(
-                            &error,
-                            "The peer descriptors could not be loaded. Please check your connection and try again.",
-                        );
-
-                        ErrorText {
-                            headline: String::from("Unable to load peer descriptors"),
-                            description: error_description,
-                        }
-                    })?;
-                
-                peers.sort_by(|peer_a, peer_b| {
-                    peer_a.name.value().to_lowercase()
-                        .cmp(&peer_b.name.value().to_lowercase())
-                        .then(peer_a.id.to_string().cmp(&peer_b.id.to_string()))
-                });
-
-                Ok(peers)
-            }
-        })
-    };
-
-    let configured_clusters: LocalResource<Result<Vec<ClusterDescriptor>, ErrorText>> = {
-        let carl = carl.clone();
-
-        LocalResource::new(move || {
-            let mut carl = carl.clone();
-            async move {
-                let clusters = carl.cluster.list_cluster_descriptors().await
-                    .map_err(|error| {
-                        error!("Failed to request the list of clusters: {error}");
-
-                        let error_description = client_error_description(
-                            &error,
-                            "The cluster descriptors could not be loaded. Please check your connection and try again.",
-                        );
-
-                        ErrorText {
-                            headline: String::from("Unable to load cluster descriptors"),
-                            description: error_description,
-                        }
-                    })?;
-
-                Ok(clusters)
-            }
-        })
-    };
+    let peer_states = list_peer_states(Some(refetch_registered_peers));
+    let peers = list_peer_descriptors(Some(refetch_registered_peers));
+    let configured_clusters = list_cluster_descriptors();
     
     let breadcrumbs = vec![
         Breadcrumb::new("Dashboard", "/"),

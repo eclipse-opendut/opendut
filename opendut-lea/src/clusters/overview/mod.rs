@@ -5,7 +5,7 @@ use leptos::prelude::*;
 use tracing::error;
 use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, ErrorMessage, InfoMessage, ErrorMessageTableRow, ErrorMessageType, ErrorText, FontAwesomeIcon, IconButton, OverviewTable, TableHeading};
 use opendut_model::cluster::{ClusterDeployment, ClusterDescriptor};
-
+use crate::api::clusters::list_cluster_descriptors;
 use crate::app::use_app_globals;
 use crate::clusters::components::CreateClusterButton;
 use crate::clusters::IsDeployed;
@@ -20,35 +20,7 @@ pub fn ClustersOverview() -> impl IntoView {
 
     let refetch_cluster_descriptors = RwSignal::new(());
 
-    let clusters = {
-        let carl = carl.clone();
-
-        LocalResource::new(move || {
-            refetch_cluster_descriptors.track();
-
-            let mut carl = carl.clone();
-            async move {
-                let mut clusters = carl.cluster.list_cluster_descriptors().await
-                    .map_err(|error| {
-                        error!("Failed to request the list of clusters: {error}");
-
-                        let error_description = client_error_description(
-                            &error,
-                            "The cluster descriptors could not be loaded. Please check your connection and try again.",
-                        );
-
-                        ErrorText {
-                            headline: String::from("Unable to load cluster descriptors"),
-                            description: error_description,
-                        }
-                    })?;
-
-                clusters.sort_by_key(|cluster| cluster.name.value().to_lowercase());
-
-                Ok::<_, ErrorText>(clusters)
-            }
-        })
-    };
+    let clusters = list_cluster_descriptors();
 
     let refetch_cluster_deployments = RwSignal::new(());
 

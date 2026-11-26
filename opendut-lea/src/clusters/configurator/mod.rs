@@ -14,6 +14,7 @@ use crate::clusters::configurator::components::{DeviceSelection, DeviceSelector,
 use crate::clusters::configurator::components::Controls;
 use crate::clusters::configurator::tabs::{DevicesTab, GeneralTab, LeaderTab, TabIdentifier};
 use types::UserClusterDescriptor;
+use crate::api::peers::list_peer_descriptors;
 use crate::clusters::IsDeployed;
 use crate::components::{use_active_tab, BasePageContainer, Breadcrumb, LoadingSpinner};
 use crate::routing::{navigate_to, WellKnownRoutes};
@@ -102,29 +103,7 @@ pub fn ClusterConfigurator() -> impl IntoView {
 
     let cluster_state = RwSignal::new(ClusterState::default());
 
-    let peers_resource = {
-        let carl = globals.client.clone();
-
-        LocalResource::new(move || {
-            let mut carl = carl.clone();
-            async move {
-                carl.peers.list_peer_descriptors().await
-                    .map_err(|error| {
-                        error!("Failed to request the list of peers: {error}");
-
-                        let error_description = client_error_description(
-                            &error,
-                            "The peer descriptors could not be loaded. Please check your connection and try again.",
-                        );
-
-                        ErrorText {
-                            headline: String::from("Unable to load peer descriptors"),
-                            description: error_description,
-                        }
-                    })
-            }
-        })
-    };
+    let peers_resource = list_peer_descriptors(None);
 
     let breadcrumbs = Signal::derive(move || {
         let cluster_id = cluster_id.uuid.to_string();

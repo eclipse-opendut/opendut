@@ -1,3 +1,6 @@
+pub mod peers;
+pub mod clusters;
+
 pub use licenses::get_licenses;
 pub use licenses::ComponentLicenses;
 
