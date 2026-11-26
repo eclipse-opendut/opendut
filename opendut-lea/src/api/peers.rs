@@ -1,5 +1,5 @@
 use opendut_carl_api::carl::ClientError;
-use opendut_carl_api::carl::peer::GetPeerDescriptorError;
+use opendut_carl_api::carl::peer::{GetPeerDescriptorError, GetPeerStateError};
 use std::collections::HashMap;
 use leptos::prelude::{Get, LocalResource, Signal, Track};
 use opendut_lea_components::ErrorText;
@@ -97,13 +97,15 @@ pub fn get_peer_state(
 
         let mut carl = carl.clone();
         async move {
-            carl.peers.get_peer_state(id).await.map_err(|error| {
-                client_error_text(
+            match carl.peers.get_peer_state(id).await {
+                Ok(state) => Ok(state),
+                Err(ClientError::UsageError(GetPeerStateError::PeerNotFound { .. })) => Ok(PeerState::default()),
+                Err(error) => Err(client_error_text(
                     &error,
                     "Unable to load peer state",
                     "The peer state could not be loaded. Please check your connection and try again.",
-                )
-            })
+                )),
+            }
         }
     })
 }
