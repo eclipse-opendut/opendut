@@ -3,7 +3,7 @@ use opendut_model::peer::{PeerId, state::PeerState};
 use opendut_carl_api::carl::ClientError;
 use opendut_carl_api::carl::cluster::{GetClusterDescriptorError};
 use opendut_model::cluster::ClusterId;
-use leptos::prelude::{Get, LocalResource, RwSignal, Signal, Track};
+use leptos::prelude::{Get, LocalResource, Signal, Track};
 use tracing::error;
 use opendut_lea_components::ErrorText;
 use opendut_model::cluster::{ClusterDeployment, ClusterDescriptor};
@@ -11,7 +11,7 @@ use crate::app::use_app_globals;
 use crate::util::client_error_description;
 
 pub fn list_cluster_descriptors(
-    refetch_signal: Option<RwSignal<()>>,
+    refetch_signal: Option<Signal<()>>,
 ) -> LocalResource<Result<Vec<ClusterDescriptor>, ErrorText>> {
     let globals = use_app_globals();
     let carl = globals.client;
@@ -43,7 +43,7 @@ pub fn list_cluster_descriptors(
     })
 }
 pub fn list_cluster_deployments(
-    refetch_signal: Option<RwSignal<()>>,
+    refetch_signal: Option<Signal<()>>,
 ) -> LocalResource<Result<Vec<ClusterDeployment>, ErrorText>> {
     let globals = use_app_globals();
     let carl = globals.client;
@@ -74,7 +74,7 @@ pub fn list_cluster_deployments(
 
 pub fn get_cluster_descriptor(
     id: impl Into<Signal<ClusterId>>,
-    refetch_signal: Option<RwSignal<()>>,
+    refetch_signal: Option<Signal<()>>,
 ) -> LocalResource<Result<Option<ClusterDescriptor>, ErrorText>> {
     let id = id.into();
     let carl = use_app_globals().client;

@@ -94,7 +94,7 @@ pub fn ClusterConfigurator() -> impl IntoView {
 
     let refetch_cluster_deployments = RwSignal::new(());
 
-    let cluster_deployments = list_cluster_deployments(Some(refetch_cluster_deployments));
+    let cluster_deployments = list_cluster_deployments(Some(refetch_cluster_deployments.into()));
 
     let deployed_signal = Signal::derive(move || {
         let cluster_id = cluster_id;

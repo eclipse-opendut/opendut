@@ -15,11 +15,11 @@ pub fn ClustersOverview() -> impl IntoView {
 
     let refetch_cluster_descriptors = RwSignal::new(());
 
-    let clusters = list_cluster_descriptors(Some(refetch_cluster_descriptors));
+    let clusters = list_cluster_descriptors(Some(refetch_cluster_descriptors.into()));
 
     let refetch_cluster_deployments = RwSignal::new(());
 
-    let cluster_deployments = list_cluster_deployments(Some(refetch_cluster_deployments));
+    let cluster_deployments = list_cluster_deployments(Some(refetch_cluster_deployments.into()));
 
     let breadcrumbs = vec![
         Breadcrumb::new("Dashboard", "/"),

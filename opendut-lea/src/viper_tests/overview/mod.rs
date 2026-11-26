@@ -14,11 +14,11 @@ pub fn ViperTestsOverview() -> impl IntoView {
 
     let refetch_viper_tests = RwSignal::new(());
 
-    let viper_tests = list_viper_test_descriptors(Some(refetch_viper_tests));
+    let viper_tests = list_viper_test_descriptors(Some(refetch_viper_tests.into()));
 
-    let viper_sources = list_viper_source_descriptors(Some(refetch_viper_tests));
+    let viper_sources = list_viper_source_descriptors(Some(refetch_viper_tests.into()));
 
-    let peers = list_peer_descriptors(Some(refetch_viper_tests));
+    let peers = list_peer_descriptors(Some(refetch_viper_tests.into()));
 
     let breadcrumbs = vec![
         Breadcrumb::new("Dashboard", "/"),

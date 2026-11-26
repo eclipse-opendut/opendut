@@ -1,7 +1,7 @@
 use opendut_carl_api::carl::ClientError;
 use opendut_carl_api::carl::viper::{CompilationErrorKind, GetViperSourceDescriptorError, GetViperTestRunDescriptorError, GetViperTestSuiteParametersError};
 use opendut_model::viper::{ViperSourceId, ViperTestId, ViperTestSuiteParameters};
-use leptos::prelude::{Get, LocalResource, RwSignal, Signal, Track};
+use leptos::prelude::{Get, LocalResource, Signal, Track};
 use opendut_lea_components::ErrorText;
 use opendut_model::viper::{ViperSourceDescriptor, ViperTestRunDescriptor};
 use tracing::error;
@@ -10,7 +10,7 @@ use crate::app::use_app_globals;
 use crate::util::client_error_description;
 
 pub fn list_viper_source_descriptors(
-    refetch_signal: Option<RwSignal<()>>,
+    refetch_signal: Option<Signal<()>>,
 ) -> LocalResource<Result<Vec<ViperSourceDescriptor>, ErrorText>> {
     let globals = use_app_globals();
     let carl = globals.client;
@@ -45,7 +45,7 @@ pub fn list_viper_source_descriptors(
 }
 
 pub fn list_viper_test_descriptors(
-    refetch_signal: Option<RwSignal<()>>,
+    refetch_signal: Option<Signal<()>>,
 ) -> LocalResource<Result<Vec<ViperTestRunDescriptor>, ErrorText>> {
     let globals = use_app_globals();
     let carl = globals.client;
@@ -81,7 +81,7 @@ pub fn list_viper_test_descriptors(
 
 pub fn get_viper_source_descriptor(
     id: impl Into<Signal<ViperSourceId>>,
-    refetch_signal: Option<RwSignal<()>>,
+    refetch_signal: Option<Signal<()>>,
 ) -> LocalResource<Result<Option<ViperSourceDescriptor>, ErrorText>> {
     let id = id.into();
     let carl = use_app_globals().client;
@@ -112,7 +112,7 @@ pub fn get_viper_source_descriptor(
 
 pub fn get_viper_test_run_descriptor(
     id: impl Into<Signal<ViperTestId>>,
-    refetch_signal: Option<RwSignal<()>>,
+    refetch_signal: Option<Signal<()>>,
 ) -> LocalResource<Result<Option<ViperTestRunDescriptor>, ErrorText>> {
     let id = id.into();
     let carl = use_app_globals().client;
@@ -143,7 +143,7 @@ pub fn get_viper_test_run_descriptor(
 
 pub fn get_viper_test_suite_parameters(
     id: impl Into<Signal<Option<ViperSourceId>>>,
-    refetch_signal: Option<RwSignal<()>>,
+    refetch_signal: Option<Signal<()>>,
 ) -> LocalResource<Result<Option<ViperTestSuiteParameters>, ErrorText>> {
     let id = id.into();
     let carl = use_app_globals().client;

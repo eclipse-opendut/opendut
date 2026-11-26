@@ -12,7 +12,7 @@ pub fn ViperSourcesOverview() -> impl IntoView {
 
     let refetch_viper_sources = RwSignal::new(());
 
-    let viper_sources = list_viper_source_descriptors(Some(refetch_viper_sources));
+    let viper_sources = list_viper_source_descriptors(Some(refetch_viper_sources.into()));
 
     let breadcrumbs = vec![
         Breadcrumb::new("Dashboard", "/"),

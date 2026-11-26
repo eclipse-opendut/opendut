@@ -15,8 +15,8 @@ pub fn PeersOverview() -> impl IntoView {
 
     let refetch_registered_peers = RwSignal::new(());
 
-    let peer_states = list_peer_states(Some(refetch_registered_peers));
-    let peers = list_peer_descriptors(Some(refetch_registered_peers));
+    let peer_states = list_peer_states(Some(refetch_registered_peers.into()));
+    let peers = list_peer_descriptors(Some(refetch_registered_peers.into()));
     let configured_clusters = list_cluster_descriptors(None);
     
     let breadcrumbs = vec![

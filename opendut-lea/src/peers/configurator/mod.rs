@@ -234,7 +234,6 @@ pub fn PeerConfigurator() -> impl IntoView {
                             on_retry=move || {
                                 cluster_descriptors.refetch();
                                 peer_descriptor.refetch();
-                                peer_descriptor_resource.refetch();
                             }
                         />
                     }.into_any(),

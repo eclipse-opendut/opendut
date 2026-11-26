@@ -1,7 +1,7 @@
 use opendut_carl_api::carl::ClientError;
 use opendut_carl_api::carl::peer::GetPeerDescriptorError;
 use std::collections::HashMap;
-use leptos::prelude::{Get, LocalResource, RwSignal, Signal, Track};
+use leptos::prelude::{Get, LocalResource, Signal, Track};
 use tracing::error;
 use opendut_lea_components::ErrorText;
 use opendut_model::peer::{PeerDescriptor, PeerId};
@@ -10,7 +10,7 @@ use crate::app::use_app_globals;
 use crate::util::client_error_description;
 
 pub fn list_peer_descriptors(
-    refetch_signal: Option<RwSignal<()>>,
+    refetch_signal: Option<Signal<()>>,
 ) -> LocalResource<Result<Vec<PeerDescriptor>, ErrorText>> {
     let globals = use_app_globals();
     let carl = globals.client;
@@ -46,7 +46,7 @@ pub fn list_peer_descriptors(
     })
 }
 
-pub fn list_peer_states(refetch_signal: Option<RwSignal<()>>) -> LocalResource<Result<HashMap<PeerId, PeerState>, ErrorText>> {
+pub fn list_peer_states(refetch_signal: Option<Signal<()>>) -> LocalResource<Result<HashMap<PeerId, PeerState>, ErrorText>> {
     LocalResource::new(move || {
         refetch_signal.track();
 
@@ -73,7 +73,7 @@ pub fn list_peer_states(refetch_signal: Option<RwSignal<()>>) -> LocalResource<R
 }
 pub fn get_peer_descriptor(
     id: impl Into<Signal<PeerId>>,
-    refetch_signal: Option<RwSignal<()>>,
+    refetch_signal: Option<Signal<()>>,
 ) -> LocalResource<Result<Option<PeerDescriptor>, ErrorText>> {
     let id = id.into();
     let carl = use_app_globals().client;
@@ -104,7 +104,7 @@ pub fn get_peer_descriptor(
 
 pub fn get_peer_state(
     id: impl Into<Signal<PeerId>>,
-    refetch_signal: Option<RwSignal<()>>,
+    refetch_signal: Option<Signal<()>>,
 ) -> LocalResource<Result<PeerState, ErrorText>> {
     let id = id.into();
     let carl = use_app_globals().client;
