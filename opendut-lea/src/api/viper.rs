@@ -117,9 +117,9 @@ pub fn get_viper_test_run_descriptor(
 }
 
 pub fn get_viper_test_suite_parameters(
-    id: impl Into<Signal<ViperSourceId>>,
+    id: impl Into<Signal<Option<ViperSourceId>>>,
     refetch_signal: Option<RwSignal<()>>,
-) -> LocalResource<Result<ViperTestSuiteParameters, Arc<ClientError<GetViperTestSuiteParametersError>>>> {
+) -> LocalResource<Result<Option<ViperTestSuiteParameters>, Arc<ClientError<GetViperTestSuiteParametersError>>>> {
     let id = id.into();
     let carl = use_app_globals().client;
 
@@ -129,7 +129,11 @@ pub fn get_viper_test_suite_parameters(
 
         let mut carl = carl.clone();
         async move {
-            carl.viper.get_viper_test_suite_parameters(id).await.map_err(Arc::new)
+            let Some(id) = id else {
+                return Ok(None);
+            };
+
+            carl.viper.get_viper_test_suite_parameters(id).await.map(Some).map_err(Arc::new)
         }
     })
 }

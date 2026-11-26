@@ -1,4 +1,4 @@
-use crate::api::viper::list_viper_source_descriptors;
+use crate::api::viper::{get_viper_test_run_descriptor, get_viper_test_suite_parameters, list_viper_source_descriptors};
 use crate::util::client_error_description;
 use std::collections::HashMap;
 use leptos::prelude::*;
@@ -8,12 +8,9 @@ use opendut_carl_api::carl::ClientError;
 use opendut_carl_api::carl::viper::{CompilationErrorKind, GetViperTestRunDescriptorError, GetViperTestSuiteParametersError};
 use opendut_lea_components::{BasePageContainer, Breadcrumb, ErrorMessage, ErrorText, LoadingSpinner, UserInputError, UserInputValue};
 use opendut_lea_components::tabs::{Tab, Tabs};
-use opendut_model::cluster::ClusterDescriptor;
-use opendut_model::peer::PeerDescriptor;
 use opendut_model::viper::{ViperParameterName, ViperTestId, ViperTestRunDescriptor};
 use crate::api::clusters::list_cluster_descriptors;
-use crate::api::peers::{list_peer_descriptors, list_peer_states};
-use crate::app::use_app_globals;
+use crate::api::peers::list_peer_descriptors;
 use crate::components::use_active_tab;
 use crate::routing::{navigate_to, WellKnownRoutes};
 use crate::viper_tests::configurator::components::Controls;
@@ -27,7 +24,6 @@ mod components;
 #[component(transparent)]
 pub fn ViperTestConfigurator() -> impl IntoView {
 
-    let globals = use_app_globals();
     let params = use_params_map();
     let active_tab = use_active_tab::<TabIdentifier>();
 
@@ -61,21 +57,21 @@ pub fn ViperTestConfigurator() -> impl IntoView {
         }
     );
 
+    let viper_test_run_descriptor = get_viper_test_run_descriptor(Signal::from(viper_test_id), None);
+
     let viper_test_run_descriptor_resource = {
-        let carl = globals.client.clone();
         LocalResource::new(move || {
-            let mut carl = carl.clone();
             async move {
-                let descriptor = match carl.viper.get_viper_test_run_descriptor(viper_test_id).await {
+                let descriptor = match viper_test_run_descriptor.await {
                     Ok(descriptor) => descriptor,
-                    Err(ClientError::UsageError(GetViperTestRunDescriptorError::TestNotFound { .. })) => {
+                    Err(error) if matches!(error.as_ref(), ClientError::UsageError(GetViperTestRunDescriptorError::TestNotFound { .. })) => {
                         return Ok(());
                     }
                     Err(error) => {
                         error!("Failed to request the VIPER test run descriptor <{viper_test_id}>: {error}");
 
                         let error_description = client_error_description(
-                            &error,
+                            error.as_ref(),
                             "The VIPER test run descriptor could not be loaded. Please check your connection and try again.",
                         );
 
@@ -117,62 +113,55 @@ pub fn ViperTestConfigurator() -> impl IntoView {
 
     let viper_sources_resource = list_viper_source_descriptors(None);
 
+    let test_suite_parameters = get_viper_test_suite_parameters(
+        Signal::derive(move || match viper_source.get() {
+            SourceSelection::Left(_) => None,
+            SourceSelection::Right(source_id) | SourceSelection::Both(_, source_id) => Some(source_id),
+        }),
+        None,
+    );
+
     let parameters = {
-        let carl = globals.client.clone();
-
         LocalResource::new(move || {
-            let mut carl = carl.clone();
-            let viper_source = viper_source.get();
-
-            let source_id = match viper_source {
-                SourceSelection::Left(_) => None,
-                SourceSelection::Right(source_id) | SourceSelection::Both(_, source_id) => Some(source_id),
-            };
-
             async move {
-                if let Some(source_id) = source_id {
-                    let result = carl.viper.get_viper_test_suite_parameters(source_id).await;
+                match test_suite_parameters.await {
+                    Ok(Some(test_suite_parameters)) => {
+                        user_test_run_descriptor.update(|user_configuration| {
+                            let mut new_parameters = HashMap::new();
 
-                    match result {
-                        Ok(test_suite_parameters) => {
-                            user_test_run_descriptor.update(|user_configuration| {
-                                let mut new_parameters = HashMap::new();
+                            for parameter in test_suite_parameters.parameters.iter() {
+                                let parameter_name = parameter.name().clone();
 
-                                for parameter in test_suite_parameters.parameters.iter() {
-                                    let parameter_name = parameter.name().clone();
+                                let value = user_configuration
+                                    .parameters
+                                    .get(&parameter_name)
+                                    .cloned()
+                                    .unwrap_or_else(|| {
+                                        if parameter.has_default_value() {
+                                            ViperBindingValueInput::Right(None)
+                                        } else {
+                                            ViperBindingValueInput::Left(String::from("Please enter a value."))
+                                        }
+                                    });
 
-                                    let value = user_configuration
-                                        .parameters
-                                        .get(&parameter_name)
-                                        .cloned()
-                                        .unwrap_or_else(|| {
-                                            if parameter.has_default_value() {
-                                                ViperBindingValueInput::Right(None)
-                                            } else {
-                                                ViperBindingValueInput::Left(String::from("Please enter a value."))
-                                            }
-                                        });
+                                new_parameters.insert(parameter_name, value);
+                            }
+                            user_configuration.parameters = new_parameters;
+                        });
 
-                                    new_parameters.insert(parameter_name, value);
-                                }
-                                user_configuration.parameters = new_parameters;
-                            });
-
-                            Ok(test_suite_parameters.parameters)
-                        }
-                        Err(client_error) => {
-                            match client_error {
-                                ClientError::UsageError(error) => {
-                                    Err(SourceFetchError::GetParameterError(error))
-                                }
-                                _ => {
-                                    Err(SourceFetchError::RequestFailed(String::from("The VIPER test suite parameters could not be loaded. Please check your connection and try again."),))
-                                }
+                        Ok(test_suite_parameters.parameters)
+                    }
+                    Err(client_error) => {
+                        match client_error.as_ref() {
+                            ClientError::UsageError(error) => {
+                                Err(SourceFetchError::GetParameterError(error.clone()))
+                            }
+                            _ => {
+                                Err(SourceFetchError::RequestFailed(String::from("The VIPER test suite parameters could not be loaded. Please check your connection and try again."),))
                             }
                         }
                     }
-                } else {
-                    Err(SourceFetchError::NoSourceSelected)
+                    Ok(None) => Err(SourceFetchError::NoSourceSelected),
                 }
             }
         })
@@ -260,7 +249,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                                             <ParametersTab
                                                 user_test_run_descriptor
                                                 parameter_result=parameter_result.clone()
-                                                on_retry=move || parameters.refetch()
+                                                on_retry=move || test_suite_parameters.refetch()
                                             />
                                         }.into_any(),
                                         TabIdentifier::Peer => view! {
@@ -279,7 +268,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                         Err(error) => view! {
                             <ErrorMessage
                                 text=error
-                                on_retry=move || viper_test_run_descriptor_resource.refetch()
+                                on_retry=move || viper_test_run_descriptor.refetch()
                             />
                         }.into_any(),
                     }

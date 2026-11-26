@@ -11,7 +11,7 @@ use opendut_carl_api::carl::viper::GetViperSourceDescriptorError;
 use opendut_lea_components::{BasePageContainer, Breadcrumb, ErrorMessage, ErrorText, LoadingSpinner, UserInputError, UserInputValue};
 use opendut_lea_components::tabs::{Tab, Tabs};
 use opendut_model::viper::ViperSourceId;
-use crate::app::use_app_globals;
+use crate::api::viper::get_viper_source_descriptor;
 use crate::components::use_active_tab;
 use crate::routing::{navigate_to, WellKnownRoutes};
 use crate::viper_sources::configurator::components::Controls;
@@ -20,7 +20,6 @@ use crate::viper_sources::configurator::types::UserViperSourceConfiguration;
 
 #[component(transparent)]
 pub fn ViperSourceConfigurator() -> impl IntoView {
-    let globals = use_app_globals();
     let params = use_params_map();
     let active_tab = use_active_tab::<TabIdentifier>();
     
@@ -53,19 +52,20 @@ pub fn ViperSourceConfigurator() -> impl IntoView {
         }
     );
 
+    let viper_source_descriptor = get_viper_source_descriptor(Signal::from(viper_source_id), None);
+
     let viper_source_descriptor_resource = LocalResource::new(move || {
-        let mut carl = globals.client.clone();
         async move {
-            let descriptor = match carl.viper.get_viper_source_descriptor(viper_source_id).await {
+            let descriptor = match viper_source_descriptor.await {
                 Ok(descriptor) => descriptor,
-                Err(ClientError::UsageError(GetViperSourceDescriptorError::SourceNotFound { .. })) => {
+                Err(error) if matches!(error.as_ref(), ClientError::UsageError(GetViperSourceDescriptorError::SourceNotFound { .. })) => {
                     return Ok(());
                 }
                 Err(error) => {
                     error!("Failed to request the VIPER source descriptor <{viper_source_id}>: {error}");
 
                     let error_description = client_error_description(
-                        &error,
+                        error.as_ref(),
                         "The VIPER source descriptor could not be loaded. Please check your connection and try again.",
                     );
 
@@ -142,7 +142,7 @@ pub fn ViperSourceConfigurator() -> impl IntoView {
                         Err(error) => view! {
                             <ErrorMessage
                                 text=error
-                                on_retry=move || viper_source_descriptor_resource.refetch()
+                                on_retry=move || viper_source_descriptor.refetch()
                             />
                         }.into_any(),
                     }
