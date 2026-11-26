@@ -132,7 +132,7 @@ fn TooltipContent(
                 <ul>
                     {tests.into_iter().map(|(id, name)| view! {
                         <li title=id.to_string()>
-                            <a href=format!("/viper_tests/{id}/configure/viper_sources")>
+                            <a href=format!("/viper_tests/{id}/configure/viper_source")>
                                 { String::from(name) }
                             </a>
                         </li>
