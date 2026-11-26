@@ -1,12 +1,10 @@
 pub mod components;
 
 use leptos::prelude::*;
-use crate::util::client_error_description;
-use opendut_lea_components::{ErrorMessage, ErrorMessageType, ErrorText};
+use opendut_lea_components::{ErrorMessage, ErrorMessageType};
 use opendut_model::peer::state::PeerConnectionState;
-use crate::app::use_app_globals;
 use crate::api::peers::list_peer_states;
-use crate::api::clusters::list_cluster_descriptors;
+use crate::api::clusters::{list_cluster_descriptors, list_cluster_deployments};
 use crate::clusters::ClustersCard;
 use crate::peers::PeersCard;
 
@@ -27,9 +25,6 @@ pub fn Dashboard() -> impl IntoView {
 
     leptos::leptos_dom::helpers::document().set_title("openDuT");
 
-    let globals = use_app_globals();
-    let cluster_client = globals.client.clone();
-
     let peer_states = list_peer_states(None);
     let peers = Signal::derive(move || {
         peer_states.get().map(|result| result.map(|peer_states| {
@@ -47,32 +42,14 @@ pub fn Dashboard() -> impl IntoView {
     });
 
     let cluster_descriptors = list_cluster_descriptors();
-    let cluster_deployments = LocalResource::new(move || {
-        let mut carl = cluster_client.clone();
-        async move {
-            let deployed = carl.cluster.list_cluster_deployments().await
-                .map_err(|error| {
-                    let description = client_error_description(
-                        &error,
-                        "The cluster deployments could not be loaded. Please check your connection and try again.",
-                    );
-                    ErrorText {
-                        headline: String::from("Unable to load cluster deployments"),
-                        description
-                    }
-                })?
-                .len();
-
-            Ok(deployed)
-        }
-    });
+    let cluster_deployments = list_cluster_deployments(None);
 
     let clusters = Signal::derive(move || {
         match (cluster_descriptors.get(), cluster_deployments.get()) {
             (Some(Err(error)), _) | (_, Some(Err(error))) => Some(Err(error)),
-            (Some(Ok(descriptors)), Some(Ok(deployed))) => Some(Ok(Clusters {
-                deployed,
-                undeployed: descriptors.len().saturating_sub(deployed),
+            (Some(Ok(descriptors)), Some(Ok(deployments))) => Some(Ok(Clusters {
+                deployed: deployments.len(),
+                undeployed: descriptors.len().saturating_sub(deployments.len()),
             })),
             _ => None,
         }

@@ -1,3 +1,4 @@
+use crate::api::clusters::list_cluster_deployments;
 use crate::util::client_error_description;
 use leptos::prelude::*;
 use leptos_router::hooks::{use_navigate, use_params_map};
@@ -117,31 +118,7 @@ pub fn ClusterConfigurator() -> impl IntoView {
 
     let refetch_cluster_deployments = RwSignal::new(());
 
-    let cluster_deployments = {
-        let carl = globals.client.clone();
-
-        LocalResource::new(move || {
-            refetch_cluster_deployments.track();
-
-            let mut carl = carl.clone();
-            async move {
-                carl.cluster.list_cluster_deployments().await
-                    .map_err(|error| {
-                        error!("Failed to request the list of cluster deployments: {error}");
-
-                        let error_description = client_error_description(
-                            &error,
-                            "The cluster deployments could not be loaded. Please check your connection and try again.",
-                        );
-
-                        ErrorText {
-                            headline: String::from("Unable to load cluster deployments"),
-                            description: error_description,
-                        }
-                    })
-            }
-        })
-    };
+    let cluster_deployments = list_cluster_deployments(Some(refetch_cluster_deployments));
 
     let deployed_signal = Signal::derive(move || {
         let cluster_id = cluster_id;
