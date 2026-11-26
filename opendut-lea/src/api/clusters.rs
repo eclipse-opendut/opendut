@@ -22,7 +22,7 @@ pub fn list_cluster_descriptors(
 
         let mut carl = carl.clone();
         async move {
-            let clusters = carl.cluster.list_cluster_descriptors().await
+            let mut clusters = carl.cluster.list_cluster_descriptors().await
                 .map_err(|error| {
                     error!("Failed to request the list of clusters: {error}");
 
@@ -36,6 +36,8 @@ pub fn list_cluster_descriptors(
                         description: error_description,
                     }
                 })?;
+
+            clusters.sort_by_key(|cluster| cluster.name.value().to_lowercase());
 
             Ok(clusters)
         }
