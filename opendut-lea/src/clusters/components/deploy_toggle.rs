@@ -1,3 +1,4 @@
+use crate::api::clusters::list_cluster_peer_states;
 use std::sync::Arc;
 
 use leptos::prelude::*;
@@ -105,44 +106,15 @@ where
         }
     };
 
-    let blocked_cluster_deployment = {
-        let carl = globals.client.clone();
-        let cluster_id = cluster_id.get_untracked();
-
-        LocalResource::new(move || {
-            let mut carl = carl.clone();
-            let is_new_cluster = is_new_cluster.get();
-            let _ = is_deployed.get();
-            refetch_peer_states.get();
-
-            async move {
-                if is_new_cluster {
-                    return None;
-                }
-
-                let states = carl.cluster.list_cluster_peer_states(cluster_id).await;
-                match states {
-                    Ok(peer_states) => {
-                        let invalid_peers = peer_states.iter()
-                            .filter(|(_, peer_state)| {
-                                matches!(&peer_state.member, PeerMemberState::Blocked { .. })
-                            })
-                            .map(|(peer_id, _)| peer_id.to_owned())
-                            .collect::<Vec<_>>();
-
-                        if invalid_peers.is_empty() {
-                            None
-                        } else {
-                            Some(DeploymentBlocker::Peers(invalid_peers))
-                        }
-                    }
-                    Err(error) => {
-                        Some(DeploymentBlocker::Message(error.to_string()))
-                    }
-                }
-            }
-        })
-    };
+    let cluster_peer_states = list_cluster_peer_states(
+        Signal::derive(move || {
+            if is_new_cluster.get() { None } else { Some(cluster_id.get()) }
+        }),
+        Some(Signal::derive(move || {
+            is_deployed.track();
+            refetch_peer_states.track();
+        })),
+    );
 
     move || {
         let on_deploy = on_deploy.clone();
@@ -152,7 +124,21 @@ where
             match is_deployed.get() {
                 Some(is_deployed) => {
                     let is_deployed = is_deployed.0;
-                    let deployment_blocker = blocked_cluster_deployment.await;
+                    let deployment_blocker = match cluster_peer_states.await {
+                        Ok(Some(peer_states)) => {
+                            let invalid_peers = peer_states.iter()
+                                .filter(|(_, state)| matches!(&state.member, PeerMemberState::Blocked { .. }))
+                                .map(|(peer_id, _)| *peer_id)
+                                .collect::<Vec<_>>();
+                            if invalid_peers.is_empty() {
+                                None
+                            } else {
+                                Some(DeploymentBlocker::Peers(invalid_peers))
+                            }
+                        }
+                        Ok(None) => None,
+                        Err(error) => Some(DeploymentBlocker::Message(error.description)),
+                    };
 
                     let toggle_state = Signal::derive({
                         let deployment_blocker = deployment_blocker.clone();

@@ -1,4 +1,7 @@
-use leptos::prelude::{LocalResource, RwSignal, Track};
+use std::collections::HashMap;
+use opendut_model::peer::{PeerId, state::PeerState};
+use opendut_model::cluster::ClusterId;
+use leptos::prelude::{Get, LocalResource, RwSignal, Signal, Track};
 use tracing::error;
 use opendut_lea_components::ErrorText;
 use opendut_model::cluster::{ClusterDeployment, ClusterDescriptor};
@@ -57,6 +60,39 @@ pub fn list_cluster_deployments(
                 })?;
 
             Ok(deployed)
+        }
+    })
+}
+
+pub fn list_cluster_peer_states(
+    cluster_id: impl Into<Signal<Option<ClusterId>>>,
+    refetch_signal: Option<Signal<()>>,
+) -> LocalResource<Result<Option<HashMap<PeerId, PeerState>>, ErrorText>> {
+    let cluster_id = cluster_id.into();
+    let carl = use_app_globals().client;
+
+    LocalResource::new(move || {
+        let cluster_id = cluster_id.get();
+        refetch_signal.track();
+        let mut carl = carl.clone();
+
+        async move {
+            let Some(cluster_id) = cluster_id else {
+                return Ok(None);
+            };
+
+            carl.cluster.list_cluster_peer_states(cluster_id).await
+                .map(Some)
+                .map_err(|error| {
+                    error!("Failed to request peer states for cluster <{cluster_id}>: {error}");
+                    ErrorText {
+                        headline: String::from("Unable to load cluster peer states"),
+                        description: client_error_description(
+                            &error,
+                            "The cluster peer states could not be loaded. Please check your connection and try again.",
+                        ),
+                    }
+                })
         }
     })
 }
