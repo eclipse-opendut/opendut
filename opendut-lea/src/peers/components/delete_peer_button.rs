@@ -22,27 +22,25 @@ where F: Fn() + Clone + Send + 'static {
 
     #[cfg(feature = "viper")]
     let used_by_viper: LocalResource<Result<Vec<(opendut_model::viper::ViperTestId, opendut_model::viper::ViperTestName)>, String>> = {
-        let carl = globals.client.clone();
+        let viper_tests = crate::api::viper::list_viper_test_descriptors(None);
         let toaster = toaster.clone();
 
         LocalResource::new(move || {
             let peer_id = peer_id.get();
-            let mut carl = carl.clone();
             let toaster = toaster.clone();
             pending.set(true);
 
             async move {
-                let result = carl.viper.list_viper_test_run_descriptors().await
+                let result = viper_tests.await
                     .map(|tests| tests.into_iter()
                         .filter(|test| test.peer == peer_id)
                         .map(|test| (test.id, test.name))
                         .collect())
                     .map_err(|cause| {
-                        error!("Failed to load peer <{peer_id}>, due to error: {cause}");
                         toaster.toast(Toast::builder()
                             .simple("Failed to check peer usage.")
                             .error());
-                        cause.to_string()
+                        cause.description
                     });
                 pending.set(false);
                 result

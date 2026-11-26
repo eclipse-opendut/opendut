@@ -1,3 +1,4 @@
+use crate::api::viper::list_viper_source_descriptors;
 use crate::util::client_error_description;
 use std::collections::HashMap;
 use leptos::prelude::*;
@@ -9,7 +10,7 @@ use opendut_lea_components::{BasePageContainer, Breadcrumb, ErrorMessage, ErrorT
 use opendut_lea_components::tabs::{Tab, Tabs};
 use opendut_model::cluster::ClusterDescriptor;
 use opendut_model::peer::PeerDescriptor;
-use opendut_model::viper::{ViperParameterName, ViperSourceDescriptor, ViperTestId, ViperTestRunDescriptor};
+use opendut_model::viper::{ViperParameterName, ViperTestId, ViperTestRunDescriptor};
 use crate::api::clusters::list_cluster_descriptors;
 use crate::api::peers::{list_peer_descriptors, list_peer_states};
 use crate::app::use_app_globals;
@@ -114,31 +115,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
         |descriptor| Clone::clone(&descriptor.viper_source),
     );
 
-    let viper_sources_resource: LocalResource<Result<Vec<ViperSourceDescriptor>, ErrorText>> =  {
-        let carl = globals.client.clone();
-
-        LocalResource::new(move || {
-            let mut carl = carl.clone();
-            async move {
-                let sources = carl.viper.list_viper_source_descriptors().await
-                    .map_err(|error| {
-                        error!("Failed to request the list of peers: {error}");
-
-                        let error_description = client_error_description(
-                            &error,
-                            "The VIPER source descriptors could not be loaded. Please check your connection and try again.",
-                        );
-
-                        ErrorText {
-                            headline: String::from("Unable to load VIPER source descriptors"),
-                            description: error_description,
-                        }
-                    })?;
-
-                Ok(sources)
-            }
-        })
-    };
+    let viper_sources_resource = list_viper_source_descriptors(None);
 
     let parameters = {
         let carl = globals.client.clone();

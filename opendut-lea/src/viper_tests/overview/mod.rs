@@ -1,81 +1,22 @@
-use crate::util::client_error_description;
+use crate::api::viper::{list_viper_source_descriptors, list_viper_test_descriptors};
 mod row;
 
 use leptos::prelude::*;
-use tracing::error;
 use opendut_lea_components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, ErrorMessage, ErrorMessageType, ErrorMessageTableRow, ErrorText, FontAwesomeIcon, IconButton, InfoMessage, OverviewTable, TableHeading};
 use opendut_model::peer::PeerDescriptor;
 use opendut_model::viper::{ViperSourceDescriptor, ViperTestRunDescriptor};
 use crate::api::peers::list_peer_descriptors;
-use crate::app::use_app_globals;
 use crate::viper_tests::components::CreateViperTestButton;
 use crate::viper_tests::overview::row::Row;
 
 #[component(transparent)]
 pub fn ViperTestsOverview() -> impl IntoView {
 
-    let globals = use_app_globals();
     let refetch_viper_tests = RwSignal::new(());
 
-    let viper_tests: LocalResource<Result<Vec<ViperTestRunDescriptor>, ErrorText>> = {
-        let carl = globals.client.clone();
+    let viper_tests = list_viper_test_descriptors(Some(refetch_viper_tests));
 
-        LocalResource::new(move || {
-            refetch_viper_tests.track();
-
-            let mut carl = carl.clone();
-
-            async move {
-                let mut viper_tests = carl.viper.list_viper_test_run_descriptors().await
-                    .map_err(|error| {
-                        error!("Failed to request the list of VIPER test descriptors: {error}");
-
-                        let error_description = client_error_description(
-                            &error,
-                            "The VIPER test descriptors could not be loaded. Please check your connection and try again.",
-                        );
-
-                        ErrorText {
-                            headline: String::from("Unable to load VIPER test descriptors"),
-                            description: error_description,
-                        }
-                    })?;
-
-                viper_tests.sort_by(|viper_test_a, viper_test_b| {
-                    viper_test_a.name.value().to_lowercase()
-                        .cmp(&viper_test_b.name.value().to_lowercase())
-                });
-
-                Ok(viper_tests)
-            }
-        })
-    };
-
-    let viper_sources: LocalResource<Result<Vec<ViperSourceDescriptor>, ErrorText>> = {
-        let carl = globals.client.clone();
-
-        LocalResource::new(move || {
-            refetch_viper_tests.track();
-
-            let mut carl = carl.clone();
-            async move {
-                carl.viper.list_viper_source_descriptors().await
-                    .map_err(|error| {
-                        error!("Failed to request the list of VIPER sources: {error}");
-
-                        let error_description = client_error_description(
-                            &error,
-                            "The VIPER sources could not be loaded. Please check your connection and try again.",
-                        );
-
-                        ErrorText {
-                            headline: String::from("Unable to load VIPER sources"),
-                            description: error_description,
-                        }
-                    })
-            }
-        })
-    };
+    let viper_sources = list_viper_source_descriptors(Some(refetch_viper_tests));
 
     let peers = list_peer_descriptors(Some(refetch_viper_tests));
 

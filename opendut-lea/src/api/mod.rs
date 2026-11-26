@@ -1,5 +1,7 @@
 pub mod peers;
 pub mod clusters;
+#[cfg(feature = "viper")]
+pub mod viper;
 
 pub use licenses::get_licenses;
 pub use licenses::ComponentLicenses;
