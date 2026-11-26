@@ -1,4 +1,4 @@
-use crate::api::clusters::list_cluster_deployments;
+use crate::api::clusters::{get_cluster_descriptor, list_cluster_deployments};
 use crate::util::client_error_description;
 use leptos::prelude::*;
 use leptos_router::hooks::{use_navigate, use_params_map};
@@ -10,7 +10,6 @@ use opendut_lea_components::tabs::{Tab, Tabs};
 use crate::components::UserInputValue;
 use opendut_model::cluster::ClusterId;
 use opendut_model::cluster::state::ClusterState;
-use crate::app::use_app_globals;
 use crate::clusters::configurator::components::{DeviceSelection, DeviceSelector, LeaderSelection};
 use crate::clusters::configurator::components::Controls;
 use crate::clusters::configurator::tabs::{DevicesTab, GeneralTab, LeaderTab, TabIdentifier};
@@ -26,7 +25,6 @@ mod types;
 
 #[component(transparent)]
 pub fn ClusterConfigurator() -> impl IntoView {
-    let globals = use_app_globals();
     let params = use_params_map();
     let active_tab = use_active_tab::<TabIdentifier>();
 
@@ -60,23 +58,21 @@ pub fn ClusterConfigurator() -> impl IntoView {
         }
     );
 
+    let cluster_descriptor = get_cluster_descriptor(Signal::from(cluster_id), None);
+
     let cluster_resource: LocalResource<Result<(), ErrorText>> = {
-        let carl = globals.client.clone();
-
         LocalResource::new(move || {
-            let mut carl = carl.clone();
-
             async move {
-                let descriptor = match carl.cluster.get_cluster_descriptor(cluster_id).await {
+                let descriptor = match cluster_descriptor.await {
                     Ok(descriptor) => descriptor,
-                    Err(ClientError::UsageError(GetClusterDescriptorError::ClusterNotFound { .. })) => {
+                    Err(error) if matches!(error.as_ref(), ClientError::UsageError(GetClusterDescriptorError::ClusterNotFound { .. })) => {
                         return Ok(());
                     }
                     Err(error) => {
                         error!("Failed to request the cluster descriptor for cluster <{cluster_id}>: {error}");
 
                         let error_description = client_error_description(
-                            &error,
+                            error.as_ref(),
                             "The cluster descriptor could not be loaded. Please check your connection and try again.",
                         );
 
@@ -218,7 +214,7 @@ pub fn ClusterConfigurator() -> impl IntoView {
                         Err(error) => view! {
                             <ErrorMessage
                                 text=error
-                                on_retry=move || cluster_resource.refetch()
+                                on_retry=move || cluster_descriptor.refetch()
                             />
                         }.into_any(),
                     }

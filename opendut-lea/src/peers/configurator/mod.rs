@@ -62,7 +62,7 @@ pub fn PeerConfigurator() -> impl IntoView {
         is_new: true,
     });
 
-    let cluster_descriptors = list_cluster_descriptors();
+    let cluster_descriptors = list_cluster_descriptors(None);
 
     let peer_descriptor = get_peer_descriptor(Signal::from(peer_id), None);
 

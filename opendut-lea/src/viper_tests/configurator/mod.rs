@@ -179,7 +179,7 @@ pub fn ViperTestConfigurator() -> impl IntoView {
     };
 
     let peers = list_peer_descriptors(None);
-    let clusters = list_cluster_descriptors();
+    let clusters = list_cluster_descriptors(None);
 
     let viper_test_id_string = create_read_slice(user_test_run_descriptor, |config| config.id.to_string());
 

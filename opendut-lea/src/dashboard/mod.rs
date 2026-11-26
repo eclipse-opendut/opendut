@@ -41,7 +41,7 @@ pub fn Dashboard() -> impl IntoView {
         }))
     });
 
-    let cluster_descriptors = list_cluster_descriptors();
+    let cluster_descriptors = list_cluster_descriptors(None);
     let cluster_deployments = list_cluster_deployments(None);
 
     let clusters = Signal::derive(move || {

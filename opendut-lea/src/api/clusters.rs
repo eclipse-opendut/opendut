@@ -11,11 +11,15 @@ use opendut_model::cluster::{ClusterDeployment, ClusterDescriptor};
 use crate::app::use_app_globals;
 use crate::util::client_error_description;
 
-pub fn list_cluster_descriptors() -> LocalResource<Result<Vec<ClusterDescriptor>, ErrorText>> {
+pub fn list_cluster_descriptors(
+    refetch_signal: Option<RwSignal<()>>,
+) -> LocalResource<Result<Vec<ClusterDescriptor>, ErrorText>> {
     let globals = use_app_globals();
     let carl = globals.client;
 
     LocalResource::new(move || {
+        refetch_signal.track();
+
         let mut carl = carl.clone();
         async move {
             let clusters = carl.cluster.list_cluster_descriptors().await

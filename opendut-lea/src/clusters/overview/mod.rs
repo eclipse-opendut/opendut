@@ -15,7 +15,7 @@ pub fn ClustersOverview() -> impl IntoView {
 
     let refetch_cluster_descriptors = RwSignal::new(());
 
-    let clusters = list_cluster_descriptors();
+    let clusters = list_cluster_descriptors(Some(refetch_cluster_descriptors));
 
     let refetch_cluster_deployments = RwSignal::new(());
 
