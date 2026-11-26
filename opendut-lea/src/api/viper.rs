@@ -1,4 +1,8 @@
-use leptos::prelude::{LocalResource, RwSignal, Track};
+use std::sync::Arc;
+use opendut_carl_api::carl::ClientError;
+use opendut_carl_api::carl::viper::{GetViperSourceDescriptorError, GetViperTestRunDescriptorError, GetViperTestSuiteParametersError};
+use opendut_model::viper::{ViperSourceId, ViperTestId, ViperTestSuiteParameters};
+use leptos::prelude::{Get, LocalResource, RwSignal, Signal, Track};
 use opendut_lea_components::ErrorText;
 use opendut_model::viper::{ViperSourceDescriptor, ViperTestRunDescriptor};
 use tracing::error;
@@ -72,6 +76,60 @@ pub fn list_viper_test_descriptors(
             });
 
             Ok(descriptors)
+        }
+    })
+}
+
+pub fn get_viper_source_descriptor(
+    id: impl Into<Signal<ViperSourceId>>,
+    refetch_signal: Option<RwSignal<()>>,
+) -> LocalResource<Result<ViperSourceDescriptor, Arc<ClientError<GetViperSourceDescriptorError>>>> {
+    let id = id.into();
+    let carl = use_app_globals().client;
+
+    LocalResource::new(move || {
+        let id = id.get();
+        refetch_signal.track();
+
+        let mut carl = carl.clone();
+        async move {
+            carl.viper.get_viper_source_descriptor(id).await.map_err(Arc::new)
+        }
+    })
+}
+
+pub fn get_viper_test_run_descriptor(
+    id: impl Into<Signal<ViperTestId>>,
+    refetch_signal: Option<RwSignal<()>>,
+) -> LocalResource<Result<ViperTestRunDescriptor, Arc<ClientError<GetViperTestRunDescriptorError>>>> {
+    let id = id.into();
+    let carl = use_app_globals().client;
+
+    LocalResource::new(move || {
+        let id = id.get();
+        refetch_signal.track();
+
+        let mut carl = carl.clone();
+        async move {
+            carl.viper.get_viper_test_run_descriptor(id).await.map_err(Arc::new)
+        }
+    })
+}
+
+pub fn get_viper_test_suite_parameters(
+    id: impl Into<Signal<ViperSourceId>>,
+    refetch_signal: Option<RwSignal<()>>,
+) -> LocalResource<Result<ViperTestSuiteParameters, Arc<ClientError<GetViperTestSuiteParametersError>>>> {
+    let id = id.into();
+    let carl = use_app_globals().client;
+
+    LocalResource::new(move || {
+        let id = id.get();
+        refetch_signal.track();
+
+        let mut carl = carl.clone();
+        async move {
+            carl.viper.get_viper_test_suite_parameters(id).await.map_err(Arc::new)
         }
     })
 }

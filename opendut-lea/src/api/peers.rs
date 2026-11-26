@@ -1,5 +1,8 @@
+use std::sync::Arc;
+use opendut_carl_api::carl::ClientError;
+use opendut_carl_api::carl::peer::{GetPeerDescriptorError, GetPeerStateError};
 use std::collections::HashMap;
-use leptos::prelude::{LocalResource, RwSignal, Track};
+use leptos::prelude::{Get, LocalResource, RwSignal, Signal, Track};
 use tracing::error;
 use opendut_lea_components::ErrorText;
 use opendut_model::peer::{PeerDescriptor, PeerId};
@@ -66,6 +69,41 @@ pub fn list_peer_states(refetch_signal: Option<RwSignal<()>>) -> LocalResource<R
                         description: error_description,
                     }
                 })
+        }
+    })
+}
+pub fn get_peer_descriptor(
+    id: impl Into<Signal<PeerId>>,
+    refetch_signal: Option<RwSignal<()>>,
+) -> LocalResource<Result<PeerDescriptor, Arc<ClientError<GetPeerDescriptorError>>>> {
+    let id = id.into();
+    let carl = use_app_globals().client;
+
+    LocalResource::new(move || {
+        let id = id.get();
+        refetch_signal.track();
+
+        let mut carl = carl.clone();
+        async move {
+            carl.peers.get_peer_descriptor(id).await.map_err(Arc::new)
+        }
+    })
+}
+
+pub fn get_peer_state(
+    id: impl Into<Signal<PeerId>>,
+    refetch_signal: Option<RwSignal<()>>,
+) -> LocalResource<Result<PeerState, Arc<ClientError<GetPeerStateError>>>> {
+    let id = id.into();
+    let carl = use_app_globals().client;
+
+    LocalResource::new(move || {
+        let id = id.get();
+        refetch_signal.track();
+
+        let mut carl = carl.clone();
+        async move {
+            carl.peers.get_peer_state(id).await.map_err(Arc::new)
         }
     })
 }

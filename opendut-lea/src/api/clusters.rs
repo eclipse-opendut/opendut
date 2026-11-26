@@ -1,5 +1,8 @@
 use std::collections::HashMap;
 use opendut_model::peer::{PeerId, state::PeerState};
+use std::sync::Arc;
+use opendut_carl_api::carl::ClientError;
+use opendut_carl_api::carl::cluster::{GetClusterDescriptorError};
 use opendut_model::cluster::ClusterId;
 use leptos::prelude::{Get, LocalResource, RwSignal, Signal, Track};
 use tracing::error;
@@ -60,6 +63,24 @@ pub fn list_cluster_deployments(
                 })?;
 
             Ok(deployed)
+        }
+    })
+}
+
+pub fn get_cluster_descriptor(
+    id: impl Into<Signal<ClusterId>>,
+    refetch_signal: Option<RwSignal<()>>,
+) -> LocalResource<Result<ClusterDescriptor, Arc<ClientError<GetClusterDescriptorError>>>> {
+    let id = id.into();
+    let carl = use_app_globals().client;
+
+    LocalResource::new(move || {
+        let id = id.get();
+        refetch_signal.track();
+
+        let mut carl = carl.clone();
+        async move {
+            carl.cluster.get_cluster_descriptor(id).await.map_err(Arc::new)
         }
     })
 }

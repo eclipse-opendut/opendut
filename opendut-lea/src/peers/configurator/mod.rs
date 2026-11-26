@@ -1,5 +1,5 @@
 use crate::util::client_error_description;
-use crate::app::use_app_globals;
+use crate::api::peers::get_peer_descriptor;
 use crate::api::clusters::list_cluster_descriptors;
 use crate::components::use_active_tab;
 use crate::components::{BasePageContainer, Breadcrumb, UserInputError, UserInputValue};
@@ -27,7 +27,6 @@ mod types;
 #[component(transparent)]
 pub fn PeerConfigurator() -> impl IntoView {
 
-    let globals = use_app_globals();
     let params = use_params_map();
     let active_tab = use_active_tab::<TabIdentifier>();
 
@@ -65,19 +64,20 @@ pub fn PeerConfigurator() -> impl IntoView {
 
     let cluster_descriptors = list_cluster_descriptors();
 
+    let peer_descriptor = get_peer_descriptor(Signal::from(peer_id), None);
+
     let peer_descriptor_resource = LocalResource::new(move || {
-        let mut carl = globals.client.clone();
         async move {
-            let descriptor = match carl.peers.get_peer_descriptor(peer_id).await {
+            let descriptor = match peer_descriptor.await {
                 Ok(descriptor) => descriptor,
-                Err(ClientError::UsageError(GetPeerDescriptorError::PeerNotFound { .. })) => {
+                Err(error) if matches!(error.as_ref(), ClientError::UsageError(GetPeerDescriptorError::PeerNotFound { .. })) => {
                     return Ok(());
                 }
                 Err(error) => {
                     error!("Failed to request the peer descriptor for peer <{peer_id}>: {error}");
 
                     let error_description = client_error_description(
-                        &error,
+                        error.as_ref(),
                         "The peer descriptor could not be loaded. Please check your connection and try again.",
                     );
                     
@@ -253,6 +253,7 @@ pub fn PeerConfigurator() -> impl IntoView {
                             text=error
                             on_retry=move || {
                                 cluster_descriptors.refetch();
+                                peer_descriptor.refetch();
                                 peer_descriptor_resource.refetch();
                             }
                         />
