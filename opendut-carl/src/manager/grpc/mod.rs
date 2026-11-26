@@ -4,6 +4,7 @@ pub use metadata_provider::MetadataProviderFacade;
 pub use peer_manager::PeerManagerFacade;
 pub use peer_messaging_broker::PeerMessagingBrokerFacade;
 pub use observer_messaging_broker::ObserverMessagingBrokerFacade;
+pub use resource_search::ResourceSearchFacade;
 #[cfg(feature = "viper")]
 pub use viper_manager::ViperManagerFacade;
 
@@ -12,6 +13,7 @@ mod metadata_provider;
 mod peer_manager;
 mod peer_messaging_broker;
 mod observer_messaging_broker;
+mod resource_search;
 #[cfg(feature = "viper")]
 mod viper_manager;
 mod error;
