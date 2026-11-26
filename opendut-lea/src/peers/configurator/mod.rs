@@ -12,8 +12,7 @@ use opendut_model::peer::PeerId;
 use leptos_router::hooks::{use_navigate, use_params_map};
 use opendut_lea_components::{ErrorMessage, LoadingSpinner};
 use opendut_lea_components::tabs::{Tab, Tabs};
-use crate::peers::configurator::types::devices::UserDeviceConfiguration;
-use crate::peers::configurator::types::network::{UserNetworkInterface, UserPeerNetwork};
+use crate::peers::configurator::types::network::UserPeerNetwork;
 use crate::peers::configurator::types::UserPeerDescriptor;
 
 mod components;
@@ -62,49 +61,21 @@ pub fn PeerConfigurator() -> impl IntoView {
 
     let peer_descriptor = get_peer_descriptor(Signal::from(peer_id), None);
 
-    let peer_descriptor_resource = LocalResource::new(move || {
-        async move {
-            let Some(descriptor) = peer_descriptor.await? else {
-                return Ok(());
-            };
+    Effect::new(move |_| {
+        if let (Some(Ok(Some(descriptor))), Some(Ok(clusters))) = (
+            peer_descriptor.get(),
+            cluster_descriptors.get(),
+        ) {
+            user_peer_descriptor.update(|configuration| configuration.apply_descriptor(descriptor, clusters));
+        }
+    });
 
-            let clusters = cluster_descriptors.await?;
-
-            user_peer_descriptor.update(|user_configuration| {
-                user_configuration.name = UserInputValue::Right(descriptor.name.value().to_owned());
-                user_configuration.is_new = false;
-                user_configuration.location = UserInputValue::Right(descriptor.location.unwrap_or_default().value());
-                user_configuration.devices = descriptor.topology.devices.into_iter().map(|device| {
-                    let mut configured_clusters = vec![];
-
-                    for cluster in &clusters {
-                        for device_id in &cluster.devices {
-                            if device.id == *device_id {
-                                configured_clusters.push(cluster.clone());
-                            }
-                        }
-                    }
-                    RwSignal::new(UserDeviceConfiguration {
-                        id: device.id,
-                        name: UserInputValue::Right(device.name.to_string()),
-                        interface: Some(device.interface),
-                        description: UserInputValue::Right(device.description.unwrap_or_default().to_string()),
-                        is_collapsed: true,
-                        contained_in_clusters: configured_clusters,
-                        tags: device.tags,
-                    })
-                }).collect::<Vec<_>>();
-                if let Some(bridge_name) = descriptor.network.bridge_name {
-                    user_configuration.network.bridge_name = UserInputValue::Right(bridge_name.name());
-                }
-                user_configuration.network.network_interfaces = descriptor.network.interfaces.into_iter()
-                    .map(|interface| {
-                        RwSignal::new(UserNetworkInterface::from(interface))
-                    })
-                    .collect();
-            });
-
-            Ok(())
+    let peer_descriptor_state = Signal::derive(move || {
+        match peer_descriptor.get() {
+            Some(Ok(Some(_))) => cluster_descriptors.get().map(|result| result.map(|_| ())),
+            Some(Ok(None)) => Some(Ok(())),
+            Some(Err(error)) => Some(Err(error)),
+            None => None,
         }
     });
 
@@ -202,15 +173,12 @@ pub fn PeerConfigurator() -> impl IntoView {
             breadcrumbs=breadcrumbs
             controls=view! { <Controls user_peer_descriptor /> }
         >
-            <Show when=move || matches!(peer_descriptor_resource.get(), Some(Ok(())))>
+            <Show when=move || matches!(peer_descriptor_state.get(), Some(Ok(())))>
                 <div> {cluster_column} </div>
             </Show>
-            <Suspense
-                fallback=LoadingSpinner // TODO: Display errors
-            >
-            { move || Suspend::new(async move {
-                match peer_descriptor_resource.await {
-                    Ok(()) => {
+            { move || {
+                match peer_descriptor_state.get() {
+                    Some(Ok(())) => {
                         view! {
                             <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
                                 <div class=("is-hidden", move || TabIdentifier::General != active_tab.get())>
@@ -228,7 +196,7 @@ pub fn PeerConfigurator() -> impl IntoView {
                             </Tabs>
                         }.into_any()
                     }
-                    Err(error) => view! {
+                    Some(Err(error)) => view! {
                         <ErrorMessage
                             text=error
                             on_retry=move || {
@@ -237,9 +205,9 @@ pub fn PeerConfigurator() -> impl IntoView {
                             }
                         />
                     }.into_any(),
+                    None => view! { <LoadingSpinner /> }.into_any(),
                 }
-            })}
-            </Suspense>
+            }}
         </BasePageContainer>
     }
 }

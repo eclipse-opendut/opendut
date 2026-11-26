@@ -1,7 +1,7 @@
 use crate::api::clusters::{get_cluster_descriptor, list_cluster_deployments};
 use leptos::prelude::*;
 use leptos_router::hooks::{use_navigate, use_params_map};
-use opendut_lea_components::{ErrorMessage, ErrorText};
+use opendut_lea_components::{ErrorMessage};
 use opendut_lea_components::tabs::{Tab, Tabs};
 use crate::components::UserInputValue;
 use opendut_model::cluster::ClusterId;
@@ -56,27 +56,11 @@ pub fn ClusterConfigurator() -> impl IntoView {
 
     let cluster_descriptor = get_cluster_descriptor(Signal::from(cluster_id), None);
 
-    let cluster_resource: LocalResource<Result<(), ErrorText>> = {
-        LocalResource::new(move || {
-            async move {
-                let Some(descriptor) = cluster_descriptor.await? else {
-                    return Ok(());
-                };
-
-                user_cluster_descriptor.set(
-                    UserClusterDescriptor {
-                        id: cluster_id,
-                        name: UserInputValue::Right(descriptor.name.value().to_owned()),
-                        devices: DeviceSelection::Right(descriptor.devices),
-                        leader: LeaderSelection::Right(descriptor.leader),
-                        is_new: false,
-                    }
-                );
-
-                Ok(())
-            }
-        })
-    };
+    Effect::new(move |_| {
+        if let Some(Ok(Some(descriptor))) = cluster_descriptor.get() {
+            user_cluster_descriptor.set(descriptor.into());
+        }
+    });
 
     let cluster_state = RwSignal::new(ClusterState::default());
 
@@ -159,8 +143,8 @@ pub fn ClusterConfigurator() -> impl IntoView {
             >
                 { move || Suspend::new(async move {
                     let peers = RwSignal::new(peers_resource.await).read_only();
-                    match cluster_resource.await {
-                        Ok(()) => {
+                    match cluster_descriptor.await {
+                        Ok(_) => {
                             view! {
                                 <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
                                     { move || match active_tab.get() {

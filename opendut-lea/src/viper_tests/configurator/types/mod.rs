@@ -78,3 +78,28 @@ impl TryFrom<UserViperTestRunDescriptor> for ViperTestRunDescriptor {
         })
     }
 }
+
+impl UserViperTestRunDescriptor {
+    pub fn apply_descriptor(&mut self, descriptor: ViperTestRunDescriptor) {
+        let ViperTestRunDescriptor {
+            id: _,
+            name,
+            source: viper_source,
+            peer,
+            parameters,
+        } = descriptor;
+
+        self.name = UserInputValue::Right(name.value().to_owned());
+        self.viper_source = SourceSelection::Right(viper_source);
+        self.peer = PeerSelection::Right(peer);
+
+        let mut configured_parameters: HashMap<ViperParameterName, ViperBindingValueInput> =
+            HashMap::new();
+
+        for (key, value) in parameters {
+            configured_parameters.insert(key, ViperBindingValueInput::Right(value));
+        }
+
+        self.parameters = configured_parameters;
+    }
+}

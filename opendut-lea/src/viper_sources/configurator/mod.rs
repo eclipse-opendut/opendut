@@ -50,22 +50,9 @@ pub fn ViperSourceConfigurator() -> impl IntoView {
 
     let viper_source_descriptor = get_viper_source_descriptor(Signal::from(viper_source_id), None);
 
-    let viper_source_descriptor_resource = LocalResource::new(move || {
-        async move {
-            let Some(descriptor) = viper_source_descriptor.await? else {
-                return Ok(());
-            };
-
-            user_source_descriptor.update(|user_configuration| {
-                user_configuration.name = UserInputValue::Right(descriptor.name.to_string());
-                user_configuration.url = UserInputValue::Right(descriptor.url.to_string());
-                user_configuration.kind = UserInputValue::Right(match descriptor.kind {
-                    opendut_model::viper::ViperSourceKind::Git => String::from("Git"),
-                    opendut_model::viper::ViperSourceKind::Http => String::from("HTTP"),
-                });
-            });
-
-            Ok(())
+    Effect::new(move |_| {
+        if let Some(Ok(Some(descriptor))) = viper_source_descriptor.get() {
+            user_source_descriptor.update(|user_descriptor| user_descriptor.apply_descriptor(descriptor));
         }
     });
 
@@ -109,8 +96,8 @@ pub fn ViperSourceConfigurator() -> impl IntoView {
                 fallback=move || view! { <LoadingSpinner /> }
             >
                 { move || Suspend::new(async move {
-                    match viper_source_descriptor_resource.await {
-                        Ok(()) => {
+                    match viper_source_descriptor.await {
+                        Ok(_) => {
                             view! {
                                 <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
                                     { move || match active_tab.get() {

@@ -4,7 +4,7 @@ use leptos::prelude::*;
 use leptos_router::hooks::{use_navigate, use_params_map};
 use opendut_lea_components::{BasePageContainer, Breadcrumb, ErrorMessage, ErrorText, LoadingSpinner, UserInputError, UserInputValue};
 use opendut_lea_components::tabs::{Tab, Tabs};
-use opendut_model::viper::{ViperParameterName, ViperTestId, ViperTestRunDescriptor};
+use opendut_model::viper::{ViperTestId};
 use crate::api::clusters::list_cluster_descriptors;
 use crate::api::peers::list_peer_descriptors;
 use crate::components::use_active_tab;
@@ -55,36 +55,11 @@ pub fn ViperTestConfigurator() -> impl IntoView {
 
     let viper_test_run_descriptor = get_viper_test_run_descriptor(Signal::from(viper_test_id), None);
 
-    let viper_test_run_descriptor_resource = {
-        LocalResource::new(move || {
-            async move {
-                let Some(descriptor) = viper_test_run_descriptor.await? else {
-                    return Ok(());
-                };
-
-                user_test_run_descriptor.update(|user_configuration| {
-                    let ViperTestRunDescriptor { id: _, name, source: viper_source, peer, parameters } = descriptor;
-
-                    user_configuration.name = UserInputValue::Right(name.value().to_owned());
-                    user_configuration.viper_source = SourceSelection::Right(viper_source);
-                    user_configuration.peer = PeerSelection::Right(peer);
-
-                    let mut configured_parameters: HashMap<ViperParameterName, ViperBindingValueInput> = HashMap::new();
-
-                    for (key, value) in parameters {
-                        configured_parameters.insert(
-                            key,
-                            ViperBindingValueInput::Right(value)
-                        );
-                    }
-
-                    user_configuration.parameters = configured_parameters;
-                });
-
-                Ok(())
-            }
-        })
-    };
+    Effect::new(move |_| {
+        if let Some(Ok(Some(descriptor))) = viper_test_run_descriptor.get() {
+            user_test_run_descriptor.update(|configuration| configuration.apply_descriptor(descriptor));
+        }
+    });
 
     let viper_source = create_read_slice(
         user_test_run_descriptor,
@@ -199,8 +174,8 @@ pub fn ViperTestConfigurator() -> impl IntoView {
                 fallback=move || view! { <LoadingSpinner /> }
             >
                 { move || Suspend::new(async move {
-                    match viper_test_run_descriptor_resource.await {
-                        Ok(()) => {
+                    match viper_test_run_descriptor.await {
+                        Ok(_) => {
                             let peers = RwSignal::new(peers.await).read_only();
                             let clusters = RwSignal::new(clusters.await).read_only();
                             let parameter_result = parameters.await;
