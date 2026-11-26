@@ -4,11 +4,10 @@ use opendut_carl_api::carl::ClientError;
 use opendut_carl_api::carl::cluster::{GetClusterDescriptorError};
 use opendut_model::cluster::ClusterId;
 use leptos::prelude::{Get, LocalResource, Signal, Track};
-use tracing::error;
 use opendut_lea_components::ErrorText;
 use opendut_model::cluster::{ClusterDeployment, ClusterDescriptor};
 use crate::app::use_app_globals;
-use crate::util::client_error_description;
+use crate::api::client_error_text;
 
 pub fn list_cluster_descriptors(
     refetch_signal: Option<Signal<()>>,
@@ -23,17 +22,11 @@ pub fn list_cluster_descriptors(
         async move {
             let mut clusters = carl.cluster.list_cluster_descriptors().await
                 .map_err(|error| {
-                    error!("Failed to request the list of clusters: {error}");
-
-                    let error_description = client_error_description(
+                    client_error_text(
                         &error,
+                        "Unable to load cluster descriptors",
                         "The cluster descriptors could not be loaded. Please check your connection and try again.",
-                    );
-
-                    ErrorText {
-                        headline: String::from("Unable to load cluster descriptors"),
-                        description: error_description,
-                    }
+                    )
                 })?;
 
             clusters.sort_by_key(|cluster| cluster.name.value().to_lowercase());
@@ -55,16 +48,11 @@ pub fn list_cluster_deployments(
         async move {
             let deployed = carl.cluster.list_cluster_deployments().await
                 .map_err(|error| {
-                    error!("Failed to request the list of cluster deployments: {error}");
-
-                    let description = client_error_description(
+                    client_error_text(
                         &error,
+                        "Unable to load cluster deployments",
                         "The cluster deployments could not be loaded. Please check your connection and try again.",
-                    );
-                    ErrorText {
-                        headline: String::from("Unable to load cluster deployments"),
-                        description
-                    }
+                    )
                 })?;
 
             Ok(deployed)
@@ -88,16 +76,11 @@ pub fn get_cluster_descriptor(
             match carl.cluster.get_cluster_descriptor(id).await {
                 Ok(descriptor) => Ok(Some(descriptor)),
                 Err(ClientError::UsageError(GetClusterDescriptorError::ClusterNotFound { .. })) => Ok(None),
-                Err(error) => {
-                    error!("Unable to load cluster descriptor: {error}");
-                    Err(ErrorText {
-                        headline: String::from("Unable to load cluster descriptor"),
-                        description: client_error_description(
-                            &error,
-                            "The cluster descriptor could not be loaded. Please check your connection and try again.",
-                        ),
-                    })
-                }
+                Err(error) => Err(client_error_text(
+                    &error,
+                    "Unable to load cluster descriptor",
+                    "The cluster descriptor could not be loaded. Please check your connection and try again.",
+                )),
             }
         }
     })
@@ -123,14 +106,11 @@ pub fn list_cluster_peer_states(
             carl.cluster.list_cluster_peer_states(cluster_id).await
                 .map(Some)
                 .map_err(|error| {
-                    error!("Failed to request peer states for cluster <{cluster_id}>: {error}");
-                    ErrorText {
-                        headline: String::from("Unable to load cluster peer states"),
-                        description: client_error_description(
-                            &error,
-                            "The cluster peer states could not be loaded. Please check your connection and try again.",
-                        ),
-                    }
+                    client_error_text(
+                        &error,
+                        "Unable to load cluster peer states",
+                        "The cluster peer states could not be loaded. Please check your connection and try again.",
+                    )
                 })
         }
     })

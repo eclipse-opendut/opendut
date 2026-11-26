@@ -4,10 +4,9 @@ use opendut_model::viper::{ViperSourceId, ViperTestId, ViperTestSuiteParameters}
 use leptos::prelude::{Get, LocalResource, Signal, Track};
 use opendut_lea_components::ErrorText;
 use opendut_model::viper::{ViperSourceDescriptor, ViperTestRunDescriptor};
-use tracing::error;
 
 use crate::app::use_app_globals;
-use crate::util::client_error_description;
+use crate::api::client_error_text;
 
 pub fn list_viper_source_descriptors(
     refetch_signal: Option<Signal<()>>,
@@ -22,15 +21,11 @@ pub fn list_viper_source_descriptors(
         async move {
             let mut descriptors = carl.viper.list_viper_source_descriptors().await
                 .map_err(|error| {
-                    error!("Failed to request the list of VIPER sources: {error}");
-
-                    ErrorText {
-                        headline: String::from("Unable to load VIPER sources"),
-                        description: client_error_description(
-                            &error,
-                            "The VIPER sources could not be loaded. Please check your connection and try again.",
-                        ),
-                    }
+                    client_error_text(
+                        &error,
+                        "Unable to load VIPER sources",
+                        "The VIPER sources could not be loaded. Please check your connection and try again.",
+                    )
                 })?;
 
             descriptors.sort_by(|a, b| {
@@ -57,15 +52,11 @@ pub fn list_viper_test_descriptors(
         async move {
             let mut descriptors = carl.viper.list_viper_test_run_descriptors().await
                 .map_err(|error| {
-                    error!("Failed to request the list of VIPER test descriptors: {error}");
-
-                    ErrorText {
-                        headline: String::from("Unable to load VIPER test descriptors"),
-                        description: client_error_description(
-                            &error,
-                            "The VIPER test descriptors could not be loaded. Please check your connection and try again.",
-                        ),
-                    }
+                    client_error_text(
+                        &error,
+                        "Unable to load VIPER test descriptors",
+                        "The VIPER test descriptors could not be loaded. Please check your connection and try again.",
+                    )
                 })?;
 
             descriptors.sort_by(|a, b| {
@@ -95,16 +86,11 @@ pub fn get_viper_source_descriptor(
             match carl.viper.get_viper_source_descriptor(id).await {
                 Ok(descriptor) => Ok(Some(descriptor)),
                 Err(ClientError::UsageError(GetViperSourceDescriptorError::SourceNotFound { .. })) => Ok(None),
-                Err(error) => {
-                    error!("Unable to load VIPER source descriptor: {error}");
-                    Err(ErrorText {
-                        headline: String::from("Unable to load VIPER source descriptor"),
-                        description: client_error_description(
-                            &error,
-                            "The VIPER source descriptor could not be loaded. Please check your connection and try again.",
-                        ),
-                    })
-                }
+                Err(error) => Err(client_error_text(
+                    &error,
+                    "Unable to load VIPER source descriptor",
+                    "The VIPER source descriptor could not be loaded. Please check your connection and try again.",
+                )),
             }
         }
     })
@@ -126,16 +112,11 @@ pub fn get_viper_test_run_descriptor(
             match carl.viper.get_viper_test_run_descriptor(id).await {
                 Ok(descriptor) => Ok(Some(descriptor)),
                 Err(ClientError::UsageError(GetViperTestRunDescriptorError::TestNotFound { .. })) => Ok(None),
-                Err(error) => {
-                    error!("Unable to load VIPER test run descriptor: {error}");
-                    Err(ErrorText {
-                        headline: String::from("Unable to load VIPER test run descriptor"),
-                        description: client_error_description(
-                            &error,
-                            "The VIPER test run descriptor could not be loaded. Please check your connection and try again.",
-                        ),
-                    })
-                }
+                Err(error) => Err(client_error_text(
+                    &error,
+                    "Unable to load VIPER test run descriptor",
+                    "The VIPER test run descriptor could not be loaded. Please check your connection and try again.",
+                )),
             }
         }
     })
@@ -159,14 +140,11 @@ pub fn get_viper_test_suite_parameters(
             };
 
             carl.viper.get_viper_test_suite_parameters(id).await.map(Some).map_err(|error| {
-                error!("Unable to load VIPER parameters: {error}");
-                let mut text = ErrorText {
-                    headline: String::from("Unable to load VIPER parameters"),
-                    description: client_error_description(
-                        &error,
-                        "The VIPER test suite parameters could not be loaded. Please check your connection and try again.",
-                    ),
-                };
+                let mut text = client_error_text(
+                    &error,
+                    "Unable to load VIPER parameters",
+                    "The VIPER test suite parameters could not be loaded. Please check your connection and try again.",
+                );
                 if let ClientError::UsageError(GetViperTestSuiteParametersError::Compilation { kind, .. }) = &error {
                     match kind {
                         CompilationErrorKind::FailedLoading { message, .. }
