@@ -37,6 +37,9 @@ mod cluster_manager {
                         cause: String::from("Error when accessing persistence"),
                     }
                 }
+                cluster_manager::CreateClusterDescriptorError::LeaderNotInCluster { cluster_id, cluster_name, leader } => {
+                    Self::LeaderNotInCluster { cluster_id, cluster_name, leader }
+                }
             }
         }
     }
