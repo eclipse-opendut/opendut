@@ -127,18 +127,18 @@ pub fn ClusterConfigurator() -> impl IntoView {
             title="Configure Cluster"
             subtitle
             breadcrumbs
-            controls=move || {
-                view! {
+            controls=view! {
+                <Transition>
                     <Controls
                         user_cluster_descriptor
                         deployed_signal
                         cluster_state=cluster_state.into()
                         on_deployment_change=move || refetch_cluster_deployments.notify()
                     />
-                }
+                </Transition>
             }
         >
-            <Suspense
+            <Transition
                 fallback=move || view! { <LoadingSpinner /> }
             >
                 { move || Suspend::new(async move {
@@ -183,7 +183,7 @@ pub fn ClusterConfigurator() -> impl IntoView {
                         }.into_any(),
                     }
                 })}
-            </Suspense>
+            </Transition>
         </BasePageContainer>
     }
 }

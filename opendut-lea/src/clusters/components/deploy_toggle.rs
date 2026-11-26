@@ -116,77 +116,66 @@ where
         })),
     );
 
-    move || {
-        let on_deploy = on_deploy.clone();
-        let on_undeploy = on_undeploy.clone();
-
-        Suspend::new(async move {
-            match is_deployed.get() {
-                Some(is_deployed) => {
-                    let is_deployed = is_deployed.0;
-                    let deployment_blocker = match cluster_peer_states.await {
-                        Ok(Some(peer_states)) => {
-                            let invalid_peers = peer_states.iter()
-                                .filter(|(_, state)| matches!(&state.member, PeerMemberState::Blocked { .. }))
-                                .map(|(peer_id, _)| *peer_id)
-                                .collect::<Vec<_>>();
-                            if invalid_peers.is_empty() {
-                                None
-                            } else {
-                                Some(DeploymentBlocker::Peers(invalid_peers))
-                            }
-                        }
-                        Ok(None) => None,
-                        Err(error) => Some(DeploymentBlocker::Message(error.description)),
-                    };
-
-                    let toggle_state = Signal::derive({
-                        let deployment_blocker = deployment_blocker.clone();
-
-                        move || {
-                            let is_blocked = deployment_blocker.is_some() && !is_deployed;
-
-                            if is_new_cluster.get() || is_blocked {
-                                ToggleState::Disabled
-                            } else {
-                                ToggleState::Enabled
-                            }
-                        }
-                    });
-
-                    let tooltip_content = Arc::new(move || {
-                        view! {
-                            <DeploymentTooltipContent is_new_cluster is_deployed blocked_deployment=Clone::clone(&deployment_blocker) />
-                        }.into_any()
-                    });
-
-                    view! {
-                        <Tooltip text=tooltip_content direction=tooltip_direction>
-                            <Toggle
-                                is_active=is_deployed
-                                state=toggle_state
-                                on_action=move || {
-                                    if is_deployed { on_undeploy() } else { on_deploy() }
-                                }
-                            />
-                        </Tooltip>
-                    }.into_any()
-                }
-                None => {
-                    view! {
-                        <div class="is-flex is-align-items-center is-justify-content-center">
-                            <ErrorIndicator
-                                text=ErrorText {
-                                    headline: String::from("Unable to load cluster deployments."),
-                                    description: String::new(),
-                                }
-                                direction=tooltip_direction
-                            />
-                        </div>
-                    }.into_any()
+    let deployment_blocker = Signal::derive(move || {
+        match cluster_peer_states.get() {
+            Some(Ok(Some(peer_states))) => {
+                let invalid_peers = peer_states.iter()
+                    .filter(|(_, state)| matches!(&state.member, PeerMemberState::Blocked { .. }))
+                    .map(|(peer_id, _)| *peer_id)
+                    .collect::<Vec<_>>();
+                if invalid_peers.is_empty() {
+                    None
+                } else {
+                    Some(DeploymentBlocker::Peers(invalid_peers))
                 }
             }
-        })
+            Some(Err(error)) => Some(DeploymentBlocker::Message(error.description)),
+            _ => None,
+        }
+    });
+
+    let is_active = Signal::derive(move || matches!(is_deployed.get(), Some(IsDeployed(true))));
+    let toggle_state = Signal::derive(move || {
+        if is_new_cluster.get() || is_deployed.get().is_none() {
+            ToggleState::Disabled
+        } else if cluster_peer_states.get().is_none() {
+            ToggleState::Loading
+        } else if deployment_blocker.get().is_some() && !is_active.get() {
+            ToggleState::Disabled
+        } else {
+            ToggleState::Enabled
+        }
+    });
+
+    let tooltip_content = Arc::new(move || {
+        view! {
+            <DeploymentTooltipContent
+                is_new_cluster
+                is_deployed=is_active
+                blocked_deployment=deployment_blocker
+            />
+        }.into_any()
+    });
+
+    view! {
+        <Tooltip text=tooltip_content direction=tooltip_direction>
+            <Toggle
+                is_active
+                state=toggle_state
+                on_action=move || {
+                    if is_active.get_untracked() { on_undeploy() } else { on_deploy() }
+                }
+            />
+        </Tooltip>
+        <Show when=move || is_deployed.get().is_none()>
+            <ErrorIndicator
+                text=ErrorText {
+                    headline: String::from("Unable to load cluster deployments."),
+                    description: String::new(),
+                }
+                direction=tooltip_direction
+            />
+        </Show>
     }
 }
 
@@ -200,7 +189,7 @@ enum DeploymentBlocker {
 fn DeploymentTooltipContent(
     is_new_cluster: Signal<bool>,
     #[prop(into)] is_deployed: Signal<bool>,
-    blocked_deployment: Option<DeploymentBlocker>,
+    blocked_deployment: Signal<Option<DeploymentBlocker>>,
 ) -> impl IntoView {
 
     move || {
@@ -211,7 +200,7 @@ fn DeploymentTooltipContent(
         }
 
         if !is_deployed.get()
-            && let Some(blocked_deployment) = blocked_deployment.as_ref() {
+            && let Some(blocked_deployment) = blocked_deployment.get().as_ref() {
                 return match blocked_deployment {
                     DeploymentBlocker::Peers(peers) => {
                         let amount = peers.len();
