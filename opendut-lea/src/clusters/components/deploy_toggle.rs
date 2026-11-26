@@ -28,6 +28,7 @@ where
 {
     let globals = use_app_globals();
     let toaster = use_toaster();
+    let pending = RwSignal::new(false);
 
     let on_deploy = {
         let carl = globals.client.clone();
@@ -41,6 +42,8 @@ where
             let on_deployment_changed = on_deployment_changed.clone();
 
             leptos::task::spawn_local(async move {
+                pending.set(true);
+
                 match carl.cluster.store_cluster_deployment(ClusterDeployment { id: cluster_id }).await {
                     Ok(cluster_id) => {
                         debug!("Successfully stored cluster deployment: {}", cluster_id);
@@ -71,6 +74,7 @@ where
                     }
                 }
                 on_deployment_changed();
+                pending.set(false);
             })
         }
     };
@@ -87,6 +91,8 @@ where
             let on_deployment_changed = on_deployment_changed.clone();
 
             leptos::task::spawn_local(async move {
+                pending.set(true);
+
                 match carl.cluster.delete_cluster_deployment(cluster_id).await {
                     Ok(_) => {
                         toaster.toast(Toast::builder()
@@ -102,6 +108,7 @@ where
                     }
                 }
                 on_deployment_changed();
+                pending.set(false);
             })
         }
     };
@@ -136,7 +143,9 @@ where
 
     let is_active = Signal::derive(move || matches!(is_deployed.get(), Some(IsDeployed(true))));
     let toggle_state = Signal::derive(move || {
-        if is_new_cluster.get() || is_deployed.get().is_none() {
+        if pending.get() {
+            ToggleState::Loading
+        } else if is_new_cluster.get() || is_deployed.get().is_none() {
             ToggleState::Disabled
         } else if cluster_peer_states.get().is_none() {
             ToggleState::Loading

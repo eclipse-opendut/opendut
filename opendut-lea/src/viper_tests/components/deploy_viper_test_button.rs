@@ -11,6 +11,15 @@ pub fn DeployViperTestButton(
 
     let globals = use_app_globals();
     let toaster = use_toaster();
+    let pending = RwSignal::new(false);
+
+    let button_state = Signal::derive(move || {
+        if pending.get() {
+            ButtonState::Loading
+        } else {
+            ButtonState::Enabled
+        }
+    });
 
     let on_click = move || {
         let mut carl = globals.client.clone();
@@ -21,6 +30,8 @@ pub fn DeployViperTestButton(
         };
 
         leptos::task::spawn_local(async move {
+            pending.set(true);
+
             let result = carl.viper.store_viper_run_deployment(deployment).await;
 
             match result {
@@ -41,6 +52,7 @@ pub fn DeployViperTestButton(
                     )
                 }
             }
+            pending.set(false);
         });
     };
 
@@ -49,7 +61,7 @@ pub fn DeployViperTestButton(
             icon=FontAwesomeIcon::Play
             color=ButtonColor::Success
             size=ButtonSize::Small
-            state=ButtonState::Enabled
+            state=button_state
             label="Deploy VIPER Test"
             on_action=on_click
         />

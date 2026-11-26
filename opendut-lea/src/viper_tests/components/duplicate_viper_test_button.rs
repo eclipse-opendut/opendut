@@ -14,12 +14,23 @@ pub fn DuplicateViperTestButton(
 
     let globals = use_app_globals();
     let toaster = use_toaster();
+    let pending = RwSignal::new(false);
+
+    let button_state = Signal::derive(move || {
+        if pending.get() {
+            ButtonState::Loading
+        } else {
+            ButtonState::Enabled
+        }
+    });
 
     let on_action = move || {
         let toaster = Arc::clone(&toaster);
         let mut carl = globals.client.clone();
 
         leptos::task::spawn_local(async move {
+            pending.set(true);
+
             let test_run_descriptor = viper_test_run_descriptor.get_untracked();
 
             let new_test_name = match ViperTestName::try_from(format!("{}-Copy", test_run_descriptor.name.value())) {
@@ -30,6 +41,7 @@ pub fn DuplicateViperTestButton(
                             .simple(error.to_string())
                             .error(),
                     );
+                    pending.set(false);
                     return;
                 }
             };
@@ -60,6 +72,7 @@ pub fn DuplicateViperTestButton(
                     toaster.toast(Toast::builder().simple("Failed to store viper test!").error());
                 }
             }
+            pending.set(false);
         })
     };
 
@@ -75,7 +88,7 @@ pub fn DuplicateViperTestButton(
                 icon=FontAwesomeIcon::Duplicate
                 color=ButtonColor::White
                 size=ButtonSize::Normal
-                state=ButtonState::Enabled
+                state=button_state
                 label="Duplicate VIPER Test"
                 on_action
             />

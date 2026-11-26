@@ -99,4 +99,3 @@ pub async fn get_licenses() -> Result<Vec<ComponentLicenses>, ApiError> {
 
     Ok(result)
 }
-
