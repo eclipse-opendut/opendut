@@ -13,11 +13,23 @@ This directory contains the Nixpkgs overlays, packages, NixOS modules, and host 
 
 ## Building the `opendut-pi-1` SD Card Image
 
-From the repository root, build the SD card image for `opendut-pi-1`:
+By default, the Nix build embeds the locally built EDGAR distribution (`target/ci/distribution/aarch64-unknown-linux-gnu/opendut-edgar-aarch64-unknown-linux-gnu-<version>.tar.gz`, where `<version>` is read from `workspace.package.version` in `Cargo.toml`).
+
+First, build (or download) the `aarch64` EDGAR distribution:
 
 ```bash
-nix build .#opendut-pi-1-sd-image
+cargo ci edgar distribution --target aarch64-unknown-linux-gnu
 ```
+
+Then, from the repository root, build the SD card image for `opendut-pi-1` (`--impure` is required so Nix can read the git-ignored `target/` directory):
+
+```bash
+nix build --impure .#opendut-pi-1-sd-image
+```
+
+> **Overrides & Release Fallback:**
+> - **Custom tarball path:** `OPENDUT_EDGAR_TARBALL=/path/to/opendut-edgar-aarch64-unknown-linux-gnu-....tar.gz nix build --impure .#opendut-pi-1-sd-image`
+> - **GitHub Release fallback:** Set `OPENDUT_EDGAR_USE_RELEASE=1 nix build --impure .#opendut-pi-1-sd-image` (or set `opendut.edgar.useReleaseFallback = true;` in the NixOS configuration, which also works in pure mode without `--impure`).
 
 > **Note (Cross-Compilation on `x86_64-linux`):**  
 > Because the Raspberry Pi target is `aarch64-linux`, building on an `x86_64-linux` host requires `aarch64-linux` emulation (e.g. via `boot.binfmt.emulatedSystems = [ "aarch64-linux" ];` on NixOS) or a remote `aarch64-linux` builder.
@@ -127,6 +139,8 @@ nix build .#packages.aarch64-linux.my-opendut-pi-sd-image
 | Option | Type | Description |
 |---|---|---|
 | `opendut.edgar.enable` | `bool` | Enables the `opendut-edgar` systemd service (starts when `/etc/opendut/edgar.toml` exists), installs `opendut-edgar` and `opendut-cannelloni`, and enables `opendut.can.enable` by default. |
+| `opendut.edgar.useReleaseFallback` | `bool` | Uses the pinned GitHub Release tarball instead of the local distribution in `target/ci/distribution/` (`false` by default). |
+| `opendut.edgar.package` | `package` | The `opendut-edgar` package to install and run (`pkgs.opendut.edgar` by default). |
 | `opendut.can.enable` | `bool` | Loads `can`, `vcan`, and `can_gw` (`max_hops=2`) kernel modules and installs `can-utils`. |
 | `opendut.raspberry-pi.enable` | `bool` | Configures Raspberry Pi bootloader, firmware, U-Boot, and VC4 CMA settings. |
 | `opendut.raspberry-pi.board` | `"pi-4"` \| `"pi-3"` | Target Raspberry Pi board model (`pi-4` supported). |

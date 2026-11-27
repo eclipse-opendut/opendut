@@ -11,6 +11,22 @@ in
 {
   options.opendut.edgar = {
     enable = lib.mkEnableOption "Enable openDuT EDGAR";
+    useReleaseFallback = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = ''
+        Whether to use the pinned GitHub Release tarball instead of the locally built
+        EDGAR distribution in `target/ci/distribution/`.
+      '';
+    };
+    package = lib.mkOption {
+      type = lib.types.package;
+      default = pkgs.opendut.edgar.override {
+        useReleaseFallback = cfg.useReleaseFallback;
+      };
+      defaultText = lib.literalExpression "pkgs.opendut.edgar";
+      description = "The opendut-edgar package to use.";
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -21,11 +37,11 @@ in
       wantedBy = [ "multi-user.target" ];
       wants = [ "network-online.target" ];
       after = [ "network-online.target" ];
-      path = with pkgs; [
-        opendut.cannelloni
-        opendut.edgar
-        can-utils
-        iproute2
+      path = [
+        pkgs.opendut.cannelloni
+        cfg.package
+        pkgs.can-utils
+        pkgs.iproute2
       ];
       unitConfig = {
         ConditionPathExists = "/etc/opendut/edgar.toml";
@@ -33,7 +49,7 @@ in
         StartLimitBurst = 0;
       };
       serviceConfig = {
-        ExecStart = "${pkgs.opendut.edgar}/bin/opendut-edgar service";
+        ExecStart = "${cfg.package}/bin/opendut-edgar service";
         Restart = "always";
         RestartSec = "30s";
         User = "root";
@@ -49,9 +65,9 @@ in
       "modprobe.d/opendut-edgar-can_gw.conf".text = "options can_gw max_hops=2\n";
     };
 
-    environment.systemPackages = with pkgs; [
-      opendut.edgar
-      opendut.cannelloni
+    environment.systemPackages = [
+      cfg.package
+      pkgs.opendut.cannelloni
     ];
   };
 }
