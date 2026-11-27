@@ -34,7 +34,10 @@ Replace `/dev/sdX` with your target SD card block device:
 
 ```bash
 sudo dd if=$(echo result/sd-image/*.img) of=/dev/sdX bs=4M status=progress conv=fsync
+sudo eject /dev/sdX
 ```
+
+> **Note:** Desktop environments (`udisks2`) may automatically mount the partitions as soon as `dd` finishes. Always run `sudo eject /dev/sdX` (or `udisksctl power-off -b /dev/sdX`) before removing the SD card so any auto-mounted partitions are cleanly unmounted and flushed.
 
 ---
 

@@ -34,6 +34,9 @@ in
 
     boot = {
       kernelPackages = pkgs.linuxPackages;
+      kernelParams = [
+        "fsck.repair=yes"
+      ];
       loader = {
         grub.enable = false;
         generic-extlinux-compatible.enable = true;
